@@ -6,6 +6,7 @@
   ghci,
   ghc,
   compiler,
+  base,
   commands ? _: {},
   extraShellInputs ? [],
   extraShellPackages ? _: [],
@@ -13,15 +14,16 @@
   runConfig ? {},
   ...
 }:
+with pkgs.lib;
 with pkgs.lib.lists;
 let
-  version = ghc.ghc.version;
-  lib = pkgs.lib;
-  inherit (pkgs.haskell.lib) enableCabalFlag;
   inherit (builtins) attrNames elem;
   vanillaGhc = (import inputs.nixpkgs { inherit (pkgs) system; }).haskell.packages.${compiler};
   haskell-language-server = vanillaGhc.haskell-language-server;
   cmds = commands { inherit pkgs ghc; };
+  tools = import ./tools.nix { inherit pkgs; };
+
+  packageSubpaths = mapAttrs (_: tools.packageSubpath base) packages;
 
   configEmpty = {
     env = {};
@@ -58,12 +60,12 @@ let
 
   restart = f: ''--restart="${f}"'';
 
-  pkgRestarts = lib.attrsets.mapAttrsToList (n: pkg: restart "$PWD/${pkg}/${n}.cabal");
+  pkgRestarts = attrsets.mapAttrsToList (n: pkg: restart "$PWD/${pkg}/${n}.cabal");
 
   ghcidCmd =
     command: test: extraRestarts:
     let
-      restarts = (pkgRestarts packages) ++ (map restart extraRestarts);
+      restarts = (pkgRestarts packageSubpaths) ++ (map restart extraRestarts);
     in
       ''ghcid -W ${toString restarts} --command="${command}" --test='${test}' '';
 
@@ -107,7 +109,8 @@ let
   let
     conf = fullConfig config;
     mainCommand = ghci.command {
-      inherit packages script prelude;
+      packages = packageSubpaths;
+      inherit script prelude;
       inherit (conf) extraSearch;
     };
     command = ''
@@ -158,7 +161,7 @@ let
 
 in shells // {
   inherit shells shellFor shellWith ghcidCmdFile ghciShellFor haskell-language-server ghcidTestWith ghcidTest;
-  run = lib.makeOverridable run {
+  run = makeOverridable run {
     pkg = main;
     module = "Main";
     name = "main";

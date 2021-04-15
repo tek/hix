@@ -47,6 +47,7 @@ let
   };
 
   tools = haskell: args@{
+    base,
     packages,
     main ? singlePackageMain packages,
     packageDir ? null,
@@ -67,7 +68,7 @@ let
     };
     ghci = util.ghci (ghciDefaults // args.ghci or {});
     ghcidDefaults = {
-      inherit inputs packages main;
+      inherit inputs packages main base;
       ghci = ghci;
       inherit (haskell) pkgs ghc compiler;
       runConfig = runConfig haskell;
