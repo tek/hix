@@ -102,6 +102,7 @@ let
     mainPackages,
     extraChecks,
     main,
+    versionFile ? null,
   }:
   let
     app = program: { type = "app"; inherit program; };
@@ -172,7 +173,6 @@ let
     compiler ? "ghc8104",
     compat ? true,
     compatOverrides ? [],
-    packageDir ? "packages",
     versionFile ? null,
     transform ? _: outputs: outputs,
     modify ? _: _: {},
@@ -181,7 +181,7 @@ let
   let
     mainPackages = outPackagesFor project packages project.ghc;
     extraChecks = if compat then compatChecks { inherit project packages compatOverrides; } args else {};
-    outputs = defaultOutputs { inherit project mainPackages extraChecks main; };
+    outputs = defaultOutputs { inherit project mainPackages extraChecks main versionFile; };
   in customizeOutputs (args // { inherit project outputs; });
 
   defaultMain = args: args.basicPkgs.lib.makeOverridable project args;
