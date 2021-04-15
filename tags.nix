@@ -1,10 +1,10 @@
+inputs:
 {
   packages,
   pkgs,
   ghc,
   compiler,
   packageDir ? null,
-  inputs,
 }:
 let
   tags = inputs.thax.tags { inherit pkgs compiler; };

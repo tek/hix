@@ -9,7 +9,7 @@ let
     ghcOverrides = import ./ghc-overrides.nix;
     ghci = import ./ghci.nix;
     ghcid = import ./ghcid.nix;
-    tags = import ./tags.nix;
+    tags = import ./tags.nix inputs;
     cabal = import ./cabal.nix;
     hpack = import ./hpack.nix;
     obelisk = import ./obelisk inputs;
@@ -78,7 +78,7 @@ let
       inherit ghci ghcid;
       tags = util.tags {
         inherit packages;
-        inherit packageDir inputs;
+        inherit packageDir;
         inherit (haskell) compiler pkgs ghc;
       };
       cabal = util.cabal { inherit packages; inherit (haskell) pkgs; };

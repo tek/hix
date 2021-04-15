@@ -15,22 +15,6 @@
         "type": "github"
       }
     },
-    "hls": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1618215455,
-        "narHash": "sha256-VF37hPr8EvMZmcYqYPWxZE0HCd1n0dDwq/zQSDrJLnU=",
-        "owner": "haskell",
-        "repo": "haskell-language-server",
-        "rev": "b085e7a2edacf8cc07644d0d7e72c289ea5fb802",
-        "type": "github"
-      },
-      "original": {
-        "owner": "haskell",
-        "repo": "haskell-language-server",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1617984351,
@@ -115,7 +99,6 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "hls": "hls",
         "nixpkgs": "nixpkgs",
         "nixpkgs8104": "nixpkgs8104",
         "nixpkgs865": "nixpkgs865",
@@ -143,13 +126,12 @@
       }
     },
     "thax": {
-      "flake": false,
       "locked": {
-        "lastModified": 1605284261,
-        "narHash": "sha256-E/plhauthjbmPyAfphNrkAnLIxVxZRbiCj172cnXsGs=",
+        "lastModified": 1618510946,
+        "narHash": "sha256-eA/PMK/C5/NaXg3rnAWBw5lE5akk/mWVhDcwV8pPtGk=",
         "owner": "tek",
         "repo": "thax",
-        "rev": "8f63f0578a97bae2584483f3d78750a97d6afb88",
+        "rev": "e7e656e28d671a682dce06abe5b1ce915c3ffac8",
         "type": "github"
       },
       "original": {
