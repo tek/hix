@@ -12,7 +12,7 @@ let
 
   packageSubpath = base: pp:
   let
-    new = strings.removePrefix (toString base) (toString pp);
+    new = strings.removePrefix (toString base + "/") (toString pp);
     success = new == (toString pp);
   in
   if builtins.isPath pp
