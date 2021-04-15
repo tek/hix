@@ -28,7 +28,9 @@ let
       git add ${file}
       git add packages/*/*.cabal
       git commit -m "v$new_version"
-      git tag "v$new_version"
+      version=$new_version
+    else
+      version=$current
     fi
   '';
 
@@ -56,6 +58,10 @@ let
         do
           cabal upload -d ${extra} $pkg
         done
+        if [[ -n $version ]]
+        then
+          git tag "v$new_version"
+        fi
       '';
 
   uploadApp = extra: args:
