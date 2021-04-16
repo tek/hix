@@ -11,13 +11,13 @@ let
   hl = pkgs.haskell.lib;
 
   unbreak = hl.unmarkBroken;
-  notest = p: hl.doHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
+  notest = p: hl.dontBenchmark (hl.dontCheck (unbreak p));
   hackageDirect = { pkg, ver, sha256 }:
-    notest (self.callHackageDirect { inherit pkg ver sha256; } {});
+    self.callHackageDirect { inherit pkg ver sha256; } {};
   cabal2nix = name: src:
-    notest (self.callCabal2nix name src {});
+    self.callCabal2nix name src {};
   subPkg = dir: name: src:
-    notest (self.callCabal2nix name "${src}/${dir}" {});
+    self.callCabal2nix name "${src}/${dir}" {};
 
   drv = d: { _spec_type = "derivation"; drv = d; };
 

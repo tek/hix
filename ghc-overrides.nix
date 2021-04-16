@@ -20,7 +20,7 @@ let
 
   reduceWork = d: disableLibraryProfiling (dontHaddock (dontBenchmark d));
 
-  local = ghc: n: p: ghc.callCabal2nixWithOptions n (pure.packagePath base p) cabal2nixOptions {};
+  local = ghc: n: p: reduceWork (ghc.callCabal2nixWithOptions n (pure.packagePath base p) cabal2nixOptions {});
 
   projectPackages = self: _: builtins.mapAttrs (local self) packages;
 
