@@ -11,9 +11,9 @@ let
   hl = pkgs.haskell.lib;
 
   unbreak = hl.unmarkBroken;
-  notest = p: hl.dontBenchmark (hl.dontCheck (unbreak p));
+  minimal = p: hl.dontHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
   hackageDirect = { pkg, ver, sha256 }:
-    self.callHackageDirect { inherit pkg ver sha256; } {};
+    minimal (self.callHackageDirect { inherit pkg ver sha256; } {});
   cabal2nix = name: src:
     self.callCabal2nix name src {};
   subPkg = dir: name: src:
@@ -79,7 +79,7 @@ let
 
   packages = compiler: ps: mapAttrs package (mapAttrs (normalize compiler) ps);
 in transformers // {
-  inherit unbreak notest hackageDirect cabal2nix subPkg;
+  inherit unbreak minimal hackageDirect cabal2nix subPkg;
   inherit packages source hackage conditional only versions self super pkgs keep drv transform;
   hsLib = hl;
   inherit (pkgs) system;
