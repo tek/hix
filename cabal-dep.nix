@@ -11,18 +11,13 @@ let
   hl = pkgs.haskell.lib;
 
   unbreak = hl.unmarkBroken;
-  notest = p:
-    hl.doHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
+  notest = p: hl.doHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
   hackageDirect = { pkg, ver, sha256 }:
     notest (self.callHackageDirect { inherit pkg ver sha256; } {});
   cabal2nix = name: src:
     notest (self.callCabal2nix name src {});
-  cabal2nixNoHpack = name: src:
-    notest (self.callCabal2nixWithOptions name src "--no-hpack" {});
   subPkg = dir: name: src:
-    notest (self.callCabal2nixWithOptions name src "--subpath ${dir}" {});
-  subPkgNoHpack = dir: name: src:
-    notest (self.callCabal2nixWithOptions name src "--subpath ${dir} --no-hpack" {});
+    notest (self.callCabal2nix name "${src}/${dir}" {});
 
   drv = d: { _spec_type = "derivation"; drv = d; };
 
@@ -46,6 +41,7 @@ let
     root = src: { _spec_type = "root"; inherit src; };
     sub = src: path: { _spec_type = "sub"; inherit src path; };
     package = src: path: sub src "packages/${path}";
+    output = input: { _spec_type = "output"; inherit input; };
   };
 
   conditional = condition: { _spec_type = "conditional"; inherit condition; };
@@ -73,6 +69,7 @@ let
   else if spec._spec_type == "root" then cabal2nix pkg spec.src
   else if spec._spec_type == "sub" then subPkg spec.path pkg spec.src
   else if spec._spec_type == "derivation" then spec.drv
+  else if spec._spec_type == "output" then spec.input.packages.${pkgs.system}.${pkg}
   else if spec._spec_type == "keep" then super.${pkg} or null
   else throw "invalid dependency spec _spec_type for ${pkg}: ${spec}";
 
@@ -82,7 +79,8 @@ let
 
   packages = compiler: ps: mapAttrs package (mapAttrs (normalize compiler) ps);
 in transformers // {
-  inherit unbreak notest hackageDirect cabal2nix cabal2nixNoHpack subPkg subPkgNoHpack;
+  inherit unbreak notest hackageDirect cabal2nix subPkg;
   inherit packages source hackage conditional only versions self super pkgs keep drv transform;
   hsLib = hl;
+  inherit (pkgs) system;
 }
