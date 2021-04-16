@@ -11,9 +11,9 @@ let
   hl = pkgs.haskell.lib;
 
   unbreak = hl.unmarkBroken;
-  minimal = p: hl.dontHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
+  minimalDrv = p: hl.dontHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
   hackageDirect = { pkg, ver, sha256 }:
-    minimal (self.callHackageDirect { inherit pkg ver sha256; } {});
+    minimalDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
   cabal2nix = name: src:
     self.callCabal2nix name src {};
   subPkg = dir: name: src:
@@ -33,6 +33,7 @@ let
     jailbreak = transform hl.doJailbreak;
     configure = flag: transform (drv: hl.appendConfigureFlag drv flag);
     override = conf: transform (drv: hl.overrideCabal drv conf);
+    minimal = transform minimalDrv;
   };
 
   hackage = ver: sha256: { _spec_type = "hackage"; inherit ver sha256; };
