@@ -18,11 +18,13 @@ let
     then tools.composeCabal overrides
     else overrides;
 
-  compose = pkgs.lib.composeExtensions;
   reduceWork = d: disableLibraryProfiling (dontHaddock (dontBenchmark d));
-  local = ghc: n: p: reduceWork (ghc.callCabal2nixWithOptions n (pure.packagePath base p) cabal2nixOptions {});
+
+  local = ghc: n: p: ghc.callCabal2nixWithOptions n (pure.packagePath base p) cabal2nixOptions {};
+
   projectPackages = self: _: builtins.mapAttrs (local self) packages;
+
   buildOverrides = self: super:
     pure.overrides finalOverrides { inherit pkgs compiler; cabal = cabal { inherit pkgs self super; }; } self super;
 in
-  compose projectPackages buildOverrides
+  pkgs.lib.composeExtensions projectPackages buildOverrides
