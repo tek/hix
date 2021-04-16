@@ -80,7 +80,7 @@ let
 
   packages = compiler: ps: mapAttrs package (mapAttrs (normalize compiler) ps);
 in transformers // {
-  inherit unbreak minimal hackageDirect cabal2nix subPkg;
+  inherit unbreak minimalDrv hackageDirect cabal2nix subPkg;
   inherit packages source hackage conditional only versions self super pkgs keep drv transform;
   hsLib = hl;
   inherit (pkgs) system;
