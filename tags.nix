@@ -4,7 +4,6 @@ inputs:
   pkgs,
   ghc,
   compiler,
-  packageDir ? null,
 }:
 let
   tags = inputs.thax.tags { inherit pkgs compiler; };
@@ -14,9 +13,9 @@ let
     let
       p = ghc.${name};
     in
-      if builtins.isNull packageDir
+      if dir == "."
       then p
-      else p // { tagsPrefix = "${packageDir}/${dir}"; };
+      else p // { tagsPrefix = dir; };
 
   targets =
     pkgs.lib.attrsets.mapAttrsToList withPrefix packages;

@@ -51,7 +51,6 @@ let
     base,
     packages,
     main ? singlePackageMain packages,
-    packageDir ? "packages",
     runConfig ? _: {},
     compiler ? "ghc8104",
     ...
@@ -83,7 +82,6 @@ let
       inherit ghci ghcid;
       tags = util.tags {
         packages = relative;
-        inherit packageDir;
         inherit (haskell) compiler pkgs ghc;
       };
       cabal = util.cabal { inherit packages; inherit (haskell) pkgs; };
