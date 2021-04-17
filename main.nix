@@ -29,7 +29,8 @@ let
     overrides ? (_: {}),
     cabal2nixOptions ? "",
     profiling ? false,
-    nixpkgs ? import inputs.nixpkgs,
+    nixpkgs ? inputs.nixpkgs,
+    nixpkgsFunc ? import nixpkgs,
     overlays ? [],
     base,
     packages,
@@ -39,7 +40,7 @@ let
     overlay = util.ghcOverlay {
       inherit base compiler overrides cabal2nixOptions profiling packages;
     };
-    pkgs = nixpkgs {
+    pkgs = nixpkgsFunc {
       inherit system;
       overlays = [overlay] ++ overlays;
     };
