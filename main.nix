@@ -51,7 +51,7 @@ let
     base,
     packages,
     main ? singlePackageMain packages,
-    packageDir ? null,
+    packageDir ? "packages",
     runConfig ? _: {},
     compiler ? "ghc8104",
     ...
@@ -190,7 +190,6 @@ let
 
   flakeWith = create: {
     packages,
-    packageDir ? "packages",
     overrideMain ? p: p,
     ...
   }@args:
