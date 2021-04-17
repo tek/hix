@@ -57,6 +57,8 @@ let
     ...
   }:
   let
+    tls = import ./tools.nix { inherit (haskell) pkgs; };
+    relative = tls.relativePackages base packages;
     ghciDefaults = {
       inherit (haskell) pkgs base;
       basicArgs = [
@@ -69,7 +71,8 @@ let
     };
     ghci = util.ghci (ghciDefaults // args.ghci or {});
     ghcidDefaults = {
-      inherit inputs packages main base;
+      inherit inputs main base;
+      packages = relative;
       ghci = ghci;
       inherit (haskell) pkgs ghc compiler;
       runConfig = runConfig haskell;
@@ -79,7 +82,7 @@ let
     haskell // {
       inherit ghci ghcid;
       tags = util.tags {
-        inherit packages;
+        packages = relative;
         inherit packageDir;
         inherit (haskell) compiler pkgs ghc;
       };

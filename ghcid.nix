@@ -23,8 +23,6 @@ let
   cmds = commands { inherit pkgs ghc; };
   tools = import ./tools.nix { inherit pkgs; };
 
-  packageSubpaths = mapAttrs (_: tools.packageSubpath base) packages;
-
   configEmpty = {
     env = {};
     extraSearch = [];
@@ -65,7 +63,7 @@ let
   ghcidCmd =
     command: test: extraRestarts:
     let
-      restarts = (pkgRestarts packageSubpaths) ++ (map restart extraRestarts);
+      restarts = (pkgRestarts packages) ++ (map restart extraRestarts);
     in
       ''ghcid -W ${toString restarts} --command="${command}" --test='${test}' '';
 
@@ -109,7 +107,7 @@ let
   let
     conf = fullConfig config;
     mainCommand = ghci.command {
-      packages = packageSubpaths;
+      packages = packages;
       inherit script prelude;
       inherit (conf) extraSearch;
     };

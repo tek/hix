@@ -19,6 +19,7 @@ let
   then if success then error "invalid package path ${pp}" else new
   else pp;
 
+  relativePackages = base: mapAttrs (_: packageSubpath base);
 in {
-  inherit overlay composeCabal composeOverrides packageSubpath;
+  inherit overlay composeCabal composeOverrides packageSubpath relativePackages;
 }
