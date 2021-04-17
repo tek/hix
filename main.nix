@@ -162,7 +162,7 @@ let
     compatProject = ver: haskell (args // {
       compiler = "ghc${ver}";
       overrides = compatOverrides;
-      nixpkgs = import inputs."nixpkgs${ver}";
+      nixpkgs = inputs."nixpkgs${ver}";
     });
     prefixed = prf: project.pkgs.lib.attrsets.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
     compatCheck = ver: (prefixed "compat-${ver}" (outPackagesFor project packages (compatProject ver).ghc));
