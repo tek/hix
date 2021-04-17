@@ -26,8 +26,8 @@ let
   transforms = { transforms ? [], ... }: transforms;
 
   transform = hook: spec:
-  let spec' = wrapDrv spec;
-  in spec' // { transforms = ([hook] ++ (transforms spec')); };
+  let unwrappedCond = wrapDrv spec;
+  in unwrappedCond // { transforms = ([hook] ++ (transforms unwrappedCond)); };
 
   transformers = {
     jailbreak = transform hl.doJailbreak;
@@ -59,11 +59,13 @@ let
   else spec;
 
   normalize = compiler: pkg: spec:
-  let spec' = condPackage compiler pkg (wrapDrv spec);
+  let
+    applied = if isFunction spec then spec super.${pkg} else spec;
+    unwrappedCond = condPackage compiler pkg (wrapDrv applied);
   in
-  if !(spec' ? _spec_type)
-  then throw "spec for ${pkg} must have attr `_spec_type` or be a derivation: ${spec'}"
-  else spec';
+  if !(unwrappedCond ? _spec_type)
+  then throw "spec for ${pkg} must have attr `_spec_type` or be a derivation: ${unwrappedCond}"
+  else unwrappedCond;
 
   specDerivation = pkg: spec:
   if spec._spec_type == "hackage" then hackageDirect { inherit pkg; inherit (spec) ver sha256; }
