@@ -1,5 +1,5 @@
 inputs:
-{ hackage, source, configure, override, pkgs, ... }:
+{ hackage, source, configure, override, pkgs, minimal, ... }:
 {
   # reflex
   universe = hackage "1.2.1" "00876daw7xf1w33szp81r0zp9y6xy6j5pa9i6pvrsf1xybihd6s2";
@@ -10,7 +10,7 @@ inputs:
   universe-instances-base = hackage "1.1" "1d5hrbn6ydyhkf9i9497rpixrcydryx6il65q4jwjqvrqpnrwgv5";
 
   # obelisk
-  snap-core = source.root inputs.snap-core;
+  snap-core = minimal (source.root inputs.snap-core);
   obelisk-backend = source.sub inputs.obelisk "lib/backend";
   obelisk-frontend = source.sub inputs.obelisk "lib/frontend";
   obelisk-route = source.sub inputs.obelisk "lib/route";
