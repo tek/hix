@@ -38,7 +38,7 @@ let
   }: rec {
     inherit compiler packages base nixpkgs;
     overlay = util.ghcOverlay {
-      inherit base compiler overrides cabal2nixOptions profiling packages;
+      inherit base overrides cabal2nixOptions profiling packages;
     };
     pkgs = nixpkgsFunc {
       inherit system;
@@ -110,7 +110,7 @@ let
   let
     app = program: { type = "app"; inherit program; };
     ghcid-test = app "${project.ghcid.ghcidTest.testApp}";
-  in{
+  in {
     defaultPackage = mainPackages.${main};
     devShell = project.ghcid.shell;
     legacyPackages = {
