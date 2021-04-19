@@ -1,7 +1,7 @@
 inputs:
 with builtins;
 let
-  util = rec {
+  util = {
     pure = import ./pure.nix;
     cabal-dep = import ./cabal-dep.nix;
     ghcOverlay = import ./ghc-overlay.nix;

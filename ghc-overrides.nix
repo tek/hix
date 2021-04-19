@@ -1,14 +1,13 @@
 {
   base,
   pkgs,
-  compiler,
   overrides ? _: {},
   packages ? {},
   cabal2nixOptions ? "",
   profiling ? false,
 }:
 let
-  cabalDep = import ./cabal-dep.nix { inherit pkgs compiler; };
+  cabalDep = import ./cabal-dep.nix { inherit pkgs profiling; };
   pure = import ./pure.nix;
   tools = import ./tools.nix { inherit pkgs; };
   inherit (pkgs.haskell.lib) dontCheck dontHaddock dontBenchmark disableLibraryProfiling;

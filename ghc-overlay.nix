@@ -9,7 +9,7 @@
 self: super:
 let
   combined = import ./ghc-overrides.nix {
-    inherit base overrides packages cabal2nixOptions profiling compiler;
+    inherit base overrides packages cabal2nixOptions profiling;
     pkgs = self;
   };
 in {

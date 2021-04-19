@@ -1,14 +1,13 @@
 {
   pkgs,
-  compiler,
+  profiling,
 }:
 with builtins;
 let
-  cabalSpec = import ./cabal-spec.nix;
-  tools = import ./cabal-spec-tools.nix { inherit pkgs; };
+  cabalSpec = import ./cabal-spec.nix { inherit pkgs profiling; };
+  tools = import ./cabal-spec-tools.nix { inherit pkgs profiling; };
 
   inherit (pkgs.lib) composeManyExtensions;
-
   inherit (pkgs.lib.attrsets) filterAttrs foldAttrs isDerivation mapAttrs' nameValuePair;
   inherit (pkgs.lib.lists) foldl;
   inherit (pkgs.lib.debug) traceVal;
@@ -16,20 +15,22 @@ let
 
   hackageDirect = self: { pkg, ver, sha256 }:
     tools.minimalDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
-  cabal2nix = self: name: src:
-    self.callCabal2nix name src {};
-  subPkg = self: dir: name: src:
-    self.callCabal2nix name "${src}/${dir}" {};
 
-  condPackage = pkg: spec:
+  cabal2nix = self: name: src:
+  tools.globalProfiling (self.callCabal2nix name src {});
+
+  subPkg = self: dir: name: src:
+  tools.globalProfiling (self.callCabal2nix name "${src}/${dir}" {});
+
+  condPackage = name: version: pkg: spec:
   if spec._spec_type == "conditional"
-  then spec.condition compiler
+  then spec.condition name version
   else spec;
 
-  normalize = pkg: spec:
+  normalize = name: version: super: pkg: spec:
   let
     applied = if isFunction spec then spec super.${pkg} else spec;
-    unwrappedCond = condPackage pkg (tools.wrapDrv applied);
+    unwrappedCond = condPackage name version pkg (tools.wrapDrv applied);
   in
   if !(unwrappedCond ? _spec_type)
   then throw "spec for ${pkg} must have attr `_spec_type` or be a derivation: ${unwrappedCond}"
@@ -49,10 +50,14 @@ let
   package = self: super: pkg: spec:
   foldl applyTransformers (specDerivation self super pkg spec) (tools.transforms spec);
 
-  packages = ps: self: super:
-  mapAttrs (package self super) (mapAttrs (normalize) (ps (cabalSpec { inherit pkgs self super; })));
+  packages = overlay: self: super:
+  let
+    name = self.ghc.name;
+    version = self.ghc.version;
+    norm = normalize name version super;
+  in mapAttrs (package self super) (mapAttrs norm (overlay (cabalSpec { inherit self super; })));
 
   compose = os: composeManyExtensions (map packages os);
 in {
-  inherit packages compose;
+  inherit packages compose tools;
 }

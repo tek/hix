@@ -1,11 +1,14 @@
 {
   pkgs,
+  profiling,
+}:
+{
   self,
   super,
 }:
 with builtins;
 let
-  tools = import ./cabal-spec-tools.nix { inherit pkgs; };
+  tools = import ./cabal-spec-tools.nix { inherit pkgs profiling; };
 
   inherit (pkgs.lib.attrsets) filterAttrs foldAttrs isDerivation mapAttrs' nameValuePair;
   inherit (pkgs.lib.lists) foldl;
@@ -40,7 +43,7 @@ let
 
   versions = vs: conditional (comp: vs.${comp} or keep);
 in transformers // {
-  inherit (tools) unbreak minimalDrv drv;
+  inherit (tools) unbreak minimalDrv minimalProf drv;
   inherit source hackage conditional only versions self super pkgs keep transform;
   hsLib = hl;
   inherit (pkgs) system;
