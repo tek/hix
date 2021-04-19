@@ -4,7 +4,7 @@
   overrides ? _: {},
   packages ? {},
   cabal2nixOptions ? "",
-  profiling ? false,
+  profiling ? true,
 }:
 self: super:
 let

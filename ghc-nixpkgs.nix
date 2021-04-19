@@ -5,7 +5,7 @@
   overrides ? { ... }: _: _: {},
   packages ? {},
   cabal2nixOptions ? "",
-  profiling ? false,
+  profiling ? true,
 }:
 nixpkgs {
   inherit system;

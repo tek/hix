@@ -28,7 +28,7 @@ let
     compiler ? "ghc8104",
     overrides ? _: {},
     cabal2nixOptions ? "",
-    profiling ? false,
+    profiling ? true,
     nixpkgs ? inputs.nixpkgs,
     nixpkgsFunc ? import nixpkgs,
     overlays ? [],

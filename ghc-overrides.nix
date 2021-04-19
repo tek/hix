@@ -4,7 +4,7 @@
   overrides ? _: {},
   packages ? {},
   cabal2nixOptions ? "",
-  profiling ? false,
+  profiling ? true,
 }:
 let
   cabalDep = import ./cabal-dep.nix { inherit pkgs profiling; };
