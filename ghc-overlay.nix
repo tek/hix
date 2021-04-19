@@ -1,7 +1,7 @@
 {
   base,
   compiler,
-  overrides ? { ... }: _: _: {},
+  overrides ? _: {},
   packages ? {},
   cabal2nixOptions ? "",
   profiling ? false,

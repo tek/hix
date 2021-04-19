@@ -3,6 +3,9 @@
 A set of tools for developing on a Haskell project with Nix build.
 Provides out-of-the-box setup for package overrides, `ghcid`, `haskell-language-server`, [thax], and `cabal upload`.
 
+**Warning** This is still under construction, subject to breaking changes, unstable, and very specific to the author's
+workflow.
+
 # Basic usage
 
 `flake.nix`:

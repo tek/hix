@@ -26,7 +26,7 @@ let
   haskell = {
     system ? currentSystem,
     compiler ? "ghc8104",
-    overrides ? (_: {}),
+    overrides ? _: {},
     cabal2nixOptions ? "",
     profiling ? false,
     nixpkgs ? inputs.nixpkgs,
@@ -198,7 +198,7 @@ let
 
 in {
   inherit util haskell tools projectWithSets project systems flakeOutputs;
-  inherit (util.pure) noOverrides composeCabal;
+  inherit (util.pure) noOverrides;
   inherit (util) obeliskOverrides;
 
   flake = flakeWith flakeOutputs;
