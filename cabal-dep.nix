@@ -57,7 +57,10 @@ let
     norm = normalize name version super;
   in mapAttrs (package self super) (mapAttrs norm (overlay (cabalSpec { inherit self super; })));
 
-  compose = os: composeManyExtensions (map packages os);
+  asList = overlays:
+  if isList overlays then overlays else [overlays];
+
+  compose = overlays: composeManyExtensions (map packages (asList overlays));
 in {
   inherit packages compose tools;
 }
