@@ -18,7 +18,7 @@ with pkgs.lib;
 with pkgs.lib.lists;
 let
   inherit (builtins) attrNames elem;
-  vanillaGhc = (import inputs.nixpkgs { inherit (pkgs) system; }).haskell.packages.${compiler};
+  vanillaGhc = (import inputs.nixpkgs-hls { inherit (pkgs) system; }).haskell.packages.${compiler};
   haskell-language-server = vanillaGhc.haskell-language-server;
   cmds = commands { inherit pkgs ghc; };
   tools = import ./tools.nix { inherit pkgs; };
