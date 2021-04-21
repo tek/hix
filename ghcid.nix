@@ -18,8 +18,9 @@ with pkgs.lib;
 with pkgs.lib.lists;
 let
   inherit (builtins) attrNames elem;
-  vanillaGhc = (import inputs.nixpkgs-hls { inherit (pkgs) system; }).haskell.packages.${compiler};
-  haskell-language-server = vanillaGhc.haskell-language-server;
+  inherit (pkgs) system;
+
+  vanillaGhc = (import inputs.nixpkgs { inherit system; }).haskell.packages.${compiler};
   cmds = commands { inherit pkgs ghc; };
   tools = import ./tools.nix { inherit pkgs; };
 
@@ -88,9 +89,14 @@ let
   }:
   let
     isNotTarget = p: !(p ? pname && elem p.pname packageNames);
-    inputs = p: p.buildInputs ++ p.propagatedBuildInputs;
-    hsPkgs = g: builtins.filter isNotTarget (concatMap inputs (map (p: g.${p}) packageNames)) ++ extraShellPackages g;
-    devInputs = [(ghc.ghcWithPackages hsPkgs) vanillaGhc.ghcid vanillaGhc.cabal-install haskell-language-server];
+    bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
+    hsPkgs = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) packageNames)) ++ extraShellPackages g;
+    devInputs = [
+      (ghc.ghcWithPackages hsPkgs)
+      vanillaGhc.ghcid
+      vanillaGhc.cabal-install
+      inputs.easy-hls.defaultPackage.${system}
+    ];
     args = {
       name = "ghci-shell";
       buildInputs = devInputs ++ extraShellInputs;
