@@ -10,6 +10,7 @@
   commands ? _: {},
   prelude ? true,
   runConfig ? {},
+  easy-hls ? true,
   ...
 }:
 with pkgs.lib;
@@ -96,12 +97,12 @@ let
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     targetDeps = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) packageNames));
     hsPkgs = g: targetDeps g ++ conf.extraShellPackages g;
+    hls = if easy-hls then inputs.easy-hls.defaultPackage.${system} else vanillaGhc.haskell-language-server;
     devInputs = [
       (ghc.ghcWithPackages hsPkgs)
       vanillaGhc.ghcid
       vanillaGhc.cabal-install
-      vanillaGhc.haskell-language-server
-      # inputs.easy-hls.defaultPackage.${system}
+      hls
     ];
     args = {
       name = "ghci-shell";
