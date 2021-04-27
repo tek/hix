@@ -8,8 +8,6 @@
   compiler,
   base,
   commands ? _: {},
-  extraShellInputs ? [],
-  extraShellPackages ? _: [],
   prelude ? true,
   runConfig ? {},
   ...
@@ -26,6 +24,8 @@ let
 
   configEmpty = {
     env = {};
+    extraShellInputs = [];
+    extraShellPackages = _: [];
     extraSearch = [];
     extraRestarts = [];
     preCommand = "";
@@ -37,10 +37,13 @@ let
   let
     l = configEmpty // left;
     r = configEmpty // right;
+    concat = attr: l.${attr} ++ r.${attr};
   in {
     env = l.env // r.env;
-    extraSearch = l.extraSearch ++ r.extraSearch;
-    extraRestarts = l.extraRestarts ++ r.extraRestarts;
+    extraSearch = concat "extraSearch";
+    extraRestarts = concat "extraRestarts";
+    extraShellInputs = concat "extraShellInputs";
+    extraShellPackages = g: l.extraShellPackages g ++ r.extraShellPackages g;
     preCommand = ''
       ${l.preCommand}
       ${r.preCommand}
@@ -85,25 +88,28 @@ let
   shellFor = {
     packageNames,
     hook ? "",
-    env ? {},
+    config ? {},
   }:
   let
+    conf = fullConfig config;
     isNotTarget = p: !(p ? pname && elem p.pname packageNames);
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
-    hsPkgs = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) packageNames)) ++ extraShellPackages g;
+    targetDeps = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) packageNames));
+    hsPkgs = g: targetDeps g ++ conf.extraShellPackages g;
     devInputs = [
       (ghc.ghcWithPackages hsPkgs)
       vanillaGhc.ghcid
       vanillaGhc.cabal-install
-      inputs.easy-hls.defaultPackage.${system}
+      vanillaGhc.haskell-language-server
+      # inputs.easy-hls.defaultPackage.${system}
     ];
     args = {
       name = "ghci-shell";
-      buildInputs = devInputs ++ extraShellInputs;
+      buildInputs = devInputs ++ conf.extraShellInputs;
       shellHook = hook;
     };
   in
-    pkgs.stdenv.mkDerivation (args // env);
+    pkgs.stdenv.mkDerivation (args // conf.env);
 
   ghcidShellCmd = {
     script,
@@ -131,7 +137,7 @@ let
   shellFor {
     packageNames = attrNames packages;
     hook = ghcidShellCmd { inherit script test config; };
-    env = config.env or {};
+    inherit config;
   };
 
   shells = builtins.mapAttrs ghciShellFor cmds;
