@@ -43,6 +43,7 @@ let
     pkgs = nixpkgsFunc {
       inherit system;
       overlays = [overlay] ++ overlays;
+      config.allowUnfree = true;
     };
     ghc = pkgs.haskell.packages.${compiler};
   };
