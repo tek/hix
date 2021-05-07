@@ -39,7 +39,7 @@ let
 
   keep = { _spec_type = "keep"; };
 
-  only = target: spec: conditional (comp: if comp == "ghc${target}" then spec else keep);
+  only = target: spec: conditional (_: version: if version == target then spec else keep);
 
   versions = vs: conditional (comp: vs.${comp} or keep);
 in transformers // {
