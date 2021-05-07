@@ -31,7 +31,14 @@ let
     fi
   '';
 
-  upload = desc: extra: { name, versionFile ? null }:
+  tagFragment = ''
+    if [[ -n $version ]]
+    then
+      git tag "v$version"
+    fi
+  '';
+
+  upload = { tag, desc, extra ? "" }: { name, versionFile ? null }:
     let
       buildDir = "/tmp/${name}-build";
       buildDirOption = "--builddir ${buildDir}";
@@ -60,18 +67,15 @@ let
         then
           git commit -m "v$new_version"
         fi
-        if [[ -n $version ]]
-        then
-          git tag "v$version"
-        fi
+        ${if tag then tagFragment else ""}
       '';
 
-  uploadApp = desc: extra: args:
+  uploadApp = config: args:
   pkgs.writeScript "cabal-upload-candidates-app"  ''
     #!/usr/bin/env zsh
-    nix develop -c ${upload desc extra args}
+    nix develop -c ${upload config args}
   '';
 in {
-  candidates = uploadApp "Upload candidates for" "";
-  release = uploadApp "Release" "--publish";
+  candidates = uploadApp { tag = false; desc = "Upload candidates for"; };
+  release = uploadApp { tag = true; desc = "Release"; extra = "--publish"; };
 }
