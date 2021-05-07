@@ -41,7 +41,7 @@ let
 
   only = target: spec: conditional (_: version: if version == target then spec else keep);
 
-  versions = vs: conditional (comp: vs.${comp} or keep);
+  versions = vs: conditional (_: version: vs.${version} or keep);
 in transformers // {
   inherit (tools) unbreak minimalDrv minimalProf drv;
   inherit source hackage conditional only versions self super pkgs keep transform;
