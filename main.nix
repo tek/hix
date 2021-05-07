@@ -21,7 +21,7 @@ let
   in
   if length names == 1
   then head names
-  else error "'main' must be specified for multi-package projects";
+  else builtins.abort "'main' must be specified for multi-package projects";
 
   haskell = {
     system ? currentSystem,

@@ -7,7 +7,7 @@ let
     success = new == (toString pp);
   in
   if builtins.isPath pp
-  then if success then error "invalid package path ${pp}" else new
+  then if success then builtins.abort "invalid package path ${pp}" else new
   else pp;
 
   relativePackages = base: mapAttrs (_: packageSubpath base);
