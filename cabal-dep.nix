@@ -7,10 +7,11 @@ let
   cabalSpec = import ./cabal-spec.nix { inherit pkgs profiling; };
   tools = import ./cabal-spec-tools.nix { inherit pkgs profiling; };
 
-  inherit (pkgs.lib) composeManyExtensions;
-  inherit (pkgs.lib.attrsets) filterAttrs foldAttrs isDerivation mapAttrs' nameValuePair;
-  inherit (pkgs.lib.lists) foldl;
-  inherit (pkgs.lib.debug) traceVal;
+  inherit (pkgs) lib;
+  inherit (lib) composeExtensions;
+  inherit (lib.attrsets) filterAttrs foldAttrs isDerivation mapAttrs' nameValuePair;
+  inherit (lib.lists) foldl;
+  inherit (lib.debug) traceVal;
   hl = pkgs.haskell.lib;
 
   hackageDirect = self: { pkg, ver, sha256 }:
@@ -59,6 +60,9 @@ let
 
   asList = overlays:
   if isList overlays then overlays else [overlays];
+
+  composeManyExtensions =
+    lib.foldr (x: y: composeExtensions x y) (self: super: {});
 
   compose = overlays: composeManyExtensions (map packages (asList overlays));
 in {
