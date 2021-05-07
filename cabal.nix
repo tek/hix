@@ -60,7 +60,7 @@ let
         done
         if [[ -n $version ]]
         then
-          git tag "v$new_version"
+          git tag "v$version"
         fi
       '';
 
