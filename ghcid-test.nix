@@ -7,7 +7,7 @@
       ${pre}
       ${if hpack then "nix run '.#hpack'" else ""}
       nix develop --impure --expr "
-        (import ./. {}).legacyPackages.x86_64-linux.run.override {
+        (builtins.getFlake path:$PWD).legacyPackages.x86_64-linux.run.override {
           pkg = \"$pkg\";
           module = \"$module\";
           name = \"$name\";
