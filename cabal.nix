@@ -47,18 +47,17 @@ let
       pkgs.writeScript "cabal-upload-candidates" ''
         #!${pkgs.zsh}/bin/zsh
         setopt err_exit
-        pkg=''${1-all}
         nix -L flake check
         rm -rf ${buildDir}
         mkdir -p ${buildDir}
         ${if isNull versionFile then "" else bumpVersion desc versionFile}
-        ${cabal "v2-build"} $pkg
-        ${cabal "v2-sdist"} $pkg
+        ${cabal "v2-build"} all
+        ${cabal "v2-sdist"} all
         for pkg in ${buildDir}/sdist/*
         do
           cabal upload ${extra} $pkg
         done
-        ${cabal "v2-haddock"} --enable-documentation --haddock-for-hackage $pkg
+        ${cabal "v2-haddock"} --enable-documentation --haddock-for-hackage all
         for pkg in ${buildDir}/*docs.tar.gz
         do
           cabal upload -d ${extra} $pkg
