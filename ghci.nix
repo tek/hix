@@ -63,17 +63,20 @@ in rec {
       '';
     };
 
-    generic = module: ''
-      :load ${module}
-      import ${module}
-    '';
+    generic = cwd: module: {
+      inherit cwd;
+      script = ''
+        :load ${module}
+        import ${module}
+      '';
+    };
 
     run = pkg: module: runner:
     if runner == "hedgehog-property"
     then property module
     else if runner == "hedgehog-unit"
     then unit pkg module
-    else generic module;
+    else generic pkg module;
 
   };
 
