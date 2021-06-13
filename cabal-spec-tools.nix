@@ -12,12 +12,17 @@ let
 
   globalProfiling = if profiling then yesProfiling else noProfiling;
 
-  drv = d: { _spec_type = "derivation"; drv = d; };
+  mkSpec = _spec_type: data: {
+    options = {};
+    inherit _spec_type;
+  } // data;
+
+  drv = d: mkSpec "derivation" { drv = d; };
 
   minimalDrv = p:
   hl.dontHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
 in {
-  inherit unbreak drv globalProfiling noProfiling minimalDrv;
+  inherit unbreak drv globalProfiling noProfiling minimalDrv mkSpec;
 
   wrapDrv = spec: if isDerivation spec then drv spec else spec;
 
