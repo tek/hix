@@ -46,6 +46,7 @@ let
       config.allowUnfree = true;
     };
     ghc = pkgs.haskell.packages.${compiler};
+    basicGhc = (import inputs.nixpkgs8104 { inherit system; }).haskell.packages.ghc8104;
   };
 
   tools = haskell: args@{
@@ -86,7 +87,7 @@ let
         inherit (haskell) compiler pkgs ghc;
       };
       cabal = util.cabal { inherit packages; inherit (haskell) pkgs; };
-      hpack = { verbose ? false }: util.hpack { inherit verbose; inherit (haskell) pkgs ghc; };
+      hpack = { verbose ? false }: util.hpack { inherit verbose; inherit (haskell) pkgs; ghc = haskell.basicGhc; };
     };
 
   project = args: tools (haskell args) args;
@@ -167,7 +168,7 @@ let
     });
     prefixed = prf: project.pkgs.lib.attrsets.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
     compatCheck = ver: (prefixed "compat-${ver}" (outPackagesFor project packages (compatProject ver).ghc));
-  in compatCheck "8104" // compatCheck "884" // compatCheck "865";
+  in compatCheck "901" // compatCheck "8104" // compatCheck "884" // compatCheck "865";
 
   flakeOutputs = {
     system,
