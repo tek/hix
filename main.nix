@@ -154,11 +154,14 @@ let
     inherit (project.pkgs.lib.attrsets) genAttrs;
   in genAttrs (attrNames packages) (n: ghc.${n} // { inherit ghc; });
 
+  defaultCompatVersions = ["901" "8104" "884"];
+
   # test the project with fixed nixpkgs and ghc version, and minimal overrides, for compatibility
   compatChecks = {
     project,
     packages,
     compatOverrides ? [],
+    compatVersions ? defaultCompatVersions,
   }: args:
   let
     compatProject = ver: haskell (args // {
@@ -168,7 +171,8 @@ let
     });
     prefixed = prf: project.pkgs.lib.attrsets.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
     compatCheck = ver: (prefixed "compat-${ver}" (outPackagesFor project packages (compatProject ver).ghc));
-  in compatCheck "901" // compatCheck "8104" // compatCheck "884" // compatCheck "865";
+  in
+    foldl' (z: v: z // compatCheck v) {} compatVersions;
 
   flakeOutputs = {
     system,
@@ -178,6 +182,7 @@ let
     compiler ? "ghc8104",
     compat ? true,
     compatOverrides ? [],
+    compatVersions ? defaultCompatVersions,
     versionFile ? null,
     transform ? _: outputs: outputs,
     modify ? _: _: {},
@@ -185,7 +190,7 @@ let
   }@args:
   let
     mainPackages = outPackagesFor project packages project.ghc;
-    extraChecks = if compat then compatChecks { inherit project packages compatOverrides; } args else {};
+    extraChecks = if compat then compatChecks { inherit project packages compatOverrides compatVersions; } args else {};
     outputs = defaultOutputs { inherit project mainPackages extraChecks main versionFile; };
   in customizeOutputs (args // { inherit project outputs; });
 
