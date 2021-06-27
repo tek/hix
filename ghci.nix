@@ -63,6 +63,15 @@ in rec {
       '';
     };
 
+    tastyUnit = cwd: module: {
+      inherit cwd;
+      script = ''
+        :load ${module}
+        import ${module}
+        import Test.Tasty (defaultMain)
+      '';
+    };
+
     generic = cwd: module: {
       inherit cwd;
       script = ''
@@ -76,6 +85,8 @@ in rec {
     then property module
     else if runner == "hedgehog-unit"
     then unit pkg module
+    else if runner == "tasty-tree"
+    then tastyUnit pkg module
     else generic pkg module;
 
   };
@@ -87,6 +98,8 @@ in rec {
       then "check ${name}"
       else if runner == "hedgehog-unit"
       then "(check . withTests 1 . property . test) ${name}"
+      else if runner == "tasty-tree"
+      then "defaultMain ${name}"
       else name;
   };
 
