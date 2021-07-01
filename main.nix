@@ -160,13 +160,18 @@ let
   compatChecks = {
     project,
     packages,
-    compatOverrides ? [],
+    compatOverrides ? {},
     compatVersions ? defaultCompatVersions,
   }: args:
   let
+    compatFor = n: compatOverrides.${n} or (_: {});
+    overrides = ver:
+      if builtins.isAttrs compatOverrides
+      then [(compatFor "all") (compatFor "ghc${ver}")]
+      else compatOverrides;
     compatProject = ver: haskell (args // {
+      overrides = overrides ver;
       compiler = "ghc${ver}";
-      overrides = compatOverrides;
       nixpkgs = inputs."nixpkgs${ver}";
     });
     prefixed = prf: project.pkgs.lib.attrsets.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
@@ -181,7 +186,7 @@ let
     main ? singlePackageMain packages,
     compiler ? "ghc8104",
     compat ? true,
-    compatOverrides ? [],
+    compatOverrides ? {},
     compatVersions ? defaultCompatVersions,
     versionFile ? null,
     transform ? _: outputs: outputs,
