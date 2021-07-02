@@ -74,6 +74,8 @@ let
     lib.foldr (x: y: composeExtensions x y) (self: super: {});
 
   compose = overlays: composeManyExtensions (map packages (asList overlays));
+
+  override = ghc: f: ghc.override { overrides = packages f; };
 in {
-  inherit packages compose tools;
+  inherit packages compose tools override;
 }
