@@ -164,10 +164,10 @@ let
     compatVersions ? defaultCompatVersions,
   }: args:
   let
-    compatFor = n: compatOverrides.${n} or (_: {});
+    compatFor = n: let c = compatOverrides.${n} or []; in if builtins.isList c then c else [c];
     overrides = ver:
       if builtins.isAttrs compatOverrides
-      then [(compatFor "all") (compatFor "ghc${ver}")]
+      then (compatFor "all") ++ (compatFor "ghc${ver}")
       else compatOverrides;
     compatProject = ver: haskell (args // {
       overrides = overrides ver;
