@@ -48,7 +48,7 @@
       flake = false;
     };
     hls = {
-      url = github:haskell/haskell-language-server;
+      url = github:haskell/haskell-language-server/b6245884ae83e00dd2b5261762549b37390179f8;
       flake = false;
     };
   };
