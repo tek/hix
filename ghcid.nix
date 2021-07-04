@@ -10,6 +10,7 @@
   commands ? _: {},
   prelude ? true,
   runConfig ? {},
+  testConfig ? _: {},
   easy-hls ? true,
   ...
 }:
@@ -36,6 +37,7 @@ let
   };
 
   unlines = concatStringsSep "\n";
+
   mergeConfig = left: right:
   let
     l = configEmpty // left;
@@ -155,9 +157,9 @@ let
     type,
     runner,
     config ? {},
-  }:
+  }@args:
   ghciShellFor "run" {
-    config = mergeConfig config { extraSearch = ["$PWD/${pkg}/${type}"]; };
+    config = mergeConfig (mergeConfig config { extraSearch = ["$PWD/${pkg}/${type}"]; }) (testConfig args);
     script = ghci.scripts.run pkg module runner;
     test = ghci.tests.test name runner;
   };

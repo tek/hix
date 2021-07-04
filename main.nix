@@ -54,6 +54,7 @@ let
     packages,
     main ? singlePackageMain packages,
     runConfig ? _: {},
+    testConfig ? _: _: {},
     compiler ? "ghc8104",
     ...
   }:
@@ -77,6 +78,7 @@ let
       ghci = ghci;
       inherit (haskell) pkgs ghc compiler;
       runConfig = runConfig haskell;
+      testConfig = testConfig haskell;
     };
     ghcid = util.ghcid (ghcidDefaults // args.ghcid or {});
   in
