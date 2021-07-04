@@ -30,34 +30,26 @@ let
     extraShellPackages = _: [];
     extraSearch = [];
     extraRestarts = [];
-    preCommand = "";
-    preStartCommand = "";
-    exitCommand = "";
+    preCommand = [];
+    preStartCommand = [];
+    exitCommand = [];
   };
 
+  unlines = concatStringsSep "\n";
   mergeConfig = left: right:
   let
     l = configEmpty // left;
     r = configEmpty // right;
-    concat = attr: l.${attr} ++ r.${attr};
+    concat = attr: toList l.${attr} ++ toList r.${attr};
   in {
     env = l.env // r.env;
     extraSearch = concat "extraSearch";
     extraRestarts = concat "extraRestarts";
     extraShellInputs = concat "extraShellInputs";
     extraShellPackages = g: l.extraShellPackages g ++ r.extraShellPackages g;
-    preCommand = ''
-      ${l.preCommand}
-      ${r.preCommand}
-    '';
-    preStartCommand = ''
-      ${l.preStartCommand}
-      ${r.preStartCommand}
-    '';
-    exitCommand = ''
-      ${l.exitCommand}
-      ${r.exitCommand}
-    '';
+    preCommand = concat "preCommand";
+    preStartCommand = concat "preStartCommand";
+    exitCommand = concat "exitCommand";
   };
 
   fullConfig = user: mergeConfig (mergeConfig configEmpty runConfig) user;
@@ -82,9 +74,9 @@ let
     ...
   }:
   pkgs.writeScript "ghcid-cmd" ''
-    ${preStartCommand}
+    ${unlines preStartCommand}
     ${ghcidCmd command test extraRestarts}
-    ${exitCommand}
+    ${unlines exitCommand}
   '';
 
   shellFor = {
@@ -125,7 +117,7 @@ let
       inherit (conf) extraSearch;
     };
     command = ''
-      ${conf.preCommand}
+      ${unlines conf.preCommand}
       ${mainCommand}
     '';
   in ghcidCmdFile (conf // { inherit command test; });
