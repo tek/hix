@@ -76,9 +76,21 @@ let
     ...
   }:
   pkgs.writeScript "ghcid-cmd" ''
+    #!${pkgs.zsh}/bin/zsh
+    quitting=0
+    quit() {
+      if [[ $quitting == 0 ]]
+      then
+        print '>>> quitting'
+        quitting=1
+        ${unlines exitCommand}
+      fi
+    }
+    trap 'quit' INT
+    trap 'quit' TERM
+    trap 'quit' EXIT
     ${unlines preStartCommand}
     ${ghcidCmd command test extraRestarts}
-    ${unlines exitCommand}
   '';
 
   shellFor = {
