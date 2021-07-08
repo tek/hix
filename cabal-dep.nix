@@ -18,13 +18,13 @@ let
   (spec.options or {}).${name} or default;
 
   hackageDirect = self: { pkg, ver, sha256 }:
-    tools.minimalDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
+    tools.minimalDrv (super.callHackageDirect { inherit pkg ver sha256; } {});
 
   cabal2nix = self: name: opts: src:
-  tools.globalProfiling (self.callCabal2nixWithOptions name src opts {});
+  tools.globalProfiling (super.callCabal2nixWithOptions name src opts {});
 
   subPkg = self: dir: name: opts: src:
-  tools.globalProfiling (self.callCabal2nixWithOptions name "${src}/${dir}" opts {});
+  tools.globalProfiling (super.callCabal2nixWithOptions name "${src}/${dir}" opts {});
 
   condPackage = name: version: pkg: spec:
   if spec._spec_type == "conditional"
