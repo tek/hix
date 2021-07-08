@@ -1,6 +1,6 @@
 {
   pkgs,
-  profiling,
+  profiling ? true,
 }:
 with builtins;
 let
@@ -17,14 +17,14 @@ let
   options = name: default: spec:
   (spec.options or {}).${name} or default;
 
-  hackageDirect = super: { pkg, ver, sha256 }:
-    tools.minimalDrv (super.callHackageDirect { inherit pkg ver sha256; } {});
+  hackageDirect = self: { pkg, ver, sha256 }:
+    tools.minimalDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
 
-  cabal2nix = super: name: opts: src:
-  tools.globalProfiling (super.callCabal2nixWithOptions name src opts {});
+  cabal2nix = self: name: opts: src:
+  tools.globalProfiling (self.callCabal2nixWithOptions name src opts {});
 
-  subPkg = super: dir: name: opts: src:
-  tools.globalProfiling (super.callCabal2nixWithOptions name "${src}/${dir}" opts {});
+  subPkg = self: dir: name: opts: src:
+  tools.globalProfiling (self.callCabal2nixWithOptions name "${src}/${dir}" opts {});
 
   condPackage = name: version: pkg: spec:
   if spec._spec_type == "conditional"
@@ -47,9 +47,9 @@ let
   in run rawSpec {};
 
   specDerivation = self: super: pkg: spec:
-  if spec._spec_type == "hackage" then hackageDirect super { inherit pkg; inherit (spec) ver sha256; }
-  else if spec._spec_type == "root" then cabal2nix super pkg (options "cabal2nix" "" spec) spec.src
-  else if spec._spec_type == "sub" then subPkg super spec.path pkg (options "cabal2nix" "" spec) spec.src
+  if spec._spec_type == "hackage" then hackageDirect self { inherit pkg; inherit (spec) ver sha256; }
+  else if spec._spec_type == "root" then cabal2nix self pkg (options "cabal2nix" "" spec) spec.src
+  else if spec._spec_type == "sub" then subPkg self spec.path pkg (options "cabal2nix" "" spec) spec.src
   else if spec._spec_type == "derivation" then spec.drv
   else if spec._spec_type == "output" then spec.input.packages.${pkgs.system}.${pkg}
   else if spec._spec_type == "keep" then super.${pkg} or null
@@ -71,11 +71,11 @@ let
   if isList overlays then overlays else [overlays];
 
   composeManyExtensions =
-    lib.foldr (x: y: composeExtensions x y) (self: super: {});
+    lib.foldr composeExtensions (self: super: {});
 
   compose = overlays: composeManyExtensions (map packages (asList overlays));
 
-  override = ghc: f: ghc.override { overrides = packages f; };
+  override = ghc: f: ghc.override { overrides = compose f; };
 in {
   inherit packages compose tools override;
 }
