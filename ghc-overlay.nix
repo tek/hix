@@ -1,5 +1,6 @@
 {
   base,
+  compiler,
   overrides ? _: {},
   packages ? {},
   cabal2nixOptions ? "",
@@ -18,8 +19,8 @@ let
   if hasPrefix "ghc" name then set.override { overrides = combined; } else set;
 in {
   haskell = super.haskell // {
-    packages = builtins.mapAttrs overlay super.haskell.packages // {
-      integer-simple = builtins.mapAttrs overlay super.haskell.packages.integer-simple;
+    packages = super.haskell.packages // {
+      ${compiler} = super.haskell.packages.${compiler}.override { overrides = combined; };
     };
   };
 }

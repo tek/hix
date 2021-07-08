@@ -38,7 +38,7 @@ let
   }: rec {
     inherit compiler packages base nixpkgs;
     overlay = util.ghcOverlay {
-      inherit base overrides cabal2nixOptions profiling packages;
+      inherit base overrides compiler cabal2nixOptions profiling packages;
     };
     pkgs = nixpkgsFunc {
       inherit system;
