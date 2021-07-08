@@ -17,13 +17,13 @@ let
   options = name: default: spec:
   (spec.options or {}).${name} or default;
 
-  hackageDirect = self: { pkg, ver, sha256 }:
+  hackageDirect = super: { pkg, ver, sha256 }:
     tools.minimalDrv (super.callHackageDirect { inherit pkg ver sha256; } {});
 
-  cabal2nix = self: name: opts: src:
+  cabal2nix = super: name: opts: src:
   tools.globalProfiling (super.callCabal2nixWithOptions name src opts {});
 
-  subPkg = self: dir: name: opts: src:
+  subPkg = super: dir: name: opts: src:
   tools.globalProfiling (super.callCabal2nixWithOptions name "${src}/${dir}" opts {});
 
   condPackage = name: version: pkg: spec:
@@ -47,9 +47,9 @@ let
   in run rawSpec {};
 
   specDerivation = self: super: pkg: spec:
-  if spec._spec_type == "hackage" then hackageDirect self { inherit pkg; inherit (spec) ver sha256; }
-  else if spec._spec_type == "root" then cabal2nix self pkg (options "cabal2nix" "" spec) spec.src
-  else if spec._spec_type == "sub" then subPkg self spec.path pkg (options "cabal2nix" "" spec) spec.src
+  if spec._spec_type == "hackage" then hackageDirect super { inherit pkg; inherit (spec) ver sha256; }
+  else if spec._spec_type == "root" then cabal2nix super pkg (options "cabal2nix" "" spec) spec.src
+  else if spec._spec_type == "sub" then subPkg super spec.path pkg (options "cabal2nix" "" spec) spec.src
   else if spec._spec_type == "derivation" then spec.drv
   else if spec._spec_type == "output" then spec.input.packages.${pkgs.system}.${pkg}
   else if spec._spec_type == "keep" then super.${pkg} or null
