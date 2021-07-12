@@ -34,7 +34,7 @@ let
   tagFragment = ''
     if [[ -n $version ]]
     then
-      git tag "v$version"
+      git tag -m "Release $version" "v$version"
     fi
   '';
 
