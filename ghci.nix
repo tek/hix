@@ -37,7 +37,7 @@ let
 in rec {
   args = {
     basic = prelude:
-    ["-no-user-package-db" "-package-env" "-"] ++ basicArgs ++ extraArgs ++ optional prelude "-XNoImplicitPrelude";
+    basicArgs ++ extraArgs ++ optional prelude "-XNoImplicitPrelude";
 
     command =
       commandArgs;
