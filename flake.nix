@@ -14,10 +14,6 @@
       url = github:tek/obelisk/tryp;
       flake = false;
     };
-    snap-core = {
-      url = github:obsidiansystems/snap-core?ref=ts-expose-fileserve-internals;
-      flake = false;
-    };
     thax.url = github:tek/thax;
   };
 

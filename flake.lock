@@ -147,11 +147,11 @@
     "obelisk": {
       "flake": false,
       "locked": {
-        "lastModified": 1618176503,
-        "narHash": "sha256-d19NBVXGci6lmLwUb9C1DKJkXtzOgsVRILZWmYnAhnw=",
+        "lastModified": 1627232660,
+        "narHash": "sha256-sWcy2QWSzNZnXY03KnaRw55faCURWHn7uhL09q2arFA=",
         "owner": "tek",
         "repo": "obelisk",
-        "rev": "d132a5bf4ef29d7eb5f7d57a7ac22e60d790430d",
+        "rev": "0aedb773022158e4a37fbf3092f621b8afbe4d54",
         "type": "github"
       },
       "original": {
@@ -172,25 +172,7 @@
         "nixpkgs884": "nixpkgs884",
         "nixpkgs901": "nixpkgs901",
         "obelisk": "obelisk",
-        "snap-core": "snap-core",
         "thax": "thax"
-      }
-    },
-    "snap-core": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1583434915,
-        "narHash": "sha256-vVfDooI1OKSXcVIUMFx/2aceendwqhJjtjtxSmDoI50=",
-        "owner": "obsidiansystems",
-        "repo": "snap-core",
-        "rev": "e015fc484e38dd9389c58b277b1884395e553bdf",
-        "type": "github"
-      },
-      "original": {
-        "owner": "obsidiansystems",
-        "ref": "ts-expose-fileserve-internals",
-        "repo": "snap-core",
-        "type": "github"
       }
     },
     "thax": {

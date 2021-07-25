@@ -10,7 +10,6 @@ inputs:
   universe-instances-base = hackage "1.1" "1d5hrbn6ydyhkf9i9497rpixrcydryx6il65q4jwjqvrqpnrwgv5";
 
   # obelisk
-  snap-core = minimal (source.root inputs.snap-core);
   obelisk-backend = source.sub inputs.obelisk "lib/backend";
   obelisk-frontend = source.sub inputs.obelisk "lib/frontend";
   obelisk-route = source.sub inputs.obelisk "lib/route";
