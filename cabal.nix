@@ -38,7 +38,7 @@ let
     fi
   '';
 
-  upload = { tag, desc, extra ? "" }: { name, versionFile ? null }:
+  upload = { tag, desc, extra ? "", check ? true }: { name, versionFile ? null }:
     let
       buildDir = "/tmp/${name}-build";
       buildDirOption = "--builddir ${buildDir}";
@@ -47,7 +47,7 @@ let
       pkgs.writeScript "cabal-upload-candidates" ''
         #!${pkgs.zsh}/bin/zsh
         setopt err_exit
-        nix -L flake check
+        ${if check then "nix -L flake check" else ""}
         rm -rf ${buildDir}
         mkdir -p ${buildDir}
         ${if isNull versionFile then "" else bumpVersion desc versionFile}
@@ -74,6 +74,6 @@ let
     nix develop -c ${upload config args}
   '';
 in {
-  candidates = uploadApp { tag = false; desc = "Upload candidates for"; };
+  candidates = uploadApp { tag = false; desc = "Upload candidates for"; check = false; };
   release = uploadApp { tag = true; desc = "Release"; extra = "--publish"; };
 }
