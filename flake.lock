@@ -64,22 +64,6 @@
         "type": "github"
       }
     },
-    "nixpkgs8105": {
-      "locked": {
-        "lastModified": 1627391865,
-        "narHash": "sha256-tPoWBO9Nzu3wuX37WcnctzL6LoDCErJLnfLGqqmXCm4=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "8ecc61c91a596df7d3293603a9c2384190c1b89a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "8ecc61c91a596df7d3293603a9c2384190c1b89a",
-        "type": "github"
-      }
-    },
     "nixpkgs865": {
       "locked": {
         "lastModified": 1602473909,
@@ -167,7 +151,6 @@
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs8104": "nixpkgs8104",
-        "nixpkgs8105": "nixpkgs8105",
         "nixpkgs865": "nixpkgs865",
         "nixpkgs884": "nixpkgs884",
         "nixpkgs901": "nixpkgs901",
