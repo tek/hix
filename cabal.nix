@@ -51,7 +51,6 @@ let
         rm -rf ${buildDir}
         mkdir -p ${buildDir}
         ${if isNull versionFile then "" else bumpVersion desc versionFile}
-        ${cabal "v2-build"} all
         ${cabal "v2-sdist"} all
         for pkg in ${buildDir}/sdist/*
         do
