@@ -5,6 +5,7 @@
   compiler,
   pkgs,
   system,
+  ghc9 ? false,
 }:
 with pkgs.lib;
 let
@@ -68,5 +69,10 @@ let
 
   hlsCustom = overrideCabal withoutPlugins (old: old // removeDeps old);
 
-  hls = if easy-hls then inputs.easy-hls.defaultPackage.${system} else hlsCustom;
+  hls =
+    if easy-hls
+    then inputs.easy-hls.defaultPackage.${system} else
+      if ghc9
+      then hlsCustom
+      else vanillaGhc.haskell-language-server;
 in hls
