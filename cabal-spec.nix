@@ -28,6 +28,7 @@ let
   transformers = {
     jailbreak = transform hl.doJailbreak;
     configure = flag: transform (drv: hl.appendConfigureFlag drv flag);
+    configures = flags: transform (drv: hl.appendConfigureFlags drv flags);
     override = conf: transform (drv: hl.overrideCabal drv conf);
     minimal = transform tools.minimalDrv;
   };
