@@ -38,7 +38,11 @@ let
     fi
   '';
 
-  upload = { tag, desc, extra ? "", check ? true }: { name, versionFile ? null }:
+  commitFragment = ''
+    git commit --allow-empty -m "v$version"
+  '';
+
+  upload = { tag, commit, desc, extra ? "", check ? true }: { name, versionFile ? null }:
     let
       buildDir = "/tmp/${name}-build";
       buildDirOption = "--builddir ${buildDir}";
@@ -61,10 +65,7 @@ let
         do
           cabal upload -d ${extra} $pkg
         done
-        if [[ -n $new_version ]]
-        then
-          git commit -m "v$new_version"
-        fi
+        ${if commit then commitFragment else ""}
         ${if tag then tagFragment else ""}
       '';
 
@@ -74,6 +75,6 @@ let
     nix develop -c ${upload config args}
   '';
 in {
-  candidates = uploadApp { tag = false; desc = "Upload candidates for"; check = false; };
-  release = uploadApp { tag = true; desc = "Release"; extra = "--publish"; };
+  candidates = uploadApp { tag = false; commit = false; desc = "Upload candidates for"; check = false; };
+  release = uploadApp { tag = true; commit = true; desc = "Release"; extra = "--publish"; };
 }
