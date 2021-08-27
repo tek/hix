@@ -19,10 +19,13 @@ let
 
   drv = d: mkSpec "derivation" { drv = d; };
 
+  hackageDrv = p:
+  hl.dontBenchmark (hl.dontCheck (unbreak p));
+
   minimalDrv = p:
-  hl.dontHaddock (hl.dontBenchmark (hl.dontCheck (unbreak p)));
+  hl.dontHaddock (minimalDrv p);
 in {
-  inherit unbreak drv globalProfiling noProfiling minimalDrv mkSpec;
+  inherit unbreak drv globalProfiling noProfiling minimalDrv mkSpec hackageDrv;
 
   wrapDrv = spec: if isDerivation spec then drv spec else spec;
 
