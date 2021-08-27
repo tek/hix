@@ -137,6 +137,7 @@ let
       tags = app "${project.tags.app}";
       candidates = app "${project.cabal.candidates { name = main; inherit versionFile; }}";
       release = app "${project.cabal.release { name = main; inherit versionFile; }}";
+      docs = app "${project.cabal.docs { name = main; }}";
     };
     defaultApp = ghcid-test;
   };
