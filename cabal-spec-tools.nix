@@ -23,7 +23,7 @@ let
   hl.dontBenchmark (hl.dontCheck (unbreak p));
 
   minimalDrv = p:
-  hl.dontHaddock (minimalDrv p);
+  hl.dontHaddock (hackageDrv p);
 in {
   inherit unbreak drv globalProfiling noProfiling minimalDrv mkSpec hackageDrv;
 

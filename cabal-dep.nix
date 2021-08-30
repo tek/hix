@@ -18,7 +18,7 @@ let
   (spec.options or {}).${name} or default;
 
   hackageDirect = self: { pkg, ver, sha256 }:
-    tools.hackageDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
+  tools.hackageDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
 
   cabal2nix = self: name: opts: src:
   tools.globalProfiling (self.callCabal2nixWithOptions name src opts {});
