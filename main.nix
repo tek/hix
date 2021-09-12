@@ -48,7 +48,7 @@ let
       config.allowUnfree = true;
     };
     ghc = pkgs.haskell.packages.${compiler};
-    basicGhc = (import inputs.nixpkgs8107 { inherit system; }).haskell.packages.${mainCompiler};
+    basicGhc = (import inputs."nixpkgs_${mainCompiler}" { inherit system; }).haskell.packages.${mainCompiler};
   };
 
   tools = haskell: args@{
