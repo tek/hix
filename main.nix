@@ -23,9 +23,11 @@ let
   then head names
   else builtins.abort "'main' must be specified for multi-package projects";
 
+  mainCompiler = "ghc8107";
+
   haskell = {
     system ? currentSystem,
-    compiler ? "ghc8104",
+    compiler ? mainCompiler,
     overrides ? _: {},
     cabal2nixOptions ? "",
     profiling ? true,
@@ -46,7 +48,7 @@ let
       config.allowUnfree = true;
     };
     ghc = pkgs.haskell.packages.${compiler};
-    basicGhc = (import inputs.nixpkgs8104 { inherit system; }).haskell.packages.ghc8104;
+    basicGhc = (import inputs.nixpkgs8107 { inherit system; }).haskell.packages.${mainCompiler};
   };
 
   tools = haskell: args@{
@@ -55,7 +57,7 @@ let
     main ? singlePackageMain packages,
     runConfig ? _: {},
     testConfig ? _: _: {},
-    compiler ? "ghc8104",
+    compiler ? mainCompiler,
     ...
   }:
   let
@@ -187,7 +189,7 @@ let
     project,
     packages,
     main ? singlePackageMain packages,
-    compiler ? "ghc8104",
+    compiler ? mainCompiler,
     compat ? true,
     compatOverrides ? {},
     compatVersions ? defaultCompatVersions,
