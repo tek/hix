@@ -11,7 +11,7 @@
   prelude ? true,
   runConfig ? {},
   testConfig ? _: {},
-  easy-hls ? true,
+  easy-hls ? false,
   ghc9 ? false,
   ...
 }:
