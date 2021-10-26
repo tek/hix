@@ -159,7 +159,7 @@ let
     inherit (project.pkgs.lib.attrsets) genAttrs;
   in genAttrs (attrNames packages) (n: ghc.${n} // { inherit ghc; });
 
-  defaultCompatVersions = ["901" "8104" "884"];
+  defaultCompatVersions = ["901" "8107" "884"];
 
   # test the project with fixed nixpkgs and ghc version, and minimal overrides, for compatibility
   compatChecks = {
@@ -177,7 +177,7 @@ let
     compatProject = ver: haskell (args // {
       overrides = overrides ver;
       compiler = "ghc${ver}";
-      nixpkgs = inputs."nixpkgs${ver}";
+      nixpkgs = inputs."nixpkgs_ghc${ver}";
     });
     prefixed = prf: project.pkgs.lib.attrsets.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
     compatCheck = ver: (prefixed "compat-${ver}" (outPackagesFor project packages (compatProject ver).ghc));
