@@ -1,7 +1,7 @@
 {
   description = "hix test project";
 
-  inputs.hix.url = path:../../;
+  inputs.hix.url = path:HIX;
 
   outputs = { hix, ... }:
   hix.flake {

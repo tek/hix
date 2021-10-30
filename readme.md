@@ -8,11 +8,27 @@ workflow.
 
 # Basic usage
 
-`flake.nix`:
+The simplest possible flake looks like this:
 
 ```nix
 {
-  description = "A Haskell Library";
+  description = "Spaceship";
+  inputs.hix.url = github:tek/hix;
+  outputs = { hix, ... }: hix.flake { base = ./.; packages = { spaceship = ./.; }; };
+}
+```
+
+This will configure a single Cabal library at the root of the project, to be built with:
+
+```
+nix build .#spaceship
+```
+
+For the explanation of other features, consider this example flake:
+
+```nix
+{
+  description = "Spaceship";
 
   inputs.hix.url = github:tek/hix;
   inputs.polysemy-log.url = github:tek/polysemy-log;
@@ -20,7 +36,7 @@ workflow.
   outputs = { hix, polysemy-log, ... }:
   let
     common = { hackage, jailbreak, ... }: {
-      co-log-polysemy = jailbreak (hackage "0.0.1.2" "17bcs8dvrhwfcyklknkqg11gxgxm2jaa7kbm6xx4vm1976abzwss");
+      co-log-polysemy = jailbreak;
       polysemy = hackage "1.5.0.0" "1xl472xqdxnp4ysyqnackpfn6wbx03rlgwmy9907bklrh557il6d";
     };
 
@@ -30,19 +46,19 @@ workflow.
     };
 
     compat = { hackage, only, ... }: {
-      polysemy = only "865" (hackage "1.4.0.0" "04bl0w7z35jh63jpy87sa1rrbgqhwn7c0pxsm5l3ww0pjnswkhjj");
+      polysemy = hackage "1.6.0.0" "04bl0w7z35jh63jpy87sa1rrbgqhwn7c0pxsm5l3ww0pjnswkhjj";
     };
 
   in hix.flake {
     base = ./.;
-    compiler = "ghc8104";
+    compiler = "ghc901";
     packages = {
-      spaceship-core = "packages/core";
-      spaceship-api = "packages/api";
+      spaceship-core = ./packages/core;
+      spaceship-api = ./packages/api;
     };
     main = "spaceship-api";
     overrides = [common main];
-    compatOverrides = [common compat];
+    compatOverrides = { all = [common]; ghc8107 = [compat]; };
     ghci.extraArgs = ["-fplugin=Polysemy.Plugin"];
     versionFile = "ops/hpack/shared/meta.yaml";
     ghcid.commands = pkgs: {
@@ -59,14 +75,32 @@ workflow.
 }
 ```
 
-This will create an `outputs` attrset that contains packages and checks for all packages, once with the specified
-`compiler` and the `overrides`, and once for each of the compiler versions 8.6.5, 8.8.4 and 8.10.4 with the
+This will create an `outputs` attrset that defines packages and checks for all Cabal packages, once with the specified
+`compiler` and the `overrides`, and once for each of the compiler versions 8.8.4, 8.10.7 and 9.0.1 with the
 `compatOverrides`.
 
 Additionally, `devShell`'s environment contains the project's dependencies plus `cabal`, `ghcid` and
 `haskell-language-server`.
 
 The `overrides` are specified using a declarative DSL, for which a set of combinators is provided.
+
+## hpack
+
+These commands run `hpack` in each directory in `packages` (the first variant suppresses output):
+
+```
+nix run .#hpack
+nix run .#hpack-verbose
+```
+
+It is possible to store the config files in a separate directory, configured by the `hpackDir` attribute to `flake`
+(defaulting to `ops/hpack`).
+If the file `${hpackDir}/<project-name>.yaml` exists, it will be copied to the project directory and removed after
+running `hpack`.
+
+Additionally, a shared directory, for use in `hpack` files with the `<<: !include shared/file.yaml` directive, may be
+configured with the `hpackShared` parameter (defaulting to `shared`).
+If the directory `${hpackDir}/${hpackShared}` exists, it will be linked to the project directory as well.
 
 ## ghcid
 
@@ -104,7 +138,7 @@ nix run .#candidates
 nix run .#release
 ```
 
-If the arg `versionFile` is given, the script will substitute the `version:` line in that hpack file after asking for
+If the arg `versionFile` is given, the script will substitute the `version:` line in that `hpack` file after asking for
 the next version.
 
 

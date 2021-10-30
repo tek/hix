@@ -1,0 +1,7 @@
+name: sub
+version: 1
+
+library:
+  source-dirs: src
+  dependencies:
+    - base >= 4 && < 5

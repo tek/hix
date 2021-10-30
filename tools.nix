@@ -4,10 +4,12 @@ let
   packageSubpath = base: pp:
   let
     new = strings.removePrefix (toString base + "/") (toString pp);
-    success = new == (toString pp);
+    failed = new == (toString pp);
   in
   if builtins.isPath pp
-  then if success then builtins.abort "invalid package path ${pp}" else new
+  then
+  if pp == base then "."
+  else if failed then builtins.abort "invalid package path ${pp} for base ${base}" else new
   else pp;
 
   relativePackages = base: mapAttrs (_: packageSubpath base);

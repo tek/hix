@@ -1,0 +1,16 @@
+name: root
+version: 1
+
+library:
+  source-dirs: src
+  dependencies:
+    - base >= 4 && < 6
+    - sub
+
+executables:
+  run:
+    main: Main.hs
+    source-dirs: app
+    dependencies:
+      - base >= 4 && < 6
+      - root

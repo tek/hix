@@ -58,6 +58,8 @@ let
     runConfig ? _: {},
     testConfig ? _: _: {},
     compiler ? mainCompiler,
+    hpackDir ? "ops/hpack",
+    hpackShared ? "shared",
     ...
   }:
   let
@@ -91,7 +93,12 @@ let
         inherit (haskell) compiler pkgs ghc;
       };
       cabal = util.cabal { inherit packages; inherit (haskell) pkgs; };
-      hpack = { verbose ? false }: util.hpack { inherit verbose; inherit (haskell) pkgs; ghc = haskell.basicGhc; };
+      hpack = { verbose ? false }: util.hpack {
+        inherit verbose hpackDir hpackShared;
+        inherit (haskell) pkgs;
+        ghc = haskell.basicGhc;
+        paths = relative;
+      };
     };
 
   project = args: tools (haskell args) args;
