@@ -213,10 +213,19 @@ let
   }@args:
   systems (args: create (args // { project = overrideMain (defaultMain args); })) args;
 
+  tests = system: import ./test { pkgs = import inputs.nixpkgs { inherit system; }; };
+
 in {
   inherit util haskell tools projectWithSets project systems flakeOutputs;
   inherit (util.pure) noOverrides;
   inherit (util) obeliskOverrides;
 
   flake = flakeWith flakeOutputs;
-}
+} // inputs.flake-utils.lib.eachSystem ["x86_64-linux"] (system: {
+  apps = {
+    test = {
+      type = "app";
+      program = "${(tests system).main}";
+    };
+  };
+})

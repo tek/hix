@@ -63,8 +63,10 @@ This will create an `outputs` attrset that contains packages and checks for all 
 `compiler` and the `overrides`, and once for each of the compiler versions 8.6.5, 8.8.4 and 8.10.4 with the
 `compatOverrides`.
 
-Additionally, `devShell`'s environment contains the project's dependencies plus `cabal`, `ghcide` and
+Additionally, `devShell`'s environment contains the project's dependencies plus `cabal`, `ghcid` and
 `haskell-language-server`.
+
+The `overrides` are specified using a declarative DSL, for which a set of combinators is provided.
 
 ## ghcid
 
@@ -93,7 +95,7 @@ nix run .#tags [<tags-file>]
 
 `tags-file` defaults to `.tags`.
 
-## cabal
+## cabal upload
 
 To upload package candidates or publish to Hackage:
 
