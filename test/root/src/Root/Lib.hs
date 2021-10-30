@@ -1,5 +1,7 @@
 module Root.Lib where
 
-boom :: m ()
-boom =
-  error "boom?"
+import qualified Sub.Lib
+
+string :: String
+string =
+  Sub.Lib.string

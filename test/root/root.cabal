@@ -11,7 +11,8 @@ library
   hs-source-dirs:
       src
   build-depends:
-    base ==4.*
+    base ==4.*,
+    sub
 
 executable run
   main-is: Main.hs

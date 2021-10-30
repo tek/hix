@@ -4,6 +4,7 @@
   set -e
   base=$PWD
   cd $base/test/root
+  nix flake update
   nix build
   output=$(result/bin/run)
   if [[ $output != 'success' ]]
