@@ -20,6 +20,10 @@ let
     old = spec.options or {};
   in spec // { options = old // { ${name} = value; }; };
 
+  options = name: default: spec:
+  (spec.options or {}).${name} or default;
+
+
   transformers = {
     jailbreak = transform_ hl.doJailbreak;
     configure = flag: transform_ (flip hl.appendConfigureFlag flag);
@@ -35,11 +39,14 @@ let
     drv = modifiers.hackageDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
   });
 
+  cabal2nix = src: spec.create ({ self, final, pkg, ... }: {
+    drv = modifiers.globalProfiling (self.callCabal2nixWithOptions pkg src (options "cabal2nix" "" final) {});
+  });
+
   source = rec {
-    root = src: mkSpec "root" { inherit src; };
-    sub = src: path: mkSpec "sub" { inherit src path; };
+    root = cabal2nix;
+    sub = src: path: cabal2nix "${src}/${path}";
     package = src: path: sub src "packages/${path}";
-    output = input: mkSpec "output" { inherit input; };
   };
 
   drv = d: set { drv = d; };
@@ -49,7 +56,7 @@ let
   noHpack = option "cabal2nix" "--no-hpack";
 
 in transformers // {
-  inherit hackage self super pkgs keep transform transform_ option noHpack drv;
+  inherit hackage source self super pkgs keep transform transform_ option noHpack drv;
   hsLib = hl;
   inherit (pkgs) system lib;
   compilerName = self.ghc.name;
