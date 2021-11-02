@@ -16,6 +16,8 @@ let
     obeliskOverrides = import ./obelisk/overrides.nix inputs;
   };
 
+  inherit (inputs.nixpkgs) lib;
+
   singlePackageMain = packages:
   let names = attrNames packages;
   in
@@ -25,7 +27,7 @@ let
 
   mainCompiler = "ghc8107";
 
-  tls = import ./tools.nix { inherit (inputs.nixpkgs) lib; };
+  tls = import ./tools.nix { inherit lib; };
 
   haskell = {
     system ? currentSystem,
@@ -105,14 +107,8 @@ let
 
   project = args: tools (haskell args) args;
 
-  systemHook = f: args: system:
-  let
-    basicPkgs = import inputs.nixpkgs { inherit system; };
-    extra = { inherit system basicPkgs; };
-  in
-    f (args // extra);
-
-  systems = f: args: inputs.flake-utils.lib.eachSystem ["x86_64-linux"] (systemHook f args);
+  systems = f: args@{ systems ? ["x86_64-linux"] }:
+  inputs.flake-utils.lib.eachSystem systems (system: f (args // { inherit system; }));
 
   defaultOutputs = {
     project,
@@ -209,7 +205,7 @@ let
     outputs = defaultOutputs { inherit project mainPackages extraChecks main versionFile; };
   in customizeOutputs (args // { inherit project outputs; });
 
-  defaultMain = args: args.basicPkgs.lib.makeOverridable project args;
+  defaultMain = args: lib.makeOverridable project args;
 
   flakeWith = create: {
     packages,
@@ -220,17 +216,18 @@ let
 
   tests = system: import ./test { pkgs = import inputs.nixpkgs { inherit system; }; };
 
+  systemOutputs = inputs.flake-utils.lib.eachSystem ["x86_64-linux"] (system: {
+    apps = {
+      test = {
+        type = "app";
+        program = "${(tests system).main}";
+      };
+    };
+  });
+
 in {
   inherit util haskell tools projectWithSets project systems flakeOutputs;
-  inherit (util.pure) noOverrides;
   inherit (util) obeliskOverrides;
 
   flake = flakeWith flakeOutputs;
-} // inputs.flake-utils.lib.eachSystem ["x86_64-linux"] (system: {
-  apps = {
-    test = {
-      type = "app";
-      program = "${(tests system).main}";
-    };
-  };
-})
+} // systemOutputs
