@@ -107,7 +107,7 @@ let
 
   project = args: tools (haskell args) args;
 
-  systems = f: args@{ systems ? ["x86_64-linux"] }:
+  systems = f: args@{ systems ? ["x86_64-linux"], ... }:
   inputs.flake-utils.lib.eachSystem systems (system: f (args // { inherit system; }));
 
   defaultOutputs = {
