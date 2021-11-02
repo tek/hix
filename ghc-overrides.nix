@@ -1,7 +1,7 @@
 {
   base,
   pkgs,
-  overrides ? _: {},
+  overrides ? {},
   packages ? {},
   cabal2nixOptions ? "",
   profiling ? true,
@@ -9,7 +9,7 @@
 let
   cabalDep = import ./cabal-dep.nix { inherit pkgs profiling; };
   pure = import ./pure.nix;
-  tools = import ./tools.nix { inherit pkgs; };
+  tools = import ./tools.nix { inherit (pkgs) lib; };
   inherit (pkgs.haskell.lib) dontCheck dontHaddock dontBenchmark disableLibraryProfiling;
 
   reduceWork = d: disableLibraryProfiling (dontHaddock (dontBenchmark d));
@@ -18,6 +18,6 @@ let
 
   projectPackages = self: _: builtins.mapAttrs (local self) packages;
 
-  buildOverrides = cabalDep.compose overrides;
+  buildOverrides = cabalDep.compose (tools.overridesFor (tools.normalizeOverrides overrides) "dev");
 in
   pkgs.lib.composeExtensions projectPackages buildOverrides

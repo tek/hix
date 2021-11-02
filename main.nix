@@ -25,10 +25,12 @@ let
 
   mainCompiler = "ghc8107";
 
+  tls = import ./tools.nix { inherit (inputs.nixpkgs) lib; };
+
   haskell = {
     system ? currentSystem,
     compiler ? mainCompiler,
-    overrides ? _: {},
+    overrides ? {},
     cabal2nixOptions ? "",
     profiling ? true,
     nixpkgs ? inputs.nixpkgs,
@@ -40,7 +42,8 @@ let
   }: rec {
     inherit compiler packages base nixpkgs;
     overlay = util.ghcOverlay {
-      inherit base overrides compiler cabal2nixOptions profiling packages;
+      inherit base compiler cabal2nixOptions profiling packages;
+      overrides = tls.normalizeOverrides overrides;
     };
     pkgs = nixpkgsFunc {
       inherit system;
@@ -63,7 +66,6 @@ let
     ...
   }:
   let
-    tls = import ./tools.nix { inherit (haskell) pkgs; };
     relative = tls.relativePackages base packages;
     ghciDefaults = {
       inherit (haskell) pkgs base;
@@ -106,8 +108,7 @@ let
   systemHook = f: args: system:
   let
     basicPkgs = import inputs.nixpkgs { inherit system; };
-    tools = import ./tools.nix { pkgs = basicPkgs; };
-    extra = tools // { inherit system basicPkgs; };
+    extra = { inherit system basicPkgs; };
   in
     f (args // extra);
 
@@ -172,17 +173,14 @@ let
   compatChecks = {
     project,
     packages,
-    compatOverrides ? {},
+    overrides ? {},
     compatVersions ? defaultCompatVersions,
   }: args:
   let
-    compatFor = n: let c = compatOverrides.${n} or []; in if builtins.isList c then c else [c];
-    overrides = ver:
-      if builtins.isAttrs compatOverrides
-      then (compatFor "all") ++ (compatFor "ghc${ver}")
-      else compatOverrides;
+    nover = tls.normalizeOverrides overrides;
+    compatOverrides = ver: tls.overridesFor nover "ghc${ver}";
     compatProject = ver: haskell (args // {
-      overrides = overrides ver;
+      overrides = compatOverrides ver;
       compiler = "ghc${ver}";
       nixpkgs = inputs."nixpkgs_ghc${ver}";
     });
@@ -198,7 +196,7 @@ let
     main ? singlePackageMain packages,
     compiler ? mainCompiler,
     compat ? true,
-    compatOverrides ? {},
+    overrides ? {},
     compatVersions ? defaultCompatVersions,
     versionFile ? null,
     transform ? _: outputs: outputs,
@@ -207,7 +205,7 @@ let
   }@args:
   let
     mainPackages = outPackagesFor project packages project.ghc;
-    extraChecks = if compat then compatChecks { inherit project packages compatOverrides compatVersions; } args else {};
+    extraChecks = if compat then compatChecks { inherit project packages overrides compatVersions; } args else {};
     outputs = defaultOutputs { inherit project mainPackages extraChecks main versionFile; };
   in customizeOutputs (args // { inherit project outputs; });
 
