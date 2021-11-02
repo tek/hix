@@ -9,9 +9,9 @@
 }:
 with pkgs.lib;
 let
-  cabal-dep = import ./cabal-dep.nix { inherit pkgs; profiling = true; };
+  deps = import ./deps.nix { inherit pkgs; profiling = true; };
 
-  hlsGhc = cabal-dep.override vanillaGhc ({ jailbreak, source, hackage, minimal, ... }: 
+  hlsGhc = deps.override vanillaGhc ({ jailbreak, source, hackage, minimal, ... }: 
   let
     hls = p: source.sub inputs.hls p;
     plug = n: hls "plugins/hls-${n}-plugin";

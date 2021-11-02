@@ -1,9 +1,13 @@
 inputs:
 with builtins;
 let
+
+  inherit (inputs.nixpkgs) lib;
+
   util = {
     pure = import ./pure.nix;
     cabal-dep = import ./cabal-dep.nix;
+    spec = import ./deps/spec.nix { inherit lib; };
     ghcOverlay = import ./ghc-overlay.nix;
     ghcNixpkgs = import ./ghc-nixpkgs.nix;
     ghcOverrides = import ./ghc-overrides.nix;
@@ -16,8 +20,6 @@ let
     obeliskOverrides = import ./obelisk/overrides.nix inputs;
   };
 
-  inherit (inputs.nixpkgs) lib;
-
   singlePackageMain = packages:
   let names = attrNames packages;
   in
@@ -29,10 +31,12 @@ let
 
   tls = import ./tools.nix { inherit lib; };
 
+  # Import nixpkgs, adding an overlay that contains `cabal2nix` derivations for local packages and the specified
+  # dependency overrides.
   haskell = {
     system ? currentSystem,
     compiler ? mainCompiler,
-    overrides ? {},
+    overrides ? [],
     cabal2nixOptions ? "",
     profiling ? true,
     nixpkgs ? inputs.nixpkgs,
@@ -44,8 +48,7 @@ let
   }: rec {
     inherit compiler packages base nixpkgs;
     overlay = util.ghcOverlay {
-      inherit base compiler cabal2nixOptions profiling packages;
-      overrides = tls.normalizeOverrides overrides;
+      inherit base compiler cabal2nixOptions profiling packages overrides;
     };
     pkgs = nixpkgsFunc {
       inherit system;
@@ -105,11 +108,19 @@ let
       };
     };
 
-  project = args: tools (haskell args) args;
+  project = args@{ overrides ? {}, ... }:
+  let
+    os =
+      tls.overridesFor overrides "all" ++
+      tls.overridesFor overrides "dev";
+    a =
+      args // { overrides = os; };
+  in tools (haskell a) a;
 
   systems = f: args@{ systems ? ["x86_64-linux"], ... }:
   inputs.flake-utils.lib.eachSystem systems (system: f (args // { inherit system; }));
 
+  # /Note/: Overrides are not normalized.
   defaultOutputs = {
     project,
     mainPackages,
@@ -165,7 +176,8 @@ let
 
   defaultCompatVersions = ["901" "8107" "884"];
 
-  # test the project with fixed nixpkgs and ghc version, and minimal overrides, for compatibility
+  # Derivations for local packages with fixed nixpkgs and ghc version, and minimal overrides, for compatibility checks.
+  # /Note/: Overrides must be normalized;
   compatChecks = {
     project,
     packages,
@@ -173,18 +185,24 @@ let
     compatVersions ? defaultCompatVersions,
   }: args:
   let
-    nover = tls.normalizeOverrides overrides;
-    compatOverrides = ver: tls.overridesFor nover "ghc${ver}";
+    compatOverrides = ver:
+    tls.overridesFor overrides "all" ++
+    tls.overridesFor overrides "compat" ++
+    tls.overridesFor overrides "ghc${ver}";
+
     compatProject = ver: haskell (args // {
       overrides = compatOverrides ver;
       compiler = "ghc${ver}";
       nixpkgs = inputs."nixpkgs_ghc${ver}";
     });
+
     prefixed = prf: project.pkgs.lib.attrsets.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
+
     compatCheck = ver: (prefixed "compat-${ver}" (outPackagesFor project packages (compatProject ver).ghc));
   in
     foldl' (z: v: z // compatCheck v) {} compatVersions;
 
+  # /Note/: Overrides are not normalized.
   flakeOutputs = {
     system,
     project,
@@ -208,11 +226,15 @@ let
   defaultMain = args: lib.makeOverridable project args;
 
   flakeWith = create: {
-    packages,
     overrideMain ? p: p,
+    overrides ? {},
+    deps ? [],
     ...
   }@args:
-  systems (args: create (args // { project = overrideMain (defaultMain args); })) args;
+  let
+    os = tls.normalizeOverrides overrides deps;
+    f = a: create (a // { project = overrideMain (defaultMain a); });
+  in systems f (args // { overrides = os; }) // { overrides = os; };
 
   tests = system: import ./test { pkgs = import inputs.nixpkgs { inherit system; }; };
 
@@ -225,9 +247,9 @@ let
     };
   });
 
-in {
+in systemOutputs // {
   inherit util haskell tools projectWithSets project systems flakeOutputs;
   inherit (util) obeliskOverrides;
 
   flake = flakeWith flakeOutputs;
-} // systemOutputs
+}
