@@ -162,8 +162,7 @@ All of these are in the attribute set passed to an override function.
 |Name|Option|
 |---|---|
 |`option`| Takes a key and an arbitrary value. Used to set options for derivation combinators.|
-|`noHpack`| Sets an option with key `cabal2nix` to `--no-hpack`, which will be read by `source.*` and passed to|
-  `cabal2nix.`
+|`noHpack`| Sets an option with key `cabal2nix` to `--no-hpack`, which will be read by `source.*` and passed to  `cabal2nix`.|
 
 ## Creating Depspec Combinators
 
