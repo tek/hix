@@ -39,6 +39,7 @@ These functions share some parameters, so they are listed independently.
 ## Basics
 
 |Name|Default|Description|
+|---|---|---|
 |`system`|| Passed to `nixpkgs`, usually provided by `flake-utils`, which is called by `hix.systems`.|
 |`base`|| Path to the project root, should be specified as `./.`.|
 |`packages`|| Local Cabal [packages](#packages).|
