@@ -152,22 +152,22 @@ All of these are in the attribute set passed to an override function.
 
 |Name|Derivation|
 |---|---|
-|`hackage`| Takes a version and SHA hash, sets the derivation to be that version pulled directly from Hackage.|
-|`source.root`| Creates a derivation by running `cabal2nix` on a directory.|
-|`source.sub`| Like `source.root`, but takes an additional subdirectory.|
-|`source.package`| Like `source.sub`, but prepends `packages/` to the subdirectory.|
-|`drv`| Sets a verbatim derivation.|
-|`keep`| Sets the derivation to `null`, effectively falling back to `super`.|
+|`hackage`|Takes a version and SHA hash, sets the derivation to be that version pulled directly from Hackage.|
+|`source.root`|Creates a derivation by running `cabal2nix` on a directory.|
+|`source.sub`|Like `source.root`, but takes an additional subdirectory.|
+|`source.package`|Like `source.sub`, but prepends `packages/` to the subdirectory.|
+|`drv`|Sets a verbatim derivation.|
+|`keep`|Sets the derivation to `null`, effectively falling back to `super`.|
 
 |Name|Transformation|
 |---|---|
-|`unbreak`| Allow packages marked as `broken`.|
-|`jailbreak`| Disable Cabal dependency bounds.|
-|`configure`| Add a Cabal configure flag.|
-|`configures`| Add multiple Cabal configure flags. |
-|`override`| Pass a function to `overrideCabal`.|
-|`minimal`| Disable Haddock, benchmarks and tests, and unbreak.|
-|`profiling`| Force profiling.|
+|`unbreak`|Allow packages marked as `broken`.|
+|`jailbreak`|Disable Cabal dependency bounds.|
+|`configure`|Add a Cabal configure flag.|
+|`configures`|Add multiple Cabal configure flags. |
+|`override`|Pass a function to `overrideCabal`.|
+|`minimal`|Disable Haddock, benchmarks and tests, and unbreak.|
+|`profiling`|Force profiling.|
 
 |Name|Option|
 |---|---|
@@ -268,13 +268,13 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 
 |Name|Default|Description|
 |---|---|---|
-|`ghci.basicArgs`|`["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`| Passed directly to `ghci`.|
-|`ghci.extraArgs`|`[]`| Passed directly to `ghci`.|
-|`ghci.options_ghc`|`null`| If non-null, passed to `ghci` as `-optF`.|
-|`ghcid.commands`|`_| {}`: A function taking `pkgs` and `ghc`, producing an attrset of attrsets. Each of those sets configure a [command](#commands).|
-|`ghcid.prelude`|`true`| Whether to work around some issues with custom `Prelude`s.|
-|`ghcid.runConfig`|`{}`| Extra configuration for all `ghcid` apps, like extra search paths.|
-|`ghcid.testConfig`|`{}`| Extra configuration for the test command.|
+|`ghci.basicArgs`|`["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`|Passed directly to `ghci`.|
+|`ghci.extraArgs`|`[]`|Passed directly to `ghci`.|
+|`ghci.options_ghc`|`null`|If non-null, passed to `ghci` as `-optF`.|
+|`ghcid.commands`|`_: {}`|A function taking `pkgs` and `ghc`, producing an attrset of attrsets. Each of those sets configure a [command](#commands).|
+|`ghcid.prelude`|`true`|Whether to work around some issues with custom `Prelude`s.|
+|`ghcid.runConfig`|`{}`|Extra configuration for all `ghcid` apps, like extra search paths.|
+|`ghcid.testConfig`|`{}`|Extra configuration for the test command.|
 
 ### Commands
 
