@@ -43,9 +43,10 @@ These functions share some parameters, so they are listed independently.
 |`system`||Passed to `nixpkgs`, usually provided by `flake-utils`, which is called by `hix.systems`.|
 |`base`||Path to the project root, should be specified as `./.`.|
 |`packages`||Local Cabal [packages](#packages).|
+|`main`|`packages.<singleton>`|The package used for `defaultPackage`. Defaults only if `packages` has one entry.|
 |`compiler`|`"ghc8107"`|The attribute name of the GHC package set to use for development.|
 |`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
-|`cabal2nixOptions`|`""`|Passed to `callCabal2nix` for project packages.|
+|`cabal2nixOptions`|`""`|Passed to `callCabal2nix` for local packages.|
 |`profiling`|`true`|Whether to enable library profiling for dependencies.|
 |`nixpkgs`|`inputs.nixpkgs`|`nixpkgs` used for development. `inputs.nixpkgs` refers to `hix`'s flake inputs, which can also be overridden with: `inputs.hix.inputs.nixpkgs.url = github:nixos/nixpkgs`|
 |`nixpkgsFunc`|`import nixpkgs`|Function variant of the previous parameter. The default imports the specified `nixpkgs` argument.|
@@ -62,7 +63,7 @@ The simplest configuration, for a project with one Cabal file at the root, is:
 {
   packages = {
     spaceship = ./.;
-  }
+  };
 }
 ```
 
@@ -73,7 +74,7 @@ For multiple packages:
   packages = {
     spaceship-core = ./packages/core;
     spaceship-api = ./packages/api;
-  }
+  };
 }
 ```
 
