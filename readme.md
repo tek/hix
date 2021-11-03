@@ -40,20 +40,18 @@ These functions share some parameters, so they are listed independently.
 
 |Name|Default|Description|
 |---|---|---|
-|`system`|| Passed to `nixpkgs`, usually provided by `flake-utils`, which is called by `hix.systems`.|
-|`base`|| Path to the project root, should be specified as `./.`.|
-|`packages`|| Local Cabal [packages](#packages).|
-|`compiler`|`"ghc8107"`| The attribute name of the GHC package set to use for development.|
-|`overrides`|`{}`| [Dependency Overrides](#dependency-overrides).|
-|`cabal2nixOptions`|`""`| Passed to `callCabal2nix` for project packages.|
-|`profiling`|`true`| Whether to enable library profiling for dependencies.|
-|`nixpkgs`|`inputs.nixpkgs`| `nixpkgs` used for development. `inputs.nixpkgs` refers to `hix`'s flake inputs, which can
-also be overridden with: `inputs.hix.inputs.nixpkgs.url = github:nixos/nixpkgs`|
-|`nixpkgsFunc`|`import nixpkgs`| Function variant of the previous parameter. The default imports the specified `nixpkgs`
-argument.|
-|`overlays`|`[]`| Additional overlays passed verbatim to `nixpkgs`.|
-|`compat`|`true`| Create flake checks for other GHC versions.|
-|`compatVersions`|`["901" "8107" "884"]`| GHC versions for which compat checks should be created.|
+|`system`||Passed to `nixpkgs`, usually provided by `flake-utils`, which is called by `hix.systems`.|
+|`base`||Path to the project root, should be specified as `./.`.|
+|`packages`||Local Cabal [packages](#packages).|
+|`compiler`|`"ghc8107"`|The attribute name of the GHC package set to use for development.|
+|`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
+|`cabal2nixOptions`|`""`|Passed to `callCabal2nix` for project packages.|
+|`profiling`|`true`|Whether to enable library profiling for dependencies.|
+|`nixpkgs`|`inputs.nixpkgs`|`nixpkgs` used for development. `inputs.nixpkgs` refers to `hix`'s flake inputs, which can also be overridden with: `inputs.hix.inputs.nixpkgs.url = github:nixos/nixpkgs`|
+|`nixpkgsFunc`|`import nixpkgs`|Function variant of the previous parameter. The default imports the specified `nixpkgs` argument.|
+|`overlays`|`[]`|Additional overlays passed verbatim to `nixpkgs`.|
+|`compat`|`true`|Create flake checks for other GHC versions.|
+|`compatVersions`|`["901" "8107" "884"]`|GHC versions for which compat checks should be created.|
 
 ## Packages
 
