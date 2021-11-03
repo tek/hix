@@ -266,15 +266,15 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 
 `ghcid` and `ghci` have several configuration options:
 
-* `ghci.basicArgs`, default `["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`:
-  Passed directly to `ghci`.
-* `ghci.extraArgs`, default `[]`: Passed directly to `ghci`.
-* `ghci.options_ghc`, default `null`: If non-null, passed to `ghci` as `-optF`.
-* `ghcid.commands`, default `_: {}`: A function taking `pkgs` and `ghc`, producing an attrset of attrsets.
-  Each of those sets configure a [command](#commands).
-* `ghcid.prelude`, default `true`: Whether to work around some issues with custom `Prelude`s.
-* `ghcid.runConfig`, default `{}`: Extra configuration for all `ghcid` apps, like extra search paths.
-* `ghcid.testConfig`, default `{}`: Extra configuration for the test command.
+|Name|Default|Description|
+|---|---|---|
+|`ghci.basicArgs`|`["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`| Passed directly to `ghci`.|
+|`ghci.extraArgs`|`[]`| Passed directly to `ghci`.|
+|`ghci.options_ghc`|`null`| If non-null, passed to `ghci` as `-optF`.|
+|`ghcid.commands`|`_| {}`: A function taking `pkgs` and `ghc`, producing an attrset of attrsets. Each of those sets configure a [command](#commands).|
+|`ghcid.prelude`|`true`| Whether to work around some issues with custom `Prelude`s.|
+|`ghcid.runConfig`|`{}`| Extra configuration for all `ghcid` apps, like extra search paths.|
+|`ghcid.testConfig`|`{}`| Extra configuration for the test command.|
 
 ### Commands
 
