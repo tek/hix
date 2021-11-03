@@ -30,7 +30,6 @@ let
     configures = flags: transform_ (flip hl.appendConfigureFlags flags);
     override = conf: transform_ (flip hl.overrideCabal conf);
     minimal = transform_ modifiers.minimalDrv;
-    minimalProf = transform_ modifiers.minimalProf;
     profiling = transform_ modifiers.profiling;
     unbreak = transform_ modifiers.unbreak;
   };

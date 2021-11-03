@@ -139,7 +139,26 @@ stage able to change it.
 
 ## Built-in Depspec Combinators
 
+All of these are in the attribute set passed to an override function.
+
+* `hackage`: Takes a version and SHA hash, sets the derivation to be that version pulled directly from Hackage.
+* `source.root`: Creates a derivation by running `cabal2nix` on a directory.
+* `source.sub`: Like `source.root`, but takes an additional subdirectory.
+* `source.package`: Like `source.sub`, but prepends `packages/` to the subdirectory.
+* `drv`: Sets a verbatim derivation.
+* `keep`: Sets the derivation to `null`, effectively falling back to `super`.
+
 * `unbreak`: Allow packages marked as `broken`.
+* `jailbreak`: Disable Cabal dependency bounds.
+* `configure`: Add a Cabal configure flag.
+* `configures`: Add multiple Cabal configure flags. 
+* `override`: Pass a function to `overrideCabal`.
+* `minimal`: Disable Haddock, benchmarks and tests, and unbreak.
+* `profiling`: Force profiling.
+
+* `option`: Takes a key and an arbitrary value. Used to set options for derivation combinators.
+* `noHpack`: Sets an option with key `cabal2nix` to `--no-hpack`, which will be read by `source.*` and passed to
+  `cabal2nix.`
 
 ## Creating Depspec Combinators
 
