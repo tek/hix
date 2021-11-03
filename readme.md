@@ -59,17 +59,21 @@ The `packages` parameter is a set mapping project names to file system paths.
 The simplest configuration, for a project with one Cabal file at the root, is:
 
 ```nix
-packages = {
-  spaceship = ./.;
+{
+  packages = {
+    spaceship = ./.;
+  }
 }
 ```
 
 For multiple packages:
 
 ```nix
-packages = {
-  spaceship-core = ./packages/core;
-  spaceship-api = ./packages/api;
+{
+  packages = {
+    spaceship-core = ./packages/core;
+    spaceship-api = ./packages/api;
+  }
 }
 ```
 
@@ -91,12 +95,14 @@ Its canonical form is a set mapping GHC versions to a list of special override f
 the development dependencies and one that is used for _all_ package sets:
 
 ```nix
-overrides = {
-  all = ...;
-  dev = ...;
-  ghc901 = ...;
-  ghc8107 = ...;
-};
+{
+  overrides = {
+    all = ...;
+    dev = ...;
+    ghc901 = ...;
+    ghc8107 = ...;
+  };
+}
 ```
 
 If, instead of a set, a list of override functions, or a single function, is given, they are treated as if they had been
@@ -107,12 +113,14 @@ additional parameters and can create not only derivations, but also custom depen
 The general shape is:
 
 ```nix
-overrides = {
-  ghc901 = { self, super, hsLib, jailbreak, ... }: {
-    name1 = hsLib.doJailbreak super.name1;
-    name2 = jailbreak;
+{
+  overrides = {
+    ghc901 = { self, super, hsLib, jailbreak, ... }: {
+      name1 = hsLib.doJailbreak super.name1;
+      name2 = jailbreak;
+    };
   };
-};
+}
 ```
 
 The function's parameter is a set containing the usual `self` and `super` as well as several other tools, including
@@ -123,12 +131,14 @@ same purpose.
 Composing those combinators is simple:
 
 ```nix
-overrides = {
-  ghc901 = { profiling, jailbreak, hackage, ... }: {
-    aeson = profiling (jailbreak (hackage "2.0.0.0" "shaxxxxx"));
-    http-client = profiling jailbreak;
+{
+  overrides = {
+    ghc901 = { profiling, jailbreak, hackage, ... }: {
+      aeson = profiling (jailbreak (hackage "2.0.0.0" "shaxxxxx"));
+      http-client = profiling jailbreak;
+    };
   };
-};
+}
 ```
 
 In the first case, the `hackage` combinator _sets_ the derivation to the one using version `2.0.0.0` from Hackage (using
@@ -183,10 +193,12 @@ Then, the `transform` function is applied to it, which is composed from all the 
 A depspec combinator can be created with:
 
 ```nix
-withHaddock =
-  hix.util.spec.create ({ self, super, final, prev, pkg, hsLib, lib }: {
-    transform = drv: hsLib.doHaddock (prev.transform drv);
-  })
+{
+  withHaddock =
+    hix.util.spec.create ({ self, super, final, prev, pkg, hsLib, lib }: {
+      transform = drv: hsLib.doHaddock (prev.transform drv);
+    });
+}
 ```
 
 `self` and `super` reference the regular Haskell package sets, while `final` and `prev` reference the depspec.
@@ -197,8 +209,10 @@ that the previous combinator produced.
 There is a shorter way to construct this combinator:
 
 ```nix
-withHaddock =
-  hix.util.spec.transform ({ hsLib, ... }: hsLib.doHaddock);
+{
+  withHaddock =
+    hix.util.spec.transform ({ hsLib, ... }: hsLib.doHaddock);
+}
 ```
 
 ## Transitive Overrides
@@ -274,7 +288,7 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
           :load Spaceship.Api.Dev
           :import Spaceship.Api.Dev (runDevApi)
         '';
-        test = "rundevApi";
+        test = "runDevApi";
         env.DEV_PORT = "8000";
       };
     };
