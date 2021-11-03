@@ -282,7 +282,7 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 {
   outputs = { hix, ... }:
   hix.flake {
-    ghcid.commands = pkgs: {
+    ghcid.commands = { pkgs, ghc }: {
       dev-api = {
         script = ''
           :load Spaceship.Api.Dev
