@@ -308,16 +308,16 @@ nix run .#dev-api
 Individual functions can be run in `ghcid` using the `nix` app `ghcid-test`:
 
 ```
-nix run .#ghci-test -- packages/spaceship-api Main main test generic
+nix run .#ghcid-test -- packages/spaceship-api Main main test generic
 ```
 
 The parameters are as follows:
 
-1. Path to the Cabal package that contains the function
-2. Name of the module that contains the function
-3. Name of the function
-4. Source directory in the package, passed to `ghci` as `-i` (module search path)
-5. Runner for the function
+1. Path to the Cabal package that contains the function. Working directory is set to this path.
+2. Name of the module that contains the function.
+3. Name of the function.
+4. Source directory in the package, passed to `ghci` as `-i` (module search path).
+5. Runner for the function.
 
 This can be combined nicely with tools like [vim-test].
 
