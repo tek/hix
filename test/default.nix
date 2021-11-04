@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, keep ? false, ... }:
 {
   main = pkgs.writeScript "hix-tests" ''
   set -e
@@ -22,6 +22,7 @@
     echo $output
     success='false'
   fi
+  ${if keep then "" else "rm -rf $tmpdir"}
   if [[ $success == 'false' ]]
   then
     exit 1

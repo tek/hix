@@ -7,6 +7,7 @@
   ghc,
   compiler,
   base,
+  nixpkgs,
   commands ? _: {},
   prelude ? true,
   runConfig ? {},
@@ -25,6 +26,7 @@ let
   cmds = commands { inherit pkgs ghc; };
   tools = import ./tools.nix { inherit pkgs; };
   hls = import ./hls.nix { inherit vanillaGhc easy-hls inputs compiler pkgs system ghc9; };
+  vms = import ./vm.nix { inherit nixpkgs pkgs; };
 
   configEmpty = {
     env = {};
@@ -35,6 +37,7 @@ let
     preCommand = [];
     preStartCommand = [];
     exitCommand = [];
+    vm = null;
   };
 
   unlines = concatStringsSep "\n";
@@ -53,6 +56,7 @@ let
     preCommand = concat "preCommand";
     preStartCommand = concat "preStartCommand";
     exitCommand = concat "exitCommand";
+    vm = if isNull r.vm then l.vm else r.vm;
   };
 
   fullConfig = user: mergeConfig (mergeConfig configEmpty runConfig) user;
@@ -68,15 +72,27 @@ let
     in
       ''ghcid -W ${toString restarts} --command="${command}" --test='${test}' '';
 
+  startVm = vm: if isNull vm then "" else vms.ensure vm;
+
+  stopVm = vm: if isNull vm then "" else vms.kill vm;
+
   ghcidCmdFile = {
     command,
     test,
     extraRestarts,
     preStartCommand,
     exitCommand,
+    vm,
     ...
   }:
-  pkgs.writeScript "ghcid-cmd" ''
+  let
+    vmData = if isNull vm then null else
+    let
+      type = vm.type or "create";
+      vmCreate = vm.create or vms.${type};
+    in vmCreate vm;
+
+  in pkgs.writeScript "ghcid-cmd" ''
     #!${pkgs.zsh}/bin/zsh
     quitting=0
     quit() {
@@ -84,6 +100,7 @@ let
       then
         quitting=1
         print ">>> quitting due to signal $1"
+        ${stopVm vmData}
         ${unlines exitCommand}
         # kill zombie GHCs
         ${pkgs.procps}/bin/pkill -9 -x -P 1 ghc
@@ -95,6 +112,7 @@ let
     TRAPKILL() { quit $* }
     TRAPEXIT() { quit $* }
     ${unlines preStartCommand}
+    ${startVm vmData}
     ${ghcidCmd command test extraRestarts}
   '';
 

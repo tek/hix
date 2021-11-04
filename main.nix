@@ -18,6 +18,7 @@ let
     hpack = import ./hpack.nix;
     obelisk = import ./obelisk inputs;
     obeliskOverrides = import ./obelisk/overrides.nix inputs;
+    vm = import ./vm;
   };
 
   singlePackageMain = packages:
@@ -87,7 +88,7 @@ let
       inherit inputs main base;
       packages = relative;
       ghci = ghci;
-      inherit (haskell) pkgs ghc compiler;
+      inherit (haskell) pkgs ghc compiler nixpkgs;
       runConfig = runConfig haskell;
       testConfig = testConfig haskell;
     };

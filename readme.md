@@ -24,15 +24,43 @@ This will configure a single Cabal library at the root of the project, to be bui
 nix build .#spaceship
 ```
 
+The effective `outputs` set looks like this:
+
+```nix
+{
+  apps.x86_64-linux = {
+    candidates = { ... }; # Run `cabal upload`
+    docs = { ... }; # Run `cabal upload -d`
+    ghcid-test = { ... }; # Run a function in `ghcid`
+    hls = { ... }; # Run HLS
+    hpack = { ... }; # Run `hpack`
+    hpack-verbose = { ... }; # Run `hpack`
+    release = { ... }; # Run `cabal upload --publish`
+    tags { ... }; # Run `hasktags`
+  };
+  checks.x86_64-linux = {
+    spaceship = { ... }; # Points to `packages.spaceship`
+  };
+  defaultApp.x86_64-linux = { ... }; # Points to `apps.ghcid-test`
+  defaultPackage.x86_64-linux = { ... }; # Points to `packages.spaceship`
+  devShell.x86_64-linux = { ... }; # shell derivation for `nix develop`
+  legacyPackages.x86_64-linux = { ... }; # access to internals
+  overrides = { ... }; # All configured GHC package overrides for use in dependent projects
+  packages.x86_64-linux = {
+    spaceship = { ... }; # `cabal2nix` derivation building the main package
+  };
+}
+```
+
 # Configuration
 
 The function `hix.flake` combines multiple steps:
 
-* `hix.haskell` creates a `nixpkgs` overlay with Cabal overrides for local packages and dependencies
-* `hix.tools` provides helpers for `ghcid`, HLS, `cabal upload`, `ctags` and `hpack`
-* `hix.flakeOutputs` assembles an `outputs.<system>` set according to flake standards
-* `hix.compatChecks` creates several additional copies of the GHC overlay for different versions
-* `hix.systems` iterates over the target systems (default is `["x86_64-linux"]`)
+* `hix.haskell` creates a `nixpkgs` overlay with Cabal overrides for local packages and dependencies.
+* `hix.tools` provides helpers for `ghcid`, HLS, `cabal upload`, `ctags` and `hpack`.
+* `hix.flakeOutputs` assembles an `outputs.<system>` set according to flake standards.
+* `hix.compatChecks` creates several additional copies of the GHC overlay for different versions.
+* `hix.systems` iterates over the target systems (default is `["x86_64-linux"]`).
 
 These functions share some parameters, so they are listed independently.
 
@@ -274,10 +302,10 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 |`ghci.options_ghc`|`null`|If non-null, passed to `ghci` as `-optF`.|
 |`ghcid.commands`|`_: {}`|A function taking `pkgs` and `ghc`, producing an attrset of attrsets. Each of those sets configure a [command](#commands).|
 |`ghcid.prelude`|`true`|Whether to work around some issues with custom `Prelude`s.|
-|`ghcid.runConfig`|`{}`|Extra configuration for all `ghcid` apps, like extra search paths.|
-|`ghcid.testConfig`|`{}`|Extra configuration for the test command.|
+|`ghcid.runConfig`|`_: {}`|Extra configuration for all `ghcid` apps, like extra search paths.|
+|`ghcid.testConfig`|`_: _: {}`|Extra configuration for the test command.|
 
-### Commands
+## Commands
 
 The `ghcid.commands` attrset is translated into flake apps that run a haskell function in `ghcid`:
 
@@ -317,6 +345,7 @@ An entry in that set has the following protocol:
 |`config.preCommand`|Shell command that should be executed before GHCi (on every reload)|
 |`config.preStartCommand`|Shell command that should be executed before `ghcid` (once)|
 |`config.exitCommand`|Shell command that should be executed after `ghcid` exits|
+|`config.vm`|Configuration for a `qemu` VM that is started before and stopped after the command runs|
 
 The values in the global parameter `runConfig` are prepended to all values in `config`.
 
@@ -370,6 +399,42 @@ which should load the modules necessary to run the test:
 ```
 
 The global option `testConfig` is used for the `config` parameters as described in [Commands](#commands).
+It is called with the basic project as first arg and the executed test as second arg.
+
+### Virtual Machines
+
+If the command config attribute `vm` is given, a `qemu` VM is run for the command, for example to provide a database for
+tests.
+The config has the following protocol:
+
+|Attribute|Default|Description|
+|---|---|---|
+|`create`|`null`|If given, override the entire built-in VM creation function|
+|`type`|`null`|If given, use a special built-in VM config. Currently supported values: `["postgres"]`|
+|`name`|`hix-vm`|Used for the temporary directory storing the image|
+|`dir`|`/tmp/hix-vm/$USER/${name}`|Temporary directory storing the image|
+|`basePort`|`10000`|Port from which the `ssh` port is calculated (`+ 22`)|
+|`ports`|`[]`|Additional port forwardings in the format expected by `virtualisation.forwardPorts`|
+|`conf`|`{}`|Additional config merged into the basic NixOS config for the VM|
+
+If `type` is `postgres`, a database will be started in the VM with the following additional config:
+
+|Attribute|Default|Description|
+|---|---|---|
+|`name`||Name of the database to be created, passed on to the basic VM creation function as well|
+|`port`|`10000`|The port in the host system that is forwarded to PostgreSQL's port|
+|`creds`|`{}`|Can contain `user` and `password`, both defaulting to `name`|
+|`log`|`false`|Whether to enable logging|
+|`conf`|`{}`|Additional config like for the basic VM, but merged after the PostgreSQL config|
+
+If the `create` attribute is given, it should be a function that takes the config as an argument and returns an attrset
+with the protocol:
+
+|Attribute|Description|
+|---|---|
+|`main`|The VM derivation, as produced by `import "${nixpkgs}/nixos" { ... }`|
+|`dir`|The directory containing the pidfile and image|
+|`pidfile`|The pidfile path|
 
 ## `haskell-language-server`
 
