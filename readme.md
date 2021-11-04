@@ -279,6 +279,8 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 
 ### Commands
 
+The `ghcid.commands` attrset is translated into flake apps that run a haskell function in `ghcid`:
+
 ```nix
 {
   outputs = { hix, ... }:
@@ -290,18 +292,33 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
           :import Spaceship.Api.Dev (runDevApi)
         '';
         test = "runDevApi";
-        env.DEV_PORT = "8000";
+        config.env.DEV_PORT = "8000";
       };
     };
   };
 }
 ```
 
-The `ghcid.commands` attrset is translated into flake apps that run a haskell function in `ghcid`:
-
 ```
 nix run .#dev-api
 ```
+
+An entry in that set has the following protocol:
+
+|Attribute|Description|
+|---|---|
+|`script`|GHCi commands to load before running the test|
+|`test`|Expression that should be evaluated|
+|`config.env`|Environment variables passed to `mkDerivation`|
+|`config.extraShellPackages`|Haskell packages to add to the environment|
+|`config.extraShellInputs`|System packages to add to the environment|
+|`config.extraSearch`|Additional GHCi search paths|
+|`config.extraRestarts`|Additional paths that trigger a `ghcid` restart|
+|`config.preCommand`|Shell command that should be executed before GHCi (on every reload)|
+|`config.preStartCommand`|Shell command that should be executed before `ghcid` (once)|
+|`config.exitCommand`|Shell command that should be executed after `ghcid` exits|
+
+The values in the global parameter `runConfig` are prepended to all values in `config`.
 
 ### Tests
 
@@ -351,6 +368,8 @@ which should load the modules necessary to run the test:
   tasty-tree = name: "defaultMain ${name}";
 }
 ```
+
+The global option `testConfig` is used for the `config` parameters as described in [Commands](#commands).
 
 ## `haskell-language-server`
 
