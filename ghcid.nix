@@ -82,14 +82,18 @@ let
     quit() {
       if [[ $quitting == 0 ]]
       then
-        print '>>> quitting'
         quitting=1
+        print ">>> quitting due to signal $1"
         ${unlines exitCommand}
+        # kill zombie GHCs
+        ${pkgs.procps}/bin/pkill -9 -x -P 1 ghc
       fi
+      return 1
     }
-    trap 'quit' INT
-    trap 'quit' TERM
-    trap 'quit' EXIT
+    TRAPINT() { quit $* }
+    TRAPTERM() { quit $* }
+    TRAPKILL() { quit $* }
+    TRAPEXIT() { quit $* }
     ${unlines preStartCommand}
     ${ghcidCmd command test extraRestarts}
   '';
