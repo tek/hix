@@ -149,6 +149,7 @@ let
     checks = mainPackages // extraChecks;
     apps = project.ghcid.shellApps // {
       inherit ghcid-test;
+      hls = app "${project.ghcid.hlsApp}";
       hpack = app "${project.hpack {}}";
       hpack-verbose = app "${project.hpack { verbose = true; }}";
       tags = app "${project.tags.app}";

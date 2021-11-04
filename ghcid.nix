@@ -190,6 +190,7 @@ in shells // {
     runner = "generic";
   };
   hls = haskell-language-server;
+  hlsApp = pkgs.writeScript "hls" "nix develop -c haskell-language-server";
   cmd = ghcidCmd;
   shell = shellWith {};
   commands = cmds;

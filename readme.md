@@ -357,7 +357,7 @@ which should load the modules necessary to run the test:
 HLS can be started with:
 
 ```
-nix develop -c haskell-language-server
+nix run .#hls
 ```
 
 ## `hasktags`
@@ -372,11 +372,12 @@ nix run .#tags [<tags-file>]
 
 ## `cabal upload`
 
-To upload package candidates or publish to Hackage:
+To upload package candidates, publish or upload docs to Hackage:
 
 ```
 nix run .#candidates
 nix run .#release
+nix run .#docs
 ```
 
 If the arg `versionFile` is given, the script will substitute the `version:` line in that `hpack` file after asking for
