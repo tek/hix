@@ -4,11 +4,12 @@
   extraArgs ? [],
   commandArgs ? [],
   options_ghc ? null,
+  testScripts ? {},
+  testRunners ? {},
   ...
 }:
+with pkgs.lib;
 let
-  inherit (pkgs.lib.lists) optional;
-  inherit (pkgs.lib.strings) optionalString;
 
   libDir = pkg: "$PWD/${pkg}/lib";
 
@@ -34,6 +35,38 @@ let
     :cd ${cwd}
   '';
 
+  builtinTestScripts = {
+    hedgehog-property = module: ''
+      :load ${module}
+      import ${module}
+      import Hedgehog (check)
+    '';
+
+    hedgehog-unit = module: ''
+      :load ${module}
+      import ${module}
+      import Hedgehog (check, property, test, withTests)
+    '';
+
+    tasty-tree = module: ''
+      :load ${module}
+      import ${module}
+      import Test.Tasty (defaultMain)
+    '';
+
+    generic = module: ''
+      :load ${module}
+      import ${module}
+    '';
+  };
+
+  builtinTestRunners = {
+    hedgehog-property = name: "check ${name}";
+    hedgehog-unit = name: "(check . withTests 1 . property . test) ${name}";
+    tasty-tree = name: "defaultMain ${name}";
+    generic = id;
+  };
+
 in rec {
   args = {
     basic = prelude:
@@ -46,68 +79,11 @@ in rec {
       ["-F" "-pgmF" ./preprocessor.bash] ++ preproc_options_ghc;
   };
 
-  scripts = rec {
+  scripts = builtinTestScripts // testScripts;
+  runners = builtinTestRunners // testRunners;
 
-    property = module: ''
-      :load ${module}
-      import ${module}
-      import Hedgehog (check)
-    '';
-
-    unit = cwd: module: {
-      inherit cwd;
-      script = ''
-        :load ${module}
-        import ${module}
-        import Hedgehog (check, property, test, withTests)
-      '';
-    };
-
-    tastyUnit = cwd: module: {
-      inherit cwd;
-      script = ''
-        :load ${module}
-        import ${module}
-        import Test.Tasty (defaultMain)
-      '';
-    };
-
-    generic = cwd: module: {
-      inherit cwd;
-      script = ''
-        :load ${module}
-        import ${module}
-      '';
-    };
-
-    run = pkg: module: runner:
-    if runner == "hedgehog-property"
-    then property module
-    else if runner == "hedgehog-unit"
-    then unit pkg module
-    else if runner == "tasty-tree"
-    then tastyUnit pkg module
-    else generic pkg module;
-
-  };
-
-  tests = {
-    test =
-      name: runner:
-      if runner == "hedgehog-property"
-      then "check ${name}"
-      else if runner == "hedgehog-unit"
-      then "(check . withTests 1 . property . test) ${name}"
-      else if runner == "tasty-tree"
-      then "defaultMain ${name}"
-      else name;
-  };
-
-  prePreludeScript = prelude: ''
-    :load ${prelude}
-    import Prelude
-    :add Prelude
-  '';
+  script = key: scripts.${key} or scripts.generic;
+  runner = key: runners.${key} or runners.generic;
 
   ghciScript = cwd: prelude: script:
   let
@@ -120,9 +96,10 @@ in rec {
     script,
     extraSearch,
     prelude ? true,
+    cwd ? null,
   }:
     let
-      cwd = if builtins.isAttrs script && script ? cwd then script.cwd else null;
+      # cwd = if builtins.isAttrs script && script ? cwd then script.cwd else null;
       basic = toString (args.basic prelude);
       command = toString args.command;
       preproc = toString args.preprocessor;

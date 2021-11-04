@@ -303,6 +303,55 @@ The `ghcid.commands` attrset is translated into flake apps that run a haskell fu
 nix run .#dev-api
 ```
 
+### Tests
+
+Individual functions can be run in `ghcid` using the `nix` app `ghcid-test`:
+
+```
+nix run .#ghci-test -- packages/spaceship-api Main main test generic
+```
+
+The parameters are as follows:
+
+1. Path to the Cabal package that contains the function
+2. Name of the module that contains the function
+3. Name of the function
+4. Source directory in the package, passed to `ghci` as `-i` (module search path)
+5. Runner for the function
+
+This can be combined nicely with tools like [vim-test].
+
+Runners are taken from the parameters `ghci.testScripts` and `ghci.testRunners` and some built-in ones:
+
+|Name|Type|
+|---|---|
+|`hedgehog-property`|`Hedgehog.Property`|
+|`hedgehog-unit`|`Hedgehog.TestT IO ()`|
+|`tasty-tree`|`Tasty.TestTree`|
+|`generic`|`IO ()`|
+
+`testScripts` is an attrset mapping the runner name to a function `(moduleName :: String) -> (ghciScript :: String)`,
+which should load the modules necessary to run the test:
+
+```nix
+{
+  tasty-tree = module: ''
+    :load ${module}
+    import ${module}
+    import Test.Tasty (defaultMain)
+  '';
+}
+```
+
+`testRunners` is an attrset mapping the runner name to a function
+`(functionName :: String) -> (haskellExpression :: String)`:
+
+```nix
+{
+  tasty-tree = name: "defaultMain ${name}";
+}
+```
+
 ## `haskell-language-server`
 
 HLS can be started with:
@@ -313,7 +362,7 @@ nix develop -c haskell-language-server
 
 ## `hasktags`
 
-To generate `ctags` for all dependencies and project packages:
+To generate `ctags` for all dependencies and project packages using [thax]:
 
 ```
 nix run .#tags [<tags-file>]
@@ -334,3 +383,4 @@ If the arg `versionFile` is given, the script will substitute the `version:` lin
 the next version.
 
 [thax]: https://github.com/tek/thax
+[vim-test]: https://github.com/vim-test/vim-test

@@ -123,12 +123,13 @@ let
     script,
     test,
     config ? {},
+    cwd ? null,
   }:
   let
     conf = fullConfig config;
     mainCommand = ghci.command {
       packages = packages;
-      inherit script prelude;
+      inherit script prelude cwd;
       inherit (conf) extraSearch;
     };
     command = ''
@@ -141,10 +142,11 @@ let
     script,
     test,
     config ? {},
+    cwd ? null,
   }:
   shellFor {
     packageNames = attrNames packages;
-    hook = ghcidShellCmd { inherit script test config; };
+    hook = ghcidShellCmd { inherit script test config cwd; };
     inherit config;
   };
 
@@ -172,9 +174,10 @@ let
     config ? {},
   }@args:
   ghciShellFor "run" {
+    cwd = pkg;
     config = mergeConfig (mergeConfig config { extraSearch = ["$PWD/${pkg}/${type}"]; }) (testConfig args);
-    script = ghci.scripts.run pkg module runner;
-    test = ghci.tests.test name runner;
+    script = ghci.script runner module;
+    test = ghci.runner runner name;
   };
 
 in shells // {
