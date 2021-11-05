@@ -24,6 +24,12 @@ This will configure a single Cabal library at the root of the project, to be bui
 nix build .#spaceship
 ```
 
+Running `main` from `app/Main.hs` in the package at `.` in a `ghcid` session can be done with:
+
+```
+nix run .#ghcid-test -- . Main main app
+```
+
 The effective `outputs` set looks like this:
 
 ```nix
@@ -359,10 +365,11 @@ nix run .#ghcid-test -- packages/spaceship-api Main main test generic
 
 The parameters are as follows:
 
-1. Path to the Cabal package that contains the function. Working directory is set to this path.
-2. Name of the module that contains the function.
-3. Name of the function.
-4. Source directory in the package, passed to `ghci` as `-i` (module search path).
+1. Path to the Cabal package that contains the function. Working directory is set to this path, (`.`,
+  `packages/spaceship-api`).
+2. Name of the module that contains the function (`Spaceship.Test.LaunchTest`).
+3. Name of the function (`test_launch`).
+4. Cabal component directory (`lib`, `app`, `test`) in the package, passed to `ghci` as `-i` (module search path).
 5. Runner for the function.
 
 This can be combined nicely with tools like [vim-test].
