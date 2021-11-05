@@ -401,6 +401,19 @@ which should load the modules necessary to run the test:
 The global option `testConfig` is used for the `config` parameters as described in [Commands](#commands).
 It is called with the basic project as first arg and the executed test as second arg.
 
+For example, setting the environment variable `BROWSER` to the path to chromium for tests:
+
+```nix
+{
+  hix.flake {
+    ...
+    testConfig = { pkgs, ... }: _: {
+      env.BROWSER = "${pkgs.ungoogled-chromium}/bin/chromium";
+    };
+  };
+}
+```
+
 ### Virtual Machines
 
 If the command config attribute `vm` is given, a `qemu` VM is run for the command, for example to provide a database for
