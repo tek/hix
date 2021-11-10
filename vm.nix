@@ -46,6 +46,7 @@ let
 
   postgres = {
     name,
+    dbName ? name,
     port ? 10000,
     dir ? "/tmp/hix-vm/$USER/${name}",
     ports ? [],
@@ -65,14 +66,14 @@ let
         enable = true;
         package = pkgs.postgresql_13;
         enableTCPIP = true;
-        ensureDatabases = [name];
+        ensureDatabases = [dbName];
         authentication = ''
           host all all 0.0.0.0/0 md5
           host all all ::/0 md5
         '';
         initialScript = pkgs.writeText "vm-postgresql-init" ''
-          create role "${user}" with login password '${creds.password or name}' createdb;
-          grant all privileges on database "${name}" to "${user}";
+          create role "${user}" with login password '${creds.password or dbName}' createdb;
+          grant all privileges on database "${dbName}" to "${user}";
         '';
         settings = if log then { log_statement = "all"; log_min_messages = "info"; } else {};
       };

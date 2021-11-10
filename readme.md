@@ -441,9 +441,9 @@ If `type` is `postgres`, a database will be started in the VM with the following
 
 |Attribute|Default|Description|
 |---|---|---|
-|`name`||Name of the database to be created, passed on to the basic VM creation function as well|
+|`dbName`||Name of the database to be created, passed on to the basic VM creation function as well|
 |`port`|`10000`|The port in the host system that is forwarded to PostgreSQL's port|
-|`creds`|`{}`|Can contain `user` and `password`, both defaulting to `name`|
+|`creds`|`{}`|Can contain `user` and `password`, both defaulting to `dbName`|
 |`log`|`false`|Whether to enable logging|
 |`conf`|`{}`|Additional config like for the basic VM, but merged after the PostgreSQL config|
 
