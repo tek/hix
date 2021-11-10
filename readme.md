@@ -344,8 +344,8 @@ An entry in that set has the following protocol:
 |`script`|GHCi commands to load before running the test|
 |`test`|Expression that should be evaluated|
 |`config.env`|Environment variables passed to `mkDerivation`|
-|`config.extraShellPackages`|Haskell packages to add to the environment|
-|`config.extraShellInputs`|System packages to add to the environment|
+|`config.extraHaskellPackages`|Haskell packages to add to the environment|
+|`config.buildInputs`|System packages to add to the environment|
 |`config.extraSearch`|Additional GHCi search paths|
 |`config.extraRestarts`|Additional paths that trigger a `ghcid` restart|
 |`config.preCommand`|Shell command that should be executed before GHCi (on every reload)|

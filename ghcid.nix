@@ -30,8 +30,8 @@ let
 
   configEmpty = {
     env = {};
-    extraShellInputs = [];
-    extraShellPackages = _: [];
+    buildInputs = [];
+    extraHaskellPackages = _: [];
     extraSearch = [];
     extraRestarts = [];
     preCommand = [];
@@ -51,8 +51,8 @@ let
     env = l.env // r.env;
     extraSearch = concat "extraSearch";
     extraRestarts = concat "extraRestarts";
-    extraShellInputs = concat "extraShellInputs";
-    extraShellPackages = g: l.extraShellPackages g ++ r.extraShellPackages g;
+    buildInputs = concat "buildInputs";
+    extraHaskellPackages = g: l.extraHaskellPackages g ++ r.extraHaskellPackages g;
     preCommand = concat "preCommand";
     preStartCommand = concat "preStartCommand";
     exitCommand = concat "exitCommand";
@@ -126,7 +126,7 @@ let
     isNotTarget = p: !(p ? pname && elem p.pname packageNames);
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     targetDeps = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) packageNames));
-    hsPkgs = g: targetDeps g ++ conf.extraShellPackages g;
+    hsPkgs = g: targetDeps g ++ conf.extraHaskellPackages g;
     devInputs = [
       (ghc.ghcWithPackages hsPkgs)
       vanillaGhc.ghcid
@@ -135,7 +135,7 @@ let
     ];
     args = {
       name = "ghci-shell";
-      buildInputs = devInputs ++ conf.extraShellInputs;
+      buildInputs = devInputs ++ conf.buildInputs;
       shellHook = hook;
     };
   in
