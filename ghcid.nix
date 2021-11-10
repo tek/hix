@@ -10,7 +10,7 @@
   nixpkgs,
   commands ? _: {},
   prelude ? true,
-  runConfig ? {},
+  shellConfig ? {},
   testConfig ? _: {},
   easy-hls ? false,
   ghc9 ? false,
@@ -59,7 +59,7 @@ let
     vm = if isNull r.vm then l.vm else r.vm;
   };
 
-  fullConfig = user: mergeConfig (mergeConfig configEmpty runConfig) user;
+  fullConfig = user: mergeConfig (mergeConfig configEmpty shellConfig) user;
 
   restart = f: ''--restart="${f}"'';
 

@@ -308,7 +308,7 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 |`ghci.options_ghc`|`null`|If non-null, passed to `ghci` as `-optF`.|
 |`ghcid.commands`|`_: {}`|A function taking `pkgs` and `ghc`, producing an attrset of attrsets. Each of those sets configure a [command](#commands).|
 |`ghcid.prelude`|`true`|Whether to work around some issues with custom `Prelude`s.|
-|`ghcid.runConfig`|`_: {}`|Extra configuration for all `ghcid` apps, like extra search paths.|
+|`ghcid.shellConfig`|`_: {}`|Extra configuration for all `ghcid` apps, like extra search paths.|
 |`ghcid.testConfig`|`_: _: {}`|Extra configuration for the test command.|
 
 ## Commands
@@ -353,7 +353,7 @@ An entry in that set has the following protocol:
 |`config.exitCommand`|Shell command that should be executed after `ghcid` exits|
 |`config.vm`|Configuration for a `qemu` VM that is started before and stopped after the command runs|
 
-The values in the global parameter `runConfig` are prepended to all values in `config`.
+The values in the global parameter `shellConfig` are prepended to all values in `config`.
 
 ### Tests
 

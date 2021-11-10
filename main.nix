@@ -64,7 +64,7 @@ let
     base,
     packages,
     main ? singlePackageMain packages,
-    runConfig ? _: {},
+    shellConfig ? _: {},
     testConfig ? _: _: {},
     compiler ? mainCompiler,
     hpackDir ? "ops/hpack",
@@ -89,7 +89,7 @@ let
       packages = relative;
       ghci = ghci;
       inherit (haskell) pkgs ghc compiler nixpkgs;
-      runConfig = runConfig haskell;
+      shellConfig = shellConfig haskell;
       testConfig = testConfig haskell;
     };
     ghcid = util.ghcid (ghcidDefaults // args.ghcid or {});
