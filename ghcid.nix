@@ -56,7 +56,7 @@ let
     preCommand = concat "preCommand";
     preStartCommand = concat "preStartCommand";
     exitCommand = concat "exitCommand";
-    vm = if isNull r.vm then l.vm else r.vm;
+    vm = if r.vm == null then l.vm else r.vm;
   };
 
   fullConfig = user: mergeConfig (mergeConfig configEmpty shellConfig) user;
@@ -72,9 +72,9 @@ let
     in
       ''ghcid -W ${toString restarts} --command="${command}" --test='${test}' '';
 
-  startVm = vm: if isNull vm then "" else vms.ensure vm;
+  startVm = vm: if vm == null then "" else vms.ensure vm;
 
-  stopVm = vm: if isNull vm then "" else vms.kill vm;
+  stopVm = vm: if vm == null then "" else vms.kill vm;
 
   ghcidCmdFile = {
     command,
@@ -86,7 +86,7 @@ let
     ...
   }:
   let
-    vmData = if isNull vm then null else
+    vmData = if vm == null then null else
     let
       type = vm.type or "create";
       vmCreate = vm.create or vms.${type};
