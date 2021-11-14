@@ -47,16 +47,20 @@ let
   then throw "hix shell config: ${old} is deprecated; use ${new} in:\n${builtins.toJSON conf}"
   else {};
 
+  checkDeprecated2 = old: new: left: right:
+  checkDeprecated old new left //
+  checkDeprecated old new right;
+
   mergeConfig = left: right:
   let
     l = configEmpty // left;
     r = configEmpty // right;
     concat = attr: toList l.${attr} ++ toList r.${attr};
   in
-  checkDeprecated "extraBuildInputs" "buildInputs" right //
-  checkDeprecated "extraSearch" "search" right //
-  checkDeprecated "extraHaskellPackages" "haskellPackages" right //
-  checkDeprecated "extraRestarts" "restarts" right //
+  checkDeprecated2 "extraBuildInputs" "buildInputs" left right //
+  checkDeprecated2 "extraSearch" "search" left right //
+  checkDeprecated2 "extraHaskellPackages" "haskellPackages" left right //
+  checkDeprecated2 "extraRestarts" "restarts" left right //
   {
     env = l.env // r.env;
     search = concat "search";
