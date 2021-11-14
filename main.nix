@@ -5,7 +5,7 @@ let
   inherit (inputs.nixpkgs) lib;
 
   util = {
-    pure = import ./pure.nix;
+    lib = import ./lib.nix { inherit lib; };
     cabal-dep = import ./cabal-dep.nix;
     spec = import ./deps/spec.nix { inherit lib; };
     ghcOverlay = import ./ghc-overlay.nix;
@@ -21,16 +21,16 @@ let
     vm = import ./vm;
   };
 
+  hlib = util.lib;
+
   singlePackageMain = packages:
   let names = attrNames packages;
   in
   if length names == 1
   then head names
-  else builtins.abort "'main' must be specified for multi-package projects";
+  else throw "'main' must be specified for multi-package projects";
 
   mainCompiler = "ghc8107";
-
-  tls = import ./tools.nix { inherit lib; };
 
   # Import nixpkgs, adding an overlay that contains `cabal2nix` derivations for local packages and the specified
   # dependency overrides.
@@ -64,15 +64,15 @@ let
     base,
     packages,
     main ? singlePackageMain packages,
-    shellConfig ? _: {},
-    testConfig ? _: _: {},
+    shellConfig ? {},
+    testConfig ? {},
     compiler ? mainCompiler,
     hpackDir ? "ops/hpack",
     hpackShared ? "shared",
     ...
   }:
   let
-    relative = tls.relativePackages base packages;
+    relative = util.lib.relativePackages base packages;
     ghciDefaults = {
       inherit (haskell) pkgs base;
       basicArgs = [
@@ -89,8 +89,8 @@ let
       packages = relative;
       ghci = ghci;
       inherit (haskell) pkgs ghc compiler nixpkgs;
-      shellConfig = shellConfig haskell;
-      testConfig = testConfig haskell;
+      shellConfig = hlib.asFunction shellConfig haskell;
+      testConfig = hlib.asFunction testConfig haskell;
     };
     ghcid = util.ghcid (ghcidDefaults // args.ghcid or {});
   in
@@ -112,8 +112,8 @@ let
   project = args@{ overrides ? {}, ... }:
   let
     os =
-      tls.overridesFor overrides "all" ++
-      tls.overridesFor overrides "dev";
+      util.lib.overridesFor overrides "all" ++
+      util.lib.overridesFor overrides "dev";
     a =
       args // { overrides = os; };
   in tools (haskell a) a;
@@ -188,9 +188,9 @@ let
   }: args:
   let
     compatOverrides = ver:
-    tls.overridesFor overrides "all" ++
-    tls.overridesFor overrides "compat" ++
-    tls.overridesFor overrides "ghc${ver}";
+    util.lib.overridesFor overrides "all" ++
+    util.lib.overridesFor overrides "compat" ++
+    util.lib.overridesFor overrides "ghc${ver}";
 
     compatProject = ver: haskell (args // {
       overrides = compatOverrides ver;
@@ -234,7 +234,7 @@ let
     ...
   }@args:
   let
-    os = tls.normalizeOverrides overrides deps;
+    os = util.lib.normalizeOverrides overrides deps;
     f = a: create (a // { project = overrideMain (defaultMain a); });
   in systems f (args // { overrides = os; }) // { overrides = os; };
 
@@ -251,7 +251,7 @@ let
 
 in systemOutputs // {
   inherit util haskell tools projectWithSets project systems flakeOutputs;
-  inherit (util) obeliskOverrides;
+  inherit (util) obeliskOverrides lib;
 
   flake = flakeWith flakeOutputs;
 }

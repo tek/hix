@@ -9,7 +9,7 @@ let
   if builtins.isPath pp
   then
   if pp == base then "."
-  else if failed then builtins.abort "invalid package path ${pp} for base ${base}" else new
+  else if failed then throw "invalid package path ${pp} for base ${base}" else new
   else pp;
 
   relativePackages = base: mapAttrs (_: packageSubpath base);
@@ -26,6 +26,14 @@ let
   let c = o.${n} or [];
   in if isList c then c else [c];
 
+  packagePath = base: pp:
+  if builtins.isPath pp
+  then pp
+  else "${base}/${pp}";
+
+  asFunction = f:
+  if isFunction f then f else _: f;
+
 in {
-  inherit packageSubpath relativePackages normalizeOverrides overridesFor;
+  inherit packageSubpath relativePackages normalizeOverrides overridesFor packagePath asFunction;
 }

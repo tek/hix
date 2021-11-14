@@ -11,7 +11,7 @@
   commands ? _: {},
   prelude ? true,
   shellConfig ? {},
-  testConfig ? _: {},
+  testConfig ? {},
   easy-hls ? false,
   ghc9 ? false,
   ...
@@ -24,7 +24,7 @@ let
 
   vanillaGhc = (import inputs.nixpkgs { inherit system; }).haskell.packages.${compiler};
   cmds = commands { inherit pkgs ghc; };
-  tools = import ./tools.nix { inherit pkgs; };
+  hlib = import ./lib.nix { inherit (pkgs) lib; };
   hls = import ./hls.nix { inherit vanillaGhc easy-hls inputs compiler pkgs system ghc9; };
   vms = import ./vm.nix { inherit nixpkgs pkgs; };
 
@@ -207,7 +207,7 @@ let
   }@args:
   ghciShellFor "run" {
     cwd = pkg;
-    config = mergeConfig (mergeConfig config { search = ["$PWD/${pkg}/${type}"]; }) (testConfig args);
+    config = mergeConfig (mergeConfig config { search = ["$PWD/${pkg}/${type}"]; }) (hlib.asFunction testConfig args);
     script = ghci.script runner module;
     test = ghci.runner runner name;
   };
