@@ -44,7 +44,7 @@ let
 
   checkDeprecated = old: new: conf:
   if hasAttr old conf
-  then throw "hix shell config: ${old} is deprecated; use ${new} in:\n${builtins.toJSON conf}"
+  then throw "hix shell config: '${old}' is deprecated; use '${new}' in:\n${builtins.toJSON conf}"
   else {};
 
   mergeConfig = left: right:
