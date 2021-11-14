@@ -94,7 +94,7 @@ in rec {
   command = {
     packages,
     script,
-    extraSearch,
+    search,
     prelude ? true,
     cwd ? null,
   }:
@@ -103,8 +103,8 @@ in rec {
       basic = toString (args.basic prelude);
       command = toString args.command;
       preproc = toString args.preprocessor;
-      search = searchPaths ((map libDir (builtins.attrValues packages)) ++ extraSearch);
+      searchP = searchPaths ((map libDir (builtins.attrValues packages)) ++ search);
       scriptFile = pkgs.writeText "ghci-script" (ghciScript cwd prelude script);
     in
-    "ghci ${basic} ${command} ${preproc} ${search} -ghci-script ${scriptFile}";
+    "ghci ${basic} ${command} ${preproc} ${searchP} -ghci-script ${scriptFile}";
 }

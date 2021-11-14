@@ -31,9 +31,9 @@ let
   configEmpty = {
     env = {};
     buildInputs = [];
-    extraHaskellPackages = _: [];
-    extraSearch = [];
-    extraRestarts = [];
+    haskellPackages = _: [];
+    search = [];
+    restarts = [];
     preCommand = [];
     preStartCommand = [];
     exitCommand = [];
@@ -42,17 +42,27 @@ let
 
   unlines = concatStringsSep "\n";
 
+  checkDeprecated = old: new: conf:
+  if hasAttr old conf
+  then throw "hix shell config: ${old} is deprecated; use ${new} in:\n${builtins.toJSON conf}"
+  else {};
+
   mergeConfig = left: right:
   let
     l = configEmpty // left;
     r = configEmpty // right;
     concat = attr: toList l.${attr} ++ toList r.${attr};
-  in {
+  in
+  checkDeprecated "extraBuildInputs" "buildInputs" right //
+  checkDeprecated "extraSearch" "search" right //
+  checkDeprecated "extraHaskellPackages" "haskellPackages" right //
+  checkDeprecated "extraRestarts" "restarts" right //
+  {
     env = l.env // r.env;
-    extraSearch = concat "extraSearch";
-    extraRestarts = concat "extraRestarts";
+    search = concat "search";
+    restarts = concat "restarts";
     buildInputs = concat "buildInputs";
-    extraHaskellPackages = g: l.extraHaskellPackages g ++ r.extraHaskellPackages g;
+    haskellPackages = g: l.haskellPackages g ++ r.haskellPackages g;
     preCommand = concat "preCommand";
     preStartCommand = concat "preStartCommand";
     exitCommand = concat "exitCommand";
@@ -66,11 +76,11 @@ let
   pkgRestarts = attrsets.mapAttrsToList (n: pkg: restart "$PWD/${pkg}/${n}.cabal");
 
   ghcidCmd =
-    command: test: extraRestarts:
+    command: test: restarts:
     let
-      restarts = (pkgRestarts packages) ++ (map restart extraRestarts);
+      allRestarts = (pkgRestarts packages) ++ (map restart restarts);
     in
-      ''ghcid -W ${toString restarts} --command="${command}" --test='${test}' '';
+      ''ghcid -W ${toString allRestarts} --command="${command}" --test='${test}' '';
 
   startVm = vm: if vm == null then "" else vms.ensure vm;
 
@@ -79,7 +89,7 @@ let
   ghcidCmdFile = {
     command,
     test,
-    extraRestarts,
+    restarts,
     preStartCommand,
     exitCommand,
     vm,
@@ -113,7 +123,7 @@ let
     TRAPEXIT() { quit $* }
     ${unlines preStartCommand}
     ${startVm vmData}
-    ${ghcidCmd command test extraRestarts}
+    ${ghcidCmd command test restarts}
   '';
 
   shellFor = {
@@ -126,7 +136,7 @@ let
     isNotTarget = p: !(p ? pname && elem p.pname packageNames);
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     targetDeps = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) packageNames));
-    hsPkgs = g: targetDeps g ++ conf.extraHaskellPackages g;
+    hsPkgs = g: targetDeps g ++ conf.haskellPackages g;
     devInputs = [
       (ghc.ghcWithPackages hsPkgs)
       vanillaGhc.ghcid
@@ -152,7 +162,7 @@ let
     mainCommand = ghci.command {
       packages = packages;
       inherit script prelude cwd;
-      inherit (conf) extraSearch;
+      inherit (conf) search;
     };
     command = ''
       ${unlines conf.preCommand}
@@ -197,7 +207,7 @@ let
   }@args:
   ghciShellFor "run" {
     cwd = pkg;
-    config = mergeConfig (mergeConfig config { extraSearch = ["$PWD/${pkg}/${type}"]; }) (testConfig args);
+    config = mergeConfig (mergeConfig config { search = ["$PWD/${pkg}/${type}"]; }) (testConfig args);
     script = ghci.script runner module;
     test = ghci.runner runner name;
   };
