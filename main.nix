@@ -6,7 +6,6 @@ let
 
   util = {
     lib = import ./lib.nix { inherit lib; };
-    cabal-dep = import ./cabal-dep.nix;
     spec = import ./deps/spec.nix { inherit lib; };
     ghcOverlay = import ./ghc-overlay.nix;
     ghcNixpkgs = import ./ghc-nixpkgs.nix;

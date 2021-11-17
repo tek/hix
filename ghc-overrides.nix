@@ -9,7 +9,7 @@
 let
   deps = import ./deps { inherit pkgs profiling; };
   hixlib = import ./lib.nix { inherit (pkgs) lib; };
-  inherit (pkgs.haskell.lib) dontCheck dontHaddock dontBenchmark disableLibraryProfiling;
+  inherit (pkgs.haskell.lib) dontHaddock dontBenchmark disableLibraryProfiling;
 
   reduceWork = d: disableLibraryProfiling (dontHaddock (dontBenchmark d));
 

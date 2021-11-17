@@ -7,7 +7,6 @@ with pkgs.lib;
 let
   depspec = import ./spec.nix { inherit (pkgs) lib; };
   api = import ./api.nix { inherit pkgs profiling; };
-  tools = import ./cabal-spec-tools2.nix { inherit pkgs profiling; };
 
   package = self: super: pkg: spec:
   let
@@ -22,11 +21,11 @@ let
   if isList overlays then overlays else [overlays];
 
   composeManyExtensions =
-    foldr composeExtensions (self: super: {});
+  foldr composeExtensions (self: super: {});
 
   compose = overlays: composeManyExtensions (map packages (asList overlays));
 
   override = ghc: f: ghc.override { overrides = compose f; };
 in {
-  inherit packages compose tools override;
+  inherit packages compose override;
 }
