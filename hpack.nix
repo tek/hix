@@ -24,6 +24,7 @@ in pkgs.writeScript "hpack.zsh" ''
       ln -srf $shared $dir/${hpackShared}
       remove="$remove $dir/${hpackShared}"
     fi
+    trap "rm -f $remove" ZERR
     trap "rm -f $remove" EXIT
     run
   }
