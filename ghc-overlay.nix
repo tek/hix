@@ -5,15 +5,16 @@
   packages ? {},
   cabal2nixOptions ? "",
   profiling ? true,
+  overridesConfig ? {},
 }:
 self: super:
 let
   inherit (self.lib.strings) hasPrefix;
 
-  combined = import ./ghc-overrides.nix {
+  combined = import ./ghc-overrides.nix ({
     inherit base overrides packages cabal2nixOptions profiling;
     pkgs = self;
-  };
+  } // overridesConfig);
 
   overlay = name: set:
   if hasPrefix "ghc" name then set.override { overrides = combined; } else set;
