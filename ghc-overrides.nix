@@ -22,9 +22,11 @@ let
     else localPackage;
 
   local = ghc: n: p:
-  withMin (mkLocalPackage (ghc.callCabal2nixWithOptions n (hixlib.packagePath base p) cabal2nixOptions {}));
+  mkLocalPackage (ghc.callCabal2nixWithOptions n (hixlib.packagePath base p) cabal2nixOptions {});
 
   projectPackages = self: _: builtins.mapAttrs (local self) packages;
 
+  minimized = _: super: foldl (ps: n: { ${n} = withMin (ps.${n}); }) super (attrNames packages);
+
 in
-  pkgs.lib.composeExtensions projectPackages (deps.compose overrides)
+  composeExtensions (composeExtensions projectPackages (deps.compose overrides)) minimized
