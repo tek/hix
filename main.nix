@@ -113,6 +113,7 @@ let
   let
     os =
       util.lib.overridesFor overrides "all" ++
+      util.lib.overridesFor overrides (args.compiler or mainCompiler) ++
       util.lib.overridesFor overrides "dev";
     a =
       args // { overrides = os; };
