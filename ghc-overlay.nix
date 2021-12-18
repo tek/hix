@@ -16,9 +16,5 @@ let
     pkgs = self;
   };
 in {
-  haskell = super.haskell // {
-    packages = super.haskell.packages // {
-      ${compiler} = super.haskell.packages.${compiler}.override { overrides = combined; };
-    };
-  };
+  hixPackages = super.haskell.packages.${compiler}.override { overrides = combined; };
 }

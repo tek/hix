@@ -56,7 +56,7 @@ let
       overlays = [overlay] ++ overlays;
       config.allowUnfree = true;
     };
-    ghc = pkgs.haskell.packages.${compiler};
+    ghc = pkgs.hixPackages;
     basicGhc = (import inputs."nixpkgs_${mainCompiler}" { inherit system; }).haskell.packages.${mainCompiler};
   };
 
