@@ -146,7 +146,7 @@ let
       tags = project.tags.projectTags;
       hpack = project.hpack {};
     };
-    packages = mainPackages // extraChecks;
+    packages = { min = mainPackages.${main}.min; } // mainPackages // extraChecks;
     checks = mainPackages // extraChecks;
     apps = project.ghcid.shellApps // {
       inherit ghcid-test;

@@ -49,11 +49,12 @@ The effective `outputs` set looks like this:
   };
   defaultApp.x86_64-linux = { ... }; # Points to `apps.ghcid-test`
   defaultPackage.x86_64-linux = { ... }; # Points to `packages.spaceship`
-  devShell.x86_64-linux = { ... }; # shell derivation for `nix develop`
-  legacyPackages.x86_64-linux = { ... }; # access to internals
+  devShell.x86_64-linux = { ... }; # Shell derivation for `nix develop`
+  legacyPackages.x86_64-linux = { ... }; # Access to internals
   overrides = { ... }; # All configured GHC package overrides for use in dependent projects
   packages.x86_64-linux = {
     spaceship = { ... }; # `cabal2nix` derivation building the main package
+    min = { ... }; # Same as the main package, but skips some phases
   };
 }
 ```
@@ -87,6 +88,7 @@ These functions share some parameters, so they are listed independently.
 |`overlays`|`[]`|Additional overlays passed verbatim to `nixpkgs`.|
 |`compat`|`true`|Create flake checks for other GHC versions.|
 |`compatVersions`|`["901" "8107" "884"]`|GHC versions for which compat checks should be created.|
+|`localPackage`|null|A function that is applied to the derivation of each local package.|
 
 ## Packages
 
@@ -114,6 +116,23 @@ For multiple packages:
 
 This configuration is used by `hix.haskell` to create `cabal2nix` derivations for the packages, by the `ghcid`
 helpers to configure the include paths, and by the `cabal upload` scripts.
+
+### Minimal Derivations
+
+Each package output has an additional output in the attribute `min` that has profiling disabled and skips haddock and
+benchmarks.
+In order to compile and test only, this derivation can be built with:
+
+```shell
+nix build .#spaceship-core.min
+```
+
+The main package's minimal derivation is additionally available as the package `min`:
+
+```shell
+nix build .#min
+```
+
 
 ## GHC Compatibility Checks
 

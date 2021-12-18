@@ -6,9 +6,6 @@
   cabal2nixOptions ? "",
   profiling ? true,
   localPackage ? null,
-  localBenchmark ? true,
-  localHaddock ? false,
-  localProfiling ? false,
 }:
 with pkgs.lib;
 let
@@ -16,20 +13,16 @@ let
   hixlib = import ./lib.nix { inherit (pkgs) lib; };
   inherit (pkgs.haskell.lib) dontHaddock dontBenchmark disableLibraryProfiling;
 
-  reduceWork = d:
-  let
-    had = (if localHaddock then id else dontHaddock);
-    bench = (if localBenchmark then id else dontBenchmark);
-    prof = (if localProfiling then id else disableLibraryProfiling);
-  in 
-    prof (had (bench d));
+  withMin = d:
+  d // { min = dontHaddock (dontBenchmark (disableLibraryProfiling d)); };
 
   mkLocalPackage =
     if localPackage == null
-    then reduceWork
+    then id
     else localPackage;
 
-  local = ghc: n: p: mkLocalPackage (ghc.callCabal2nixWithOptions n (hixlib.packagePath base p) cabal2nixOptions {});
+  local = ghc: n: p:
+  withMin (mkLocalPackage (ghc.callCabal2nixWithOptions n (hixlib.packagePath base p) cabal2nixOptions {}));
 
   projectPackages = self: _: builtins.mapAttrs (local self) packages;
 

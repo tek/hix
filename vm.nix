@@ -25,7 +25,7 @@ let
             diskImage = image;
             diskSize = 4096;
             forwardPorts = [
-              { from = "host"; host.port = basePort + 22; guest.port = 22; }
+              { host.port = basePort + 22; guest.port = 22; }
             ] ++ ports;
           };
           services.openssh = {
@@ -60,7 +60,7 @@ let
   in create {
     inherit name dir;
     basePort = port;
-    ports = ports ++ [{ from = "host"; host.port = port; guest.port = 5432; }];
+    ports = ports ++ [{ host.port = port; guest.port = 5432; }];
     conf = pkgs: {
       services.postgresql = {
         enable = true;

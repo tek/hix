@@ -15,9 +15,6 @@ let
     inherit base overrides packages cabal2nixOptions profiling;
     pkgs = self;
   } // overridesConfig);
-
-  overlay = name: set:
-  if hasPrefix "ghc" name then set.override { overrides = combined; } else set;
 in {
   haskell = super.haskell // {
     packages = super.haskell.packages // {
