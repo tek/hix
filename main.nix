@@ -42,14 +42,14 @@ let
     nixpkgs ? inputs.nixpkgs,
     nixpkgsFunc ? import nixpkgs,
     overlays ? [],
-    overridesConfig ? {},
+    localPackage ? null,
     base,
     packages,
     ...
   }: rec {
     inherit compiler packages base nixpkgs;
     overlay = util.ghcOverlay {
-      inherit base compiler cabal2nixOptions profiling packages overrides overridesConfig;
+      inherit base compiler cabal2nixOptions profiling packages overrides localPackage;
     };
     pkgs = nixpkgsFunc {
       inherit system;

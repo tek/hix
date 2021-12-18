@@ -5,16 +5,16 @@
   packages ? {},
   cabal2nixOptions ? "",
   profiling ? true,
-  overridesConfig ? {},
+  localPackage ? null,
 }:
 self: super:
 let
   inherit (self.lib.strings) hasPrefix;
 
-  combined = import ./ghc-overrides.nix ({
-    inherit base overrides packages cabal2nixOptions profiling;
+  combined = import ./ghc-overrides.nix {
+    inherit base overrides packages cabal2nixOptions profiling localPackage;
     pkgs = self;
-  } // overridesConfig);
+  };
 in {
   haskell = super.haskell // {
     packages = super.haskell.packages // {
