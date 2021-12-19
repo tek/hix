@@ -7,9 +7,10 @@ let
   util = {
     lib = import ./lib.nix { inherit lib; };
     spec = import ./deps/spec.nix { inherit lib; };
+    ghcOverrides = import ./ghc-overrides.nix;
+    haskellPackages = import ./haskell-packages.nix;
     ghcOverlay = import ./ghc-overlay.nix;
     ghcNixpkgs = import ./ghc-nixpkgs.nix;
-    ghcOverrides = import ./ghc-overrides.nix;
     ghci = import ./ghci.nix;
     ghcid = import ./ghcid.nix;
     tags = import ./tags.nix inputs;
