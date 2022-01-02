@@ -32,6 +32,7 @@ let
     minimal = transform_ modifiers.minimalDrv;
     profiling = transform_ modifiers.profiling;
     unbreak = transform_ modifiers.unbreak;
+    fast = transform_ modifiers.fast;
   };
 
   hackage = ver: sha256: spec.create ({ self, pkg, ... }: {

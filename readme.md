@@ -221,6 +221,7 @@ All of these are in the attribute set passed to an override function.
 |`configures`|Add multiple Cabal configure flags. |
 |`override`|Pass a function to `overrideCabal`.|
 |`minimal`|Disable Haddock, benchmarks and tests, and unbreak.|
+|`fast`|Disable Haddock and profiling.|
 |`profiling`|Force profiling.|
 
 |Name|Option|

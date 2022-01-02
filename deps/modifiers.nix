@@ -23,4 +23,6 @@ in {
   profiling = yesProfiling;
 
   minimalProf = p: globalProfiling (minimalDrv p);
+
+  fast = p: noProfiling (hl.dontHaddock p);
 }
