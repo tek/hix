@@ -178,7 +178,7 @@ let
     inherit (project.pkgs.lib.attrsets) genAttrs;
   in genAttrs (attrNames packages) (n: ghc.${n} // { inherit ghc; });
 
-  defaultCompatVersions = ["901" "8107" "884"];
+  defaultCompatVersions = ["902" "8107" "884"];
 
   # Derivations for local packages with fixed nixpkgs and ghc version, and minimal overrides, for compatibility checks.
   # /Note/: Overrides must be normalized;

@@ -4,7 +4,8 @@
   inputs = {
     nixpkgs.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
     nixpkgs_ghc921.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
-    nixpkgs_ghc901.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
+    nixpkgs_ghc902.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
+    nixpkgs_ghc901.url = github:NixOS/nixpkgs/45a3f9d7725c7e21b252c223676cc56fb2ed5d6d;
     nixpkgs_ghc8107.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
     nixpkgs_ghc884.url = github:NixOS/nixpkgs/c0e881852006b132236cbf0301bd1939bb50867e;
     nixpkgs_ghc865.url = github:NixOS/nixpkgs/cfed29bfcb28259376713005d176a6f82951014a;

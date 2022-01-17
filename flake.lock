@@ -114,6 +114,22 @@
     },
     "nixpkgs_ghc901": {
       "locked": {
+        "lastModified": 1639713555,
+        "narHash": "sha256-w1TacWjnqhC19n+rheyOif3JxwvWMbyxfgqYCY0FLdQ=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "45a3f9d7725c7e21b252c223676cc56fb2ed5d6d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "45a3f9d7725c7e21b252c223676cc56fb2ed5d6d",
+        "type": "github"
+      }
+    },
+    "nixpkgs_ghc902": {
+      "locked": {
         "lastModified": 1642069818,
         "narHash": "sha256-666w6j8wl/bojfgpp0k58/UJ5rbrdYFbI2RFT2BXbSQ=",
         "owner": "NixOS",
@@ -170,6 +186,7 @@
         "nixpkgs_ghc865": "nixpkgs_ghc865",
         "nixpkgs_ghc884": "nixpkgs_ghc884",
         "nixpkgs_ghc901": "nixpkgs_ghc901",
+        "nixpkgs_ghc902": "nixpkgs_ghc902",
         "nixpkgs_ghc921": "nixpkgs_ghc921",
         "obelisk": "obelisk",
         "thax": "thax"

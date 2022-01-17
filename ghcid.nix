@@ -13,7 +13,6 @@
   shellConfig ? {},
   testConfig ? {},
   easy-hls ? false,
-  ghc9 ? false,
   ...
 }:
 with pkgs.lib;
@@ -25,7 +24,10 @@ let
   vanillaGhc = (import inputs.nixpkgs { inherit system; }).haskell.packages.${compiler};
   cmds = commands { inherit pkgs ghc; };
   hlib = import ./lib.nix { inherit (pkgs) lib; };
-  hls = import ./hls.nix { inherit vanillaGhc easy-hls inputs compiler pkgs system ghc9; };
+  hls =
+    if easy-hls
+    then inputs.easy-hls.defaultPackage.${system}
+    else vanillaGhc.haskell-language-server;
   vms = import ./vm.nix { inherit nixpkgs pkgs; };
 
   configEmpty = {

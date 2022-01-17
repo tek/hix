@@ -87,7 +87,7 @@ These functions share some parameters, so they are listed independently.
 |`nixpkgsFunc`|`import nixpkgs`|Function variant of the previous parameter. The default imports the specified `nixpkgs` argument.|
 |`overlays`|`[]`|Additional overlays passed verbatim to `nixpkgs`.|
 |`compat`|`true`|Create flake checks for other GHC versions.|
-|`compatVersions`|`["901" "8107" "884"]`|GHC versions for which compat checks should be created.|
+|`compatVersions`|`["902" "8107" "884"]`|GHC versions for which compat checks should be created.|
 |`localPackage`|null|A function that is applied to the derivation of each local package.|
 
 ## Packages
@@ -136,7 +136,7 @@ nix build .#min
 
 ## GHC Compatibility Checks
 
-If the `compat` argument is `true`, the flake will have additional outputs named like `compat-901-spaceship-core`.
+If the `compat` argument is `true`, the flake will have additional outputs named like `compat-902-spaceship-core`.
 These derivations don't share the same overrides as the main (`dev`) project.
 This allows testing the project with the default packages from the hackage snapshot that nixpkgs uses for this version.
 Each of these versions can have their own overrides, as described in the next section.
@@ -153,7 +153,7 @@ the development dependencies and one that is used for _all_ package sets:
   overrides = {
     all = ...;
     dev = ...;
-    ghc901 = ...;
+    ghc902 = ...;
     ghc8107 = ...;
   };
 }
@@ -169,7 +169,7 @@ The general shape is:
 ```nix
 {
   overrides = {
-    ghc901 = { self, super, hsLib, jailbreak, ... }: {
+    ghc902 = { self, super, hsLib, jailbreak, ... }: {
       name1 = hsLib.doJailbreak super.name1;
       name2 = jailbreak;
     };
@@ -187,7 +187,7 @@ Composing those combinators is simple:
 ```nix
 {
   overrides = {
-    ghc901 = { profiling, jailbreak, hackage, ... }: {
+    ghc902 = { profiling, jailbreak, hackage, ... }: {
       aeson = profiling (jailbreak (hackage "2.0.0.0" "shaxxxxx"));
       http-client = profiling jailbreak;
     };
