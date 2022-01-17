@@ -1,0 +1,15 @@
+name:           dep2
+version:        0.1.0.0
+synopsis:       dep2
+author:         Torsten Schmits
+maintainer:     haskell@tryp.io
+copyright:      2021 Torsten Schmits
+build-type:     Simple
+
+library
+  exposed-modules:
+    Dep2
+  hs-source-dirs:
+      lib
+  build-depends:
+      base ==4.*, stm-chans

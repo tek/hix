@@ -16,7 +16,7 @@ let
 
   normalizeOverrides = old: deps:
   let
-    local = if isAttrs old then old else { all = old; };
+    local = if isAttrs old then old else { all = old; dev = old; };
     norm = mapAttrs (_: o: if isList o then o else [o]) local;
     depOverrides = map (o: o.overrides) deps;
   in

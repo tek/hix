@@ -6,6 +6,9 @@ library:
   dependencies:
     - base >= 4 && < 6
     - sub
+    - dep2
+    - dep1
+    - stm-chans
 
 executables:
   run:

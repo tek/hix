@@ -252,7 +252,7 @@ let
   });
 
 in systemOutputs // {
-  inherit util haskell tools projectWithSets project systems flakeOutputs;
+  inherit util haskell tools project systems flakeOutputs;
   inherit (util) obeliskOverrides lib;
 
   flake = flakeWith flakeOutputs;

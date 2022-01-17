@@ -160,7 +160,9 @@ the development dependencies and one that is used for _all_ package sets:
 ```
 
 If, instead of a set, a list of override functions, or a single function, is given, they are treated as if they had been
-specified as `{ all = overrides; }`.
+specified as `{ all = overrides; dev = overrides; }`.
+The explicit `dev` spec is used to allow this simpler variant to have precedence over explicit
+[transitive](#transitive-overrides) `dev` overrides.
 
 Override functions have similar semantics to regular nixpkgs extension functions (`self: super: {...}`), but they take
 additional parameters and can create not only derivations, but also custom dependency specifications.
