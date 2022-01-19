@@ -3,41 +3,59 @@
 A set of tools for developing on a Haskell project with Nix build.
 Provides out-of-the-box setup for package overrides, `ghcid`, `haskell-language-server`, [thax], and `cabal upload`.
 
-**Warning** This is still under construction, subject to breaking changes, unstable, and very specific to the author's
-workflow.
+There is a dedicated page for the documentation of the library's [options].
 
 # Basic usage
 
-The simplest possible flake looks like this:
+The main service provided by *hix* is the construction of a set of [flake] outputs with useful functionality for
+Haskell development.
+The library's main entry point, `hix.lib.flake`, should be evaluated in the flake's `outputs` function.
+Assuming the simplest possible project setup consisting of a single Cabal library named `spaceship` with the file
+`spaceship.cabal` in the project's root directory, the only necessary arguments are the project's root directory as
+`base`; and a mapping from Cabal package names to directories as `packages`:
 
 ```nix
 {
   description = "Spaceship";
   inputs.hix.url = github:tek/hix;
-  outputs = { hix, ... }: hix.flake { base = ./.; packages = { spaceship = ./.; }; };
+  outputs = { hix, ... }: hix.lib.flake { base = ./.; packages = { spaceship = ./.; }; };
 }
 ```
 
-This will configure a single Cabal library at the root of the project, to be built with:
+This generates an output set that contains, among other things, the set `packages`, which is where `nix build` looks for
+derivations, making it possible to build the `spaceship` library with the command:
 
 ```
 nix build .#spaceship
 ```
 
-Running `main` from `app/Main.hs` in the package at `.` in a `ghcid` session can be done with:
+Furthermore, the set `apps`, which is consulted by `nix run`, is populated with several tools, like a `ghcid` launcher.
+This app allows the developer to run arbitrary functions in `ghci`, instantly recompiling and re-executing on every
+change.
+For example, the function `main` from the module `Main` in the directory `app` in the package at the root directory
+(`.`) can be executed with this command:
 
 ```
-nix run .#ghcid-test -- . Main main app
+nix run .#ghcid -- . Main main app
 ```
 
-The effective `outputs` set looks like this:
+`ghcid` is run in a Nix shell that is configured to provide the environment that the app needs to find the project
+sources and all dependencies.
+This shell environment can be entered interactively to run `cabal` with an appropriately configured package database:
+
+```
+nix develop
+cabal v2-build all
+```
+
+The full set of `outputs` looks roughly like this:
 
 ```nix
 {
   apps.x86_64-linux = {
     candidates = { ... }; # Run `cabal upload`
     docs = { ... }; # Run `cabal upload -d`
-    ghcid-test = { ... }; # Run a function in `ghcid`
+    ghcid = { ... }; # Run a function in `ghcid`
     hls = { ... }; # Run HLS
     hpack = { ... }; # Run `hpack`
     hpack-verbose = { ... }; # Run `hpack`
@@ -47,7 +65,7 @@ The effective `outputs` set looks like this:
   checks.x86_64-linux = {
     spaceship = { ... }; # Points to `packages.spaceship`
   };
-  defaultApp.x86_64-linux = { ... }; # Points to `apps.ghcid-test`
+  defaultApp.x86_64-linux = { ... }; # Points to `apps.ghcid`
   defaultPackage.x86_64-linux = { ... }; # Points to `packages.spaceship`
   devShell.x86_64-linux = { ... }; # Shell derivation for `nix develop`
   legacyPackages.x86_64-linux = { ... }; # Access to internals
@@ -61,35 +79,38 @@ The effective `outputs` set looks like this:
 
 # Configuration
 
-The function `hix.flake` combines multiple steps:
-
-* `hix.projectOverrides` creates Haskell package overrides for the local packages and combines them with those from
-  dependencies and the user specified overrides.
-* `hix.haskell` creates a `nixpkgs` overlay from said overrides.
-* `hix.tools` provides helpers for `ghcid`, HLS, `cabal upload`, `ctags` and `hpack`.
-* `hix.systemOutputs` assembles an `outputs.*.<system>` set according to flake standards.
-* `hix.compatChecks` creates several additional copies of the GHC overlay for different versions.
-* `hix.systems` iterates over the target systems (default is `["x86_64-linux"]`).
-
-These functions share some parameters, so they are listed independently.
-
-## Basics
+*Hix* uses the NixOS module system for configuration, allowing the user to override options that are deeply buried
+within the library's logic with a type system and automatic documentation generation.
+While there is a dedicated [options page](options) that lists all of them, here are a few basic ones:
 
 |Name|Default|Description|
 |---|---|---|
-|`system`||Passed to `nixpkgs`, usually provided by `flake-utils`, which is called by `hix.systems`.|
 |`base`||Path to the project root, should be specified as `./.`.|
 |`packages`||Local Cabal [packages](#packages).|
 |`main`|`packages.<singleton>`|The package used for `defaultPackage`. Defaults only if `packages` has one entry.|
-|`compiler`|`"ghc8107"`|The attribute name of the GHC package set to use for development.|
+|`devGhc.compiler`|`"ghc8107"`|The attribute name of the GHC package set to use for development.|
 |`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
-|`profiling`|`true`|Whether to enable library profiling for dependencies.|
-|`nixpkgs`|`inputs.nixpkgs`|`nixpkgs` used for development. `inputs.nixpkgs` refers to `hix`'s flake inputs, which can also be overridden with: `inputs.hix.inputs.nixpkgs.url = github:nixos/nixpkgs`|
-|`nixpkgsFunc`|`import nixpkgs`|Function variant of the previous parameter. The default imports the specified `nixpkgs` argument.|
-|`overlays`|`[]`|Additional overlays passed verbatim to `nixpkgs`.|
-|`compat`|`true`|Create flake checks for other GHC versions.|
-|`compatVersions`|`["902" "8107" "884"]`|GHC versions for which compat checks should be created.|
-|`localPackage`|null|A function that is applied to the derivation of each local package.|
+|`compat.versions`|`["902" "8107" "884"]`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
+
+While these options can be passed to `hix.lib.flake` as regular function arguments, the function actually treats its
+argument as a NixOS module.
+This allows complex configuration for more advanced projects with the ability to access the entire configuration:
+
+```nix
+{
+  outputs = { hix, ... }:
+  let
+    module = { config, ... }: {
+       base = ./.;
+       packages = { spaceship = ./.; };
+       systems = ["x86_64-linux" "aarch64-linux"];
+       devGhc.compiler = if config.system == "aarch64-linux" then "ghc884" else "ghc921";
+    };
+  in hix.lib.flake module;
+}
+```
+
+For even more elaborate setups, `hix.lib.flake` also accepts a *list* of modules.
 
 ## Packages
 
@@ -137,11 +158,11 @@ nix build .#min
 
 ## GHC Compatibility Checks
 
-If the `compat` argument is `true`, the flake will have additional outputs named like `compat-902-spaceship-core`.
+If the `compat.enable` argument is `true`, the flake will have additional outputs named like
+`compat-902-spaceship-core`.
 These derivations don't share the same overrides as the main (`dev`) project.
 This allows testing the project with the default packages from the hackage snapshot that nixpkgs uses for this version.
 Each of these versions can have their own overrides, as described in the next section.
-
 
 # Dependency Overrides
 
@@ -326,11 +347,10 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 
 |Name|Default|Description|
 |---|---|---|
-|`ghci.basicArgs`|`["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`|Passed directly to `ghci`.|
-|`ghci.extraArgs`|`[]`|Passed directly to `ghci`.|
+|`ghci.args`|`["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`|Passed directly to `ghci`.|
 |`ghci.options_ghc`|`null`|If non-null, passed to `ghci` as `-optF`.|
+|`ghci.prelude`|`true`|Whether to work around some issues with custom `Prelude`s.|
 |`ghcid.commands`|`_: {}`|A function taking `pkgs` and `ghc`, producing an attrset of attrsets. Each of those sets configure a [command](#commands).|
-|`ghcid.prelude`|`true`|Whether to work around some issues with custom `Prelude`s.|
 |`ghcid.shellConfig`|`_: {}`|Extra configuration for all `ghcid` apps, like extra search paths.|
 |`ghcid.testConfig`|`_: _: {}`|Extra configuration for the test command.|
 
@@ -380,10 +400,10 @@ The values in the global parameter `shellConfig` are prepended to all values in 
 
 ### Tests
 
-Individual functions can be run in `ghcid` using the `nix` app `ghcid-test`:
+Individual functions can be run in `ghcid` using the `nix` app `ghcid`:
 
 ```
-nix run .#ghcid-test -- packages/spaceship-api Main main test generic
+nix run .#ghcid -- packages/spaceship-api Main main test generic
 ```
 
 The parameters are as follows:
@@ -446,42 +466,18 @@ For example, setting the environment variable `BROWSER` to the path to chromium 
 
 ### Virtual Machines
 
-If the command config attribute `vm` is given, a `qemu` VM is run for the command, for example to provide a database for
-tests.
-The config has the following protocol:
+If the command config option `vm.enable` is set to `true`, a `qemu` VM is run for the command, for example to provide
+a database for tests.
 
-|Attribute|Default|Description|
-|---|---|---|
-|`create`|`null`|If given, override the entire built-in VM creation function|
-|`type`|`null`|If given, use a special built-in VM config. Currently supported values: `["postgres"]`|
-|`name`|`hix-vm`|Used for the temporary directory storing the image|
-|`dir`|`/tmp/hix-vm/$USER/${name}`|Temporary directory storing the image|
-|`basePort`|`10000`|Port from which the `ssh` port is calculated (`+ 22`)|
-|`ports`|`[]`|Additional port forwardings in the format expected by `virtualisation.forwardPorts`|
-|`conf`|`{}`|Additional config merged into the basic NixOS config for the VM|
+The option `vm.conf` is passed directly to the import of `nixos`, allowing the user to run arbitrary services.
+More configuration options are listed in the [options] documentation.
 
-If `type` is `postgres`, a database will be started in the VM with the following additional config:
+The option `vm.postgres.enable` adds a PostgreSQL server to the VM, with some additional configuration options in the
+same module.
 
-|Attribute|Default|Description|
-|---|---|---|
-|`dbName`||Name of the database to be created, passed on to the basic VM creation function as well|
-|`port`|`10000`|The port in the host system that is forwarded to PostgreSQL's port|
-|`creds`|`{}`|Can contain `user` and `password`, both defaulting to `dbName`|
-|`log`|`false`|Whether to enable logging|
-|`conf`|`{}`|Additional config like for the basic VM, but merged after the PostgreSQL config|
+## Haskell Language Server
 
-If the `create` attribute is given, it should be a function that takes the config as an argument and returns an attrset
-with the protocol:
-
-|Attribute|Description|
-|---|---|
-|`main`|The VM derivation, as produced by `import "${nixpkgs}/nixos" { ... }`|
-|`dir`|The directory containing the pidfile and image|
-|`pidfile`|The pidfile path|
-
-## `haskell-language-server`
-
-HLS can be started with:
+HLS can be started by running the `hls` app, using the same shell environment as `ghcid`:
 
 ```
 nix run .#hls
@@ -510,5 +506,7 @@ nix run .#docs
 If the arg `versionFile` is given, the script will substitute the `version:` line in that `hpack` file after asking for
 the next version.
 
+[options]: https://tryp.io/hix/index.html
+[flake]: https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html
 [thax]: https://github.com/tek/thax
 [vim-test]: https://github.com/vim-test/vim-test

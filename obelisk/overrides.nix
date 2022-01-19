@@ -1,4 +1,4 @@
-inputs:
+{ obelisk }:
 { hackage, source, configure, override, pkgs, minimal, ... }:
 {
   # reflex
@@ -10,13 +10,13 @@ inputs:
   universe-instances-base = hackage "1.1" "1d5hrbn6ydyhkf9i9497rpixrcydryx6il65q4jwjqvrqpnrwgv5";
 
   # obelisk
-  obelisk-backend = source.sub inputs.obelisk "lib/backend";
-  obelisk-frontend = source.sub inputs.obelisk "lib/frontend";
-  obelisk-route = source.sub inputs.obelisk "lib/route";
-  obelisk-run = override { librarySystemDepends = [pkgs.iproute]; } (source.sub inputs.obelisk "lib/run");
-  obelisk-asset-serve-snap = source.sub inputs.obelisk "lib/asset/serve-snap";
-  obelisk-executable-config-inject = source.sub inputs.obelisk "lib/executable-config/inject";
-  obelisk-executable-config-lookup = source.sub inputs.obelisk "lib/executable-config/lookup";
-  obelisk-snap-extras = source.sub inputs.obelisk "lib/snap-extras";
-  tabulation = source.sub inputs.obelisk "lib/tabulation";
+  obelisk-backend = source.sub obelisk "lib/backend";
+  obelisk-frontend = source.sub obelisk "lib/frontend";
+  obelisk-route = source.sub obelisk "lib/route";
+  obelisk-run = override { librarySystemDepends = [pkgs.iproute]; } (source.sub obelisk "lib/run");
+  obelisk-asset-serve-snap = source.sub obelisk "lib/asset/serve-snap";
+  obelisk-executable-config-inject = source.sub obelisk "lib/executable-config/inject";
+  obelisk-executable-config-lookup = source.sub obelisk "lib/executable-config/lookup";
+  obelisk-snap-extras = source.sub obelisk "lib/snap-extras";
+  tabulation = source.sub obelisk "lib/tabulation";
 }

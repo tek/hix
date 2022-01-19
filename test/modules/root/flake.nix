@@ -6,19 +6,19 @@
   inputs.dep2.url = path:BASE/dep2;
 
   outputs = { hix, dep1, dep2, ... }:
-  hix.flake {
+  hix.lib.flake {
     base = ./.;
     main = "root";
     packages = {
       root = ./.;
       sub = ./sub;
     };
-    compat = false;
+    compat.enable = true;
     overrides = { hackage, source, ... }: {
       stm-chans = hackage "2.0.0" "0afxg1wx0jkkajwcz338hm1ql4rzrj9dkdpkcvdaw04jrzaqwmby";
     };
     deps = [dep1 dep2];
-    modify = project: outputs: {
+    output.amend = project: outputs: {
       stm-chans-version =
         with project.pkgs.lib;
         let

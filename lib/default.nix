@@ -33,6 +33,27 @@ let
   asFunction = f:
   if isFunction f then f else _: f;
 
+  unlines = concatStringsSep "\n";
+
+  parents = modules: {
+    options.internal.parents = mkOption { type = types.unspecified; };
+    config.internal.parents = modules;
+  };
+
+  withModules = config: extra: f:
+  let
+    current = attrByPath ["internal" "parents"] [] config ++ extra;
+    newModules = lib.evalModules { modules = current ++ [(parents current)]; };
+  in f newModules.config;
+
 in {
-  inherit packageSubpath relativePackages normalizeOverrides overridesFor packagePath asFunction;
+  inherit
+  packageSubpath
+  relativePackages
+  normalizeOverrides
+  overridesFor
+  packagePath
+  asFunction
+  unlines
+  withModules;
 }

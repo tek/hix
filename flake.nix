@@ -16,7 +16,11 @@
       flake = false;
     };
     thax.url = github:tek/thax;
+    nmd = {
+      url = git+https://gitlab.com/rycee/nmd;
+      flake = false;
+    };
   };
 
-  outputs = inputs: import ./main.nix inputs;
+  outputs = inputs: import ./default.nix inputs;
 }

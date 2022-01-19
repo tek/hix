@@ -1,0 +1,32 @@
+<reference
+xmlns="http://docbook.org/ns/docbook"
+xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:xi="http://www.w3.org/2001/XInclude">
+<info>
+  <title>Hix</title>
+  <author>
+    <personname>Torsten Schmits</personname>
+  </author>
+  <copyright>
+    <year>2021</year>
+    <holder>Torsten Schmits</holder>
+  </copyright>
+</info>
+<refentry>
+  <refmeta>
+    <refentrytitle>Hix</refentrytitle>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>Hix</refname>
+    <refpurpose>Module options</refpurpose>
+  </refnamediv>
+  <refsection>
+    <title>Options</title>
+    <para>
+      Module Configuration options
+    </para>
+    <xi:include href="./nmd-result/hix-options.xml" />
+  </refsection>
+</refentry>
+</reference>

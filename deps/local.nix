@@ -5,7 +5,7 @@
   localPackage ? _: lib.id,
 }:
 let
-  hixlib = import ../lib.nix { inherit lib; };
+  hixlib = import ../lib/default.nix { inherit lib; };
 
   local = api: p:
   (localPackage api) (api.source.root (hixlib.packagePath base p));

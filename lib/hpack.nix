@@ -1,4 +1,4 @@
-{ pkgs, ghc, verbose, paths, hpackDir, hpackShared ? "shared", }:
+{ pkgs, ghc, verbose, paths, dir, shared ? "shared", }:
 let
   packageCalls = pkgs.lib.mapAttrsToList (n: p: "gen ${n} ${p}") paths;
 in pkgs.writeScript "hpack.zsh" ''
@@ -6,8 +6,8 @@ in pkgs.writeScript "hpack.zsh" ''
   setopt err_exit no_unset
 
   base=''${1-''$PWD}
-  hpack="$base/${hpackDir}"
-  shared="$hpack/${hpackShared}"
+  hpack="$base/${dir}"
+  shared="$hpack/${shared}"
 
   run()
   {
@@ -21,8 +21,8 @@ in pkgs.writeScript "hpack.zsh" ''
     cp $hpack/packages/$name.yaml $dir/package.yaml
     if [[ -d $shared ]]
     then
-      ln -srf $shared $dir/${hpackShared}
-      remove="$remove $dir/${hpackShared}"
+      ln -srf $shared $dir/${shared}
+      remove="$remove $dir/${shared}"
     fi
     trap "rm -f $remove" ZERR
     trap "rm -f $remove" EXIT

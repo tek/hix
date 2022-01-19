@@ -1,12 +1,12 @@
-inputs:
 {
+  thax,
   packages,
   pkgs,
   ghc,
   compiler,
 }:
 let
-  tags = inputs.thax.tags { inherit pkgs compiler; };
+  tags = thax.tags { inherit pkgs compiler; };
 
   withPrefix =
     name: dir:

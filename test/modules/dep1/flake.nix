@@ -4,9 +4,9 @@
   inputs.hix.url = path:HIX;
 
   outputs = { hix, ... }:
-  hix.flake {
+  hix.lib.flake {
     base = ./.;
     packages.dep1 = ./.;
-    compat = false;
+    compat.enable = false;
   };
 }
