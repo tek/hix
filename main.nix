@@ -7,10 +7,8 @@ let
   util = {
     lib = import ./lib.nix { inherit lib; };
     spec = import ./deps/spec.nix { inherit lib; };
-    ghcOverrides = import ./ghc-overrides.nix;
-    haskellPackages = import ./haskell-packages.nix;
     ghcOverlay = import ./ghc-overlay.nix;
-    ghcNixpkgs = import ./ghc-nixpkgs.nix;
+    ghcOverrides = import ./overrides.nix;
     ghci = import ./ghci.nix;
     ghcid = import ./ghcid.nix;
     tags = import ./tags.nix inputs;
@@ -32,26 +30,42 @@ let
 
   mainCompiler = "ghc8107";
 
+  projectOverrides = {
+    base,
+    packages,
+    deps ? [],
+    overrides ? [],
+    profiling ? true,
+    localPackage ? _: lib.id,
+  }:
+  let
+    local = import ./deps/local.nix { inherit lib base packages localPackage; };
+    localMin = import ./deps/local.nix {
+      inherit lib base packages;
+      localPackage = { fast, minimal, ... }: p: fast (minimal p);
+    };
+    withDeps = util.lib.normalizeOverrides overrides deps;
+  in withDeps // { local = [local]; localMin = [localMin]; };
+
   # Import nixpkgs, adding an overlay that contains `cabal2nix` derivations for local packages and the specified
   # dependency overrides.
   haskell = {
+    base,
+    packages,
     system ? currentSystem,
     compiler ? mainCompiler,
-    overrides ? [],
-    cabal2nixOptions ? "",
+    overrides ? {},
+    overrideKeys ? ["local" "all" compiler "dev"],
     profiling ? true,
     nixpkgs ? inputs.nixpkgs,
     nixpkgsFunc ? import nixpkgs,
     overlays ? [],
-    localPackage ? null,
-    base,
-    packages,
     ...
-  }: rec {
-    inherit compiler packages base nixpkgs;
-    overlay = util.ghcOverlay {
-      inherit base compiler cabal2nixOptions profiling packages overrides localPackage;
-    };
+  }:
+  let
+    overlay = util.ghcOverlay { inherit compiler profiling overrides overrideKeys; };
+  in rec {
+    inherit compiler packages base nixpkgs overlay;
     pkgs = nixpkgsFunc {
       inherit system;
       overlays = [overlay] ++ overlays;
@@ -110,15 +124,7 @@ let
       };
     };
 
-  project = args@{ overrides ? {}, ... }:
-  let
-    os =
-      util.lib.overridesFor overrides "all" ++
-      util.lib.overridesFor overrides (args.compiler or mainCompiler) ++
-      util.lib.overridesFor overrides "dev";
-    a =
-      args // { overrides = os; };
-  in tools (haskell a) a;
+  project = args: tools (haskell args) args;
 
   systems = f: args@{ systems ? ["x86_64-linux"], ... }:
   inputs.flake-utils.lib.eachSystem systems (system: f (args // { inherit system; }));
@@ -173,41 +179,38 @@ let
   let customized = transform project outputs;
   in project.pkgs.lib.attrsets.recursiveUpdate customized (modify project customized);
 
-  outPackagesFor = project: packages: ghc:
+  outPackagesFor = packages: ghc:
   let
-    inherit (project.pkgs.lib.attrsets) genAttrs;
-  in genAttrs (attrNames packages) (n: ghc.${n} // { inherit ghc; });
+  in lib.genAttrs (attrNames packages) (n: ghc.${n} // { inherit ghc; });
 
   defaultCompatVersions = ["902" "8107" "884"];
 
   # Derivations for local packages with fixed nixpkgs and ghc version, and minimal overrides, for compatibility checks.
   # /Note/: Overrides must be normalized;
   compatChecks = {
-    project,
     packages,
     overrides ? {},
     compatVersions ? defaultCompatVersions,
   }: args:
   let
-    compatOverrides = ver:
-    util.lib.overridesFor overrides "all" ++
-    util.lib.overridesFor overrides "compat" ++
-    util.lib.overridesFor overrides "ghc${ver}";
-
+    compiler = "ghc${ver}";
     compatProject = ver: haskell (args // {
-      overrides = compatOverrides ver;
-      compiler = "ghc${ver}";
+      inherit compiler;
       nixpkgs = inputs."nixpkgs_ghc${ver}";
+      overrideKeys = ["local" "all" "compat" compiler];
     });
 
-    prefixed = prf: project.pkgs.lib.attrsets.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
+    prefixed = prf: lib.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
 
-    compatCheck = ver: (prefixed "compat-${ver}" (outPackagesFor project packages (compatProject ver).ghc));
+    compatCheck = ver: (prefixed "compat-${ver}" (outPackagesFor packages (compatProject ver).ghc));
   in
     foldl' (z: v: z // compatCheck v) {} compatVersions;
 
+  addMinPackages = { base, min, packages }:
+  base // lib.mapAttrs (n: _: base.${n} // { min = min.ghc.${n}; }) packages;
+
   # /Note/: Overrides are not normalized.
-  flakeOutputs = {
+  systemOutputs = {
     system,
     project,
     packages,
@@ -222,27 +225,36 @@ let
     ...
   }@args:
   let
-    mainPackages = outPackagesFor project packages project.ghc;
-    extraChecks = if compat then compatChecks { inherit project packages overrides compatVersions; } args else {};
+    mainPackagesBase = outPackagesFor packages project.ghc;
+    minPackages = haskell (args // { overrrideKeys = ["localMin" "all" compiler "dev"]; } );
+    mainPackages = addMinPackages { base = mainPackagesBase; min = minPackages; inherit packages; };
+    extraChecks = if compat then compatChecks { inherit packages overrides compatVersions; } args else {};
     outputs = defaultOutputs { inherit project mainPackages extraChecks main versionFile; };
   in customizeOutputs (args // { inherit project outputs; });
 
   defaultMain = args: lib.makeOverridable project args;
 
   flakeWith = create: {
-    overrideMain ? p: p,
-    overrides ? {},
+    base,
+    packages,
     deps ? [],
+    overrides ? {},
+    profiling ? true,
+    localPackage ? _: lib.id,
+    overrideMain ? p: p,
     ...
   }@args:
   let
-    os = util.lib.normalizeOverrides overrides deps;
+    fullOverrides = projectOverrides {
+      inherit base packages deps overrides profiling localPackage;
+    };
     f = a: create (a // { project = overrideMain (defaultMain a); });
-  in systems f (args // { overrides = os; }) // { overrides = os; };
+    outputs = systems f (args // { overrides = fullOverrides; });
+  in outputs // { overrides = fullOverrides; };
 
   tests = system: import ./test { pkgs = import inputs.nixpkgs { inherit system; }; };
 
-  systemOutputs = inputs.flake-utils.lib.eachSystem ["x86_64-linux"] (system: {
+  localOutputs = inputs.flake-utils.lib.eachSystem ["x86_64-linux"] (system: {
     apps = {
       test = {
         type = "app";
@@ -251,9 +263,9 @@ let
     };
   });
 
-in systemOutputs // {
-  inherit util haskell tools project systems flakeOutputs;
+in localOutputs // {
+  inherit util projectOverrides haskell tools project systems systemOutputs;
   inherit (util) obeliskOverrides lib;
 
-  flake = flakeWith flakeOutputs;
+  flake = flakeWith systemOutputs;
 }

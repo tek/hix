@@ -19,8 +19,7 @@ let
     local = if isAttrs old then old else { all = old; dev = old; };
     norm = mapAttrs (_: o: if isList o then o else [o]) local;
     depOverrides = map (o: o.overrides) deps;
-  in
-    zipAttrsWith (_: concatLists) (depOverrides ++ [norm]);
+  in { all = []; } // zipAttrsWith (_: concatLists) (depOverrides ++ [norm]);
 
   overridesFor = o: n:
   let c = o.${n} or [];

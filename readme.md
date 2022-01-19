@@ -63,9 +63,11 @@ The effective `outputs` set looks like this:
 
 The function `hix.flake` combines multiple steps:
 
-* `hix.haskell` creates a `nixpkgs` overlay with Cabal overrides for local packages and dependencies.
+* `hix.projectOverrides` creates Haskell package overrides for the local packages and combines them with those from
+  dependencies and the user specified overrides.
+* `hix.haskell` creates a `nixpkgs` overlay from said overrides.
 * `hix.tools` provides helpers for `ghcid`, HLS, `cabal upload`, `ctags` and `hpack`.
-* `hix.flakeOutputs` assembles an `outputs.<system>` set according to flake standards.
+* `hix.systemOutputs` assembles an `outputs.*.<system>` set according to flake standards.
 * `hix.compatChecks` creates several additional copies of the GHC overlay for different versions.
 * `hix.systems` iterates over the target systems (default is `["x86_64-linux"]`).
 
@@ -81,7 +83,6 @@ These functions share some parameters, so they are listed independently.
 |`main`|`packages.<singleton>`|The package used for `defaultPackage`. Defaults only if `packages` has one entry.|
 |`compiler`|`"ghc8107"`|The attribute name of the GHC package set to use for development.|
 |`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
-|`cabal2nixOptions`|`""`|Passed to `callCabal2nix` for local packages.|
 |`profiling`|`true`|Whether to enable library profiling for dependencies.|
 |`nixpkgs`|`inputs.nixpkgs`|`nixpkgs` used for development. `inputs.nixpkgs` refers to `hix`'s flake inputs, which can also be overridden with: `inputs.hix.inputs.nixpkgs.url = github:nixos/nixpkgs`|
 |`nixpkgsFunc`|`import nixpkgs`|Function variant of the previous parameter. The default imports the specified `nixpkgs` argument.|

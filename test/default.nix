@@ -11,21 +11,33 @@
 
   cp -r $hix_dir/test/{root,dep1,dep2} $tmpdir/
   cd $tmpdir
-  cat dep1/flake.nix
   sed -i "s#HIX#$hix_dir#" */flake.nix
   sed -i "s#BASE#$tmpdir#" */flake.nix
-  cat dep1/flake.nix
   cd ./root
   nix flake update
   nix run .#hpack-verbose
-  # nix build
-  # output=$(result/bin/run)
-  # if [[ $output != 'success66' ]]
-  # then
-  #   echo ">>> Test for 'root' failed. Output:"
-  #   echo $output
-  #   success='false'
-  # fi
+
+  # build main package
+  nix build
+  output=$(result/bin/run)
+  if [[ $output != 'success66' ]]
+  then
+    echo ">>> Running the main package failed. Output:"
+    echo $output
+    success='false'
+  fi
+
+  # build minimal derivation of main package
+  nix build .#root.min
+  nix build .#min
+  output=$(result/bin/run)
+  if [[ $output != 'success66' ]]
+  then
+    echo ">>> Running the minimized derivation of the main package failed. Output:"
+    echo $output
+    success='false'
+  fi
+
   version=$(nix eval .#stm-chans-version.${pkgs.system})
   if [[ $version != '"2.0.0"' ]]
   then
