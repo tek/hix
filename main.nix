@@ -96,7 +96,7 @@ let
         "-Wredundant-constraints"
         "-Wunused-type-patterns"
         "-Widentities"
-      ] ++ (if match "ghc81.*" compiler != null then ["-Wunused-packages"] else []);
+      ] ++ (if match "ghc(81|9).*" compiler != null then ["-Wunused-packages"] else []);
     };
     ghci = util.ghci (ghciDefaults // args.ghci or {});
     ghcidDefaults = {
