@@ -15,8 +15,6 @@
     };
     compat = false;
     overrides = { hackage, source, ... }: {
-      dep1 = source.root dep1;
-      dep2 = source.root dep2;
       stm-chans = hackage "2.0.0" "0afxg1wx0jkkajwcz338hm1ql4rzrj9dkdpkcvdaw04jrzaqwmby";
     };
     deps = [dep1 dep2];

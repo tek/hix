@@ -42,10 +42,10 @@ let
     local = import ./deps/local.nix { inherit lib base packages localPackage; };
     localMin = import ./deps/local.nix {
       inherit lib base packages;
-      localPackage = { fast, minimal, ... }: p: fast (minimal p);
+      localPackage = { fast, ... }: p: fast p;
     };
     withDeps = util.lib.normalizeOverrides overrides deps;
-  in withDeps // { local = [local]; localMin = [localMin]; };
+  in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
 
   # Import nixpkgs, adding an overlay that contains `cabal2nix` derivations for local packages and the specified
   # dependency overrides.
