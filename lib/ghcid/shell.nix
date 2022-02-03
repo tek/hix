@@ -60,7 +60,7 @@ in rec {
 
   shellAppCmd = name: { script, test, shellConfig ? {} }:
   withShellConfig shellConfig (c:
-    let cmd = (shellCommand { inherit script test; inherit (c.ghcid) shellConfig; }).script;
+    let cmd = (command.shellCommand { inherit script test; inherit (c.ghcid) shellConfig; }).script;
     in pkgs.writeScript "shell-${name}" "nix develop -c ${cmd}"
   );
 
