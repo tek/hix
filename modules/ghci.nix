@@ -182,7 +182,6 @@ in {
 
     extensions = mkOption {
       type = listOf str;
-      default = extensions;
     };
 
     preprocessor = mkOption {
@@ -206,6 +205,8 @@ in {
   };
 
   config.ghci = {
+    inherit extensions;
+
     preprocessor = mkDefault (import ../lib/preprocessor.nix {
       pkgs = config.internal.basicPkgs;
       inherit (config.ghci) extensions;
