@@ -10,14 +10,12 @@ let
     project,
     mainPackages,
     extraChecks,
-    main,
-    versionFile ? null,
   }:
   let
     app = program: { type = "app"; inherit program; };
     ghcid = app "${(config.ghcid.test {}).testApp}";
   in {
-    defaultPackage = mainPackages.${main};
+    defaultPackage = mainPackages.${config.main};
     devShell = config.ghcid.shell;
     legacyPackages = {
       inherit project config;
@@ -28,7 +26,7 @@ let
       tags = project.tags.projectTags;
       hpack = project.hpack {};
     };
-    packages = { min = mainPackages.${main}.min; } // mainPackages // extraChecks;
+    packages = { min = mainPackages.${config.main}.min; } // mainPackages // extraChecks;
     checks = mainPackages // extraChecks;
     apps = config.ghcid.apps // {
       inherit ghcid;
@@ -38,9 +36,9 @@ let
       hpack = app "${project.hpack {}}";
       hpack-verbose = app "${project.hpack { verbose = true; }}";
       tags = app "${project.tags.app}";
-      candidates = app "${project.cabal.candidates { name = main; inherit versionFile; }}";
-      release = app "${project.cabal.release { name = main; inherit versionFile; }}";
-      docs = app "${project.cabal.docs { name = main; }}";
+      candidates = app "${project.cabal.candidates { name = config.main; inherit (config) versionFile; }}";
+      release = app "${project.cabal.release { name = config.main; inherit (config) versionFile; }}";
+      docs = app "${project.cabal.docs { name = config.main; }}";
     };
     defaultApp = ghcid;
   };
@@ -68,7 +66,7 @@ let
     mainPackagesBase = outPackagesFor config.packages project.ghc;
     mainPackages = addMinPackages { base = mainPackagesBase; min = config.minDevGhc; inherit (config) packages; };
     extraChecks = if config.compat.enable then compatChecks else {};
-    outputs = defaultOutputs { inherit (config) main; inherit project mainPackages extraChecks; };
+    outputs = defaultOutputs { inherit project mainPackages extraChecks; };
   in customizeOutputs outputs;
 
 in {

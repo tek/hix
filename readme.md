@@ -503,7 +503,7 @@ nix run .#release
 nix run .#docs
 ```
 
-If the arg `versionFile` is given, the script will substitute the `version:` line in that `hpack` file after asking for
+If the option `versionFile` is set, the script will substitute the `version:` line in that `hpack` file after asking for
 the next version.
 
 [options]: https://tryp.io/hix/index.html

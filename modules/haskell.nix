@@ -182,6 +182,18 @@ in {
       description = "Flake inputs containing hix projects whose overrides are merged into this project's.";
     };
 
+    versionFile = mkOption {
+      type = nullOr str;
+      default = null;
+      description = ''
+      The relative path to a file containing the hpack <literal>version</literal> attribute that should be replaced when
+      releasing a new version.
+      If it is <literal>null</literal>, every individual hpack file will be modified.
+      This is intended for the case in which the version is shared among multiple packages, for example by using hpack's
+      <literal>defaults</literal>.
+      '';
+    };
+
     devGhc = mkOption {
       type = submodule ghcModule;
       description = ''
