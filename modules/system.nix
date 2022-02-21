@@ -48,7 +48,7 @@ let
   in attrsets.recursiveUpdate customized (config.output.amend defaultMain customized);
 
   outPackagesFor = packages: ghc:
-  lib.genAttrs (attrNames packages) (n: ghc.${n} // { inherit ghc; });
+  lib.genAttrs packages (n: ghc.${n} // { inherit ghc; });
 
   compatChecks =
   let
@@ -63,7 +63,7 @@ let
   systemOutputs =
   let
     project = config.output.overrideMain defaultMain;
-    mainPackagesBase = outPackagesFor config.packages project.ghc;
+    mainPackagesBase = outPackagesFor (attrNames config.packages ++ config.output.extraPackages) project.ghc;
     mainPackages = addMinPackages { base = mainPackagesBase; min = config.minDevGhc; inherit (config) packages; };
     extraChecks = if config.compat.enable then compatChecks else {};
     outputs = defaultOutputs { inherit project mainPackages extraChecks; };
