@@ -53,7 +53,7 @@ let
   compatChecks =
   let
     prefixed = prf: lib.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
-    compatCheck = ver: conf: prefixed conf.prefix (outPackagesFor config.packages conf.ghc.ghc);
+    compatCheck = ver: conf: prefixed conf.prefix (outPackagesFor (attrNames config.packages) conf.ghc.ghc);
   in
     foldl (z: v: z // v) {} (mapAttrsToList compatCheck config.compat.projects);
 
