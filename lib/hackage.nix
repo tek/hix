@@ -27,7 +27,6 @@ let
     if cfg.confirm then confirm type else "";
 
   confirmVersion = type: ''
-    version=''${new_version:-$current}
     print ">>> Version of the uploaded package is $version."
     ${confirmIfEnabled type}
   '';
@@ -49,6 +48,9 @@ let
       print ">>> Current version: $current"
       print -n ">>> Please enter new version (empty to keep): "
       read new_version
+      version=''${new_version:-$current}
+    else
+      version=$new_version
     fi
   '';
 
@@ -59,7 +61,6 @@ let
     git add packages/*/*.cabal
   '';
 
-  # TODO don't run hpack if it's not configured
   checkVersion = file: type: ''
     : ''${new_version:=}
     ${if cfg.askVersion then bumpVersion file else ""}
@@ -76,18 +77,24 @@ let
   if file != null then checkVersion file else noVersion;
 
   tagFragment = ''
-    if [[ -n $version ]]
+    if [[ -n ''${version:-} ]]
     then
       git tag -m "Release $version" "v$version"
     fi
   '';
 
   commitFragment = ''
-    git commit --allow-empty -m "v$version"
+    if [[ -n ''${version:-} ]]
+    then
+      git commit --allow-empty -m "v$version"
+    fi
   '';
 
   commitPackageFragment = name: ''
-    git commit --allow-empty -m "${name} v$version"
+    if [[ -n ''${version:-} ]]
+    then
+      git commit --allow-empty -m "${name} v$version"
+    fi
   '';
 
   command = doc: tarball: publish: target:
@@ -166,6 +173,7 @@ let
 
   uploadAll = source: publish:
   mkScript "cabal-upload-all" (unlines (
+    ["version=\${1:-}"] ++
     optionals source (sourceCommands publish) ++
     docCommands publish ++
     optional (source && publish && cfg.commit) commitFragment ++
@@ -178,8 +186,9 @@ let
     type = if publish then "release" else "candidate";
   in mkScript "cabal-upload-${pkg}" ''
   new_version=''${1:-}
+  version=''${1:-}
   ${handleVersion file type}
-  nix run .#upload-${if publish then "release" else "candidate"}-${pkg}
+  nix run .#upload-${if publish then "release" else "candidate"}-${pkg} $version
   '';
 
   uploadPackage = source: publish: name:
