@@ -27,7 +27,7 @@ let
     if cfg.confirm then confirm type else "";
 
   confirmVersion = type: ''
-    print ">>> Version of the uploaded package is $version."
+    print ">>> Version of the uploaded packages is $version."
     ${confirmIfEnabled type}
   '';
 
@@ -49,8 +49,6 @@ let
       print -n ">>> Please enter new version (empty to keep): "
       read new_version
       version=''${new_version:-$current}
-    else
-      version=$new_version
     fi
   '';
 
@@ -63,6 +61,7 @@ let
 
   checkVersion = file: type: ''
     : ''${new_version:=}
+    version="$new_version"
     ${if cfg.askVersion then bumpVersion file else ""}
     ${if cfg.confirm then confirmVersion type else ""}
     if [[ -n $new_version ]]
@@ -150,13 +149,15 @@ let
     type = if publish then "releases" else "candidates";
   in mkScript "cabal-upload-init" ''
     ${if publish && cfg.check then "nix -L flake check" else ""}
+    new_version=""
     ${readArgs}
+    version=$new_version
     if [[ -z ''${pkg:-} ]]
     then
       ${handleVersion file type}
-      nix run .#upload-${if publish then "release" else "candidates"}
+      nix run .#upload-${if publish then "release" else "candidates"} $new_version
     else
-      nix run .#bump-${if publish then "release" else "candidate"}-''${pkg} $new_version
+      nix run .#bump-${if publish then "release" else "candidate"}-''${pkg}
     fi
     '';
 
@@ -193,6 +194,7 @@ let
 
   uploadPackage = source: publish: name:
   mkScript "cabal-upload-package" (unlines (
+    ["version=\${1:-}"] ++
     optional source (sourceCommand publish name) ++
     [(docCommand publish name)] ++
     optional (source && publish && cfg.commit) (commitPackageFragment name)
