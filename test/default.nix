@@ -2,8 +2,10 @@
 let
   modules = import ./modules/test.nix { inherit pkgs; };
   ghcid = import ./ghcid/test.nix { inherit pkgs; };
+  hackage = import ./hackage/test.nix { inherit pkgs; };
 in {
   main = pkgs.writeScript "hix-tests" ''
+  #!${pkgs.bash}/bin/bash
   set -e
   hix_dir=$PWD
   tmpdir=/tmp/hix-test-temp
@@ -34,6 +36,9 @@ in {
 
   prepare 'ghcid'
   ${if false then "" else ghcid.test}
+
+  prepare 'hackage'
+  ${if false then "" else hackage.test}
 
   echo '>>> All tests succeeded.'
   '';

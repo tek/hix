@@ -46,6 +46,9 @@ let
     newModules = lib.evalModules { modules = current ++ [(parents current)]; };
   in f newModules.config;
 
+  foldMapAttrs = f: xs:
+  foldl' (z: a: z // a) {} (map f xs);
+
 in {
   inherit
   packageSubpath
@@ -55,5 +58,7 @@ in {
   packagePath
   asFunction
   unlines
-  withModules;
+  withModules
+  foldMapAttrs
+  ;
 }

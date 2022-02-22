@@ -503,8 +503,17 @@ nix run .#release
 nix run .#docs
 ```
 
-If the option `versionFile` is set, the script will substitute the `version:` line in that `hpack` file after asking for
-the next version.
+If the option `versionFile` is set, the script will substitute the `version:` line in that `hpack` or `.cabal` file
+after asking for the next version.
+
+The command line option `--version`/`-v` maybe be used to specify the version directly.
+Furthermore, if one positional argument is given, only the package of that name will be uploaded.
+
+For example, to publish `spaceship-api` at version `2.5.0.1`:
+
+```
+nix run .#release -- spaceship-api -v 2.5.0.1
+```
 
 [options]: https://tryp.io/hix/index.html
 [flake]: https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html

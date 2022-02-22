@@ -46,11 +46,14 @@ let
 
   overrides =
   let
-    local = import ../deps/local.nix { inherit lib; inherit (config) base packages localPackage; };
+    local = import ../deps/local.nix {
+      inherit lib;
+      inherit (config) base packages localPackage;
+    };
     localMin = import ../deps/local.nix {
       inherit lib;
       inherit (config) base packages;
-      localPackage = { fast, ... }: p: fast p;
+      localPackage = { fast, ... }: p: fast (config.localPackage p);
     };
     withDeps = normalizeOverrides config.overrides config.deps;
   in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
@@ -154,16 +157,6 @@ in {
         '';
       };
 
-      versions = mkOption {
-        type = listOf str;
-        default = ["902" "8107" "884"];
-        description = ''
-          The set of GHC versions for which additional checks should be generated, numbers corresponding to the suffix
-          of the package set, as in <literal>pkgs.haskell.packages.ghc902</literal>.
-          If only this option is set, the <literal>compat.projects</literal> option will be generated from it.
-        '';
-      };
-
       projects = mkOption {
         type = attrsOf (submodule compatProject);
         description = ''
@@ -180,18 +173,6 @@ in {
       # type = listOf path;
       default = [];
       description = "Flake inputs containing hix projects whose overrides are merged into this project's.";
-    };
-
-    versionFile = mkOption {
-      type = nullOr str;
-      default = null;
-      description = ''
-      The relative path to a file containing the hpack <literal>version</literal> attribute that should be replaced when
-      releasing a new version.
-      If it is <literal>null</literal>, every individual hpack file will be modified.
-      This is intended for the case in which the version is shared among multiple packages, for example by using hpack's
-      <literal>defaults</literal>.
-      '';
     };
 
     devGhc = mkOption {
@@ -242,9 +223,9 @@ in {
 
     devGhc = mkDefault {};
 
-    minDevGhc = mkDefault {
+    minDevGhc = mkDefault (config.devGhc // {
       overrideKeys = ["localMin" "all" config.minDevGhc.compiler "dev"];
-    };
+    });
 
     compat.projects = mkDefault compatProjects;
 

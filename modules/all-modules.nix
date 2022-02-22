@@ -31,6 +31,7 @@ in
     ./output.nix
     ./ghci.nix
     ./ghcid.nix
+    ./hackage.nix
     inputsConfig
     helpers
   ]

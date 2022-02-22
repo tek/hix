@@ -5,7 +5,6 @@ let
 
   defaultMain = makeOverridable tools config.devGhc;
 
-  # /Note/: Overrides are not normalized.
   defaultOutputs = {
     project,
     mainPackages,
@@ -28,17 +27,12 @@ let
     };
     packages = { min = mainPackages.${config.main}.min; } // mainPackages // extraChecks;
     checks = mainPackages // extraChecks;
-    apps = config.ghcid.apps // {
+    apps = config.ghcid.apps // config.hackage.output.apps // {
       inherit ghcid;
-      # TODO deprecate
-      ghcid-test = ghcid;
       hls = app "${config.ghcid.hlsApp}";
       hpack = app "${project.hpack {}}";
       hpack-verbose = app "${project.hpack { verbose = true; }}";
       tags = app "${project.tags.app}";
-      candidates = app "${project.cabal.candidates { name = config.main; inherit (config) versionFile; }}";
-      release = app "${project.cabal.release { name = config.main; inherit (config) versionFile; }}";
-      docs = app "${project.cabal.docs { name = config.main; }}";
     };
     defaultApp = ghcid;
   };
@@ -57,14 +51,28 @@ let
   in
     foldl (z: v: z // v) {} (mapAttrsToList compatCheck config.compat.projects);
 
-  addMinPackages = { base, min, packages }:
-  base // lib.mapAttrs (n: _: base.${n} // { min = min.ghc.${n}; }) packages;
+  releaseDrv = pkgs: drv:
+  let
+    hsLib = pkgs.haskell.lib;
+  in
+    import ../lib/release-derivation.nix { inherit lib hsLib; } drv;
+
+  extraDrvs = { pkgs, base, min, packages }:
+  let
+    extra = n: _: base.${n} // { min = min.ghc.${n}; release = releaseDrv pkgs base.${n}; };
+  in
+    base // lib.mapAttrs extra packages;
 
   systemOutputs =
   let
     project = config.output.overrideMain defaultMain;
     mainPackagesBase = outPackagesFor (attrNames config.packages ++ config.output.extraPackages) project.ghc;
-    mainPackages = addMinPackages { base = mainPackagesBase; min = config.minDevGhc; inherit (config) packages; };
+    mainPackages = extraDrvs {
+      base = mainPackagesBase;
+      min = config.minDevGhc;
+      inherit (config) packages;
+      inherit (project) pkgs;
+    };
     extraChecks = if config.compat.enable then compatChecks else {};
     outputs = defaultOutputs { inherit project mainPackages extraChecks; };
   in customizeOutputs outputs;

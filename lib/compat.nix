@@ -21,6 +21,7 @@ let
   pipe args [
     (deprecatedPath true ["ghci" "extraArgs"] "ghci.args")
     (deprecatedPath true ["compiler"] "devGhc.compiler")
+    (deprecatedPath true ["versionFile"] "hackage.versionFile")
     (actIf isBool ["compat"] (deprecated false "compat" "compat.enable"))
     (actIf isFunction ["ghcid" "commands"] (throw "The option 'ghcid.commands' must be a module."))
     normalizeCompat
