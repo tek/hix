@@ -6,8 +6,6 @@ haskell:
 with builtins;
 with lib;
 let
-  cabal = import ../lib/cabal.nix { pkgs = config.internal.basicPkgs; };
-
   tags = import ../lib/tags.nix {
     inherit (config.inputs) thax;
     packages = config.internal.relativePackages;
@@ -22,6 +20,6 @@ let
   };
 in
   haskell // {
-    inherit cabal tags;
+    inherit tags;
     hpack = { verbose ? false }: hpack verbose;
   }

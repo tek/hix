@@ -12,6 +12,8 @@ let
 
   allTargets = if cfg.packages == null then attrNames config.packages else cfg.packages;
 
+  allCabals = concatMapStringsSep " " (n: "${config.internal.relativePackages.${n}}/${n}.cabal") allTargets;
+
   mapLines = concatMapStringsSep "\n";
 
   confirm = type: ''
@@ -58,7 +60,7 @@ let
 
   addFiles = file: ''
     ${git} add ${file}
-    ${git} add **/*.cabal
+    ${git} add ${allCabals}
   '';
 
   checkVersion = file: type: ''
