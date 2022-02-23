@@ -45,6 +45,12 @@
       fail "Wrong version commit message for release-all:\n$output"
     fi
 
+    output=$(git tag -l --points-at=HEAD)
+    if [[ $output != "v$version" ]]
+    then
+      fail "No tag with message "v$version" points at HEAD for release-all:\n$output"
+    fi
+
     git reset --quiet --hard @^
 
     output=$(run .#candidates)
