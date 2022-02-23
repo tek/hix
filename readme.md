@@ -9,12 +9,17 @@ There is a dedicated page for the documentation of the library's [options].
 
 The main service provided by *hix* is the construction of a set of [flake] outputs with useful functionality for
 Haskell development.
+A flake is an organizational unit for *nix* projects that usually corresponds to a repository.
+It is configured in the file `flake.nix`, residing at the project's root directory, by defining a set of inputs
+(dependencies that can be flakes or arbitrary source trees) and outputs (derivations, shells, overlays etc.).
+
 The library's main entry point, `hix.lib.flake`, should be evaluated in the flake's `outputs` function.
 Assuming the simplest possible project setup consisting of a single Cabal library named `spaceship` with the file
 `spaceship.cabal` in the project's root directory, the only necessary arguments are the project's root directory as
 `base`; and a mapping from Cabal package names to directories as `packages`:
 
 ```nix
+# flake.nix
 {
   description = "Spaceship";
   inputs.hix.url = github:tek/hix;
@@ -88,9 +93,9 @@ While there is a dedicated [options page](options) that lists all of them, here 
 |`base`||Path to the project root, should be specified as `./.`.|
 |`packages`||Local Cabal [packages](#packages).|
 |`main`|`packages.<singleton>`|The package used for `defaultPackage`. Defaults only if `packages` has one entry.|
-|`devGhc.compiler`|`"ghc8107"`|The attribute name of the GHC package set to use for development.|
+|`devGhc.compiler`|`"ghc902"`|The attribute name of the GHC package set to use for development.|
 |`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
-|`compat.versions`|`["902" "8107" "884"]`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
+|`compat.versions`|`["921 "902" "8107" "884"]`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
 
 While these options can be passed to `hix.lib.flake` as regular function arguments, the function actually treats its
 argument as a NixOS module.

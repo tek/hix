@@ -93,7 +93,7 @@ in {
 
     mainCompiler = mkOption {
       type = str;
-      default = "ghc8107";
+      default = "ghc902";
       description = ''
         The GHC version used for internal tasks and as default for the dev package set.
       '';
