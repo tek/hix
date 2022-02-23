@@ -9,8 +9,8 @@
     packages.root = ./.;
     compat.enable = false;
     hackage = {
-      commit = false;
-      tag = false;
+      commit = true;
+      tag = true;
       uploadCommand = args: "echo '${builtins.toJSON args}'";
       askVersion = false;
       confirm = false;

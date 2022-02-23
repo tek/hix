@@ -56,7 +56,7 @@ let
 
   addFiles = file: ''
     git add ${file}
-    git add packages/*/*.cabal
+    git add **/*.cabal
   '';
 
   checkVersion = file: type: ''
@@ -157,7 +157,7 @@ let
       ${handleVersion file type}
       nix run .#upload-${if publish then "release" else "candidates"} $new_version
     else
-      nix run .#bump-${if publish then "release" else "candidate"}-''${pkg}
+      nix run .#bump-${if publish then "release" else "candidate"}-''${pkg} $new_version
     fi
     '';
 

@@ -3,6 +3,9 @@
   test = ''
     cd ./root
     nix flake update
+    git init --quiet
+    git add .
+    git commit -m "init" --quiet
 
     doc_target() {
       local v=''${2:-0.1.0.0}
@@ -30,13 +33,19 @@
     version_target="$(src_target true $version)
     $(doc_target true $version)"
 
-    output=$(run .#release -- -v $version)
+    output=$(run .#release -- -v $version | head -n2)
     if [[ $output != $version_target ]]
     then
       fail "Wrong output for release-all-version commands:\n$output"
     fi
 
-    sed -i 's#^version:.*#version: 0.1.0.0#' root.cabal
+    output=$(git show --format=format:%s --no-patch)
+    if [[ $output != "v$version" ]]
+    then
+      fail "Wrong version commit message for release-all:\n$output"
+    fi
+
+    git reset --quiet --hard @^
 
     output=$(run .#candidates)
     if [[ $output != $candidates_target ]]
@@ -44,13 +53,19 @@
       fail "Wrong output for candidates-all commands:\n$output"
     fi
 
-    output=$(run .#release -- root -v $version)
+    output=$(run .#release -- root -v $version | head -n2)
     if [[ $output != $version_target ]]
     then
       fail "Wrong output for release-one commands:\n$output"
     fi
 
-    sed -i 's#^version:.*#version: 0.1.0.0#' root.cabal
+    output=$(git show --format=format:%s --no-patch)
+    if [[ $output != "root v$version" ]]
+    then
+      fail "Wrong version commit message for release-one:\n$output"
+    fi
+
+    git reset --quiet --hard @^
 
     output=$(run .#docs)
     if [[ $output != $(doc_target true) ]]
