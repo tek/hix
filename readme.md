@@ -249,6 +249,7 @@ All of these are in the attribute set passed to an override function.
 |`configure`|Add a Cabal configure flag.|
 |`configures`|Add multiple Cabal configure flags. |
 |`override`|Pass a function to `overrideCabal`.|
+|`notest`|Disable tests.|
 |`minimal`|Disable Haddock, benchmarks and tests, and unbreak.|
 |`fast`|Disable Haddock and profiling.|
 |`profiling`|Force profiling.|

@@ -33,6 +33,7 @@ let
     profiling = transform_ modifiers.profiling;
     unbreak = transform_ modifiers.unbreak;
     fast = transform_ modifiers.fast;
+    notest = transform_ modifiers.notest;
   };
 
   hackage = ver: sha256: spec.create ({ self, pkg, ... }: {

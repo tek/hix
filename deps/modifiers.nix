@@ -12,13 +12,15 @@ let
 
   globalProfiling = if profiling then yesProfiling else noProfiling;
 
+  notest = hl.dontCheck;
+
   hackageDrv = p:
-  hl.dontBenchmark (hl.dontCheck (unbreak p));
+  hl.dontBenchmark (notest (unbreak p));
 
   minimalDrv = p:
   hl.dontHaddock (hackageDrv p);
 in {
-  inherit unbreak globalProfiling noProfiling minimalDrv hackageDrv;
+  inherit unbreak globalProfiling noProfiling minimalDrv hackageDrv notest;
 
   profiling = yesProfiling;
 
