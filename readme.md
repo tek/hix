@@ -354,12 +354,13 @@ Additionally, `ghcid` may be run with the proper configuration so that it watche
 |---|---|---|
 |`ghci.args`|`["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`|Passed directly to `ghci`.|
 |`ghci.options_ghc`|`null`|If non-null, passed to `ghci` as `-optF`.|
-|`ghci.prelude`|`true`|Whether to work around some issues with custom `Prelude`s.|
-|`ghcid.commands`|`_: {}`|A function taking `pkgs` and `ghc`, producing an attrset of attrsets. Each of those sets configure a [command](#commands).|
-|`ghcid.shellConfig`|`_: {}`|Extra configuration for all `ghcid` apps, like extra search paths.|
-|`ghcid.testConfig`|`_: _: {}`|Extra configuration for the test command.|
+|`ghci.preludePackage`|`null`|Cabal package containing the custom `Prelude`.|
+|`ghci.preludeModule`|`null`|Module containing the custom `Prelude`.|
+|`ghcid.commands`|`{}`|An attrset of submodules, each configuring a [command](#commands).|
+|`ghcid.shellConfig`|`{}`|Extra configuration for all `ghcid` apps, like extra search paths.|
+|`ghcid.testConfig`|`_: {}`|Extra configuration for the test command.|
 
-## Commands
+### Commands
 
 The `ghcid.commands` attrset is translated into flake apps that run a haskell function in `ghcid`:
 
@@ -389,17 +390,17 @@ An entry in that set has the following protocol:
 
 |Attribute|Description|
 |---|---|
-|`script`|GHCi commands to load before running the test|
+|`script`|GHCi commands to execute before running the test|
 |`test`|Expression that should be evaluated|
-|`config.env`|Environment variables passed to `mkDerivation`|
-|`config.haskellPackages`|Haskell packages to add to the environment|
-|`config.buildInputs`|System packages to add to the environment|
-|`config.search`|Additional GHCi search paths|
-|`config.restarts`|Additional paths that trigger a `ghcid` restart|
-|`config.preCommand`|Shell command that should be executed before GHCi (on every reload)|
-|`config.preStartCommand`|Shell command that should be executed before `ghcid` (once)|
-|`config.exitCommand`|Shell command that should be executed after `ghcid` exits|
-|`config.vm`|Configuration for a `qemu` VM that is started before and stopped after the command runs|
+|`shellConfig.env`|Environment variables passed to `mkDerivation`|
+|`shellConfig.haskellPackages`|Haskell packages to add to the environment|
+|`shellConfig.buildInputs`|System packages to add to the environment|
+|`shellConfig.search`|Additional GHCi search paths|
+|`shellConfig.restarts`|Additional paths that trigger a `ghcid` restart|
+|`shellConfig.preCommand`|Shell command that should be executed before GHCi (on every reload)|
+|`shellConfig.preStartCommand`|Shell command that should be executed before `ghcid` (once)|
+|`shellConfig.exitCommand`|Shell command that should be executed after `ghcid` exits|
+|`shellConfig.vm`|Configuration for a `qemu` VM that is started before and stopped after the command runs|
 
 The values in the global parameter `shellConfig` are prepended to all values in `config`.
 
@@ -479,6 +480,66 @@ More configuration options are listed in the [options] documentation.
 
 The option `vm.postgres.enable` adds a PostgreSQL server to the VM, with some additional configuration options in the
 same module.
+
+### Custom Preludes
+
+**TL;DR**: Set `ghci.preludeModule = "Relude";` if you're using a nonstandard `Prelude`, or
+`ghci.preludePackage = "somedep";` if that module is also named `Prelude`.
+
+Various workarounds are necessary to replicate Cabal's environment in `ghcid`, since it does not read `.cabal` files.
+It is especially complicated to accommodate the case of a custom `Prelude`, in particular when it is defined in an
+external dependency.
+
+As an example, when using [relude], the `hpack` file usually looks like this:
+
+```yaml
+dependencies:
+  - name: base
+    version: '>= 4 && < 5'
+    mixin:
+      - hiding (Prelude)
+  - name: relude
+    mixin:
+      - (Relude as Prelude)
+      - hiding (Relude)
+```
+
+Since `ghcid` has no knowledge of these mixins, `ghci` will simply `import Prelude` and catch the only module by that
+name on the package path, which is the one from `base`.
+
+To interfere with the `Prelude` loading mechanism, `ghci` is first executed with `-XNoImplicitPrelude`, to avoid the
+automatic import that happens before anything else is executed.
+
+In the `ghci` script that also contains the test command setup, `Prelude` has to be loaded, imported and made implicit
+again:
+
+```
+:load Prelude
+import Prelude
+:set -XImplicitPrelude
+```
+
+The goal is now to make `ghci` see only the correct `Prelude` at this point, and ensure this for different kinds of setups.
+
+For this purpose, there are two configuration options: `ghci.preludePackage` and `ghci.preludeModule`.
+
+When either of them is set, the `Prelude` machinery will be altered to import the specified module (or `Prelude` if
+`null`) is imported from the specified package (or the local project if `null`).
+This is achieved by writing a temporary file to the store, containing a reexport:
+
+```haskell
+module Prelude (module Relude) where
+import "relude" Relude
+```
+
+The package import is used to disambiguate the case in which multiple dependencies have the target module.
+In this case, this is unnecessary, but if the package defines the actual module `Prelude`, `ghci` would still fail
+without the package name.
+
+Now this file's directory, which is in the *nix* store, is specified as a search path option to `ghci`, as in
+`-i/nix/store/xxxx-prelude-reexport/`.
+This causes the directory to be treated as part of the local project, allowing the commands `:load Prelude` and `import
+Prelude` to be executed unambiguously!
 
 ## Haskell Language Server
 

@@ -4,6 +4,8 @@ with lib;
 let
   pkgs = config.internal.basicPkgs;
 
+  git = "${pkgs.git}/bin/git";
+
   cfg = config.hackage;
 
   app = program: { type = "app"; inherit program; };
@@ -55,8 +57,8 @@ let
   isHpack = file: match ".*\.yaml" file != null;
 
   addFiles = file: ''
-    git add ${file}
-    git add **/*.cabal
+    ${git} add ${file}
+    ${git} add **/*.cabal
   '';
 
   checkVersion = file: type: ''
@@ -78,21 +80,21 @@ let
   tagFragment = ''
     if [[ -n ''${version:-} ]]
     then
-      git tag -m "Release $version" "v$version"
+      ${git} tag -m "Release $version" "v$version"
     fi
   '';
 
   commitFragment = ''
     if [[ -n ''${version:-} ]]
     then
-      git commit --allow-empty -m "v$version"
+      ${git} commit --allow-empty -m "v$version"
     fi
   '';
 
   commitPackageFragment = name: ''
     if [[ -n ''${version:-} ]]
     then
-      git commit --allow-empty -m "${name} v$version"
+      ${git} commit --allow-empty -m "${name} v$version"
     fi
   '';
 

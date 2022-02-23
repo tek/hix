@@ -32,10 +32,10 @@ in {
   mkdir -p $tmpdir
 
   prepare 'modules'
-  ${if true then "" else modules.test}
+  ${if false then "" else modules.test}
 
   prepare 'ghcid'
-  ${if true then "" else ghcid.test}
+  ${if false then "" else ghcid.test}
 
   prepare 'hackage'
   ${if false then "" else hackage.test}

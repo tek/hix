@@ -1,4 +1,4 @@
-{ pkgs, extensions ? [], extraCode ? "" }:
+{ pkgs, extensions ? [], preludePackage ? null, extraCode ? "" }:
 with builtins;
 with pkgs.lib;
 let
@@ -23,7 +23,7 @@ let
 
     ${if length extensions == 0 then "" else append extensionPragma}
     ${append (pragma "options_ghc" "$options_ghc")}
-    ${if stringLength extraCode == 0then "" else append extensionPragma}
+    ${if stringLength extraCode == 0 then "" else append extensionPragma}
     ${append (pragma "line" ''1 "$orig_file"'')}
     cat $in_file >> $out_file
   '';

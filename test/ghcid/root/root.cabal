@@ -12,4 +12,4 @@ library
   hs-source-dirs:
       lib
   build-depends:
-      base ==4.*
+      base ==4.*, incipit-base ==0.1.0.0

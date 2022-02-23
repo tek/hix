@@ -83,15 +83,18 @@ let
     options = {
 
       shellConfig = mkOption {
+        description = "This command's nix shell configuration.";
         type = runConfig;
         default = {};
       };
 
       script = mkOption {
+        description = "GHCi commands to execute before running the test.";
         type = lines;
       };
 
       test = mkOption {
+        description = "The expression that is evaluated repeatedly.";
         type = str;
       };
 
@@ -102,50 +105,61 @@ in {
   options.ghcid = {
 
     shellConfig = mkOption {
+      description = "The shell configuration shared by all commands and shells.";
       type = runConfig;
       default = {};
     };
 
     testConfig = mkOption {
+      description = "The shell configuration shared by all tests.";
       type = functionTo runConfig;
       default = {};
     };
 
     commands = mkOption {
+      description = "The ghcid commands exposed as flake apps.";
       type = attrsOf ghcidCommand;
       default = {};
     };
 
     shells = mkOption {
+      description = "The shells generated for the commands.";
       type = unspecified;
     };
 
     shell = mkOption {
+      description = "The default shell generated for use by the flake output <literal>devShell</literal>.";
       type = unspecified;
     };
 
     apps = mkOption {
+      description = "The flake apps generated for the commands.";
       type = unspecified;
     };
 
     hls = mkOption {
+      description = "The package for HLS.";
       type = package;
     };
 
     hlsApp = mkOption {
+      description = "The flake app generated for HLS.";
       type = unspecified;
     };
 
     run = mkOption {
+      description = "Internal function used to run ghcid tests.";
       type = unspecified;
     };
 
     easy-hls = mkOption {
+      description = "Wether to use easy-hls to obtain HLS.";
       type = bool;
       default = false;
     };
 
     test = mkOption {
+      description = "The generated app that runs a ghcid test.";
       type = functionTo unspecified;
     };
 

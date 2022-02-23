@@ -1,9 +1,7 @@
 module Root.Lib where
 
-import qualified Sub.Lib
-import qualified Dep1
-import qualified Dep2
-
 string :: String
 string =
-  Sub.Lib.string <> show Dep1.a <> show Dep2.a
+  case head [1, 2] of
+    Just (1 :: Int) -> "Prelude works"
+    _ -> "weird"

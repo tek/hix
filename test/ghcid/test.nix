@@ -15,7 +15,8 @@
 import Prelude
 :set -XImplicitPrelude
 :load Root.Lib
-import Root.Lib'
+import Root.Lib
+putStrLn string'
     result=$(nix eval --raw .#ghcid.script)
     if [[ "$result" != "$script" ]]
     then
@@ -25,6 +26,13 @@ import Root.Lib'
     if ! nix eval --raw .#ghcid.mainScript | grep -q 'ensure-vm'
     then
       fail "'ensure-vm' is not called in the 'mainScript'."
+    fi
+
+    output=$(nix run .#ghci-test <<< :quit 2>&1)
+
+    if [[ ! "$output" =~ 'Prelude works' ]]
+    then
+      fail "invalid output of ghci command:\n$output"
     fi
   '';
 }
