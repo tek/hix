@@ -59,8 +59,7 @@ let
   isHpack = file: match ".*\.yaml" file != null;
 
   addFiles = file: ''
-    ${git} add ${file}
-    ${git} add ${allCabals}
+    ${git} add ${if file == null then "" else file} ${allCabals}
   '';
 
   checkVersion = file: type: ''
@@ -152,13 +151,13 @@ let
     file = cfg.versionFile;
     type = if publish then "releases" else "candidates";
   in mkScript "cabal-upload-init" ''
-    ${if publish && cfg.check then "nix -L flake check" else ""}
     new_version=""
     ${readArgs}
     version=$new_version
     if [[ -z ''${pkg:-} ]]
     then
       ${handleVersion file type}
+      ${if publish && cfg.check then "nix -L flake check" else ""}
       nix run .#upload-${if publish then "release" else "candidates"} $new_version
     else
       nix run .#bump-${if publish then "release" else "candidate"}-''${pkg} $new_version
@@ -193,6 +192,7 @@ let
   new_version=''${1:-}
   version=''${1:-}
   ${handleVersion file type}
+  ${if publish && cfg.check then "nix -L flake check" else ""}
   nix run .#upload-${if publish then "release" else "candidate"}-${pkg} $version
   '';
 
