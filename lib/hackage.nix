@@ -157,7 +157,7 @@ let
     if [[ -z ''${pkg:-} ]]
     then
       ${handleVersion file type}
-      ${if publish && cfg.check then "nix -L flake check" else ""}
+      ${if publish && cfg.check then "nix flake check" else ""}
       nix run .#upload-${if publish then "release" else "candidates"} $new_version
     else
       nix run .#bump-${if publish then "release" else "candidate"}-''${pkg} $new_version
