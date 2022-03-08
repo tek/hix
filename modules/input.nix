@@ -25,14 +25,14 @@ in {
 
     inputs = genAttrs repos input;
 
-    ghcNixpkgs = mkOption {
+    input.ghcNixpkgs = mkOption {
       description = "An attrset mapping GHC versions to the nixpkgs inputs used to build them.";
       type = types.unspecified;
     };
   };
 
   config = {
-    ghcNixpkgs = {
+    input.ghcNixpkgs = {
       ghc884 = mkDefault config.inputs.nixpkgs_ghc884;
       ghc8107 = mkDefault config.inputs.nixpkgs_ghc8107;
       ghc902 = mkDefault config.inputs.nixpkgs_ghc902;

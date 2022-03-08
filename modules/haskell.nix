@@ -33,7 +33,7 @@ let
       ghc = {
         compiler = config.version;
         overrideKeys = ["local" "all" "compat" config.ghc.compiler];
-        nixpkgs = global.ghcNixpkgs."${config.ghc.compiler}" or global.inputs.nixpkgs;
+        nixpkgs = global.input.ghcNixpkgs."${config.ghc.compiler}" or global.inputs.nixpkgs;
       };
     };
   };
