@@ -56,7 +56,7 @@ let
       inherit (config) base packages;
       localPackage = { fast, ... }: p: fast (config.localPackage p);
     };
-    withDeps = normalizeOverrides config.overrides config.deps;
+    withDeps = normalizeOverrides config.overrides config.deps config.depsAll;
   in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
 
 in {
@@ -173,7 +173,20 @@ in {
       # TODO this appears to work in tests, verify
       # type = listOf path;
       default = [];
-      description = "Flake inputs containing hix projects whose overrides are merged into this project's.";
+      description = ''
+        Flake inputs containing hix projects whose overrides are merged into this project's.
+        The <literal>all</literal> overrides are ignored to prevent local packages from being injected into the compat
+        checks.
+      '';
+    };
+
+    depsAll = mkOption {
+      type = unspecified;
+      default = [];
+      description = ''
+        Flake inputs containing hix projects whose overrides are merged into this project's.
+        Unlike <literal>deps</literal>, this includes the <literal>all</literal> overrides.
+      '';
     };
 
     devGhc = mkOption {
@@ -203,6 +216,7 @@ in {
 
       basicPkgs = mkOption {
         type = unspecified;
+        readOnly = true;
       };
 
       basicGhc = mkOption {
