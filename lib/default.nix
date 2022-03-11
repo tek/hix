@@ -14,13 +14,13 @@ let
 
   relativePackages = base: mapAttrs (_: packageSubpath base);
 
-  normalizeOverrides = old: deps: depsAll:
+  normalizeOverrides = project: deps: depsFull:
   let
-    local = if isAttrs old then old else { all = old; dev = old; };
+    local = if isAttrs project then project else { all = project; dev = project; };
     norm = mapAttrs (_: o: if isList o then o else [o]) local;
-    depsOverrides = map (o: o.overrides // { all = []; }) deps;
-    depsAllOverrides = map (o: o.overrides) depsAll;
-  in { all = []; } // zipAttrsWith (_: concatLists) (depsOverrides ++ depsAllOverrides ++ [norm]);
+    depsOverrides = map (o: o.overrides // { local = []; }) deps;
+    depsFullOverrides = map (o: o.overrides) depsFull;
+  in { all = []; } // zipAttrsWith (_: concatLists) (depsOverrides ++ depsFullOverrides ++ [norm]);
 
   overridesFor = o: n:
   let c = o.${n} or [];

@@ -320,6 +320,8 @@ Overrides can be inherited from dependency flakes:
 
 The overrides defined in the flakes given in the `deps` argument will be folded into the current project's overrides,
 with local overrides having higher precedence.
+If a dependency's local packages should be included (and built directly from the flake's source), the alternative option
+`depsFull` may be used.
 **Note** that this may lead to unexpected results if the dependencies don't use the same nixpkgs version.
 
 # Tools
