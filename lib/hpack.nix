@@ -34,6 +34,7 @@ in pkgs.writeScript "hpack.zsh" ''
     local name=$1 rel=$2
     dir="$base/$rel"
     pushd $dir
+    ${if verbose then ''echo ">>> $dir"'' else ""}
     if [[ -f package.yaml ]]
     then
       run
