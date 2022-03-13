@@ -17,7 +17,7 @@
     overrides = { hackage, source, ... }: {
       stm-chans = hackage "2.0.0" "0afxg1wx0jkkajwcz338hm1ql4rzrj9dkdpkcvdaw04jrzaqwmby";
     };
-    deps = [dep1 dep2];
+    depsFull = [dep1 dep2];
     output.amend = project: outputs: {
       stm-chans-version =
         with project.pkgs.lib;
