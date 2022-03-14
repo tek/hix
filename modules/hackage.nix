@@ -68,7 +68,7 @@ in {
       type = functionTo str;
       default = file:
       if isNix file
-      then ''sed -n 's/"\(\s*\)"/\1/' ${file}''
+      then ''sed -n 's/"\(.*\)"/\1/p' ${file}''
       else ''sed -n 's/^version:\s*\(\S\+\)/\1/p' ${file}'';
     };
 
