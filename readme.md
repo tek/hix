@@ -326,7 +326,7 @@ If a dependency's local packages should be included (and built directly from the
 
 # Tools
 
-## `hpack`
+## *hpack*
 
 These commands run `hpack` in each directory in `packages` (the first variant suppresses output):
 
@@ -343,6 +343,11 @@ running `hpack`.
 Additionally, a shared directory, for use in `hpack` files with the `<<: !include shared/file.yaml` directive, may be
 configured with the `hpackShared` parameter (defaulting to `shared`).
 If the directory `${hpackDir}/${hpackShared}` exists, it will be linked to the project directory as well.
+
+### *hpack* configuration in *nix*
+
+Instead of conventional `yaml` files, *Hix* allows the configuration to be specified as nix expressions.
+If the option `hpack.packages.${name}` is set, it is converted to an *hpack* file.
 
 ## `devShell` and `ghcid`
 
@@ -493,7 +498,7 @@ Various workarounds are necessary to replicate Cabal's environment in `ghcid`, s
 It is especially complicated to accommodate the case of a custom `Prelude`, in particular when it is defined in an
 external dependency.
 
-As an example, when using [relude], the `hpack` file usually looks like this:
+As an example, when using [relude], the *hpack* file usually looks like this:
 
 ```yaml
 dependencies:
@@ -572,8 +577,12 @@ nix run .#release
 nix run .#docs
 ```
 
-If the option `versionFile` is set, the script will substitute the `version:` line in that `hpack` or `.cabal` file
+If the option `versionFile` is set, the script will substitute the `version:` line in that *hpack* or `.cabal` file
 after asking for the next version.
+In the case of the *hpack* config being specified via the config option `hpack.packages`, this should be a `.nix` file
+containing a string.
+The options `hackage.versionFileExtract` and `hackage.versionFileUpdate` can be customized to allow for arbitrary other
+formats.
 
 The command line option `--version`/`-v` maybe be used to specify the version directly.
 Furthermore, if one positional argument is given, only the package of that name will be uploaded.

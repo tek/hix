@@ -1,6 +1,15 @@
-{ pkgs, ghc, verbose, paths, dir, shared ? "shared", }:
+{ pkgs, ghc, verbose, paths, dir, packages, shared ? "shared", }:
+with builtins;
 let
-  packageCalls = pkgs.lib.mapAttrsToList (n: p: "gen ${n} ${p}") paths;
+
+  packageCall = n: p:
+  if hasAttr n packages
+  then "synthetic ${n} ${p} ${toFile "package.yaml" (toJSON packages.${n})}"
+  else "regular ${n} ${p}";
+
+  packageCalls =
+    pkgs.lib.mapAttrsToList packageCall paths;
+
 in pkgs.writeScript "hpack.zsh" ''
   #!${pkgs.zsh}/bin/zsh
   setopt err_exit no_unset
@@ -29,7 +38,7 @@ in pkgs.writeScript "hpack.zsh" ''
     run
   }
 
-  gen()
+  regular()
   {
     local name=$1 rel=$2
     dir="$base/$rel"
@@ -47,5 +56,19 @@ in pkgs.writeScript "hpack.zsh" ''
     popd
   }
 
-  ${builtins.concatStringsSep "\n" packageCalls}
+  synthetic()
+  {
+    local name=$1 rel=$2 file=$3
+    dir="$base/$rel"
+    pushd $dir
+    ${if verbose then ''echo ">>> $dir"'' else ""}
+    remove="$dir/package.yaml"
+    cp $file package.yaml
+    trap "rm -f $remove" ZERR
+    trap "rm -f $remove" EXIT
+    run
+    popd
+  }
+
+  ${concatStringsSep "\n" packageCalls}
 ''

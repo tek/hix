@@ -43,7 +43,7 @@ let
   bumpVersion = file: ''
     if [[ -z ''${new_version} ]]
     then
-      current=$(sed -n 's/^version:\s*\(\S\+\)/\1/p' ${file})
+      current=$(${cfg.versionFileExtract file})
       if [[ -z $current ]]
       then
         print ">>> ERROR: Could not find current version in ${file}."
@@ -56,7 +56,7 @@ let
     fi
   '';
 
-  isHpack = file: match ".*\.yaml" file != null;
+  needsHpack = file: match ".*\.(yaml|nix)" file != null;
 
   addFiles = file: ''
     ${git} add ${if file == null then "" else file} ${allCabals}
@@ -69,8 +69,8 @@ let
     ${if cfg.confirm then confirmVersion type else ""}
     if [[ -n $new_version ]]
     then
-      sed -i "s/^version:\(\s*\).*/version:\1$new_version/" ${file}
-      ${if isHpack file then "nix run '.#hpack'" else ""}
+      ${cfg.versionFileUpdate file}
+      ${if needsHpack file then "nix run '.#hpack'" else ""}
       ${if cfg.commit && file != null then addFiles file else ""}
     fi
   '';

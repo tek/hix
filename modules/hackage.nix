@@ -1,7 +1,14 @@
 { lib, config, unlines, foldMapAttrs, ... }:
+with builtins;
 with lib;
 let
+
   logic = import ../lib/hackage.nix { inherit lib config unlines foldMapAttrs; };
+
+  isYaml = file: match ".*\.yaml" file != null;
+
+  isNix = file: match ".*\.nix" file != null;
+
 in {
   options.hackage = with types; {
 
@@ -29,8 +36,13 @@ in {
       description = ''
         If multiple packages use the same file for the version (like when using shared hpack files) this option may
         point to that file.
-        If <literal>releaseAll</literal> is <literal>true</literal> and this option is <literal>null</literal>, the
-        version will not be modified by the release app.
+        If <literal>hackage.allPackages</literal> is <literal>true</literal> and this option is <literal>null</literal>,
+        the version will not be modified by the release app.
+        If the project uses the feature for hpack config synthesis from nix expressions, the version must be defined in
+        a nix file. In that case, the simplest mechanism would be to use a separate file that only contains a string and
+        is integrated into the config with <literal>version = import ./version.nix;</literal>. The default version
+        handlers make this assumption; if a different method is used, the options
+        <literal>hackage.versionFileExtract</literal> and <literal>hackage.versionFileUpdate</literal> must be adapted.
       '';
       type = nullOr str;
       default = null;
@@ -39,11 +51,40 @@ in {
     versionFiles = mkOption {
       description = ''
         Per-package version file paths.
-        If <literal>releaseAll</literal> is <literal>true</literal> and the specified package is not present in this
-        set, the version will not be modified by the release app.
+        If <literal>hackage.allPackages</literal> is <literal>true</literal> and the specified package is not present in
+        this set, the version will not be modified by the release app.
+        See <literal>hackage.versionFile</literal> for more information.
       '';
       type = attrsOf str;
       default = {};
+    };
+
+    versionFileExtract = mkOption {
+      description = ''
+      A function that returns a shell script fragment that extracts the current version from a version file.
+      The default assumes hpack/cabal format, like <literal>version: 5</literal>, unless the file has the extension
+      <literal>.nix</literal>, in which case it is assumed the file only contains a string.
+      '';
+      type = functionTo str;
+      default = file:
+      if isNix file
+      then ''sed -n 's/"\(\s*\)"/\1/' ${file}''
+      else ''sed -n 's/^version:\s*\(\S\+\)/\1/p' ${file}'';
+    };
+
+    versionFileUpdate = mkOption {
+      description = ''
+      A function that returns a shell script fragment that updates the current version in a version file.
+      The new version is stored in the environment variable <literal>$new_version</literal> in the surrounding shell
+      script.
+      The default assumes hpack/cabal format, like <literal>version: 5</literal>, unless the file has the extension
+      <literal>.nix</literal>, in which case it is assumed the file only contains a string.
+      '';
+      type = functionTo str;
+      default = file:
+      if isNix file
+      then ''sed -i "s/\".*\"/\"$new_version\"/" ${file}''
+      else ''sed -i "s/^version:\(\s*\).*/version:\1$new_version/" ${file}'';
     };
 
     check = mkOption {

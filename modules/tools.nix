@@ -19,6 +19,11 @@ in {
         default = "shared";
       };
 
+      packages = mkOption {
+        type = attrsOf unspecified;
+        default = {};
+      };
+
     };
   };
 

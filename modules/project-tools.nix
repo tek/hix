@@ -13,7 +13,7 @@ let
   };
   hpack = verbose: import ../lib/hpack.nix {
     inherit verbose;
-    inherit (config.hpack) dir shared;
+    inherit (config.hpack) dir shared packages;
     inherit (haskell) pkgs;
     ghc = config.internal.basicGhc;
     paths = config.internal.relativePackages;

@@ -2,6 +2,7 @@
 let
   modules = import ./modules/test.nix { inherit pkgs; };
   ghcid = import ./ghcid/test.nix { inherit pkgs; };
+  hpack = import ./hpack/test.nix { inherit pkgs; };
   hackage = import ./hackage/test.nix { inherit pkgs; };
 in {
   main = pkgs.writeScript "hix-tests" ''
@@ -36,6 +37,9 @@ in {
 
   prepare 'ghcid'
   ${if false then "" else ghcid.test}
+
+  prepare 'hpack'
+  ${if false then "" else hpack.test}
 
   prepare 'hackage'
   ${if false then "" else hackage.test}
