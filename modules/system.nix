@@ -14,8 +14,7 @@ let
     app = program: { type = "app"; inherit program; };
     ghcid = app "${(config.ghcid.test {}).testApp}";
   in {
-    defaultPackage = mainPackages.${config.main};
-    devShell = config.ghcid.shell;
+    devShells.default = config.ghcid.shell;
     legacyPackages = {
       inherit project config;
       inherit (project) pkgs ghc cabal;
@@ -25,7 +24,10 @@ let
       tags = project.tags.projectTags;
       hpack = project.hpack {};
     };
-    packages = { min = mainPackages.${config.main}.min; } // mainPackages // extraChecks;
+    packages = {
+      min = mainPackages.${config.main}.min;
+      default = mainPackages.${config.main};
+    } // mainPackages // extraChecks;
     checks = mainPackages // extraChecks;
     apps = config.ghcid.apps // config.hackage.output.apps // {
       inherit ghcid;
