@@ -64,7 +64,11 @@ in pkgs.writeScript "hpack.zsh" ''
     ${if verbose then ''echo ">>> $dir"'' else ""}
     remove="$dir/package.yaml"
     cp $file package.yaml
-    trap "rm -f $remove" ZERR
+    error() {
+      ${if verbose then "cat $file" else ""}
+      rm -f $remove
+    }
+    trap error ZERR
     trap "rm -f $remove" EXIT
     run
     popd
