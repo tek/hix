@@ -3,7 +3,7 @@
   compiler,
   profiling ? true,
   overrides ? {},
-  overrideKeys ? ["all" compiler "dev"],
+  overrideKeys ? ["local" "all" compiler "dev"],
 }:
 let
   deps = import ../deps/default.nix { inherit lib profiling; };
