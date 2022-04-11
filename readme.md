@@ -489,6 +489,9 @@ More configuration options are listed in the [options] documentation.
 The option `vm.postgres.enable` adds a PostgreSQL server to the VM, with some additional configuration options in the
 same module.
 
+**Note**: If a virtual machine misbehaves, first try to delete the image at `/tmp/hix-vm` to make sure it's not an
+effect of a nixpkgs update.
+
 ### Custom Preludes
 
 **TL;DR**: Set `ghci.preludeModule = "Relude";` if you're using a nonstandard `Prelude`, or

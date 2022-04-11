@@ -17,7 +17,7 @@ let
       enable = true;
       permitRootLogin = "yes";
     };
-    users.mutableUsers = false;
+    users.mutableUsers = true;
     users.users.root.password = "";
     networking.firewall.enable = false;
   };
@@ -135,6 +135,15 @@ in {
       description = "The path to the image file.";
     };
 
+    headless = mkOption {
+      type = bool;
+      default = true;
+      description = ''
+      VMs are run without a graphical connection to their console.
+      For debugging purposes, this option can be disabled to show the window.
+      '';
+    };
+
     vm = mkOption {
       type = unspecified;
       description = "The final derivation for the VM.";
@@ -147,7 +156,12 @@ in {
 
     ports = if config.postgres.enable then [{ host.port = config.port; guest.port = 5432; }] else [];
 
-    conf = basicVmNixosConf config // (if config.postgres.enable then postgresNixosConf config else {});
+    conf =
+      let
+        basic = basicVmNixosConf config;
+        pg = if config.postgres.enable then postgresNixosConf config else {};
+      in
+      lib.recursiveUpdate basic pg;
 
     pidfile = mkDefault "${config.dir}/vm.pid";
 
