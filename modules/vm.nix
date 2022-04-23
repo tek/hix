@@ -6,7 +6,7 @@ with types;
 let
 
   basicVmNixosConf = config: {
-    virtualisation = {
+    virtualisation.vmVariant.virtualisation = {
       diskImage = config.image;
       diskSize = 4096;
       forwardPorts = [
