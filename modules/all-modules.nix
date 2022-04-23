@@ -6,7 +6,7 @@ let
     config.inputs = {
       inherit (inputs)
       nixpkgs
-      nixpkgs_ghc921
+      nixpkgs_ghc922
       nixpkgs_ghc902
       nixpkgs_ghc8107
       nixpkgs_ghc884

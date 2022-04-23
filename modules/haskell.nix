@@ -39,7 +39,7 @@ let
   };
 
   compatProjects = {
-    "921" = {};
+    "922" = {};
     "902" = {};
     "8107" = {};
     "884" = {};
@@ -121,7 +121,7 @@ in {
           aeson = fast (hackage "2.0.0.0" "sha54321");
           http-client = unbreak;
         }];
-        ghc921 = [{ source, minimal, ... }: {
+        ghc922 = [{ source, minimal, ... }: {
           lens = minimal (source.root inputs.lens);
         }];
       }

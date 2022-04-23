@@ -2,8 +2,8 @@
   description = "Haskell Development Build Tools";
 
   inputs = {
-    nixpkgs.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
-    nixpkgs_ghc921.url = github:nixos/nixpkgs/b80f570a92d04e8ace67ff09c34aa48708a5c88c;
+    nixpkgs.url = github:NixOS/nixpkgs/b80f570a92d04e8ace67ff09c34aa48708a5c88c;
+    nixpkgs_ghc922.url = github:nixos/nixpkgs/b80f570a92d04e8ace67ff09c34aa48708a5c88c;
     nixpkgs_ghc902.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
     nixpkgs_ghc901.url = github:NixOS/nixpkgs/45a3f9d7725c7e21b252c223676cc56fb2ed5d6d;
     nixpkgs_ghc8107.url = github:NixOS/nixpkgs/46821ea01c8f54d2a20f5a503809abfc605269d7;
