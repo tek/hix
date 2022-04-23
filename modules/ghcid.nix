@@ -174,7 +174,7 @@ in {
 
     hls = mkDefault (
       if config.ghcid.easy-hls
-      then inputs.easy-hls.defaultPackage.${system}
+      then config.inputs.easy-hls.defaultPackage.${system}
       else vanillaGhc.haskell-language-server
     );
 
