@@ -5,11 +5,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1637250802,
-        "narHash": "sha256-/crlHEVB148PGQLZCsHOR9L5qgvCAfRSocIoKgmMAhA=",
+        "lastModified": 1646146030,
+        "narHash": "sha256-wkKDVVL2/rUGokxs4kqCE+ZzxljBqYDZvBuQGVGXYJM=",
         "owner": "jkachmar",
         "repo": "easy-hls-nix",
-        "rev": "7c123399ef8a67dc0e505d9cf7f2c7f64f1cd847",
+        "rev": "ecb85ab6ba0aab0531fff32786dfc51feea19370",
         "type": "github"
       },
       "original": {
