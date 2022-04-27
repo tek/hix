@@ -54,7 +54,6 @@ with lib;
     nixpkgsFunc = mkDefault (import config.nixpkgs);
 
     ghcOverlay = mkDefault (import ../lib/ghc-overlay.nix {
-      inherit (global) profiling;
       inherit (global.internal) overrides;
       inherit (config) compiler overrideKeys;
     });

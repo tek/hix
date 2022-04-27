@@ -1,6 +1,5 @@
 {
   lib,
-  profiling ? true,
 }:
 with builtins;
 with lib;
@@ -17,7 +16,7 @@ let
   packages = overlay: self: super:
   let
     pkgs = self.callPackage ({ pkgs, ... }: pkgs) {};
-    api = import ./api.nix { inherit pkgs profiling; };
+    api = import ./api.nix { inherit pkgs; };
   in mapAttrs (package self super) (overlay (api { inherit self super; }));
 
   asList = overlays:

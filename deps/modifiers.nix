@@ -1,4 +1,4 @@
-{ pkgs, profiling, }:
+{ pkgs, }:
 with pkgs.lib;
 let
 
@@ -10,8 +10,6 @@ let
 
   yesProfiling = hl.enableLibraryProfiling;
 
-  globalProfiling = if profiling then yesProfiling else noProfiling;
-
   notest = hl.dontCheck;
 
   hackageDrv = p:
@@ -20,11 +18,9 @@ let
   minimalDrv = p:
   hl.dontHaddock (hackageDrv p);
 in {
-  inherit unbreak globalProfiling noProfiling minimalDrv hackageDrv notest;
+  inherit unbreak noProfiling minimalDrv hackageDrv notest;
 
   profiling = yesProfiling;
-
-  minimalProf = p: globalProfiling (minimalDrv p);
 
   fast = p: noProfiling (hl.dontHaddock p);
 }

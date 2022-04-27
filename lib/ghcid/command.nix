@@ -21,7 +21,7 @@ in rec {
       allRestarts = pkgRestarts ++ (map restart restarts);
     in
     ''
-      ghcid -W ${toString allRestarts} --command="${command}" --test='${test}'
+      ghcid ${toString allRestarts} --command="${command}" --test='${test}'
     '';
 
   ghcidScript = {

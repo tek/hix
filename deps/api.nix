@@ -1,6 +1,5 @@
 {
   pkgs,
-  profiling,
 }:
 {
   self,
@@ -9,7 +8,7 @@
 with builtins;
 with pkgs.lib;
 let
-  modifiers = import ./modifiers.nix { inherit pkgs profiling; };
+  modifiers = import ./modifiers.nix { inherit pkgs; };
   spec = import ./spec.nix { inherit (pkgs) lib; };
 
   inherit (spec) transform transform_ set;
@@ -41,7 +40,7 @@ let
   });
 
   cabal2nix = src: spec.create ({ self, final, pkg, ... }: {
-    drv = modifiers.globalProfiling (self.callCabal2nixWithOptions pkg src (options "cabal2nix" "" final) {});
+    drv = self.callCabal2nixWithOptions pkg src (options "cabal2nix" "" final) {};
   });
 
   source = rec {

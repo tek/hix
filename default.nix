@@ -10,12 +10,19 @@ let
   compat = import ./lib/compat.nix { inherit lib; };
 
   api = rec {
+    lib = import ./lib/default.nix { inherit (inputs.nixpkgs) lib; };
+
     modules = projectModules: import ./modules/all-modules.nix {
       inherit inputs;
       projectModules = toList projectModules;
     };
-    flake = projectModules: import ./modules/build.nix { inherit lib; modules = modules projectModules; };
+
+    flake = projectModules:
+    import ./modules/build.nix { inherit (inputs.nixpkgs) lib; modules = modules projectModules; };
+
     obeliskOverrides = import ./obelisk/overrides.nix { inherit (inputs) obelisk; };
+
+    overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };
   };
 
 in localOutputs // {

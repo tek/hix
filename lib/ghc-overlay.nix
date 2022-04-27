@@ -1,6 +1,11 @@
-{ compiler, ... }@args:
-final: prev: {
-  hixPackages = prev.haskell.packages.${compiler}.override {
-    overrides = import ./overrides.nix { inherit (prev) lib; } args;
-  };
+{
+  compiler,
+  overrides ? {},
+  overrideKeys ? ["local" "all" compiler "dev"],
+}:
+final: prev:
+let
+  o = import ./overrides.nix { inherit (prev) lib; };
+in {
+  hixPackages = o.ghcWithNamedOverrides overrideKeys overrides prev.haskell.packages.${compiler};
 }

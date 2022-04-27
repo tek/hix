@@ -62,4 +62,6 @@ in {
   withModules
   foldMapAttrs
   ;
+
+  overrides = import ./overrides.nix { inherit lib; };
 }
