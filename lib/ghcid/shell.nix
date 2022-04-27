@@ -30,7 +30,7 @@ in rec {
       (config.devGhc.ghc.ghcWithPackages hsPkgs)
       vanillaGhc.ghcid
       vanillaGhc.cabal-install
-      config.ghcid.hls
+      config.shell.hls.package
     ];
     args = {
       name = "ghci-shell";

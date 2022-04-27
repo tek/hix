@@ -3,7 +3,7 @@ with builtins;
 with lib;
 with types;
 let
-  inherit (config.devGhc) nixpkgs pkgs;
+  inherit (config.devGhc) pkgs;
 
   vanillaGhc = config.devGhc.vanillaGhc;
 
@@ -137,16 +137,6 @@ in {
       type = unspecified;
     };
 
-    hls = mkOption {
-      description = "The package for HLS.";
-      type = package;
-    };
-
-    hlsApp = mkOption {
-      description = "The flake app generated for HLS.";
-      type = unspecified;
-    };
-
     run = mkOption {
       description = "Internal function used to run ghcid tests.";
       type = unspecified;
@@ -171,14 +161,6 @@ in {
     shells = mkDefault (mapAttrs ghcidLib.shell.runShell config.ghcid.commands);
 
     apps = mkDefault (mapAttrs ghcidLib.shell.app config.ghcid.commands);
-
-    hls = mkDefault (
-      if config.ghcid.easy-hls
-      then config.inputs.easy-hls.defaultPackage.${config.system}
-      else vanillaGhc.haskell-language-server
-    );
-
-    hlsApp = mkDefault (pkgs.writeScript "hls" "nix develop -c haskell-language-server");
 
     run = mkDefault (makeOverridable ghcidLib.shell.run defaultRunArgs);
 

@@ -31,7 +31,7 @@ let
     checks = mainPackages // extraChecks;
     apps = config.ghcid.apps // config.hackage.output.apps // {
       inherit ghcid;
-      hls = app "${config.ghcid.hlsApp}";
+      hls = app "${config.shell.hls.app}";
       hpack = app "${project.hpack {}}";
       hpack-verbose = app "${project.hpack { verbose = true; }}";
       tags = app "${project.tags.app}";
