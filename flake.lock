@@ -179,16 +179,16 @@
     "obelisk": {
       "flake": false,
       "locked": {
-        "lastModified": 1627232660,
-        "narHash": "sha256-sWcy2QWSzNZnXY03KnaRw55faCURWHn7uhL09q2arFA=",
+        "lastModified": 1650800768,
+        "narHash": "sha256-bBr61MzVFyIMpsri8inOPxCHSL1ogFbpb3uGS7pZ+X0=",
         "owner": "tek",
         "repo": "obelisk",
-        "rev": "0aedb773022158e4a37fbf3092f621b8afbe4d54",
+        "rev": "7991b4d86be0ae04e22bcbe91607d99eb113c2c2",
         "type": "github"
       },
       "original": {
         "owner": "tek",
-        "ref": "tryp",
+        "ref": "ghc9",
         "repo": "obelisk",
         "type": "github"
       }

@@ -11,15 +11,9 @@
     nixpkgs_ghc865.url = github:NixOS/nixpkgs/cfed29bfcb28259376713005d176a6f82951014a;
     easy-hls.url = github:jkachmar/easy-hls-nix;
     flake-utils.url = github:numtide/flake-utils;
-    obelisk = {
-      url = github:tek/obelisk/tryp;
-      flake = false;
-    };
+    obelisk = { url = github:tek/obelisk/ghc9; flake = false; };
     thax.url = github:tek/thax;
-    nmd = {
-      url = git+https://gitlab.com/rycee/nmd;
-      flake = false;
-    };
+    nmd = { url = git+https://gitlab.com/rycee/nmd; flake = false; };
   };
 
   outputs = inputs: import ./default.nix inputs;
