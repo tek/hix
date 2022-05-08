@@ -253,6 +253,8 @@ All of these are in the attribute set passed to an override function.
 |`minimal`|Disable Haddock, benchmarks and tests, and unbreak.|
 |`fast`|Disable Haddock and profiling.|
 |`profiling`|Force profiling.|
+|`overrideAttrs`|Call the derivation's `overrideAttrs`.|
+|`buildInputs`|Append to the derivation's `buildInputs`.|
 
 |Name|Option|
 |---|---|
