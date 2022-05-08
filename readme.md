@@ -273,14 +273,14 @@ When evaluating the depspec, it is passed this state:
 
 If `drv` is `null` in the result, it is replaced with `super.package`.
 Then, the `transform` function is applied to it, which is composed from all the combinators like `jailbreak`.
-`options` is an arbitrary set that can be used to modify other combinators.
+`options` is an arbitrary set that can be used to influence the behaviour other combinators.
 
 A depspec combinator can be created with:
 
 ```nix
 {
   withHaddock =
-    hix.util.spec.create ({ self, super, final, prev, pkg, hsLib, lib }: {
+    hix.lib.spec.create ({ self, super, final, prev, pkg, hsLib, lib }: {
       transform = drv: hsLib.doHaddock (prev.transform drv);
     });
 }
@@ -296,7 +296,16 @@ There is a shorter way to construct this combinator:
 ```nix
 {
   withHaddock =
-    hix.util.spec.transform ({ hsLib, ... }: hsLib.doHaddock);
+    hix.lib.spec.transform ({ hsLib, ... }: hsLib.doHaddock);
+}
+```
+
+Or, if none of the resources are needed:
+
+```nix
+{
+  noCheck =
+    hix.lib.spec.transform_ (drv: drv.overrideAttrs (_: { doCheck = false; }))
 }
 ```
 

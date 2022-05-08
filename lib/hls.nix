@@ -28,5 +28,5 @@ let
       hls-stylish-haskell-plugin = hackage "1.0.1.1" "0ykvs43wkyszmxnfbcjg17qvkkqqc2zg2ydr60kfpz3abka2mny2";
       hls-tactics-plugin = hackage "1.6.2.0" "0gnvrckr8yiyxgaf95i3r4xq1qw1mf630fwzgnjw11vjacvspm8n";
     };
-in 
+in
   (overrides.ghcWithOverrides [hlsOverrides] config.devGhc.vanillaGhc).haskell-language-server

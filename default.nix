@@ -23,6 +23,8 @@ let
     obeliskOverrides = import ./obelisk/overrides.nix { inherit (inputs) obelisk; };
 
     overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };
+
+    spec = import ./deps/spec.nix { inherit lib; };
   };
 
 in localOutputs // {

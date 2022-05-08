@@ -28,6 +28,8 @@ let
     configure = flag: transform_ (flip hl.appendConfigureFlag flag);
     configures = flags: transform_ (flip hl.appendConfigureFlags flags);
     override = conf: transform_ (flip hl.overrideCabal conf);
+    overrideAttrs = f: transform_ (drv: drv.overrideAttrs f);
+    buildInputs = inputs: transform_ (drv: drv.overrideAttrs (old: { buildInputs = old.buildInputs ++ inputs; }));
     minimal = transform_ modifiers.minimalDrv;
     profiling = transform_ modifiers.profiling;
     unbreak = transform_ modifiers.unbreak;
