@@ -20,6 +20,8 @@ let
     users.mutableUsers = true;
     users.users.root.password = "";
     networking.firewall.enable = false;
+    documentation.nixos.enable = false;
+    system.stateVersion = "22.05";
   };
 
   postgresNixosConf = vm: {
