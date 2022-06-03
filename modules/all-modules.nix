@@ -28,7 +28,7 @@ in
   projectModules ++ [
     ./input.nix
     ./haskell.nix
-    ./tools.nix
+    ./hpack.nix
     ./output.nix
     ./ghci.nix
     ./ghcid.nix

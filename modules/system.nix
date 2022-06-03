@@ -29,14 +29,13 @@ let
       default = mainPackages.${config.main};
     } // mainPackages // extraChecks;
     checks = mainPackages // extraChecks;
-    apps = config.ghcid.apps // config.hackage.output.apps // {
+    apps = config.ghcid.apps // config.hackage.output.apps // config.hpack.apps mainPackages // {
       inherit ghcid;
       hls = app "${config.shell.hls.app}";
       hpack = app "${project.hpack {}}";
       hpack-verbose = app "${project.hpack { verbose = true; }}";
       tags = app "${project.tags.app}";
     };
-    defaultApp = ghcid;
   };
 
   customizeOutputs = outputs:

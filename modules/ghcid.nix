@@ -143,7 +143,7 @@ in {
     };
 
     easy-hls = mkOption {
-      description = "Wether to use easy-hls to obtain HLS.";
+      description = "Whether to use easy-hls to obtain HLS.";
       type = bool;
       default = false;
     };
