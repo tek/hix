@@ -46,12 +46,15 @@ in {
           The name of an executable in <literal>hpack.packages</literal> that should be assigned to
           <literal>packages.default</literal>.
         '';
-        default = config.main;
       };
 
   };
 
-  config.hpack.apps =
-    mkDefault (outputs: foldl (a: b: a // b) {} (mapAttrsToList (packageApps outputs) config.hpack.packages));
+  config.hpack = {
+    apps =
+      mkDefault (outputs: foldl (a: b: a // b) {} (mapAttrsToList (packageApps outputs) config.hpack.packages));
+    defaultApp =
+      mkDefault config.main;
+  };
 
 }
