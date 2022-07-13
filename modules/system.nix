@@ -5,43 +5,6 @@ let
 
   defaultMain = makeOverridable tools config.devGhc;
 
-  defaultOutputs = {
-    project,
-    mainPackages,
-    extraChecks,
-  }:
-  let
-    app = program: { type = "app"; inherit program; };
-    ghcid = app "${(config.ghcid.test {}).testApp}";
-  in {
-    devShells.default = config.ghcid.shell;
-    legacyPackages = {
-      inherit project config;
-      inherit (project) pkgs ghc cabal;
-      ghcid = config.ghcid;
-      run = config.ghcid.run;
-      shell = config.ghcid.shell;
-      tags = project.tags.projectTags;
-      hpack = project.hpack {};
-    };
-    packages = {
-      min = mainPackages.${config.main}.min;
-      default = mainPackages.${config.main};
-    } // mainPackages // extraChecks;
-    checks = mainPackages // extraChecks;
-    apps = config.ghcid.apps // config.hackage.output.apps // config.hpack.apps mainPackages // {
-      inherit ghcid;
-      hls = app "${config.shell.hls.app}";
-      hpack = app "${project.hpack {}}";
-      hpack-verbose = app "${project.hpack { verbose = true; }}";
-      tags = app "${project.tags.app}";
-    };
-  };
-
-  customizeOutputs = outputs:
-  let customized = config.output.transform defaultMain outputs;
-  in attrsets.recursiveUpdate customized (config.output.amend defaultMain customized);
-
   outPackagesFor = packages: ghc:
   lib.genAttrs packages (n: ghc.${n} // { inherit ghc; });
 
@@ -64,29 +27,102 @@ let
   in
     base // lib.mapAttrs extra packages;
 
-  systemOutputs =
-  let
-    project = config.output.overrideMain defaultMain;
-    mainPackagesBase = outPackagesFor (attrNames config.packages ++ config.output.extraPackages) project.ghc;
-    mainPackages = extraDrvs {
-      base = mainPackagesBase;
-      min = config.minDevGhc;
-      inherit (config) packages;
-      inherit (project) pkgs;
-    };
-    extraChecks = if config.compat.enable then compatChecks else {};
-    outputs = defaultOutputs { inherit project mainPackages extraChecks; };
-  in customizeOutputs outputs;
+  project = config.output.overrideMain defaultMain;
 
-in {
-  options = {
-    system = mkOption {
-      type = types.str;
-    };
-    systemOutputs = mkOption {
-      type = types.unspecified;
-    };
+  mainPackagesBase = outPackagesFor (attrNames config.packages ++ config.output.extraPackages) project.ghc;
+
+  mainPackages = extraDrvs {
+    base = mainPackagesBase;
+    min = config.minDevGhc;
+    inherit (config) packages;
+    inherit (project) pkgs;
   };
 
-  config.systemOutputs = mkDefault systemOutputs;
+  extraChecks = if config.compat.enable then compatChecks else {};
+
+  customized = config.output.transform defaultMain config.outputs;
+
+  amended = config.output.amend defaultMain customized;
+
+in {
+  options = with types; {
+
+    system = mkOption {
+      type = str;
+    };
+
+    systemOutputs = mkOption {
+      type = unspecified;
+    };
+
+    outputs = {
+
+      packages = mkOption {
+        type = attrsOf package;
+        description = "The flake output attribute <literal>packages</literal>.";
+      };
+
+      checks = mkOption {
+        type = attrsOf package;
+        description = "The flake output attribute <literal>checks</literal>.";
+      };
+
+      legacyPackages = mkOption {
+        type = attrsOf unspecified;
+        description = "The flake output attribute <literal>legacyPackages</literal>.";
+      };
+
+      devShells = mkOption {
+        type = attrsOf package;
+        description = "The flake output attribute <literal>devShells</literal>.";
+      };
+
+      apps = mkOption {
+        type = attrsOf unspecified;
+        description = "The flake output attribute <literal>apps</literal>.";
+      };
+
+    };
+
+  };
+
+  config = {
+
+    outputs = {
+
+      packages = {
+        min = mainPackages.${config.main}.min;
+        default = mainPackages.${config.main};
+      } // mainPackages // extraChecks;
+
+      checks = mainPackages // extraChecks;
+
+      legacyPackages = {
+        inherit project config;
+        inherit (project) pkgs ghc;
+        ghcid = config.ghcid;
+        run = config.ghcid.run;
+        shell = config.ghcid.shell;
+        tags = project.tags.projectTags;
+        hpack = project.hpack {};
+      };
+
+      devShells.default = config.ghcid.shell;
+
+      apps = let
+        app = program: { type = "app"; inherit program; };
+        ghcid = app "${(config.ghcid.test {}).testApp}";
+      in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps mainPackages // {
+        inherit ghcid;
+        hls = app "${config.shell.hls.app}";
+        hpack = app "${project.hpack {}}";
+        hpack-verbose = app "${project.hpack { verbose = true; }}";
+        tags = app "${project.tags.app}";
+      };
+
+    };
+
+    systemOutputs = mkDefault (attrsets.recursiveUpdate customized amended);
+
+  };
 }
