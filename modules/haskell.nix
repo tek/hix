@@ -1,4 +1,4 @@
-{ config, lib, normalizeOverrides, relativePackages, ... }:
+{ config, lib, mergeOverrides, normalizeOverrides, relativePackages, ... }:
 with lib;
 with types;
 let
@@ -102,13 +102,13 @@ in {
     overrides = mkOption {
       type = unspecified;
       default = {};
-      # TODO link combinators doc
       description = ''
         Cabal package specifications and overrides injected into GHC package sets.
         Each override spec is a list of dep functions, which are called with a set of combinators and resources like
         nixpkgs and should return an attrset containing either derivations or a transformation built from those
         combinators.
-        The combinators are described at TODO.
+        The combinators are described in
+        <link xlink:href="https://github.com/tek/hix#built-in-depspec-combinators">readme.md</link>.
         If this is given as a single deps function or a list thereof, it will be converted to
         <literal>{ all = [o]; dev = [o]; }</literal> (without the brackets for a list).
         The keys are used to select the override functions requested by a package set's <literal>overrideKeys</literal>
@@ -125,6 +125,15 @@ in {
           lens = minimal (source.root inputs.lens);
         }];
       }
+      '';
+    };
+
+    extraOverrides = mkOption {
+      type = attrsOf (listOf unspecified);
+      default = {};
+      description = ''
+        Like <literal>overrides</literal>, but expected to be in normalized form. This allows for extensions of Hix to
+        add overrides from multiple locations, since the <literal>listOf</literal> aggregates all definitions.
       '';
     };
 
@@ -205,7 +214,7 @@ in {
 
     internal = {
       overrides = mkOption {
-        type = unspecified;
+        type = attrsOf (listOf unspecified);
         description = ''
           Internal option that computes the full overrides, combining <literal>overrides</literal> with the full
           overrides from <literal>deps</literal> and the local package derivations.
@@ -243,7 +252,7 @@ in {
     compat.projects = mkDefault compatProjects;
 
     internal = {
-      overrides = mkDefault overrides;
+      overrides = mkDefault (mergeOverrides [config.extraOverrides overrides]);
 
       relativePackages = mkDefault (relativePackages config.base config.packages);
     };

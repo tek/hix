@@ -14,13 +14,15 @@ let
 
   relativePackages = base: mapAttrs (_: packageSubpath base);
 
+  mergeOverrides = zipAttrsWith (_: concatLists);
+
   normalizeOverrides = project: deps: depsFull:
   let
     local = if isAttrs project then project else { all = project; dev = project; };
     norm = mapAttrs (_: o: if isList o then o else [o]) local;
     depsOverrides = map (o: o.overrides // { local = []; }) deps;
     depsFullOverrides = map (o: o.overrides) depsFull;
-  in { all = []; } // zipAttrsWith (_: concatLists) (depsOverrides ++ depsFullOverrides ++ [norm]);
+  in { all = []; } // mergeOverrides (depsOverrides ++ depsFullOverrides ++ [norm]);
 
   overridesFor = o: n:
   let c = o.${n} or [];
@@ -57,6 +59,7 @@ in {
   inherit
   packageSubpath
   relativePackages
+  mergeOverrides
   normalizeOverrides
   overridesFor
   packagePath

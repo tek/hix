@@ -9,7 +9,7 @@ let
 
   compat = import ./lib/compat.nix { inherit lib; };
 
-  api = rec {
+  api = makeExtensible (self: {
     lib = import ./lib/default.nix { inherit (inputs.nixpkgs) lib; };
 
     modules = projectModules: import ./modules/all-modules.nix {
@@ -18,21 +18,15 @@ let
     };
 
     flake = projectModules:
-    import ./modules/build.nix { inherit (inputs.nixpkgs) lib; modules = modules projectModules; };
+    import ./modules/build.nix { inherit (inputs.nixpkgs) lib; modules = self.modules projectModules; };
 
     obeliskOverrides = import ./obelisk/overrides.nix { inherit (inputs) obelisk; };
 
     overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };
 
-    spec = import ./deps/spec.nix { inherit lib; };
-  };
+    spec = import ./deps/spec.nix { inherit (self) lib; };
+  });
 
 in localOutputs // {
   lib = api;
-
-  flake = args:
-  let msg = "The function 'flake' is deprecated. Please use 'lib.flake'.";
-  in warn msg (api.flake (compat.check args));
-
-  obeliskOverrides = compat.warn "obeliskOverrides" "lib.obeliskOverrides" api.obeliskOverrides;
 }
