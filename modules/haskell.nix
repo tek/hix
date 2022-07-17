@@ -199,8 +199,15 @@ in {
     devGhc = mkOption {
       type = submodule ghcModule;
       description = ''
-      The GHC package set with overrides that is used primarily, like when building the default package with
-      <literal>nix build</literal> or running shells.
+        The GHC package set with overrides that is used primarily, like when building the default package with
+        <literal>nix build</literal> or running shells.
+      '';
+    };
+
+    pkgs = mkOption {
+      type = unspecified;
+      description = ''
+        The nixpkgs attrset used by <literal>devGhc</literal>.
       '';
     };
 
@@ -244,6 +251,8 @@ in {
     internal.basicGhc = config.internal.basicPkgs.haskell.packages.${config.mainCompiler};
 
     devGhc = mkDefault {};
+
+    pkgs = mkDefault config.devGhc.pkgs;
 
     minDevGhc = mkDefault (config.devGhc // {
       overrideKeys = ["localMin" "all" config.minDevGhc.compiler "dev"];
