@@ -50,17 +50,17 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1651927509,
-        "narHash": "sha256-fGVGUdEsriuAL1vkUh29FlOQmEkPRnSfRGImWYaVjos=",
+        "lastModified": 1660817299,
+        "narHash": "sha256-0QZE5FYLOyTEpKobPk32gxAQBtYs/nAfGx3PK+x6bXI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2fdb6f2e08e7989b03a2a1aa8538d99e3eeea881",
+        "rev": "b42e50fe36242b1b205a7d501b7911d698218086",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2fdb6f2e08e7989b03a2a1aa8538d99e3eeea881",
+        "rev": "b42e50fe36242b1b205a7d501b7911d698218086",
         "type": "github"
       }
     },
@@ -144,19 +144,35 @@
         "type": "github"
       }
     },
-    "nixpkgs_ghc922": {
+    "nixpkgs_ghc924": {
       "locked": {
-        "lastModified": 1651927509,
-        "narHash": "sha256-fGVGUdEsriuAL1vkUh29FlOQmEkPRnSfRGImWYaVjos=",
+        "lastModified": 1660817299,
+        "narHash": "sha256-0QZE5FYLOyTEpKobPk32gxAQBtYs/nAfGx3PK+x6bXI=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "2fdb6f2e08e7989b03a2a1aa8538d99e3eeea881",
+        "rev": "b42e50fe36242b1b205a7d501b7911d698218086",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "2fdb6f2e08e7989b03a2a1aa8538d99e3eeea881",
+        "rev": "b42e50fe36242b1b205a7d501b7911d698218086",
+        "type": "github"
+      }
+    },
+    "nixpkgs_ghc941": {
+      "locked": {
+        "lastModified": 1660817299,
+        "narHash": "sha256-0QZE5FYLOyTEpKobPk32gxAQBtYs/nAfGx3PK+x6bXI=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "b42e50fe36242b1b205a7d501b7911d698218086",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "b42e50fe36242b1b205a7d501b7911d698218086",
         "type": "github"
       }
     },
@@ -166,7 +182,7 @@
         "lastModified": 1648078774,
         "narHash": "sha256-rWaMxlODw2uji55ANn+t0/20elreUGvvY9FaRNbBJMo=",
         "ref": "master",
-        "rev": "de522bdd533350b3afb41e1ce9b3afb72922fba2",
+        "rev": "de522bdd533350b3afb41e1ce9b3afb72924fba2",
         "revCount": 31,
         "type": "git",
         "url": "https://gitlab.com/rycee/nmd"
@@ -203,7 +219,8 @@
         "nixpkgs_ghc884": "nixpkgs_ghc884",
         "nixpkgs_ghc901": "nixpkgs_ghc901",
         "nixpkgs_ghc902": "nixpkgs_ghc902",
-        "nixpkgs_ghc922": "nixpkgs_ghc922",
+        "nixpkgs_ghc924": "nixpkgs_ghc924",
+        "nixpkgs_ghc941": "nixpkgs_ghc941",
         "nmd": "nmd",
         "obelisk": "obelisk",
         "thax": "thax"
