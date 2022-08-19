@@ -6,7 +6,7 @@ let
   modulesDocs = nmd.buildModulesDocs {
     modules = import ../../modules/all-modules.nix { inherit inputs; projectModules = []; };
     moduleRootPaths = [../../modules];
-    mkModuleUrl = path: "https://git.tryp.io/tek/hix/src/branch/main/${path}";
+    mkModuleUrl = path: "https://git.tryp.io/tek/hix/src/branch/main/modules/${path}";
     channelName = "hix";
     docBook.id = "hix-options";
   };
