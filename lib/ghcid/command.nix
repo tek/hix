@@ -12,16 +12,11 @@ let
 
   restart = f: ''--restart="${f}"'';
 
-  pkgRestarts = attrsets.mapAttrsToList (n: pkg: restart "$PWD/${pkg}/${n}.cabal") config.internal.relativePackages;
-
 in rec {
   ghcidCmd =
     command: test: restarts:
-    let
-      allRestarts = pkgRestarts ++ (map restart restarts);
-    in
     ''
-      ghcid ${toString allRestarts} --command="${command}" --test='${test}'
+      ghcid ${toString (map restart restarts)} --command="${command}" --test='${test}'
     '';
 
   ghcidScript = {
