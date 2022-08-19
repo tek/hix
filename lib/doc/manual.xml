@@ -10,7 +10,7 @@
 </info>
 <para>
   This page lists all option definitions for the Haskell/Nix build library
-  <link xlink:href="https://github.com/tek/hix">Hix</link>.
+  <link xlink:href="https://git.tryp.io/tek/hix">Hix</link>.
 </para>
 <xi:include href="./nmd-result/hix-options.xml" />
 </article>
