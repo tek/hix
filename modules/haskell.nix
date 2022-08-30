@@ -60,6 +60,19 @@ let
     withDeps = normalizeOverrides config.overrides config.deps config.depsFull;
   in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
 
+  baseFromPackages = let
+    pkg = head (attrValues config.packages);
+    next = p:
+      if p == "/"
+      then throw "Could not determine base dir: Invalid package path ${pkg}"
+      else if isStorePath p
+      then p
+      else next (dirOf p);
+  in
+   if length (attrNames config.packages) == 0
+   then throw ""
+   else next pkg;
+
 in {
   options = {
 
@@ -245,6 +258,8 @@ in {
   };
 
   config = {
+    base = mkDefault baseFromPackages;
+
     main = mkIf (length (attrNames config.packages) == 1) (mkDefault (head (attrNames config.packages)));
 
     internal.basicPkgs = import config.inputs."nixpkgs_${config.mainCompiler}" { inherit (config) system; };

@@ -17,11 +17,10 @@ let
       then p
       else p // { tagsPrefix = dir; };
 
-  targets =
-    pkgs.lib.attrsets.mapAttrsToList withPrefix packages;
-
   projectTags =
-    tags.combined.all { inherit targets; };
+    tags.combined.all {
+      targets = pkgs.lib.attrsets.mapAttrsToList withPrefix packages;
+    };
 
 in {
   inherit projectTags;
