@@ -42,9 +42,9 @@ let
 
   extraChecks = if config.compat.enable then compatChecks else {};
 
-  customized = config.output.transform defaultMain config.outputs;
+  customized = config.output.transform project config.outputs;
 
-  amended = config.output.amend defaultMain customized;
+  amended = config.output.amend project customized;
 
 in {
   options = {
