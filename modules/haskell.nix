@@ -112,10 +112,16 @@ in {
       '';
     };
 
-    forceCabal = mkOption {
+    forceCabal2nix = mkOption {
       type = bool;
       default = false;
-      description = "Whether to skip the check for a Cabal or HPack file.";
+      description = "Whether to use cabal2nix even if there is no Cabal file.";
+    };
+
+    forceCabalGen = mkOption {
+      type = bool;
+      default = false;
+      description = "Whether to generate a Cabal file from Nix config even if there is one in the source directory.";
     };
 
     ifd = mkOption {

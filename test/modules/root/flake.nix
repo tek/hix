@@ -13,6 +13,28 @@
       root = ./.;
       sub = ./sub;
     };
+    hpack.packages.root = {
+      name = "root";
+      version = "1";
+      library = {
+        source-dirs = "src";
+        dependencies = [
+          "base >= 4 && < 6"
+          "sub"
+          "dep2"
+          "dep1"
+          "stm-chans"
+        ];
+      };
+      executables.run = {
+        main = "Main.hs";
+        source-dirs = "app";
+        dependencies = [
+          "base >= 4 && < 6"
+          "root"
+        ];
+      };
+    };
     compat.enable = true;
     overrides = { hackage, source, ... }: {
       stm-chans = hackage "2.0.0" "0afxg1wx0jkkajwcz338hm1ql4rzrj9dkdpkcvdaw04jrzaqwmby";

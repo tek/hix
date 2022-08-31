@@ -346,17 +346,6 @@ nix run .#hpack
 nix run .#hpack-verbose
 ```
 
-It is possible to store the config files in a separate directory, configured by the `hpackDir` attribute to `flake`
-(defaulting to `ops/hpack`).
-If the file `${hpackDir}/<project-name>.yaml` exists, it will be copied to the project directory and removed after
-running `hpack`.
-
-Additionally, a shared directory, for use in `hpack` files with the `<<: !include shared/file.yaml` directive, may be
-configured with the `hpackShared` parameter (defaulting to `shared`).
-If the directory `${hpackDir}/${hpackShared}` exists, it will be linked to the project directory as well.
-
-### *hpack* configuration in *nix*
-
 Instead of conventional `yaml` files, *Hix* allows the configuration to be specified as nix expressions.
 If the option `hpack.packages.${name}` is set, it is converted to an *hpack* file.
 

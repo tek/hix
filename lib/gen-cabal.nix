@@ -3,14 +3,14 @@ with builtins;
 with lib;
 let
 
-  hpackFile = name:
-  toFile "package.yaml" (toJSON (removeAttrs config.hpack.packages.${name} ["passthru"])); 
+  hpackFile = conf:
+  toFile "package.yaml" (toJSON (removeAttrs conf ["passthru"]));
 
-  withCabal = name: src: config.pkgs.runCommand "${name}-gen-cabal" {} ''
+  withCabal = conf: name: src: config.pkgs.runCommand "${name}-gen-cabal" {} ''
   cp -r ${src} $out
   chmod u+w $out
   cd $out
-  cp ${hpackFile name} package.yaml
+  cp ${hpackFile conf} package.yaml
   ${config.internal.basicGhc.hpack}/bin/hpack
   rm package.yaml
   '';
@@ -20,10 +20,8 @@ let
   then n.name
   else head (splitString " " n);
 
-  simpleCabalDrv = { pkgs, self, hsLib, ... }: pname: src:
+  simpleCabalDrvWith = conf: { pkgs, self, hsLib, ... }: pname: src:
   let
-
-    conf = config.hpack.packages.${pname};
 
     attr = n:
     if hasAttr n conf
@@ -43,7 +41,8 @@ let
     deps = c: concatMap depspec (c.dependencies or []);
 
   in self.mkDerivation ({
-    inherit pname src;
+    inherit pname;
+    src = withCabal conf pname src;
     version = attr "version";
     license = attr "license";
     libraryHaskellDepends = deps (conf.library or {});
@@ -51,8 +50,9 @@ let
     testHaskellDepends = concatMap deps (attrValues (conf.tests or {}));
   } // conf.passthru or {});
 
-  inferCabalDrv = api: name: src: throw "No Cabal config for '${name}' and 'ifd = true'.";
+  simpleCabalDrv = api: pname:
+  simpleCabalDrvWith config.hpack.packages.${pname} api pname;
 
 in {
-  inherit withCabal simpleCabalDrv inferCabalDrv;
+  inherit withCabal simpleCabalDrv;
 }
