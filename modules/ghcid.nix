@@ -153,6 +153,11 @@ in {
       type = functionTo unspecified;
     };
 
+    lib = mkOption {
+      description = "The internal logic for devshells and ghcid.";
+      type = unspecified;
+    };
+
   };
 
   config.ghcid = {
@@ -167,5 +172,7 @@ in {
     shell = mkDefault (ghcidLib.shell.shellWith { inherit (config.ghcid) shellConfig; });
 
     test = mkDefault (args: ghcidLib.test ({ inherit pkgs; } // args));
+
+    lib = ghcidLib;
   };
 }
