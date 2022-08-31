@@ -1,6 +1,6 @@
 { pkgs }:
 {
-  test = builtins.toFile "auto-1-test" ''
+  test = builtins.toFile "auto-3-test" ''
     cd ./root
     nix flake update
     nix build
