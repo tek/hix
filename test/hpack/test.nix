@@ -4,7 +4,7 @@ let
   target = builtins.toFile "cabal-target" ''
   cabal-version: 2.0
 
-  -- This file has been generated from package.yaml by hpack version 0.34.6.
+  -- This file has been generated from package.yaml by hpack version 0.34.7.
   --
   -- see: https://github.com/sol/hpack
 
@@ -47,7 +47,7 @@ let
   '';
 
 in {
-  test = ''
+  test = builtins.toFile "hpack-test" ''
     cd ./root
     nix flake update
     nix run .#hpack

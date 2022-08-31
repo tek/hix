@@ -81,7 +81,7 @@ let
   '';
 
 in {
-  test = ''
+  test = builtins.toFile "hackage-test" ''
     doc_target() {
       local v=''${2:-0.1.0.0}
       cat <<EOF

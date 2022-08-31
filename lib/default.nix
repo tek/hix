@@ -28,11 +28,6 @@ let
   let c = o.${n} or [];
   in if isList c then c else [c];
 
-  packagePath = base: pp:
-  if builtins.isPath pp
-  then pp
-  else "${base}/${pp}";
-
   asFunction = f:
   if isFunction f then f else _: f;
 
@@ -62,7 +57,6 @@ in {
   mergeOverrides
   normalizeOverrides
   overridesFor
-  packagePath
   asFunction
   unlines
   withModules

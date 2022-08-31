@@ -49,12 +49,10 @@ let
   overrides =
   let
     local = import ../deps/local.nix {
-      inherit lib;
-      inherit (config) base packages localPackage;
+      inherit config lib;
     };
     localMin = import ../deps/local.nix {
-      inherit lib;
-      inherit (config) base packages;
+      inherit config lib;
       localPackage = { fast, ... }: p: fast (config.localPackage p);
     };
     withDeps = normalizeOverrides config.overrides config.deps config.depsFull;
@@ -103,6 +101,27 @@ in {
         This package will be assigned to the <literal>defaultPackage</literal> flake output that is built by a plain
         <literal>nix build</literal>.
       '';
+    };
+
+    auto = mkOption {
+      type = bool;
+      default = false;
+      description = ''
+        Generate Cabal files on the fly if none is present in the source directory (or a
+        <literal>package.yaml</literal>).
+      '';
+    };
+
+    forceCabal = mkOption {
+      type = bool;
+      default = false;
+      description = "Whether to skip the check for a Cabal or HPack file.";
+    };
+
+    ifd = mkOption {
+      type = bool;
+      default = true;
+      description = "Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.";
     };
 
     mainCompiler = mkOption {

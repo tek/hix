@@ -20,6 +20,9 @@ let
     flake = projectModules:
     import ./modules/build.nix { inherit (inputs.nixpkgs) lib; modules = self.modules projectModules; };
 
+    auto = projectModules:
+    self.flake ([{ auto = true; ifd = false; }] ++ toList projectModules);
+
     obeliskOverrides = import ./obelisk/overrides.nix { inherit (inputs) obelisk; };
 
     overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };

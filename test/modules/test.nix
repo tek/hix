@@ -1,6 +1,6 @@
 { pkgs }:
 {
-  test = ''
+  test = builtins.toFile "modules-test" ''
     cd ./root
     nix flake update
     nix run .#hpack-verbose
