@@ -17,26 +17,26 @@ let
       If the file exists, you might have to 'git add' it or its name isn't '${name}.cabal'.
     '';
 
-  wantAuto = name: src:
-  !config.forceCabal2nix && (config.forceCabalGen || noCabal name src);
+  wantAuto = name: pkg:
+  !config.forceCabal2nix && (config.forceCabalGen || noCabal name pkg.src);
 
-  checkAuto = api: name: src:
+  checkAuto = api: name: pkg:
   let
     autoSrc =
       if config.auto
-      then gen-cabal.withCabal name src
+      then gen-cabal.withCabal name pkg.src
       else noCabalError name;
     fullSrc =
-      if wantAuto name src
+      if wantAuto name pkg
       then autoSrc
-      else src;
+      else pkg.src;
   in api.source.root fullSrc;
 
-  checkIfd = api: name: src:
+  checkIfd = api: name: pkg:
   localPackage api (
     if config.ifd
-    then checkAuto api name src
-    else gen-cabal.simpleCabalDrv api name src
+    then checkAuto api name pkg
+    else gen-cabal.simpleCabalDrv api name pkg
   );
 
-in api: builtins.mapAttrs (checkIfd api) config.packages
+in api: builtins.mapAttrs (checkIfd api) config.internal.packages

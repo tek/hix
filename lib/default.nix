@@ -1,10 +1,11 @@
 { lib }:
 with lib;
 let
+
   packageSubpath = base: pp:
   let
     new = strings.removePrefix (toString base + "/") (toString pp);
-    failed = new == (toString pp);
+    failed = new == toString pp;
   in
   if builtins.isPath pp
   then
@@ -50,6 +51,11 @@ let
   foldMapAttrs = f: xs:
   foldAttrs (map f xs);
 
+  over = path: f: attrs:
+  if hasAttrByPath path attrs
+  then updateManyAttrsByPath [{ inherit path; update = f; }] attrs
+  else attrs;
+
 in {
   inherit
   packageSubpath
@@ -62,6 +68,7 @@ in {
   withModules
   foldAttrs
   foldMapAttrs
+  over
   ;
 
   overrides = import ./overrides.nix { inherit lib; };

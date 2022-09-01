@@ -6,7 +6,7 @@ let
 
   vanillaGhc = config.devGhc.vanillaGhc;
 
-  mainPackageNames = attrNames config.packages;
+  mainPackageNames = config.internal.packageNames;
 
   getScript = c: key: c.ghci.scripts.${key} or c.ghci.scripts.generic;
   getRunner = c: key: c.ghci.runners.${key} or c.ghci.runners.generic;

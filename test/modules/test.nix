@@ -19,9 +19,8 @@
       fail "stm-chans version override in 'root' doesn't supersede the one from 'dep1' (is $version)."
     fi
 
-    # nix build .#compat-902-root
+    nix build .#compat-902-root
 
-    result=$(nix run .#hls)
-    echo $result
+    nix run .#hls 2>/dev/null
   '';
 }

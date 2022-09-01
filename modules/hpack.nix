@@ -1,4 +1,4 @@
-{ lib, config, foldAttrs, ... }:
+{ lib, config, foldAttrs, foldMapAttrs, over, ... }:
 with builtins;
 with lib;
 with types;
@@ -25,62 +25,158 @@ let
 
   baseDep = { dependencies = [base]; };
 
-  inferPackageConf = pname: src: let
-    srcContent = readDir src;
+  inferPackageConf = pname: pkg: let
 
-    dirs = filterAttrs (_: type: type == "directory") srcContent;
+    packageDeps = pkg.dependencies or [];
+    extraDeps = config.dependencies ++ packageDeps;
 
-    files = filterAttrs (_: type: type == "regular") srcContent;
+    ensureDeps = addLib: comp: let
+      deps = extraDeps ++ comp.dependencies or [];
+    in comp // { dependencies = optional addLib pname ++ (if deps == [] then [base] else deps); };
 
-    hsInRoot = any (hasSuffix ".hs") (filter (f: f != "Setup.hs") files);
+    allDirs = ["lib" "src" "app" "test" "tests" "integration"];
 
-    test = if dirs ? test then "test" else if dirs ? tests then "tests" else null;
+    inferDirStatus = dir:
+    let srcDir = "${pkg.src}/${dir}";
+    in optionalAttrs (pathExists srcDir) { ${dir} = pathExists "${srcDir}/Main.hs"; };
 
-    isExe = d: hasAttr d dirs && pathExists "${src}/${d}/Main.hs";
+    existing = foldMapAttrs inferDirStatus allDirs;
 
-    exe = if isExe "app" then "app" else if isExe "src" then "src" else null;
+    specified = let
+      check = comp:
+        optional (hasAttr "source-dirs" comp) comp.source-dirs;
+    in
+    (if hasAttr "library" pkg then check pkg.library else []) ++
+    concatMap check ((attrValues (pkg.executables or {})) ++ (attrValues (pkg.tests or {})))
+    ;
 
-    library = if dirs ? lib then "lib" else if dirs ? src && exe != "src" then "src" else null;
+    available = filterAttrs (n: _: !(elem n specified)) existing;
 
-    inSubdir = test != null || exe != null || library != null;
+    mkExe = source-dirs: { inherit source-dirs; main = "Main.hs"; };
 
-    inferLib =
-      if library == null
-      then {}
-      else { library = { source-dirs = library; } // baseDep; };
+    amendExe = conf: name: let
+      inferredDir =
+        if available.app or false
+        then "app"
+        else if available.src or false
+        then "src"
+        else throw ''
+        The executable ${name} was specified without a 'source-dirs' attribute.
+        Hix chooses either 'app' or 'src' in this case, if one of those directories contains 'Main.hs'.
+        These conditions are not satisfied.
+        '';
+    in over ["executables" name] (a: a // mkExe inferredDir) conf;
 
-    exeConf = { main = "Main.hs"; dependencies = [base] ++ (if library == null then [] else [pname]); };
+    inferExe = let
+      use = dir: { executables.${pname} = mkExe dir; };
+    in
+      if available.app or false
+      then use "app"
+      else if available.src or false
+      then use "src"
+      else {};
 
-    inferExe =
-      if exe == null
-      then {}
-      else { executables.${pname} = { source-dirs = exe; } // exeConf; };
+    checkExe = conf: let
+      exe = head (attrNames conf.executables);
+      new =
+        if hasAttr "executables" conf
+        then
+          if length (attrNames conf.executables) == 1 && !(hasAttr "source-dirs" conf.executables.${exe})
+          then amendExe conf exe
+          else conf
+        else conf // inferExe
+        ;
+    in over ["executables"] (mapAttrs (_: ensureDeps (conf ? library))) new;
 
-    inferTest =
-      if test == null
-      then {}
-      else { tests."${pname}-test" = { source-dirs = test; } // exeConf; };
+    amendTest = conf: name: let
+      inferredDir =
+        if available.test or false
+        then "test"
+        else if available.tests or false
+        then "tests"
+        else if available.integration or false
+        then "integration"
+        else throw ''
+        The test ${name} was specified without a 'source-dirs' attribute.
+        Hix chooses either 'test', 'tests' or 'integration' in this case, if one of those directories contains 'Main.hs'.
+        These conditions are not satisfied.
+        '';
+    in over ["tests" name] (a: a // mkExe inferredDir) conf;
 
-    inferSubdirs = inferLib // inferExe // inferTest;
+    inferTest = let
+      use = dir: { tests."${pname}-${dir}" = mkExe dir; };
+    in
+      if available.test or false
+      then use "test"
+      else if available.tests or false
+      then use "tests"
+      else if available.integration or false
+      then use "integration"
+      else {};
 
-    inferRoot =
-      if pathExists "${src}/Main.hs"
-      then { executables.${pname} = { source-dirs = "."; main = "Main.hs"; } // baseDep; }
-      else { library = { source-dirs = "."; } // baseDep; }
+    checkTest = conf: let
+      test = head (attrNames conf.tests);
+      new =
+        if hasAttr "tests" conf
+        then
+          if length (attrNames conf.tests) == 1 && !(hasAttr "source-dirs" conf.tests.${test})
+          then amendTest conf test
+          else conf
+        else conf // inferTest
+        ;
+    in over ["tests"] (mapAttrs (_: ensureDeps (conf ? library))) new;
+
+    amendLib = conf: let
+      inferredDir =
+        if !(available.lib or true)
+        then "lib"
+        else if !(available.src or true)
+        then "src"
+        else throw ''
+        The library for ${pname} was specified without a 'source-dirs' attribute.
+        Hix chooses either 'lib' or 'src' in this case, if one of those directories does not contain 'Main.hs'.
+        These conditions are not satisfied.
+        '';
+    in over ["library"] (a: a // { source-dirs = inferredDir; }) conf;
+
+    inferLib = let
+      use = dir: { library.source-dirs = dir; };
+    in
+      if !(available.lib or true)
+      then use "lib"
+      else if !(available.src or true)
+      then use "src"
+      else {};
+
+    checkLib = conf: let
+      new =
+        if hasAttr "library" conf
+        then
+          if !(hasAttr "source-dirs" conf.library)
+          then amendLib conf
+          else conf
+        else conf // inferLib
+        ;
+    in over ["library"] (ensureDeps false) new;
+
+    subdirs = (checkTest (checkExe (checkLib pkg)));
+
+    root =
+      if pathExists "${pkg.src}/Main.hs"
+      then { executables.${pname} = ensureDeps false (mkExe "."); }
+      else { library = ensureDeps false { source-dirs = "."; }; }
       ;
 
-    projectDesc = if pname == "project" then "" else " of '${pname}'";
+    couldInfer = subdirs ? library || subdirs ? executables || subdirs ? tests;
 
-    error = throw ''
-    Could not detect the project structure${projectDesc}!
-    The directory does not contain any of the directories 'app', 'src', 'lib', 'test' or 'tests', or there is
-    no 'Main.hs' in the directories 'app', 'test' or 'tests'.
-    '';
+    full = defaultMeta // { name = pname; } // (if couldInfer then subdirs else root);
 
-  in defaultMeta // { name = pname; } // (if inSubdir then inferSubdirs else inferRoot);
+    clean = removeAttrs full ["dependencies" "src"];
+
+  in clean;
 
   infer =
-    mapAttrs inferPackageConf config.packages;
+    mapAttrs inferPackageConf config.internal.packages;
 
 in {
 

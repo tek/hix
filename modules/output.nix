@@ -13,7 +13,7 @@ let
   compatChecks =
   let
     prefixed = prf: lib.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
-    compatCheck = ver: conf: prefixed conf.prefix (outPackagesFor (attrNames config.packages) conf.ghc.ghc);
+    compatCheck = ver: conf: prefixed conf.prefix (outPackagesFor config.internal.packageNames conf.ghc.ghc);
   in
     foldl (z: v: z // v) {} (mapAttrsToList compatCheck config.compat.projects);
 
@@ -31,7 +31,7 @@ let
 
   project = config.output.overrideMain defaultMain;
 
-  mainPackagesBase = outPackagesFor (attrNames config.packages ++ config.output.extraPackages) project.ghc;
+  mainPackagesBase = outPackagesFor (config.internal.packageNames ++ config.output.extraPackages) project.ghc;
 
   mainPackages = extraDrvs {
     base = mainPackagesBase;

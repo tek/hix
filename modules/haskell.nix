@@ -59,7 +59,7 @@ let
   in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
 
   baseFromPackages = let
-    pkg = head (attrValues config.packages);
+    pkg = head (attrValues config.internal.packagePaths);
     next = p:
       if p == "/"
       then throw "Could not determine base dir: Invalid package path ${pkg}"
@@ -67,7 +67,7 @@ let
       then p
       else next (dirOf p);
   in
-   if length (attrNames config.packages) == 0
+   if length (attrNames config.packagePaths) == 0
    then throw ""
    else next pkg;
 
@@ -81,7 +81,7 @@ in {
     };
 
     packages = mkOption {
-      type = attrsOf path;
+      type = attrsOf (either path attrs);
       description = ''
         The project's Cabal packages, with keys being the Cabal names and values pointing to the directory containing
         the Cabal file.
@@ -136,6 +136,15 @@ in {
       description = ''
         The GHC version used for internal tasks and as default for the dev package set.
       '';
+    };
+
+    dependencies = mkOption {
+      type = listOf str;
+      default = [];
+      description = ''
+        Cabal dependencies used for all packages when generating config.
+      '';
+      example = literalExpression ''["aeson" "containers"]'';
     };
 
     overrides = mkOption {
@@ -259,6 +268,7 @@ in {
     };
 
     internal = {
+
       overrides = mkOption {
         type = attrsOf (listOf unspecified);
         description = ''
@@ -276,16 +286,32 @@ in {
         type = unspecified;
       };
 
+      packages = mkOption {
+        type = attrsOf attrs;
+        description = ''
+          The project's Cabal packages, canonicalized from <literal>packages</literal>.
+        '';
+      };
+
+      packageNames = mkOption {
+        type = listOf str;
+      };
+
+      packagePaths = mkOption {
+        type = attrsOf path;
+      };
+
       relativePackages = mkOption {
         type = attrsOf str;
       };
+
     };
   };
 
   config = {
     base = mkDefault baseFromPackages;
 
-    main = mkIf (length (attrNames config.packages) == 1) (mkDefault (head (attrNames config.packages)));
+    main = mkIf (length config.internal.packageNames == 1) (mkDefault (head config.internal.packageNames));
 
     internal.basicPkgs = import config.inputs."nixpkgs_${config.mainCompiler}" { inherit (config) system; };
 
@@ -304,7 +330,13 @@ in {
     internal = {
       overrides = mkDefault (mergeOverrides [config.extraOverrides overrides]);
 
-      relativePackages = mkDefault (relativePackages config.base config.packages);
+      packages = mkDefault (mapAttrs (_: p: if isAttrs p then p else { src = p; }) config.packages);
+
+      packageNames = mkDefault (attrNames config.internal.packages);
+
+      packagePaths = mkDefault (mapAttrs (_: p: p.src) config.internal.packages);
+
+      relativePackages = mkDefault (relativePackages config.base config.internal.packagePaths);
     };
   };
 }

@@ -20,9 +20,8 @@ let
   then n.name
   else head (splitString " " n);
 
-  simpleCabalDrvWith = conf: { pkgs, self, hsLib, ... }: pname: src:
+  simpleCabalDrvWith = conf: { pkgs, self, hsLib, ... }: pname: pkg:
   let
-
     attr = n:
     if hasAttr n conf
     then conf.${n}
@@ -42,7 +41,7 @@ let
 
   in self.mkDerivation ({
     inherit pname;
-    src = withCabal conf pname src;
+    src = withCabal conf pname pkg.src;
     version = attr "version";
     license = attr "license";
     libraryHaskellDepends = deps (conf.library or {});

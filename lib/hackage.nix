@@ -10,7 +10,7 @@ let
 
   app = program: { type = "app"; inherit program; };
 
-  allTargets = if cfg.packages == null then attrNames config.packages else cfg.packages;
+  allTargets = if cfg.packages == null then config.internal.packageNames else cfg.packages;
 
   allCabals = concatMapStringsSep " " (n: "${config.internal.relativePackages.${n}}/${n}.cabal") allTargets;
 

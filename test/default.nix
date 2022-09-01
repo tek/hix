@@ -12,6 +12,8 @@ let
     auto-1 = test "auto-1";
     auto-2 = test "auto-2";
     auto-3 = test "auto-3";
+    auto-4 = test "auto-4";
+    auto-5 = test "auto-5";
   };
 
   testA = n: t: "${n} ${t}";
