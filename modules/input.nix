@@ -3,7 +3,7 @@ with lib;
 let
   repos = [
     "nixpkgs"
-    "nixpkgs_ghc941"
+    "nixpkgs_ghc942"
     "nixpkgs_ghc924"
     "nixpkgs_ghc902"
     "nixpkgs_ghc8107"
@@ -39,7 +39,7 @@ in {
       ghc8107 = mkDefault config.inputs.nixpkgs_ghc8107;
       ghc902 = mkDefault config.inputs.nixpkgs_ghc902;
       ghc924 = mkDefault config.inputs.nixpkgs_ghc924;
-      ghc941 = mkDefault config.inputs.nixpkgs_ghc941;
+      ghc942 = mkDefault config.inputs.nixpkgs_ghc942;
     };
   };
 }
