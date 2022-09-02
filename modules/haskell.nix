@@ -67,8 +67,8 @@ let
       then p
       else next (dirOf p);
   in
-   if length (attrNames config.packagePaths) == 0
-   then throw ""
+   if length (attrNames config.internal.packagePaths) == 0
+   then throw "You have to specify either the 'base' option, pointing to the project root, or an entry in 'packages'."
    else next pkg;
 
 in {
