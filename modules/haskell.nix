@@ -334,10 +334,6 @@ in {
 
     main = mkIf (length config.internal.packageNames == 1) (mkDefault (head config.internal.packageNames));
 
-    internal.basicPkgs = import config.inputs."nixpkgs_${config.mainCompiler}" { inherit (config) system; };
-
-    internal.basicGhc = config.internal.basicPkgs.haskell.packages.${config.mainCompiler};
-
     devGhc = { name = "dev"; };
 
     pkgs = mkDefault config.devGhc.pkgs;
@@ -349,15 +345,21 @@ in {
     compat.projects = compatProjects;
 
     internal = {
-      overrides = mkDefault (mergeOverrides [config.extraOverrides overrides]);
 
-      packages = mkDefault (mapAttrs (_: p: if isAttrs p then p else { src = p; }) config.packages);
+      basicPkgs = import config.inputs."nixpkgs_${config.mainCompiler}" { inherit (config) system; };
 
-      packageNames = mkDefault (attrNames config.internal.packages);
+      basicGhc = config.internal.basicPkgs.haskell.packages.${config.mainCompiler};
 
-      packagePaths = mkDefault (mapAttrs (_: p: p.src) config.internal.packages);
+      overrides = mergeOverrides [config.extraOverrides overrides];
 
-      relativePackages = mkDefault (relativePackages config.base config.internal.packagePaths);
+      packages = mapAttrs (_: p: if isAttrs p then p else { src = p; }) config.packages;
+
+      packageNames = attrNames config.internal.packages;
+
+      packagePaths = mapAttrs (_: p: p.src) config.internal.packages;
+
+      relativePackages = relativePackages config.base config.internal.packagePaths;
+
     };
   };
 }
