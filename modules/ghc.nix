@@ -3,6 +3,12 @@
 with lib;
 {
   options = with types; {
+    name = mkOption {
+      type = str;
+      description = "An identifier used for describing the package set.";
+      default = "unnamed";
+    };
+
     compiler = mkOption {
       type = str;
       description = "The attribute name for a GHC version in the set <literal>haskell.packages</literal>.";

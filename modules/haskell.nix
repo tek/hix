@@ -11,7 +11,7 @@ let
     options = {
       enable = mkOption {
         type = bool;
-        description = "Whether this version should be included";
+        description = "Whether this version should be included.";
         default = true;
       };
 
@@ -32,7 +32,10 @@ let
       version = mkOption {
         type = str;
         default = "ghc${name}";
-        description = "The attribute of the GHC version used for this compat project.";
+        description = ''
+          The attribute name for a GHC version in the set <literal>haskell.packages</literal> used for this compat
+          project.
+        '';
       };
 
       ghc = mkOption {
@@ -48,6 +51,7 @@ let
     config = {
       prefix = mkDefault "compat-${config.name}";
       ghc = {
+        name = config.name;
         compiler = config.version;
         overrideKeys = ["local" "all" "compat" config.ghc.compiler];
         nixpkgs = global.input.ghcNixpkgs."${config.ghc.compiler}" or global.inputs.nixpkgs;
@@ -334,7 +338,7 @@ in {
 
     internal.basicGhc = config.internal.basicPkgs.haskell.packages.${config.mainCompiler};
 
-    devGhc = mkDefault {};
+    devGhc = { name = "dev"; };
 
     pkgs = mkDefault config.devGhc.pkgs;
 
