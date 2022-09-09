@@ -163,7 +163,7 @@ in {
         basic = basicVmNixosConf config;
         pg = if config.postgres.enable then postgresNixosConf config else {};
       in
-      lib.recursiveUpdate basic pg;
+        recursiveUpdate basic pg;
 
     pidfile = mkDefault "${config.dir}/vm.pid";
 

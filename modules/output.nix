@@ -3,14 +3,13 @@ with lib;
 with types;
 let
 
-  project = makeOverridable config.devGhc;
+  project = config.devGhc;
 
   outPackagesFor = packages: ghc:
-  lib.genAttrs packages (n: ghc.${n} // { inherit ghc; });
+  genAttrs packages (n: ghc.${n} // { inherit ghc; });
 
-  compatChecks =
-  let
-    prefixed = prf: lib.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
+  compatChecks = let
+    prefixed = prf: mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
     compatCheck = ver: conf:
     if conf.enable
     then prefixed conf.prefix (outPackagesFor config.internal.packageNames conf.ghc.ghc)
@@ -18,32 +17,24 @@ let
   in
     foldl (z: v: z // v) {} (mapAttrsToList compatCheck config.compat.projects);
 
-  releaseDrv = pkgs: drv:
-  let
-    hsLib = pkgs.haskell.lib;
+  releaseDrv =
+    import ../lib/release-derivation.nix {
+      inherit lib;
+      hsLib = config.pkgs.haskell.lib;
+    };
+
+  base = outPackagesFor (config.internal.packageNames ++ config.output.extraPackages) project.ghc;
+
+  main = let
+    extra = n: base.${n} // { min = config.minDevGhc.ghc.${n}; release = releaseDrv base.${n}; };
   in
-    import ../lib/release-derivation.nix { inherit lib hsLib; } drv;
-
-  extraDrvs = { pkgs, base, min, packages }:
-  let
-    extra = n: _: base.${n} // { min = min.ghc.${n}; release = releaseDrv pkgs base.${n}; };
-  in
-    base // lib.mapAttrs extra packages;
-
-  mainPackagesBase = outPackagesFor (config.internal.packageNames ++ config.output.extraPackages) project.ghc;
-
-  mainPackages = extraDrvs {
-    base = mainPackagesBase;
-    min = config.minDevGhc;
-    inherit (config) packages;
-    inherit (project) pkgs;
-  };
+    base // genAttrs config.internal.packageNames extra;
 
   extraChecks = if config.compat.enable then compatChecks else {};
 
-  customized = config.output.transform project config.outputs;
+  transformed = config.output.transform main config.outputs;
 
-  amended = config.output.amend project customized;
+  amended = config.output.amend main transformed;
 
   tags = import ../lib/tags.nix { inherit config; };
 
@@ -57,14 +48,6 @@ in {
         default = ["x86_64-linux"];
       };
 
-      overrideMain = mkOption {
-        type = unspecified;
-        default = id;
-        description = ''
-        A function that allows customization of the generated dev package set.
-        '';
-      };
-
       transform = mkOption {
         type = functionTo (functionTo unspecified);
         default = _: id;
@@ -76,7 +59,7 @@ in {
 
       amend = mkOption {
         type = functionTo (functionTo unspecified);
-        default = _: id;
+        default = _: _: {};
         description = ''
         A function taking the dev project and the generated outputs and returning additional outputs.
         The return value is merged with the original outputs.
@@ -103,27 +86,27 @@ in {
     outputs = {
 
       packages = mkOption {
-        type = attrsOf package;
+        type = lazyAttrsOf package;
         description = "The flake output attribute <literal>packages</literal>.";
       };
 
       checks = mkOption {
-        type = attrsOf package;
+        type = lazyAttrsOf package;
         description = "The flake output attribute <literal>checks</literal>.";
       };
 
       legacyPackages = mkOption {
-        type = attrsOf unspecified;
+        type = lazyAttrsOf unspecified;
         description = "The flake output attribute <literal>legacyPackages</literal>.";
       };
 
       devShells = mkOption {
-        type = attrsOf package;
+        type = lazyAttrsOf package;
         description = "The flake output attribute <literal>devShells</literal>.";
       };
 
       apps = mkOption {
-        type = attrsOf unspecified;
+        type = lazyAttrsOf unspecified;
         description = "The flake output attribute <literal>apps</literal>.";
       };
 
@@ -134,17 +117,17 @@ in {
   config = {
 
     output = {
-      final = mkDefault (attrsets.recursiveUpdate customized amended);
+      final = mkDefault (recursiveUpdate transformed amended);
     };
 
     outputs = {
 
       packages = {
-        min = mainPackages.${config.main}.min;
-        default = mainPackages.${config.main};
-      } // mainPackages // extraChecks;
+        min = main.${config.main}.min;
+        default = main.${config.main};
+      } // main // extraChecks;
 
-      checks = mainPackages // extraChecks;
+      checks = main // extraChecks;
 
       legacyPackages = {
         inherit project config;
@@ -159,7 +142,7 @@ in {
       apps = let
         app = program: { type = "app"; inherit program; };
         ghcid = app "${(config.ghcid.test {}).testApp}";
-      in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps mainPackages // {
+      in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps main // {
         inherit ghcid;
         hls = app "${config.shell.hls.app}";
         hpack = app "${config.hpack.script}";

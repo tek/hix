@@ -29,7 +29,7 @@ in {
 
     input.ghcNixpkgs = mkOption {
       description = "An attrset mapping GHC versions to the nixpkgs inputs used to build them.";
-      type = types.unspecified;
+      type = types.lazyAttrsOf types.unspecified;
     };
   };
 
