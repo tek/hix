@@ -3,9 +3,7 @@ with lib;
 with types;
 let
 
-  tools = import ./project-tools.nix { inherit lib config; };
-
-  defaultMain = makeOverridable tools config.devGhc;
+  project = makeOverridable config.devGhc;
 
   outPackagesFor = packages: ghc:
   lib.genAttrs packages (n: ghc.${n} // { inherit ghc; });
@@ -29,8 +27,6 @@ let
   in
     base // lib.mapAttrs extra packages;
 
-  project = config.output.overrideMain defaultMain;
-
   mainPackagesBase = outPackagesFor (config.internal.packageNames ++ config.output.extraPackages) project.ghc;
 
   mainPackages = extraDrvs {
@@ -45,6 +41,8 @@ let
   customized = config.output.transform project config.outputs;
 
   amended = config.output.amend project customized;
+
+  tags = import ../lib/tags.nix { inherit config; };
 
 in {
   options = {
@@ -151,7 +149,6 @@ in {
         ghcid = config.ghcid;
         run = config.ghcid.run;
         shell = config.ghcid.shell;
-        tags = project.tags.projectTags;
       };
 
       devShells.default = config.ghcid.shell;
@@ -163,7 +160,7 @@ in {
         inherit ghcid;
         hls = app "${config.shell.hls.app}";
         hpack = app "${config.hpack.script}";
-        tags = app "${project.tags.app}";
+        tags = app "${tags.app}";
       };
 
     };

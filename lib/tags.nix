@@ -1,11 +1,8 @@
-{
-  thax,
-  packages,
-  pkgs,
-  ghc,
-  compiler,
-}:
+{ config }:
 let
+  inherit (config.inputs) thax;
+  inherit (config.devGhc) compiler pkgs ghc;
+
   tags = thax.tags { inherit pkgs compiler; };
 
   withPrefix =
@@ -19,7 +16,7 @@ let
 
   projectTags =
     tags.combined.all {
-      targets = pkgs.lib.attrsets.mapAttrsToList withPrefix packages;
+      targets = pkgs.lib.attrsets.mapAttrsToList withPrefix config.internal.relativePackages;
     };
 
 in {
