@@ -59,6 +59,8 @@ with lib;
       go = ghcOverlay {
         inherit (global.internal) overrides;
         inherit (config) compiler overrideKeys;
+        inherit (config.nixpkgs) rev;
+        inherit (config) name;
       };
       options = recursiveUpdate {
         inherit (global) system;
