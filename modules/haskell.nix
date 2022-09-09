@@ -9,22 +9,39 @@ let
 
   compatProject = { name, config, ... }: {
     options = {
+      enable = mkOption {
+        type = bool;
+        description = "Whether this version should be included";
+        default = true;
+      };
+
       name = mkOption {
         type = str;
+        description = "The name is used in the default prefix as <literal>compat-{name}</literal>.";
         default = name;
       };
 
       prefix = mkOption {
         type = str;
+        description = ''
+        All compat check derivation are prefixed with this, so you would run:
+         <literal>nix build .#{prefix}-{package}</literal>.
+        '';
       };
 
       version = mkOption {
         type = str;
         default = "ghc${name}";
+        description = "The attribute of the GHC version used for this compat project.";
       };
 
       ghc = mkOption {
         type = submodule ghcModule;
+        description = ''
+        The GHC config used for this compat project.
+        The default uses <literal>version</literal> for the <literal>compiler</literal> option, adds the version to
+        <literal>overrideKeys</literal> and uses the nixpkgs input named <literal>nixpkgs_{version}</literal>.
+        '';
       };
     };
 
@@ -39,7 +56,7 @@ let
   };
 
   compatProjects = {
-    # "941" = {};
+    "942" = { enable = false; };
     "924" = {};
     "902" = {};
     "8107" = {};
@@ -325,7 +342,7 @@ in {
       overrideKeys = ["localMin" "all" config.minDevGhc.compiler "dev"];
     });
 
-    compat.projects = mkDefault compatProjects;
+    compat.projects = compatProjects;
 
     internal = {
       overrides = mkDefault (mergeOverrides [config.extraOverrides overrides]);

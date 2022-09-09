@@ -11,7 +11,10 @@ let
   compatChecks =
   let
     prefixed = prf: lib.mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
-    compatCheck = ver: conf: prefixed conf.prefix (outPackagesFor config.internal.packageNames conf.ghc.ghc);
+    compatCheck = ver: conf:
+    if conf.enable
+    then prefixed conf.prefix (outPackagesFor config.internal.packageNames conf.ghc.ghc)
+    else {};
   in
     foldl (z: v: z // v) {} (mapAttrsToList compatCheck config.compat.projects);
 
