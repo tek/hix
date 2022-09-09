@@ -11,13 +11,6 @@ let
     packages = config.internal.relativePackages;
     inherit (baseGhc) compiler pkgs ghc;
   };
-  hpack = verbose: import ../lib/hpack.nix {
-    inherit verbose;
-    inherit (config.hpack) packages;
-    inherit (baseGhc) pkgs;
-    ghc = config.internal.basicGhc;
-    paths = config.internal.relativePackages;
-  };
 in
   baseGhc // {
     inherit tags;

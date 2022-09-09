@@ -152,7 +152,6 @@ in {
         run = config.ghcid.run;
         shell = config.ghcid.shell;
         tags = project.tags.projectTags;
-        hpack = project.hpack {};
       };
 
       devShells.default = config.ghcid.shell;
@@ -163,8 +162,7 @@ in {
       in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps mainPackages // {
         inherit ghcid;
         hls = app "${config.shell.hls.app}";
-        hpack = app "${project.hpack {}}";
-        hpack-verbose = app "${project.hpack { verbose = true; }}";
+        hpack = app "${config.hpack.script}";
         tags = app "${project.tags.app}";
       };
 

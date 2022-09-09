@@ -1,6 +1,8 @@
-{ pkgs, ghc, verbose, paths, packages, }:
+{ config }:
 with builtins;
 let
+  inherit (config.hpack) packages;
+  inherit (config) pkgs;
 
   packageCall = n: p:
   if hasAttr n packages
@@ -8,7 +10,7 @@ let
   else "regular ${n} ${p}";
 
   packageCalls =
-    pkgs.lib.mapAttrsToList packageCall paths;
+    pkgs.lib.mapAttrsToList packageCall config.internal.relativePackages;
 
 in pkgs.writeScript "hpack.zsh" ''
   #!${pkgs.zsh}/bin/zsh
@@ -18,7 +20,7 @@ in pkgs.writeScript "hpack.zsh" ''
 
   run()
   {
-    ${ghc.hpack}/bin/hpack ${if verbose then "" else "1>/dev/null"}
+    ${config.internal.basicGhc.hpack}/bin/hpack
   }
 
   regular()
@@ -26,7 +28,7 @@ in pkgs.writeScript "hpack.zsh" ''
     local name=$1 rel=$2
     dir="$base/$rel"
     pushd $dir
-    ${if verbose then ''echo ">>> $dir"'' else ""}
+    echo ">>> $dir"
     if [[ -f package.yaml ]]
     then
       run
@@ -41,11 +43,11 @@ in pkgs.writeScript "hpack.zsh" ''
     local name=$1 rel=$2 file=$3
     dir="$base/$rel"
     pushd $dir
-    ${if verbose then ''echo ">>> $dir"'' else ""}
+    echo ">>> $dir"
     remove="$dir/package.yaml"
     cp $file package.yaml
     error() {
-      ${if verbose then "cat $file" else ""}
+      cat $file
       rm -f $remove
     }
     trap error ZERR

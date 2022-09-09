@@ -36,6 +36,10 @@ let
 
     allDirs = ["lib" "src" "app" "test" "tests" "integration"];
 
+    hasMain = dir: pathExists "${pkg.src}/${dir}/Main.hs";
+
+    hasNoMain = dir: pathExists "${pkg.src}/${dir}" && !(hasMain dir);
+
     inferDirStatus = dir:
     let srcDir = "${pkg.src}/${dir}";
     in optionalAttrs (pathExists srcDir) { ${dir} = pathExists "${srcDir}/Main.hs"; };
@@ -54,97 +58,64 @@ let
 
     mkExe = source-dirs: { inherit source-dirs; main = "Main.hs"; };
 
-    amendExe = conf: name: let
-      inferredDir =
-        if available.app or false
-        then "app"
-        else if available.src or false
-        then "src"
-        else throw ''
-        The executable ${name} was specified without a 'source-dirs' attribute.
-        Hix chooses either 'app' or 'src' in this case, if one of those directories contains 'Main.hs'.
+    amend = type: dirs: key: dir: conf: name: let
+      notFound = throw ''
+        The ${type} '${name}' was specified without a 'source-dirs' attribute.
+        Hix chooses either ${dirs} in this case, if one of those directories contains 'Main.hs'.
         These conditions are not satisfied.
-        '';
-    in over ["executables" name] (a: a // mkExe inferredDir) conf;
-
-    inferExe = let
-      use = dir: { executables.${pname} = mkExe dir; };
+      '';
     in
-      if available.app or false
-      then use "app"
-      else if available.src or false
-      then use "src"
-      else {};
+    if dir == null
+    then notFound
+    else over [key name] (a: a // mkExe dir) conf;
+
+    inferExe = dir: optionalAttrs (dir != null) { executables.${pname} = mkExe dir; };
 
     checkExe = conf: let
-      exe = head (attrNames conf.executables);
+      inferredDir = findFirst hasMain null ["app" "src"];
+      comps = conf.executables;
+      exe = head (attrNames comps);
       new =
         if hasAttr "executables" conf
         then
-          if length (attrNames conf.executables) == 1 && !(hasAttr "source-dirs" conf.executables.${exe})
-          then amendExe conf exe
+          if length (attrNames comps) == 1 && !(hasAttr "source-dirs" comps.${exe})
+          then amend "executable" "'app' or 'src'" "executables" inferredDir conf exe
           else conf
-        else conf // inferExe
+        else conf // inferExe inferredDir
         ;
     in over ["executables"] (mapAttrs (_: ensureDeps (conf ? library))) new;
 
-    amendTest = conf: name: let
-      inferredDir =
-        if available.test or false
-        then "test"
-        else if available.tests or false
-        then "tests"
-        else if available.integration or false
-        then "integration"
-        else throw ''
-        The test ${name} was specified without a 'source-dirs' attribute.
-        Hix chooses either 'test', 'tests' or 'integration' in this case, if one of those directories contains 'Main.hs'.
-        These conditions are not satisfied.
-        '';
-    in over ["tests" name] (a: a // mkExe inferredDir) conf;
-
-    inferTest = let
-      use = dir: { tests."${pname}-${dir}" = mkExe dir; };
-    in
-      if available.test or false
-      then use "test"
-      else if available.tests or false
-      then use "tests"
-      else if available.integration or false
-      then use "integration"
-      else {};
+    inferTest = dir: optionalAttrs (dir != null) { tests."${pname}-${dir}" = mkExe dir; };
 
     checkTest = conf: let
+      inferredDir = findFirst hasMain null ["test" "tests" "integration"];
       test = head (attrNames conf.tests);
       new =
         if hasAttr "tests" conf
         then
           if length (attrNames conf.tests) == 1 && !(hasAttr "source-dirs" conf.tests.${test})
-          then amendTest conf test
+          then amend "test" "'test', 'tests' or 'integration'" "tests" inferredDir conf test
           else conf
-        else conf // inferTest
+        else conf // inferTest inferredDir
         ;
     in over ["tests"] (mapAttrs (_: ensureDeps (conf ? library))) new;
 
     amendLib = conf: let
-      inferredDir =
-        if !(available.lib or true)
-        then "lib"
-        else if !(available.src or true)
-        then "src"
-        else throw ''
-        The library for ${pname} was specified without a 'source-dirs' attribute.
+      noLib = throw ''
+        The library for '${pname}' was specified without a 'source-dirs' attribute.
         Hix chooses either 'lib' or 'src' in this case, if one of those directories does not contain 'Main.hs'.
         These conditions are not satisfied.
-        '';
+      '';
+      inferredDir =
+        findFirst hasNoMain noLib ["lib" "src"];
     in over ["library"] (a: a // { source-dirs = inferredDir; }) conf;
 
     inferLib = let
       use = dir: { library.source-dirs = dir; };
     in
-      if !(available.lib or true)
+      if hasNoMain "lib"
       then use "lib"
-      else if !(available.src or true)
+      else if hasNoMain "src"
       then use "src"
       else {};
 
@@ -178,6 +149,8 @@ let
   infer =
     mapAttrs inferPackageConf config.internal.packages;
 
+  script = import ../lib/hpack.nix { inherit config; };
+
 in {
 
   options.hpack = {
@@ -199,6 +172,17 @@ in {
         '';
       };
 
+      script = mkOption {
+        type = package;
+        description = ''
+          The script that generates a Cabal file in each of the directories configured in <literal>packages</literal> by
+          executing <literal>hpack</literal>.
+          It is intended to be run manually in the package directory using <literal>nix run .#hpack</literal>.
+          If <literal>hpack.packages</literal> is defined, it is used to synthesize a <literal>package.yaml</literal>.
+          Otherwise, the file needs to be present in the source directory.
+        '';
+      };
+
   };
 
   config.hpack = {
@@ -211,6 +195,8 @@ in {
     defaultApp =
       mkDefault config.main;
 
+    script =
+      mkDefault script;
   };
 
 }
