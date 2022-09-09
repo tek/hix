@@ -2,7 +2,7 @@
 with builtins;
 with lib;
 let
-  pkgs = config.internal.basicPkgs;
+  pkgs = config.pkgs;
 
   vms = import ../vm.nix { inherit pkgs; };
 

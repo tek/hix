@@ -1,11 +1,11 @@
-{ config, lib, mergeOverrides, normalizeOverrides, relativePackages, ... }:
+{ config, lib, mergeOverrides, normalizeOverrides, relativePackages, ghcOverlay, ... }:
 with lib;
 with types;
 let
 
   global = config;
 
-  ghcModule = import ./ghc.nix global;
+  ghcModule = import ./ghc.nix { inherit global ghcOverlay; };
 
   compatProject = { name, config, ... }: {
     options = {

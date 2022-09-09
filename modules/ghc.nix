@@ -1,4 +1,4 @@
-global:
+{ global, ghcOverlay }:
 { lib, config, ... }:
 with lib;
 {
@@ -18,16 +18,14 @@ with lib;
       description = "The flake input pointing to a nixpkgs commit used as the basis for the package set.";
     };
 
-    nixpkgsFunc = mkOption {
-      type = functionTo unspecified;
+    nixpkgsOptions = mkOption {
+      type = attrsOf unspecified;
+      description = "Additional options to pass to nixpkgs when importing.";
+      default = {};
     };
 
     pkgs = mkOption {
       type = unspecified;
-    };
-
-    ghcOverlay = mkOption {
-      type = functionTo (functionTo unspecified);
     };
 
     overlays = mkOption {
@@ -51,20 +49,19 @@ with lib;
 
     nixpkgs = mkDefault global.inputs.nixpkgs;
 
-    nixpkgsFunc = mkDefault (import config.nixpkgs);
+    pkgs = let
+      go = ghcOverlay {
+        inherit (global.internal) overrides;
+        inherit (config) compiler overrideKeys;
+      };
+      options = recursiveUpdate {
+        inherit (global) system;
+        overlays = [go] ++ config.overlays;
+        config.allowUnfree = true;
+      } config.nixpkgsOptions;
+    in import config.nixpkgs options;
 
-    ghcOverlay = mkDefault (import ../lib/ghc-overlay.nix {
-      inherit (global.internal) overrides;
-      inherit (config) compiler overrideKeys;
-    });
-
-    pkgs = mkDefault (config.nixpkgsFunc {
-      inherit (global) system;
-      overlays = [config.ghcOverlay] ++ config.overlays;
-      config.allowUnfree = true;
-    });
-
-    ghc = mkDefault config.pkgs.hixPackages;
+    ghc = config.pkgs.hixPackages;
 
     vanillaGhc = mkDefault ((import config.nixpkgs { inherit (global) system; }).haskell.packages.${config.compiler});
   };
