@@ -7,6 +7,8 @@ let
 
   global = config;
 
+  cfg = config.shell.hls;
+
   ghcModule = import ./ghc.nix { inherit global ghcOverlay; };
 
   ghcidLib = import ../lib/ghcid/default.nix { inherit lib config withModules; };
@@ -67,16 +69,10 @@ in {
       nixpkgs = config.devGhc.nixpkgs;
       nixpkgsOptions = config.devGhc.nixpkgsOptions;
       overrideKeys = [];
-      overlays = config.devGhc.overlays ++ traceVal config.shell.hls.overlays;
+      overlays = config.devGhc.overlays ++ cfg.overlays;
     };
 
-    package = mkDefault (
-      if config.ghcid.easy-hls
-      then config.inputs.easy-hls.defaultPackage.${config.system}
-      else if config.shell.hls.vanilla
-      then config.shell.hls.ghc.ghc.haskell-language-server
-      else import ../lib/hls.nix { inherit config overrides; }
-    );
+    package = mkDefault cfg.ghc.ghc.haskell-language-server;
 
     app = mkDefault (pkgs.writeScript "hls" "nix develop -c haskell-language-server");
 

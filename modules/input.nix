@@ -11,7 +11,6 @@ let
     "flake-utils"
     "obelisk"
     "thax"
-    "easy-hls"
   ];
 
   input = name: mkOption {

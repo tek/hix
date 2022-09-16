@@ -142,12 +142,6 @@ in {
       type = unspecified;
     };
 
-    easy-hls = mkOption {
-      description = "Whether to use easy-hls to obtain HLS.";
-      type = bool;
-      default = false;
-    };
-
     test = mkOption {
       description = "The generated app that runs a ghcid test.";
       type = functionTo unspecified;

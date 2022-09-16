@@ -14,7 +14,6 @@ let
       flake-utils
       obelisk
       thax
-      easy-hls
       ;
     };
   };
