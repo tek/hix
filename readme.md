@@ -339,11 +339,11 @@ If a dependency's local packages should be included (and built directly from the
 
 ## *hpack*
 
-These commands run `hpack` in each directory in `packages` (the first variant suppresses output):
+These commands run `hpack` in each directory in `packages` (the second variant suppresses output):
 
 ```
 nix run .#hpack
-nix run .#hpack-verbose
+nix run .#hpack-quiet
 ```
 
 Instead of conventional `yaml` files, *Hix* allows the configuration to be specified as nix expressions.

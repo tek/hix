@@ -3,7 +3,7 @@
   test = builtins.toFile "modules-test" ''
     cd ./root
     nix flake update
-    nix run .#hpack-verbose
+    nix run .#hpack
 
     nix build .#root.min
     nix build

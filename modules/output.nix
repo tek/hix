@@ -146,6 +146,7 @@ in {
         inherit ghcid;
         hls = app "${config.shell.hls.app}";
         hpack = app "${config.hpack.script}";
+        hpack-quiet = app "${config.hpack.scriptQuiet}";
         tags = app "${tags.app}";
       };
 

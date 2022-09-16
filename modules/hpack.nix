@@ -149,7 +149,9 @@ let
   infer =
     mapAttrs inferPackageConf config.internal.packages;
 
-  script = import ../lib/hpack.nix { inherit config; };
+  script = import ../lib/hpack.nix { inherit config; verbose = true; };
+
+  scriptQuiet = import ../lib/hpack.nix { inherit config; };
 
 in {
 
@@ -183,6 +185,13 @@ in {
         '';
       };
 
+      scriptQuiet = mkOption {
+        type = package;
+        description = ''
+          Same as <literal>script</literal>, but suppress all output.
+        '';
+      };
+
   };
 
   config.hpack = {
@@ -195,8 +204,9 @@ in {
     defaultApp =
       mkDefault config.main;
 
-    script =
-      mkDefault script;
+    script = script;
+
+    scriptQuiet = scriptQuiet;
   };
 
 }

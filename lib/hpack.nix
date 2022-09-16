@@ -1,4 +1,4 @@
-{ config }:
+{ config, verbose ? false }:
 with builtins;
 let
   inherit (config.hpack) packages;
@@ -18,9 +18,14 @@ in pkgs.writeScript "hpack.zsh" ''
 
   base=''${1-''$PWD}
 
+  info()
+  {
+    ${if verbose then ''echo ">>> $*"'' else ""}
+  }
+
   run()
   {
-    ${config.internal.basicGhc.hpack}/bin/hpack
+    ${config.internal.basicGhc.hpack}/bin/hpack ${if verbose then "" else "1>/dev/null"}
   }
 
   regular()
@@ -28,7 +33,7 @@ in pkgs.writeScript "hpack.zsh" ''
     local name=$1 rel=$2
     dir="$base/$rel"
     pushd $dir
-    echo ">>> $dir"
+    info "$dir"
     if [[ -f package.yaml ]]
     then
       run
@@ -43,7 +48,7 @@ in pkgs.writeScript "hpack.zsh" ''
     local name=$1 rel=$2 file=$3
     dir="$base/$rel"
     pushd $dir
-    echo ">>> $dir"
+    info "$dir"
     remove="$dir/package.yaml"
     cp $file package.yaml
     error() {

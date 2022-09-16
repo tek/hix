@@ -70,7 +70,7 @@ let
     if [[ -n $new_version ]]
     then
       ${cfg.versionFileUpdate file}
-      ${if needsHpack file then "nix run '.#hpack'" else ""}
+      ${if needsHpack file then "nix run '.#hpack-quiet'" else ""}
       ${if cfg.commit && file != null then addFiles file else ""}
     fi
   '';
