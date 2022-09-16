@@ -28,10 +28,9 @@ in rec {
     hsPkgs = g: targetDeps g ++ shellConfig.haskellPackages g;
     devInputs = [
       (config.devGhc.ghc.ghcWithPackages hsPkgs)
-      vanillaGhc.ghcid
       vanillaGhc.cabal-install
       config.shell.hls.package
-    ];
+    ] ++ optional config.shell.ghcid.enable vanillaGhc.ghcid;
     args = {
       name = "ghci-shell";
       buildInputs = devInputs ++ shellConfig.buildInputs;

@@ -27,6 +27,17 @@ in {
         type = unspecified;
       };
 
+    ghcid = {
+
+      enable = mkOption {
+        type = bool;
+        description = ''
+          Whether to include <literal>ghcid</literal> in the shell inputs.
+          Setting this to <literal>false</literal> will prevent the test apps from working.
+        '';
+        default = true;
+      };
+
     };
 
   };
