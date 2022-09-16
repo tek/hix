@@ -86,6 +86,9 @@ let
   libDir = pkg:
   "$PWD/" + (if pkg == "." then "lib" else "${pkg}/lib");
 
+  srcDir = pkg:
+  "$PWD/" + (if pkg == "." then "src" else "${pkg}/src");
+
   colonSeparated =
     concatStringsSep ":";
 
@@ -179,7 +182,7 @@ let
     cwd ? null,
   }:
   let
-    searchP = searchPaths ((map libDir (attrValues packages)) ++ search ++ optional preludeFix preludeSearch);
+    searchP = searchPaths (map srcDir (attrValues packages) ++ map libDir (attrValues packages) ++ search ++ optional preludeFix preludeSearch);
     script' = ghciScript cwd script;
     scriptFile = pkgs.writeText "ghci-script" script';
   in {
