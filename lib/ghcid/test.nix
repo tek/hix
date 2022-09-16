@@ -1,3 +1,4 @@
+{ config }:
 { pkgs, hpack ? true, pre ? "", }:
 {
   testApp =
@@ -7,7 +8,7 @@
       ${pre}
       ${if hpack then "nix run '.#hpack-quiet'" else ""}
       nix develop --impure --expr "
-        (builtins.getFlake path:$PWD).legacyPackages.x86_64-linux.run.override {
+        (builtins.getFlake path:$PWD).legacyPackages.${config.system}.run.override {
           pkg = \"$pkg\";
           module = \"$module\";
           name = \"$name\";
