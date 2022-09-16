@@ -1,9 +1,13 @@
-{ lib, config, withModules, overrides, ... }:
+{ lib, config, withModules, overrides, ghcOverlay, ... }:
 with builtins;
 with lib;
 with types;
 let
   inherit (config.devGhc) pkgs;
+
+  global = config;
+
+  ghcModule = import ./ghc.nix { inherit global ghcOverlay; };
 
   ghcidLib = import ../lib/ghcid/default.nix { inherit lib config withModules; };
 in {
@@ -16,6 +20,11 @@ in {
         type = package;
       };
 
+      ghc = mkOption {
+        description = "The GHC config used for HLS, defaulting to the dev GHC without overrides.";
+        type = submodule ghcModule;
+      };
+
       vanilla = mkOption {
         description = "If true, use the derivation from nixpkgs. If false, build a custom package from Hackage.";
         type = bool;
@@ -26,6 +35,14 @@ in {
         description = "The flake app generated for HLS.";
         type = unspecified;
       };
+
+      overlays = mkOption {
+        description = "Overlays to apply to the nixpkgs used for HLS.";
+        type = unspecified;
+        default = [];
+      };
+
+    };
 
     ghcid = {
 
@@ -44,11 +61,20 @@ in {
 
   config.shell.hls = {
 
+    ghc = {
+      name = "hls";
+      compiler = config.devGhc.compiler;
+      nixpkgs = config.devGhc.nixpkgs;
+      nixpkgsOptions = config.devGhc.nixpkgsOptions;
+      overrideKeys = [];
+      overlays = config.devGhc.overlays ++ traceVal config.shell.hls.overlays;
+    };
+
     package = mkDefault (
       if config.ghcid.easy-hls
       then config.inputs.easy-hls.defaultPackage.${config.system}
       else if config.shell.hls.vanilla
-      then config.devGhc.vanillaGhc.haskell-language-server
+      then config.shell.hls.ghc.ghc.haskell-language-server
       else import ../lib/hls.nix { inherit config overrides; }
     );
 
