@@ -158,7 +158,12 @@ in {
   options.hpack = {
 
       packages = mkOption {
-        type = attrsOf unspecified;
+        type = nullOr (attrsOf unspecified);
+        description = ''
+        Cabal configuration in the <literal>hpack</literal> schema.
+        It will be encoded as JSON and passed to <literal>hpack</literal> to generate a Cabal file.
+        '';
+        default = null;
       };
 
       apps = mkOption {
@@ -175,7 +180,7 @@ in {
       };
 
       script = mkOption {
-        type = package;
+        type = path;
         description = ''
           The script that generates a Cabal file in each of the directories configured in <literal>packages</literal> by
           executing <literal>hpack</literal>.
@@ -186,20 +191,28 @@ in {
       };
 
       scriptQuiet = mkOption {
-        type = package;
+        type = path;
         description = ''
           Same as <literal>script</literal>, but suppress all output.
         '';
+      };
+
+      internal = {
+
+        packages = mkOption {
+          type = attrsOf unspecified;
+        };
+
       };
 
   };
 
   config.hpack = {
 
-    packages = mkDefault infer;
+    internal.packages = mkDefault (if config.hpack.packages == null then infer else config.hpack.packages);
 
     apps =
-      mkDefault (outputs: foldl (a: b: a // b) {} (mapAttrsToList (packageApps outputs) config.hpack.packages));
+      mkDefault (outputs: foldl (a: b: a // b) {} (mapAttrsToList (packageApps outputs) config.hpack.internal.packages));
 
     defaultApp =
       mkDefault config.main;

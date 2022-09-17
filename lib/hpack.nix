@@ -1,11 +1,11 @@
 { config, verbose ? false }:
 with builtins;
 let
-  inherit (config.hpack) packages;
+  inherit (config.hpack.internal) packages;
   inherit (config) pkgs;
 
   packageCall = n: p:
-  if hasAttr n packages
+  if (config.hpack.packages != null || config.auto) && hasAttr n packages
   then "synthetic ${n} ${p} ${toFile "package.yaml" (toJSON packages.${n})}"
   else "regular ${n} ${p}";
 

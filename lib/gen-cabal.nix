@@ -50,7 +50,7 @@ let
   } // conf.passthru or {});
 
   simpleCabalDrv = api: pname:
-  simpleCabalDrvWith config.hpack.packages.${pname} api pname;
+  simpleCabalDrvWith config.hpack.internal.packages.${pname} api pname;
 
 in {
   inherit withCabal simpleCabalDrv;
