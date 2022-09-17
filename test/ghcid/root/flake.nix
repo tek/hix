@@ -66,7 +66,7 @@
 
       testConfig_searchPath =
         let
-          path = (ghcid.run.override { type = "integration"; }).ghciCommand.searchP;
+          path = (ghcid.run { type = "integration"; }).ghciCommand.searchP;
         in concatStringsSep ":" (take 4 (splitString ":" path));
 
       inherit (ghcid.shells.test) mainScript;

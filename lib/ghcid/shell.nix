@@ -44,8 +44,11 @@ in rec {
     test,
     shellConfig,
     cwd ? null,
-  }: {
-    command = (command.shellCommand { inherit script test shellConfig cwd; }).script;
+  }: let
+    shellCommand = command.shellCommand { inherit script test shellConfig cwd; };
+  in {
+    inherit shellCommand;
+    command = shellCommand.script;
     shell = shellFor {
       packageNames = mainPackageNames;
       inherit shellConfig;
@@ -54,7 +57,7 @@ in rec {
 
   runShell = name: args: let
     sh = runEnv name args;
-  in sh.shell.overrideAttrs { shellHook = sh.command; };
+  in sh.shellCommand // sh.shell.overrideAttrs (_: { shellHook = sh.command; });
 
   shellWith = { packageNames ? mainPackageNames, shellConfig ? {}, hook ? "" }:
   withShellConfig shellConfig (c: shellFor { inherit packageNames hook; inherit (c.ghcid) shellConfig; });
@@ -92,6 +95,6 @@ in rec {
 
   run = args: let
     env = test args;
-  in env.shell.overrideAttrs (_: { shellHook = env.command; });
+  in env.shellCommand // env.shell.overrideAttrs (_: { shellHook = env.command; });
 
 }
