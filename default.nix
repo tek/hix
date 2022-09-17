@@ -23,6 +23,9 @@ let
     auto = projectModules:
     self.flake ([{ auto = true; ifd = false; }] ++ toList projectModules);
 
+    pro = projectModules:
+    self.flake ([(import ./modules/pro.nix)] ++ toList projectModules);
+
     obeliskOverrides = import ./obelisk/overrides.nix { inherit (inputs) obelisk; };
 
     overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };
