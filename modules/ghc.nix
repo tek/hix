@@ -40,11 +40,11 @@ with lib;
     };
 
     vanillaGhc = mkOption {
-      type = unspecified;
+      type = util.types.ghc;
     };
 
     ghc = mkOption {
-      type = unspecified;
+      type = util.types.ghc;
     };
   };
 

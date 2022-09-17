@@ -27,4 +27,10 @@ in {
     merge = mergeOneOption;
   };
 
+  ghc = types.mkOptionType {
+    name = "ghc";
+    description = "A Haskell package set";
+    merge = mergeOneOption;
+  };
+
 }

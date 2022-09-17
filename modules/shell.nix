@@ -34,8 +34,8 @@ in {
       };
 
       app = mkOption {
-        description = "The flake app generated for HLS.";
-        type = unspecified;
+        description = "The script for a flake app that executes HLS.";
+        type = path;
       };
 
       overlays = mkOption {

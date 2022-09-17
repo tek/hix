@@ -305,7 +305,7 @@ in {
       };
 
       basicGhc = mkOption {
-        type = unspecified;
+        type = util.types.ghc;
       };
 
       packages = mkOption {

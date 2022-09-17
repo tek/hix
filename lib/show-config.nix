@@ -1,10 +1,12 @@
 { config, lib, util, ... }:
 {
-  path ? null
+  path ? ""
 }:
 with builtins;
 with lib;
 let
+
+  pathSegs = if path == "" then [] else splitString "." path;
 
   unlines = concatStringsSep "\n";
 
@@ -14,23 +16,60 @@ let
 
   concatMapAttrs = f: a: concatLists (mapAttrsToList f a);
 
-  desc = n: t: "\\e[" + toString n + "m" + t + "\\e[0m: ";
+  color = n: t: "\\e[" + toString n + "m" + t + "\\e[0m";
 
-  kv = n: v:
-  [(desc 34 n + v)];
+  colors = {
+    attrset = "33";
+    submodule = "32";
+    option = "34";
+  };
+
+  desc = n: t: color n t + ": ";
+
+  kvWith = col: name: value:
+  [(desc col name + value)];
+
+  kv =
+  kvWith colors.option;
 
   sub = n:
   kv n "";
 
   mods = util.modulesRaw {} (util.modules ++ [{ system = config.system; } (import ../modules/system.nix)]);
-  # mods = util.modulesRaw {} util.modules;
 
-  options = mods.options;
+  zoom = segs: root: let
+    get = p: f: config: let
+      inner =
+        if hasAttr p config
+        then f config.${p}
+        else throw ''
+        No such config option: ${path}
+        ${p} is not present in ${concatStringsSep ", " (attrNames config)}
+        '';
+    in
+    { ${p} = inner; };
+    spin = p: f: get p f;
+  in foldr spin id segs root;
+
+  listOrEmpty = f: cs: n:
+  if cs == []
+  then kv n "[]"
+  else sub n ++ indent (map f cs);
+
+  attrsOrEmpty = f: cs: n:
+  if cs == {}
+  then kv n "{}"
+  else sub n ++ indent (concatMapAttrs f cs);
 
   renderPackage = p:
     if p ? pname
     then "${p.pname}-${p.version}"
     else p.name or "package";
+
+  ghcDesc = g:
+    if hasAttr "hix-name" g
+    then " (Overrides for ${g.hix-name})"
+    else "";
 
   renderers = {
     bool = b: if b then "true" else "false";
@@ -42,7 +81,8 @@ let
     nixpkgs = n: "nixpkgs source (${n.rev or "?"})";
     pkgs = _: "nixpkgs attrset";
     overlay = _: "overlay";
-    cabalOverrides = _: "Cabal overrides";
+    cabal-overrides = _: "Cabal overrides";
+    ghc = g: "Packages for GHC ${g.ghc.version}${ghcDesc g}";
   };
 
   renderGeneric = tpe: _:
@@ -52,15 +92,14 @@ let
   (renderers.${tpe} or (renderGeneric tpe)) c;
 
   stringifySubmodule = c: n: a:
-  [(desc 33 n)] ++
+  [(desc colors.submodule n)] ++
   indent (stringifyModule c (a.getSubOptions []));
 
   stringifyElem = tpe: c:
-  "- " + stringifyOptionValue c tpe;
+  color 35 "* " + stringifyOptionValue c tpe;
 
-  stringifyListOf = c: n: a:
-  sub n ++
-  indent (map (stringifyElem a.nestedTypes.elemType.name) c);
+  stringifyListOf = cs: n: a:
+  listOrEmpty (stringifyElem a.nestedTypes.elemType.name) cs n;
 
   stringifyAttrOf = tpe: n: c:
   kv n (stringifyOptionValue c tpe);
@@ -68,12 +107,10 @@ let
   stringifyAttrsOf = cs: n: a: let
     tpe = a.nestedTypes.elemType;
   in
-  sub n ++
-  indent (concatMapAttrs (n: c: stringifyOption c n tpe) cs);
+  attrsOrEmpty (n: c: stringifyOption c n tpe) cs n;
 
   stringifyAny = n: a:
     if isDerivation a
-    # then "<derivation> ${toString (attrNames a)}"
     then "<derivation>"
     else if isAttrs a
     then stringifyAttrsStrict a n null
@@ -82,8 +119,8 @@ let
     else kv n (toString a)
     ;
 
-  stringifyAttrsStrict = c: n: _:
-  [(desc 34 n)] ++ indent (concatMapAttrs stringifyAny c);
+  stringifyAttrsStrict = cs: n: _:
+  attrsOrEmpty stringifyAny cs n;
 
   stringifyEither = c: n: a:
   if a.nestedTypes.left.check c
@@ -104,31 +141,31 @@ let
   then nestedHandlers.${tpe.name} c n tpe
   else kv n (stringifyOptionValue c tpe.name);
 
-  stringifyOther = c: n: a:
-  [(desc 35 n + "other")];
-
   stringifyAttrs = c: n: a:
-  [(desc 33 n)] ++
+  [(desc colors.attrset n)] ++
   (if isDerivation a
-  then ["derivation"]
-  else indent (concatMapAttrs (n: stringifyAttr c n) a));
+  then ["<derivation>"]
+  else indent (stringifyModule c a));
 
-  stringifyAttr = c: n: a:
+  stringifyValue = c: n: a:
   if n == "_module"
   then []
   else if isAttrs a
   then
   if (a._type or "nothing") == "option"
-  then stringifyOption c.${n} n a.type
-  else stringifyAttrs c.${n} n a
-  else
-  stringifyOther c.${n} n a;
+  then stringifyOption c n a.type
+  else stringifyAttrs c n a
+  else stringifyAny n a;
 
-  stringifyModule = c: m: concatMapAttrs (stringifyAttr c) m;
+  stringifyModule = c: m: concatMapAttrs (n: a: optionals (hasAttr n c) (stringifyValue c.${n} n a)) m;
 
-  stringifyRoot = r: unlines (stringifyModule config r);
+  stringifyRoot = unlines (stringifyModule (zoom pathSegs mods.config) mods.options);
+
+  palette = "Colors: ${concatStringsSep " | " (mapAttrsToList (flip color) colors)}";
 
 in config.pkgs.writeScript "show-config" ''
   #!${config.pkgs.zsh}/bin/zsh
-  echo "${stringifyRoot options}"
+  print "${palette}"
+  print ""
+  print "${stringifyRoot}"
 ''

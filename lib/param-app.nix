@@ -2,7 +2,6 @@
 {
   name,
   func,
-  params ? [],
   pre ? "",
 }:
 with lib;
@@ -10,9 +9,13 @@ let
 
   inherit (config) pkgs;
 
-  param = p: "";
+  params = attrNames (functionArgs func);
 
-  paramLines = concatMapStringsSep "\n" param params;
+  dollar = "$";
+
+  param = i: p: ''$(arg "${p}" ${toString i})'';
+
+  paramLines = concatStringsSep "\n" (imap1 param params);
 
   script = args: pkgs.writeScriptBin "hix-param-app" ''
   ${func args}
@@ -25,7 +28,17 @@ let
   app =
     pkgs.writeScript "${name}-app" ''
       #!${pkgs.zsh}/bin/zsh
-      pkg=$1 module=$2 name=$3 type_=$4 runner=''${5-generic}
+      num_args=$#
+      args=($@)
+      arg()
+      {
+        if (( $2 >= $num_args ))
+        then
+          print "$1 = \"$args[$2]\";"
+        else
+          exit 1
+        fi
+      }
       ${pre}
       nix develop --impure --expr "
         (builtins.getFlake path:$PWD).legacyPackages.${config.system}.${name} {
