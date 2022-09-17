@@ -17,8 +17,8 @@ let
 in rec {
 
   shellFor = {
-    shellConfig,
-    packageNames,
+    shellConfig ? {},
+    packageNames ? mainPackageNames,
     hook ? "",
   }:
   let
@@ -39,20 +39,22 @@ in rec {
   in
     pkgs.stdenv.mkDerivation (args // shellConfig.env);
 
-  runShell = name: {
+  runEnv = name: {
     script,
     test,
     shellConfig,
     cwd ? null,
-  }:
-  let
-    cmd = command.shellCommand { inherit script test shellConfig cwd; };
+  }: {
+    command = (command.shellCommand { inherit script test shellConfig cwd; }).script;
     shell = shellFor {
       packageNames = mainPackageNames;
-      hook = cmd.script;
       inherit shellConfig;
     };
-  in cmd // shell;
+  };
+
+  runShell = name: args: let
+    sh = runEnv name args;
+  in sh.shell.overrideAttrs { shellHook = sh.command; };
 
   shellWith = { packageNames ? mainPackageNames, shellConfig ? {}, hook ? "" }:
   withShellConfig shellConfig (c: shellFor { inherit packageNames hook; inherit (c.ghcid) shellConfig; });
@@ -68,25 +70,28 @@ in rec {
     program = "${shellAppCmd name conf}";
   };
 
-  run = {
-    pkg,
-    module,
-    name,
-    type,
+  test = {
+    pkg ? config.main,
+    module ? "Main",
+    name ? "main",
+    type ? "test",
     runner ? "generic",
     shellConfig ? {},
-  }@args:
+  }:
   withModules config [
     { ghcid.testConfig = _: config.ghcid.shellConfig; }
     { ghcid.testConfig = _: { search = ["$PWD/${pkg}/${type}"]; }; }
     { ghcid.testConfig = _: shellConfig; }
-  ] (c:
-    runShell "run" {
+  ] (c: runEnv "test" {
       cwd = pkg;
       shellConfig = c.ghcid.testConfig { inherit pkg module name type runner; };
       script = getScript c runner module;
       test = getRunner c runner name;
     }
   );
+
+  run = args: let
+    env = test args;
+  in env.shell.overrideAttrs (_: { shellHook = env.command; });
 
 }

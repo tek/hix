@@ -142,7 +142,17 @@ in {
       description = ''
         The command line arguments passed to GHCi.
         Setting this option appends to the defaults, so in order to replace them, use 'mkForce'.
+        To only override basic GHC options like <literal>-Werror</literal>, use <literal>ghci.ghcOptions</literal>.
       '';
+    };
+
+    ghcOptions = mkOption {
+      type = listOf str;
+      description = ''
+        Command line arguments passed to GHCi that aren't related to more complex Hix config, like Prelude overrides and
+        the extensions preprocessor.
+      '';
+      default = basicGhciArgs;
     };
 
     scripts = mkOption {
@@ -179,6 +189,7 @@ in {
         Since <literal>ghcid</literal> cannot read Cabal files, these have to be set manually.
       '';
       type = listOf str;
+      default = [];
     };
 
     preprocessor = mkOption {
@@ -238,7 +249,7 @@ in {
     });
 
     args =
-      basicGhciArgs
+      config.ghci.ghcOptions
       ++
       optional newerThan810 "-Wunused-packages"
       ++
@@ -250,6 +261,7 @@ in {
       ;
 
     scripts = builtinTestScripts;
+
     runners = builtinTestRunners;
 
     command = mkDefault command;

@@ -40,7 +40,19 @@ let
 
   showConfig = import ../lib/show-config.nix { inherit config lib util; };
 
-  show-config = util.paramApp { name = "show-config"; func = showConfig; };
+  show-config = util.paramApp {
+    name = "show-config";
+    func = showConfig;
+    params = ["path"];
+  };
+
+  ghcid-test =
+    util.paramApp {
+      name = "ghcid";
+      func = config.ghcid.lib.shell.test;
+      params = ["pkg" "module" "name" "type" "runner"];
+      shellName = "ghcid-run";
+    };
 
 in {
   options = {
@@ -137,23 +149,23 @@ in {
         inherit project config;
         inherit (project) pkgs ghc;
         ghcid = config.ghcid;
-        run = config.ghcid.run;
         shell = config.ghcid.shell;
         show-config = show-config.shell;
+        ghcid-run = ghcid-test.shell;
       };
 
       devShells.default = config.ghcid.shell;
 
       apps = let
         app = program: { type = "app"; inherit program; };
-        ghcid = app "${(config.ghcid.test {}).testApp}";
+        ghcid = ghcid-test.app;
       in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps main // {
         inherit ghcid;
         hls = app "${config.shell.hls.app}";
         hpack = app "${config.hpack.script}";
         hpack-quiet = app "${config.hpack.scriptQuiet}";
         tags = app "${tags.app}";
-        show-config = app "${show-config.app}";
+        show-config = show-config.app;
       };
 
     };

@@ -11,14 +11,6 @@ let
 
   vmConfig = import ./vm.nix config;
 
-  defaultRunArgs = {
-    pkg = config.main;
-    module = "Main";
-    name = "main";
-    type = "test";
-    runner = "generic";
-  };
-
   runConfig = submodule ({ config, ... }: {
     options = {
 
@@ -161,7 +153,7 @@ in {
 
     apps = mkDefault (mapAttrs ghcidLib.shell.app config.ghcid.commands);
 
-    run = mkDefault (makeOverridable ghcidLib.shell.run defaultRunArgs);
+    run = mkDefault ghcidLib.shell.run;
 
     shell = mkDefault (ghcidLib.shell.shellWith { inherit (config.ghcid) shellConfig; });
 
