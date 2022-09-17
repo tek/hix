@@ -6,6 +6,7 @@
   overrideKeys ? ["local" "all" compiler "dev"],
 }:
 final: prev:
+with prev.lib;
 let
 
   o = import ./overrides.nix { inherit (prev) lib; };

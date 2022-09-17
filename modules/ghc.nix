@@ -1,4 +1,4 @@
-{ global, ghcOverlay }:
+{ global, ghcOverlay, util }:
 { lib, config, ... }:
 with lib;
 {
@@ -20,7 +20,7 @@ with lib;
     };
 
     nixpkgs = mkOption {
-      type = unspecified;
+      type = util.types.nixpkgs;
       description = "The flake input pointing to a nixpkgs commit used as the basis for the package set.";
     };
 
@@ -31,11 +31,11 @@ with lib;
     };
 
     pkgs = mkOption {
-      type = unspecified;
+      type = util.types.pkgs;
     };
 
     overlays = mkOption {
-      type = listOf unspecified;
+      type = listOf util.types.overlay;
       default = [];
     };
 

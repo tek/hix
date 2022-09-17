@@ -73,7 +73,7 @@ in rec {
     module,
     name,
     type,
-    runner,
+    runner ? "generic",
     shellConfig ? {},
   }@args:
   withModules config [

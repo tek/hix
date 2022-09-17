@@ -6,7 +6,7 @@
   inputs.dep2.url = path:BASE/dep2;
 
   outputs = { hix, dep1, dep2, ... }:
-  hix.lib.flake {
+  hix.lib.flake ({ lib, ... }: {
     base = ./.;
     main = "root";
     packages = {
@@ -42,11 +42,11 @@
     depsFull = [dep1 dep2];
     output.amend = project: outputs: {
       stm-chans-version =
-        with project.pkgs.lib;
+        with lib;
         let
           pred = dep: dep != null && dep.pname == "stm-chans";
           stm-chans = findFirst pred { version = "missing"; } outputs.packages.root.getCabalDeps.libraryHaskellDepends;
         in stm-chans.version;
-    };
-  };
+      };
+    });
 }

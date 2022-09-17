@@ -1,4 +1,4 @@
-{ lib, config, ... }:
+{ lib, config, util, ... }:
 with lib;
 with types;
 let
@@ -37,6 +37,10 @@ let
   amended = config.output.amend main transformed;
 
   tags = import ../lib/tags.nix { inherit config; };
+
+  showConfig = import ../lib/show-config.nix { inherit config lib util; };
+
+  show-config = util.paramApp { name = "show-config"; func = showConfig; };
 
 in {
   options = {
@@ -135,6 +139,7 @@ in {
         ghcid = config.ghcid;
         run = config.ghcid.run;
         shell = config.ghcid.shell;
+        show-config = show-config.shell;
       };
 
       devShells.default = config.ghcid.shell;
@@ -148,6 +153,7 @@ in {
         hpack = app "${config.hpack.script}";
         hpack-quiet = app "${config.hpack.scriptQuiet}";
         tags = app "${tags.app}";
+        show-config = app "${show-config.app}";
       };
 
     };

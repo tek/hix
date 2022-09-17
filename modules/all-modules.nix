@@ -20,12 +20,15 @@ let
 
   hixlib = import ../lib/default.nix { inherit lib; };
 
-  helpers = {
-    _module.args = hixlib;
+  hixlibc = config:
+  let util = import ../lib/with-config.nix { inherit config lib util; };
+  in util;
+
+  helpers = { config, ... }: {
+    _module.args = hixlib // { util = hixlibc config // { modules = modules; }; };
   };
 
-in
-  projectModules ++ [
+  modules = projectModules ++ [
     ./input.nix
     ./haskell.nix
     ./hpack.nix
@@ -36,4 +39,6 @@ in
     ./hackage.nix
     inputsConfig
     helpers
-  ]
+  ];
+
+in modules

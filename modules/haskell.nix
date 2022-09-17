@@ -1,11 +1,11 @@
-{ config, lib, mergeOverrides, normalizeOverrides, relativePackages, ghcOverlay, ... }:
+{ config, lib, mergeOverrides, normalizeOverrides, relativePackages, ghcOverlay, util, ... }:
 with lib;
 with types;
 let
 
   global = config;
 
-  ghcModule = import ./ghc.nix { inherit global ghcOverlay; };
+  ghcModule = import ./ghc.nix { inherit global ghcOverlay util; };
 
   compatProject = { name, config, ... }: {
     options = {
@@ -71,10 +71,11 @@ let
   let
     local = import ../deps/local.nix {
       inherit config lib;
+      inherit (config) localPackage;
     };
     localMin = import ../deps/local.nix {
       inherit config lib;
-      localPackage = { fast, ... }: p: fast (config.localPackage p);
+      localPackage = api@{ fast, ... }: p: fast (config.localPackage api p);
     };
     withDeps = normalizeOverrides config.overrides config.deps config.depsFull;
   in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
@@ -169,7 +170,7 @@ in {
     };
 
     overrides = mkOption {
-      type = unspecified;
+      type = util.types.cabalOverrides;
       default = {};
       description = ''
         Cabal package specifications and overrides injected into GHC package sets.
@@ -198,7 +199,7 @@ in {
     };
 
     extraOverrides = mkOption {
-      type = attrsOf (listOf unspecified);
+      type = lazyAttrsOf (listOf unspecified);
       default = {};
       description = ''
         Like <literal>overrides</literal>, but expected to be in normalized form. This allows for extensions of Hix to
@@ -274,7 +275,7 @@ in {
     };
 
     pkgs = mkOption {
-      type = unspecified;
+      type = util.types.pkgs;
       description = ''
         The nixpkgs attrset used by <literal>devGhc</literal>.
       '';
@@ -338,9 +339,14 @@ in {
 
     pkgs = mkDefault config.devGhc.pkgs;
 
-    minDevGhc = mkDefault (config.devGhc // {
+    minDevGhc = {
+      name = "min";
+      compiler = config.devGhc.compiler;
+      nixpkgs = config.devGhc.nixpkgs;
+      nixpkgsOptions = config.devGhc.nixpkgsOptions;
       overrideKeys = ["localMin" "all" config.minDevGhc.compiler "dev"];
-    });
+      overlays = config.devGhc.overlays;
+    };
 
     compat.projects = compatProjects;
 

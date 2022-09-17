@@ -19,13 +19,10 @@ let
     api = import ./api.nix { inherit pkgs; };
   in mapAttrs (package self super) (overlay (api { inherit self super; }));
 
-  asList = overlays:
-  if isList overlays then overlays else [overlays];
-
-  composeManyExtensions =
+  foldExtensions =
   foldr composeExtensions (self: super: {});
 
-  compose = overlays: composeManyExtensions (map packages (asList overlays));
+  compose = overlays: foldExtensions (map packages (toList overlays));
 
   override = ghc: f: ghc.override { overrides = compose f; };
 in {

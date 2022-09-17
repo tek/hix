@@ -1,4 +1,4 @@
-{ lib, config, withModules, ... }:
+{ lib, config, ... }:
 with lib;
 let
 

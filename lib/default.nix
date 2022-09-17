@@ -39,11 +39,14 @@ let
     config.internal.parents = modules;
   };
 
-  withModules = config: extra: f:
+  modulesRaw = config: extra:
   let
     current = attrByPath ["internal" "parents"] [] config ++ extra;
     newModules = lib.evalModules { modules = current ++ [(parents current)]; };
-  in f newModules.config;
+  in newModules;
+
+  withModules = config: extra: f:
+  f (modulesRaw config extra).config;
 
   foldAttrs =
   foldl' (z: a: z // a) {};
@@ -65,6 +68,7 @@ in {
   overridesFor
   asFunction
   unlines
+  modulesRaw
   withModules
   foldAttrs
   foldMapAttrs

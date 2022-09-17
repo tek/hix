@@ -182,7 +182,13 @@ let
     cwd ? null,
   }:
   let
-    searchP = searchPaths (map srcDir (attrValues packages) ++ map libDir (attrValues packages) ++ search ++ optional preludeFix preludeSearch);
+    searchP =
+      searchPaths (
+        map srcDir (attrValues packages) ++
+        map libDir (attrValues packages) ++
+        search ++
+        optional preludeFix preludeSearch
+      );
     script' = ghciScript cwd script;
     scriptFile = pkgs.writeText "ghci-script" script';
   in {

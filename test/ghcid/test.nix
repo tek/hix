@@ -4,7 +4,7 @@
     cd ./root
     nix flake update
 
-    search_path='-i$PWD/lib:$PWD/root/intergration'
+    search_path='-i$PWD/src:$PWD/lib:extra-search:$PWD/root/integration'
     result=$(nix eval --raw .#ghcid.testConfig_searchPath)
     if [[ "$result" != "$search_path" ]]
     then
