@@ -71,6 +71,13 @@ in {
 
     inherit extensions;
 
+    ghcOptions = [
+      "-Werror"
+      "-Wall"
+      "-Wredundant-constraints"
+      "-Wunused-type-patterns"
+      "-Widentities"
+    ];
   };
 
 }

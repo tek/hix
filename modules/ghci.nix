@@ -11,14 +11,6 @@ let
 
   newerThan810 = match "ghc(81|9).*" config.devGhc.compiler != null;
 
-  basicGhciArgs = [
-    "-Werror"
-    "-Wall"
-    "-Wredundant-constraints"
-    "-Wunused-type-patterns"
-    "-Widentities"
-  ];
-
   libDir = pkg:
   "$PWD/" + (if pkg == "." then "lib" else "${pkg}/lib");
 
@@ -149,10 +141,10 @@ in {
     ghcOptions = mkOption {
       type = listOf str;
       description = ''
-        Command line arguments passed to GHCi that aren't related to more complex Hix config, like Prelude overrides and
+        Command line arguments passed to GHCi that aren't related to more complex Hix config like Prelude overrides and
         the extensions preprocessor.
       '';
-      default = basicGhciArgs;
+      default = [];
     };
 
     scripts = mkOption {
