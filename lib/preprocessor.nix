@@ -22,7 +22,10 @@ let
     touch $out_file
 
     ${if length extensions == 0 then "" else append extensionPragma}
-    ${append (pragma "options_ghc" "$options_ghc")}
+    if [[ -n "$options_ghc" ]]
+    then
+      ${append (pragma "options_ghc" "$options_ghc")}
+    fi
     ${if stringLength extraCode == 0 then "" else append extensionPragma}
     ${append (pragma "line" ''1 "$orig_file"'')}
     cat $in_file >> $out_file
