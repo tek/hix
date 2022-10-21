@@ -42,7 +42,7 @@ let
   });
 
   cabal2nix = src: spec.create ({ self, final, pkg, ... }: {
-    drv = self.callCabal2nixWithOptions pkg src (options "cabal2nix" "" final) {};
+    drv = self.callCabal2nixWithOptions pkg src (options "cabal2nix" "" final) (options "cabal2nix-overrides" {} final);
   });
 
   source = rec {
@@ -57,8 +57,10 @@ let
 
   noHpack = option "cabal2nix" "--no-hpack";
 
+  cabalOverrides = option "cabal2nix-overrides";
+
 in transformers // {
-  inherit hackage source self super pkgs keep transform transform_ option noHpack drv;
+  inherit hackage source self super pkgs keep transform transform_ option noHpack cabalOverrides drv;
   hsLib = hl;
   inherit (pkgs) system lib;
   compilerName = self.ghc.name;

@@ -266,6 +266,16 @@ in {
       '';
     };
 
+    depsProf = mkOption {
+      type = listOf path;
+      default = [];
+      description = ''
+        Flake inputs containing hix projects whose overrides are merged into this project's.
+        Unlike <literal>deps</literal>, this includes the <literal>local</literal> overrides.
+        Unlike <literal>depsFull</literal>, the local packages are forced to be built with profiling enabled.
+      '';
+    };
+
     devGhc = mkOption {
       type = submodule ghcModule;
       description = ''
