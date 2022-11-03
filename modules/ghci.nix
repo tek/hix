@@ -133,7 +133,7 @@ in {
       type = listOf str;
       description = ''
         The command line arguments passed to GHCi.
-        Setting this option appends to the defaults, so in order to replace them, use 'mkForce'.
+        Setting this option appends to the defaults, so in order to replace them, use <literal>mkForce</literal>.
         To only override basic GHC options like <literal>-Werror</literal>, use <literal>ghci.ghcOptions</literal>.
       '';
     };
@@ -143,6 +143,8 @@ in {
       description = ''
         Command line arguments passed to GHCi that aren't related to more complex Hix config like Prelude overrides and
         the extensions preprocessor.
+        This option is initialized with values that use the Nix setting <literal>cores</literal> to set the number of
+        threads GHCi should use. If you want to control this yourself, use <literal>mkForce</literal> here.
       '';
       default = [];
     };
@@ -234,6 +236,8 @@ in {
   };
 
   config.ghci = {
+    ghcOptions = ["-j$NIX_BUILD_CORES" "+RTS -A64M -RTS"];
+
     preprocessor = mkDefault (import ../lib/preprocessor.nix {
       inherit pkgs;
       inherit (config.ghci) extensions;
