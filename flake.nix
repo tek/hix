@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = github:NixOS/nixpkgs/c3e4dc4f6d23c7e41dda5ce98956c75c7779e2fa;
-    nixpkgs_ghc942.url = github:NixOS/nixpkgs/c6b3881520feb0c837cf5ae16d95d32277f41f60;
+    nixpkgs_ghc943.url = github:NixOS/nixpkgs/nixpkgs-unstable;
     nixpkgs_ghc924.follows = "nixpkgs";
     nixpkgs_ghc902.follows = "nixpkgs";
     nixpkgs_ghc8107.follows = "nixpkgs";

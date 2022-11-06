@@ -47,19 +47,19 @@
         "type": "github"
       }
     },
-    "nixpkgs_ghc942": {
+    "nixpkgs_ghc943": {
       "locked": {
-        "lastModified": 1664525607,
-        "narHash": "sha256-yb1HvHGcf05HrzX6KK4HTfNhF/lvCwFnd7cBaGg7roE=",
+        "lastModified": 1667639549,
+        "narHash": "sha256-frqZKSG/933Ctwl9voSZnXDwo8CqddXcjQhnCzwNqaM=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c6b3881520feb0c837cf5ae16d95d32277f41f60",
+        "rev": "cae3751e9f74eea29c573d6c2f14523f41c2821a",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
-        "rev": "c6b3881520feb0c837cf5ae16d95d32277f41f60",
         "type": "github"
       }
     },
@@ -126,7 +126,7 @@
         "nixpkgs_ghc924": [
           "nixpkgs"
         ],
-        "nixpkgs_ghc942": "nixpkgs_ghc942",
+        "nixpkgs_ghc943": "nixpkgs_ghc943",
         "nixpkgs_nmd": "nixpkgs_nmd",
         "nmd": "nmd",
         "obelisk": "obelisk",
