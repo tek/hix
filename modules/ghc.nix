@@ -34,6 +34,14 @@ with lib;
       type = util.types.pkgs;
     };
 
+    crossPkgs = mkOption {
+      type = util.types.pkgs;
+      description = ''
+      This option can be used to override the pkgs set used for the Haskell package set, for example an element of
+      <literal>pkgsCross</literal>: <literal>devGhc.crossPkgs = config.devGhc.pkgs.pkgsCross.musl64</literal>
+      '';
+    };
+
     overlays = mkOption {
       type = listOf util.types.overlay;
       default = [];
@@ -69,7 +77,9 @@ with lib;
       } config.nixpkgsOptions;
     in import config.nixpkgs options;
 
-    ghc = config.pkgs.hixPackages;
+    crossPkgs = mkDefault config.pkgs;
+
+    ghc = config.crossPkgs.hixPackages;
 
     vanillaGhc = mkDefault ((import config.nixpkgs { inherit (global) system; }).haskell.packages.${config.compiler});
   };

@@ -1,0 +1,29 @@
+cabal-version:  2.2
+name:           root
+version:        0.1.0.0
+synopsis:       root
+description:    A test package for hix
+author:         Torsten Schmits
+maintainer:     haskell@tryp.io
+copyright:      2022 Torsten Schmits
+build-type:     Simple
+license:        BSD-2-Clause-Patent
+category:       Test
+
+library
+  exposed-modules:
+    Root.Lib
+  hs-source-dirs:
+      lib
+  build-depends:
+      base ==4.*
+  default-language:
+    Haskell2010
+
+executable run
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  build-depends:
+      base ==4.*
+    , root
