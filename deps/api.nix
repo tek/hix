@@ -35,6 +35,8 @@ let
     unbreak = transform_ modifiers.unbreak;
     fast = transform_ modifiers.fast;
     notest = transform_ modifiers.notest;
+    bench = transform_ modifiers.bench;
+    nobench = transform_ modifiers.nobench;
   };
 
   hackage = ver: sha256: spec.create ({ self, pkg, ... }: {

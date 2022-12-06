@@ -12,13 +12,17 @@ let
 
   notest = hl.dontCheck;
 
+  bench = hl.doBenchmark;
+
+  nobench = hl.dontBenchmark;
+
   hackageDrv = p:
   hl.dontBenchmark (notest (unbreak p));
 
   minimalDrv = p:
   hl.dontHaddock (hackageDrv p);
 in {
-  inherit unbreak noProfiling minimalDrv hackageDrv notest;
+  inherit unbreak noProfiling minimalDrv hackageDrv notest bench nobench;
 
   profiling = yesProfiling;
 
