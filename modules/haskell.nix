@@ -60,7 +60,7 @@ let
   };
 
   compatProjects = {
-    "942" = { enable = false; };
+    "943" = { enable = false; };
     "924" = {};
     "902" = {};
     "8107" = {};
