@@ -236,7 +236,7 @@ in {
   };
 
   config.ghci = {
-    ghcOptions = ["-j$NIX_BUILD_CORES" "+RTS -A64M -RTS"];
+    ghcOptions = ["-j$NIX_BUILD_CORES" "+RTS -A64M -RTS" "-XHaskell2010"];
 
     preprocessor = mkDefault (import ../lib/preprocessor.nix {
       inherit pkgs;
