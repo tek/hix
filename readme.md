@@ -86,7 +86,7 @@ The full set of `outputs` looks roughly like this:
 
 *Hix* uses the NixOS module system for configuration, allowing the user to override options that are deeply buried
 within the library's logic with a type system and automatic documentation generation.
-While there is a dedicated [options page](options) that lists all of them, here are a few basic ones:
+While there is a dedicated [options] page that lists all of them, here are a few basic ones:
 
 |Name|Default|Description|
 |---|---|---|
