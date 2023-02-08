@@ -14,6 +14,9 @@ let
   withShellConfig = overrides:
   withModules config [{ ghcid.shellConfig = overrides; }];
 
+  wantGhcid = config.shell.ghcid.enable;
+  vanillaGhcid = config.shell.ghcid.vanilla;
+
 in rec {
 
   shellFor = {
@@ -25,12 +28,13 @@ in rec {
     isNotTarget = p: !(p ? pname && elem p.pname packageNames);
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     targetDeps = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) packageNames));
-    hsPkgs = g: targetDeps g ++ shellConfig.haskellPackages g;
+    hsPkgs = g:
+      targetDeps g ++ shellConfig.haskellPackages g;
     devInputs = [
       (config.devGhc.ghc.ghcWithPackages hsPkgs)
       vanillaGhc.cabal-install
       config.shell.hls.package
-    ] ++ optional config.shell.ghcid.enable vanillaGhc.ghcid;
+    ] ++ optional wantGhcid (if vanillaGhcid then vanillaGhc.ghcid else config.devGhc.ghc.ghcid);
     args = {
       name = "ghci-shell";
       buildInputs = devInputs ++ shellConfig.buildInputs;
