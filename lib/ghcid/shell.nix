@@ -32,7 +32,6 @@ in rec {
       targetDeps g ++ shellConfig.haskellPackages g;
     devInputs = [
       (config.devGhc.ghc.ghcWithPackages hsPkgs)
-      vanillaGhc.cabal-install
       config.shell.hls.package
     ] ++ optional wantGhcid (if vanillaGhcid then vanillaGhc.ghcid else config.devGhc.ghc.ghcid);
     args = {
