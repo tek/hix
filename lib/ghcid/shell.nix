@@ -33,7 +33,7 @@ in rec {
     devInputs = [
       (config.devGhc.ghc.ghcWithPackages hsPkgs)
       config.shell.hls.package
-    ] ++ optional wantGhcid (if vanillaGhcid then vanillaGhc.ghcid else config.devGhc.ghc.ghcid);
+    ] ++ optional wantGhcid (if vanillaGhcid then config.pkgs.haskell.lib.dontCheck vanillaGhc.ghcid else config.devGhc.ghc.ghcid);
     args = {
       name = "ghci-shell";
       buildInputs = devInputs ++ shellConfig.buildInputs;
