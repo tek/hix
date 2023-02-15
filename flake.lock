@@ -107,7 +107,7 @@
         "nixpkgs_ghc902": [
           "nixpkgs"
         ],
-        "nixpkgs_ghc924": [
+        "nixpkgs_ghc925": [
           "nixpkgs"
         ],
         "nixpkgs_ghc943": [

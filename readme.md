@@ -95,7 +95,7 @@ While there is a dedicated [options] page that lists all of them, here are a few
 |`main`|`packages.<singleton>`|The package used for `defaultPackage`. Defaults only if `packages` has one entry.|
 |`devGhc.compiler`|`"ghc902"`|The attribute name of the GHC package set to use for development.|
 |`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
-|`compat.versions`|`["924" "902" "8107" "884"]`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
+|`compat.versions`|`["925" "902" "8107" "884"]`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
 
 While these options can be passed to `hix.lib.flake` as regular function arguments, the function actually treats its
 argument as a NixOS module.
@@ -109,7 +109,7 @@ This allows complex configuration for more advanced projects with the ability to
        base = ./.;
        packages = { spaceship = ./.; };
        output.systems = ["x86_64-linux" "aarch64-linux"];
-       devGhc.compiler = if config.system == "aarch64-linux" then "ghc884" else "ghc924";
+       devGhc.compiler = if config.system == "aarch64-linux" then "ghc884" else "ghc925";
     };
   in hix.lib.flake module;
 }

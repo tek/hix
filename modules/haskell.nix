@@ -61,7 +61,7 @@ let
 
   compatProjects = {
     "943" = {};
-    "924" = {};
+    "925" = {};
     "902" = {};
     "8107" = {};
     "884" = { enable = false; };
@@ -154,7 +154,7 @@ in {
 
     mainCompiler = mkOption {
       type = str;
-      default = "ghc924";
+      default = "ghc925";
       description = ''
         The GHC version used for internal tasks and as default for the dev package set.
       '';
@@ -191,7 +191,7 @@ in {
           aeson = fast (hackage "2.0.0.0" "sha54321");
           http-client = unbreak;
         }];
-        ghc924 = [{ source, minimal, ... }: {
+        ghc925 = [{ source, minimal, ... }: {
           lens = minimal (source.root inputs.lens);
         }];
       }

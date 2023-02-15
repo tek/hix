@@ -5,7 +5,7 @@ let
   nixpkgsRepos = [
     "nixpkgs"
     "nixpkgs_ghc943"
-    "nixpkgs_ghc924"
+    "nixpkgs_ghc925"
     "nixpkgs_ghc902"
     "nixpkgs_ghc8107"
     "nixpkgs_ghc884"
@@ -47,7 +47,7 @@ in {
       ghc884 = mkDefault config.inputs.nixpkgs_ghc884;
       ghc8107 = mkDefault config.inputs.nixpkgs_ghc8107;
       ghc902 = mkDefault config.inputs.nixpkgs_ghc902;
-      ghc924 = mkDefault config.inputs.nixpkgs_ghc924;
+      ghc925 = mkDefault config.inputs.nixpkgs_ghc925;
       ghc943 = mkDefault config.inputs.nixpkgs_ghc943;
     };
   };

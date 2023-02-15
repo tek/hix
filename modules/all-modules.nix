@@ -7,7 +7,7 @@ let
       inherit (inputs)
       nixpkgs
       nixpkgs_ghc943
-      nixpkgs_ghc924
+      nixpkgs_ghc925
       nixpkgs_ghc902
       nixpkgs_ghc8107
       nixpkgs_ghc884
