@@ -108,7 +108,7 @@ This allows complex configuration for more advanced projects with the ability to
     module = { config, ... }: {
        base = ./.;
        packages = { spaceship = ./.; };
-       systems = ["x86_64-linux" "aarch64-linux"];
+       output.systems = ["x86_64-linux" "aarch64-linux"];
        devGhc.compiler = if config.system == "aarch64-linux" then "ghc884" else "ghc924";
     };
   in hix.lib.flake module;
