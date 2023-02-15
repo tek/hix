@@ -13,6 +13,8 @@ let
   restart = f: ''--restart="${f}"'';
 
 in rec {
+  inherit startVm stopVm;
+
   ghcidCmd =
     command: test: restarts:
     ''
