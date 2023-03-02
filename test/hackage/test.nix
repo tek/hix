@@ -17,16 +17,38 @@ let
     output=$(git show --format=format:%s --no-patch)
     if [[ $output != "v$version" ]]
     then
-      fail "Wrong version commit message for release-all:\n$output"
+      fail "Wrong version commit message for release-all-version:\n$output"
     fi
 
     output=$(git tag -l --points-at=HEAD)
     if [[ $output != "v$version" ]]
     then
-      fail "No tag with message "v$version" points at HEAD for release-all:\n$output"
+      fail "No tag with name "v$version" points at HEAD for release-all-version:\n$output"
     fi
 
-    git reset --quiet --hard @^
+    sed -i "s/^version:\(\s*\).*/version:\1$manual_version/" root.cabal
+    git add .
+    git commit -m "bump manually" --quiet
+
+    output=$(run .#release | head -n2)
+    if [[ $output != $manual_version_target ]]
+    then
+      fail "Wrong output for release-all-version-manual commands:\n$output"
+    fi
+
+    output=$(git show --format=format:%s --no-patch)
+    if [[ $output != "v$manual_version" ]]
+    then
+      fail "Wrong version commit message for release-all-version-manual:\n$output"
+    fi
+
+    output=$(git tag -l --points-at=HEAD)
+    if [[ $output != "v$manual_version" ]]
+    then
+      fail "No tag with name "v$manual_version" points at HEAD for release-all-version-manual:\n$output"
+    fi
+
+    git reset --quiet --hard @^^^
 
     output=$(run .#candidates)
     if [[ $output != $candidates_target ]]
@@ -44,6 +66,12 @@ let
     if [[ $output != "root v$version" ]]
     then
       fail "Wrong version commit message for release-one:\n$output"
+    fi
+
+    output=$(git tag -l --points-at=HEAD)
+    if [[ $output != "root-v$version" ]]
+    then
+      fail "No tag with name "root-v$version" points at HEAD for release-one:\n$output"
     fi
 
     git reset --quiet --hard @^
@@ -107,6 +135,9 @@ in {
     version='1.0.0.0'
     version_target="$(src_target true $version)
     $(doc_target true $version)"
+    manual_version="2.0.0.0"
+    manual_version_target="$(src_target true $manual_version)
+    $(doc_target true $manual_version)"
 
     ${regular}
 

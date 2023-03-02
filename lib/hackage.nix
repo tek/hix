@@ -43,7 +43,7 @@ let
   bumpVersion = file: ''
     if [[ -z ''${new_version} ]]
     then
-      current=$(${cfg.versionFileExtract file})
+      current="$(${cfg.versionFileExtract file})"
       if [[ -z $current ]]
       then
         print ">>> ERROR: Could not find current version in ${file}."
@@ -56,6 +56,13 @@ let
     fi
   '';
 
+  reuseVersion = file: ''
+    if [[ -z $version ]]
+    then
+      version="$(${cfg.versionFileExtract file})"
+    fi
+  '';
+
   needsHpack = file: match ".*\.(yaml|nix)" file != null;
 
   addFiles = file: ''
@@ -65,7 +72,7 @@ let
   checkVersion = file: type: ''
     : ''${new_version:=}
     version="$new_version"
-    ${if cfg.askVersion then bumpVersion file else ""}
+    ${if cfg.askVersion then bumpVersion file else reuseVersion file}
     ${if cfg.confirm then confirmVersion type else ""}
     if [[ -n $new_version ]]
     then
@@ -96,6 +103,13 @@ let
     if [[ -n ''${version:-} ]]
     then
       ${git} commit --allow-empty -m "${name} v$version"
+    fi
+  '';
+
+  tagPackageFragment = name: ''
+    if [[ -n ''${version:-} ]]
+    then
+      ${git} tag -m "Release ${name} $version" "${name}-v$version"
     fi
   '';
 
@@ -158,9 +172,9 @@ let
     then
       ${handleVersion file type}
       ${if publish && cfg.check then "nix flake check" else ""}
-      nix run .#upload-${if publish then "release" else "candidates"} $new_version
+      nix run .#upload-${if publish then "release" else "candidates"} $version
     else
-      nix run .#bump-${if publish then "release" else "candidate"}-''${pkg} $new_version
+      nix run .#bump-${if publish then "release" else "candidate"}-''${pkg} $version
     fi
     '';
 
@@ -201,7 +215,8 @@ let
     ["version=\${1:-}"] ++
     optional source (sourceCommand publish name) ++
     [(docCommand publish name)] ++
-    optional (source && publish && cfg.commit) (commitPackageFragment name)
+    optional (source && publish && cfg.commit) (commitPackageFragment name) ++
+    optional (source && publish && cfg.tag) (tagPackageFragment name)
   ));
 
   uploadPackageApps = source: publish: type:
