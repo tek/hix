@@ -8,6 +8,26 @@ let
     git add .
     git commit -m "init" --quiet
 
+    output=$(run .#release | head -n2)
+    if [[ $output != $pristine_target ]]
+    then
+      fail "Wrong output for release-all-pristine-version commands:\n$output"
+    fi
+
+    output=$(git show --format=format:%s --no-patch)
+    if [[ $output != "v$pristine_version" ]]
+    then
+      fail "Wrong version commit message for release-all-pristine-version:\n$output"
+    fi
+
+    output=$(git tag -l --points-at=HEAD)
+    if [[ $output != "v$pristine_version" ]]
+    then
+      fail "No tag with name "v$pristine_version" points at HEAD for release-all-pristine-version:\n$output"
+    fi
+
+    git reset --quiet --hard @^
+
     output=$(run .#release -- -v $version | head -n2)
     if [[ $output != $version_target ]]
     then
@@ -31,7 +51,7 @@ let
     git commit -m "bump manually" --quiet
 
     output=$(run .#release | head -n2)
-    if [[ $output != $manual_version_target ]]
+    if [[ $output != $manual_target ]]
     then
       fail "Wrong output for release-all-version-manual commands:\n$output"
     fi
@@ -132,11 +152,14 @@ in {
       nix run $* | sed 's#/nix/store/[^-]\+-##g'
     }
 
+    pristine_version='0.1.0.0'
+    pristine_target="$(src_target true $pristine_version)
+    $(doc_target true $pristine_version)"
     version='1.0.0.0'
     version_target="$(src_target true $version)
     $(doc_target true $version)"
     manual_version="2.0.0.0"
-    manual_version_target="$(src_target true $manual_version)
+    manual_target="$(src_target true $manual_version)
     $(doc_target true $manual_version)"
 
     ${regular}
