@@ -1,12 +1,19 @@
-{ pkgs, extensions ? [], preludePackage ? null, extraCode ? "" }:
+{ pkgs, cli, extensions ? null, extraCode ? "" }:
 with builtins;
 with pkgs.lib;
 let
   pragma = name: text:
     "{-# ${name} ${text} #-}";
 
+  explicitExtensions = extensions != null;
+
   extensionPragma =
-    pragma "language" (concatStringsSep "," extensions);
+    if !explicitExtensions
+    then "$(${cli} preproc $orig_file)"
+    else
+    if length extensions != 0
+    then pragma "language" (concatStringsSep "," extensions)
+    else "";
 
   append = text:
   ''
@@ -21,12 +28,13 @@ let
     orig_file=$1 in_file=$2 out_file=$3 options_ghc=$4
     touch $out_file
 
-    ${if length extensions == 0 then "" else append extensionPragma}
+    ${append "${extensionPragma}"}
+
     if [[ -n "$options_ghc" ]]
     then
       ${append (pragma "options_ghc" "$options_ghc")}
     fi
-    ${if stringLength extraCode == 0 then "" else append extensionPragma}
+    ${if stringLength extraCode == 0 then "" else append extraCode}
     ${append (pragma "line" ''1 "$orig_file"'')}
     cat $in_file >> $out_file
   '';

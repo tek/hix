@@ -1,3 +1,4 @@
+cabal-version: 2.2
 name:           root
 version:        0.1.0.0
 synopsis:       root
@@ -13,3 +14,5 @@ library
       lib
   build-depends:
       base ==4.*, incipit-base ==0.1.0.0
+  default-extensions:
+    ScopedTypeVariables, DataKinds

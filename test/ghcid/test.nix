@@ -28,6 +28,7 @@ putStrLn string'
       fail "'ensure-vm' is not called in the 'mainScript'."
     fi
 
+    nix run .#ghci-test <<< :quit 2>&1
     output=$(nix run .#ghci-test <<< :quit 2>&1)
 
     if [[ ! "$output" =~ 'Prelude works' ]]

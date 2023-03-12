@@ -60,8 +60,7 @@ in {
       vanilla = mkOption {
         type = bool;
         description = ''
-          Whether the <literal>ghcid</literal> should be taken from the vanilla package set without any of the
-          overrides.
+          Whether <literal>ghcid</literal> should be taken from the vanilla package set without any of the overrides.
         '';
         default = true;
       };

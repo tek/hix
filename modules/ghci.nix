@@ -182,8 +182,8 @@ in {
         Global GHC extensions inserted into each file processed by GHCi.
         Since <literal>ghcid</literal> cannot read Cabal files, these have to be set manually.
       '';
-      type = listOf str;
-      default = [];
+      type = nullOr (listOf str);
+      default = null;
     };
 
     preprocessor = mkOption {
@@ -240,7 +240,8 @@ in {
 
     preprocessor = mkDefault (import ../lib/preprocessor.nix {
       inherit pkgs;
-      inherit (config.ghci) extensions;
+      cli = "${config.internal.hixCli.package}/bin/hix";
+      extensions = if config.auto then config.ghci.extensions else null;
       extraCode = config.ghci.preprocessorExtraCode;
     });
 

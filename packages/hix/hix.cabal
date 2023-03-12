@@ -1,0 +1,276 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           hix
+version:        0.1.0.0
+synopsis:       Haskell Development Build Tools
+description:    See https://hackage.haskell.org/package/hix/docs/Hix.html
+category:       Build
+homepage:       https://git.tryp.io/tek/hix
+bug-reports:    https://github.com/tek/hix/issues
+author:         Torsten Schmits
+maintainer:     hackage@tryp.io
+copyright:      2023 Torsten Schmits
+license:        BSD-2-Clause-Patent
+license-file:   LICENSE
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://git.tryp.io/tek/hix
+
+library
+  exposed-modules:
+      Hix
+      Hix.Options
+      Hix.Optparse
+  hs-source-dirs:
+      lib
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DoAndIfThenElse
+      DuplicateRecordFields
+      EmptyCase
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedLabels
+      OverloadedLists
+      OverloadedStrings
+      PackageImports
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      QuasiQuotes
+      RankNTypes
+      RecordWildCards
+      RecursiveDo
+      RoleAnnotations
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -Wno-partial-type-signatures
+  build-depends:
+      Cabal
+    , base >=4.12 && <5
+    , exon ==1.4.*
+    , filepattern
+    , incipit-base ==0.5.*
+    , optparse-applicative
+    , path
+    , path-io
+    , transformers
+  mixins:
+      base hiding (Prelude)
+    , incipit-base (IncipitBase as Prelude)
+    , incipit-base hiding (IncipitBase)
+  default-language: Haskell2010
+
+executable hix
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DoAndIfThenElse
+      DuplicateRecordFields
+      EmptyCase
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedLabels
+      OverloadedLists
+      OverloadedStrings
+      PackageImports
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      QuasiQuotes
+      RankNTypes
+      RecordWildCards
+      RecursiveDo
+      RoleAnnotations
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -Wno-partial-type-signatures -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.12 && <5
+    , hix
+    , incipit-base ==0.5.*
+  mixins:
+      base hiding (Prelude)
+    , incipit-base (IncipitBase as Prelude)
+    , incipit-base hiding (IncipitBase)
+  default-language: Haskell2010
+
+test-suite hix-unit
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Hix.Test.CabalTest
+  hs-source-dirs:
+      test
+  default-extensions:
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BangPatterns
+      BinaryLiterals
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveLift
+      DeriveTraversable
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DoAndIfThenElse
+      DuplicateRecordFields
+      EmptyCase
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      LiberalTypeSynonyms
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedLabels
+      OverloadedLists
+      OverloadedStrings
+      PackageImports
+      PartialTypeSignatures
+      PatternGuards
+      PatternSynonyms
+      PolyKinds
+      QuantifiedConstraints
+      QuasiQuotes
+      RankNTypes
+      RecordWildCards
+      RecursiveDo
+      RoleAnnotations
+      ScopedTypeVariables
+      StandaloneDeriving
+      TemplateHaskell
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeFamilyDependencies
+      TypeOperators
+      TypeSynonymInstances
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -Wno-partial-type-signatures -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      Cabal
+    , base >=4.12 && <5
+    , directory
+    , exon ==1.4.*
+    , filepath
+    , hedgehog ==1.1.*
+    , hix
+    , incipit-base ==0.5.*
+    , path
+    , path-io
+    , tasty ==1.4.*
+    , tasty-hedgehog ==1.3.*
+    , transformers
+  mixins:
+      base hiding (Prelude)
+    , incipit-base (IncipitBase as Prelude)
+    , incipit-base hiding (IncipitBase)
+  default-language: Haskell2010

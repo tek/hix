@@ -14,9 +14,14 @@ with lib;
       description = "The attribute name for a GHC version in the set <literal>haskell.packages</literal>.";
     };
 
+    overrides = mkOption {
+      type = util.types.cabalOverrides;
+      description = "The overrides used for this package set, defaulting to the global overrides.";
+    };
+
     overrideKeys = mkOption {
       type = listOf str;
-      description = "The overrides used for this package set, in increasing order of precedence.";
+      description = "The keys of the overrides used for this package set, in increasing order of precedence.";
     };
 
     nixpkgs = mkOption {
@@ -59,14 +64,15 @@ with lib;
   config = {
     compiler = mkDefault global.mainCompiler;
 
+    overrides = mkDefault global.internal.overrides;
+
     overrideKeys = mkDefault ["local" "all" config.compiler "dev"];
 
     nixpkgs = mkDefault global.inputs.nixpkgs;
 
     pkgs = let
       go = ghcOverlay {
-        inherit (global.internal) overrides;
-        inherit (config) compiler overrideKeys;
+        inherit (config) overrides compiler overrideKeys;
         inherit (config.nixpkgs) rev;
         inherit (config) name;
       };
