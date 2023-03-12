@@ -5,7 +5,6 @@ import Options.Applicative (
   CommandFields,
   Mod,
   Parser,
-  argument,
   bashCompleter,
   command,
   completer,
@@ -17,6 +16,7 @@ import Options.Applicative (
   hsubparser,
   info,
   long,
+  option,
   prefs,
   progDesc,
   short,
@@ -29,7 +29,9 @@ import Prelude hiding (Mod)
 
 data PreprocOptions =
   PreprocOptions {
-    source :: Path Abs File
+    source :: Path Abs File,
+    inFile :: Path Abs File,
+    outFile :: Path Abs File
   }
   deriving stock (Eq, Show, Generic)
 
@@ -52,23 +54,26 @@ data Options =
   deriving stock (Eq, Show)
 
 preprocFileParser ::
+  String ->
+  String ->
   Parser (Path Abs File)
-preprocFileParser =
-  argument absFileOption (completer (bashCompleter "file") <> help fileHelp)
-  where
-    fileHelp =
-      "The file for which to generate the preprocessor"
+preprocFileParser longName helpText =
+  option absFileOption (long longName <> completer (bashCompleter "file") <> help helpText)
 
 preprocParser :: Parser PreprocOptions
 preprocParser =
   PreprocOptions
   <$>
-  preprocFileParser
+  preprocFileParser "source" "The original source file"
+  <*>
+  preprocFileParser "in" "The prepared input file"
+  <*>
+  preprocFileParser "out" "The path to the output file"
 
 preprocCommand ::
   Mod CommandFields Command
 preprocCommand =
-  command "preproc" (Preproc <$> info (preprocParser) (progDesc "Generate a preprocessor for a file"))
+  command "preproc" (Preproc <$> info (preprocParser) (progDesc "Preprocess a source file for use with ghcid"))
 
 globalParser :: Parser GlobalOptions
 globalParser = do

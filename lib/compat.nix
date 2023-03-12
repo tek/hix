@@ -2,13 +2,21 @@
 with lib;
 let
 
-  deprecated = fatal: old: new:
-  (if fatal then throw else warn) "The option '${old}' is deprecated. Please use '${new}'.";
+  deprecated = fatal: option: advice:
+  (if fatal then throw else warn) "The option '${option}' is deprecated. ${advice}.";
 
-  deprecatedPath = fatal: path: new: args:
+  renameAdvice = new: "Please use '${new}'";
+
+  deprecatedRename = fatal: old: new:
+  deprecated fatal old (renameAdvice new);
+
+  deprecatedPath = fatal: path: advice: args:
   if hasAttrByPath path args
-  then deprecated fatal (concatStringsSep "." path) new args
+  then deprecated fatal (concatStringsSep "." path) advice args
   else args;
+
+  deprecatedPathRename = fatal: path: new: args:
+  deprecatedPath fatal path (renameAdvice new) args;
 
   actIf = cond: path: f: args:
   if cond (attrByPath path null args) then f args else args;
@@ -19,16 +27,17 @@ let
 
   checkDeprecated = args:
   pipe args [
-    (deprecatedPath true ["ghci" "extraArgs"] "ghci.args")
-    (deprecatedPath true ["compiler"] "devGhc.compiler")
-    (deprecatedPath true ["versionFile"] "hackage.versionFile")
-    (actIf isBool ["compat"] (deprecated false "compat" "compat.enable"))
+    (deprecatedPathRename true ["ghci" "extraArgs"] "ghci.args")
+    (deprecatedPathRename true ["compiler"] "devGhc.compiler")
+    (deprecatedPathRename true ["versionFile"] "hackage.versionFile")
+    (deprecatedPath false ["ghci" "extensions"] "Extensions are now read from cabal files")
+    (actIf isBool ["compat"] (deprecatedRenamePath false "compat" "compat.enable"))
     (actIf isFunction ["ghcid" "commands"] (throw "The option 'ghcid.commands' must be a module."))
     normalizeCompat
   ];
 
 in {
-  inherit deprecated;
+  inherit deprecated deprecatedRename;
   check = checkDeprecated;
-  warn = deprecated false;
+  warn = deprecatedRename false;
 }

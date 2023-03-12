@@ -363,7 +363,11 @@ in {
   config = {
     base = mkDefault baseFromPackages;
 
-    main = mkIf (length config.internal.packageNames == 1) (mkDefault (head config.internal.packageNames));
+    main = mkDefault (
+      if (length config.internal.packageNames == 1)
+      then head config.internal.packageNames
+      else throw "The config option 'main' must name one of the 'packages' if more than one is defined."
+    );
 
     devGhc = { name = "dev"; };
 

@@ -1,5 +1,5 @@
 cabal-version: 2.2
-name:           root
+name:           dep
 version:        0.1.0.0
 synopsis:       root
 author:         Torsten Schmits
@@ -9,14 +9,8 @@ build-type:     Simple
 
 library
   exposed-modules:
-    Root.Lib
+    Dep.Lib
   hs-source-dirs:
       lib
   build-depends:
-      base ==4.*, incipit-base ==0.5.0.0, dep
-  default-extensions:
-    ScopedTypeVariables, DataKinds
-  mixins:
-      base hiding (Prelude)
-    , incipit-base (IncipitBase as Prelude)
-    , incipit-base hiding (IncipitBase)
+      base ==4.*

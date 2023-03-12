@@ -25,8 +25,11 @@ source-repository head
 library
   exposed-modules:
       Hix
+      Hix.Cabal
+      Hix.Data.Error
       Hix.Options
       Hix.Optparse
+      Hix.Preproc
   hs-source-dirs:
       lib
   default-extensions:
@@ -96,11 +99,15 @@ library
       Cabal
     , base >=4.12 && <5
     , exon ==1.4.*
+    , extra
     , filepattern
+    , generic-lens
     , incipit-base ==0.5.*
+    , lens
+    , lens-regex-pcre
     , optparse-applicative
     , path
-    , path-io
+    , random
     , transformers
   mixins:
       base hiding (Prelude)
@@ -189,7 +196,9 @@ test-suite hix-unit
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Hix.Test.CabalFile
       Hix.Test.CabalTest
+      Hix.Test.PreprocTest
   hs-source-dirs:
       test
   default-extensions:
@@ -258,9 +267,7 @@ test-suite hix-unit
   build-depends:
       Cabal
     , base >=4.12 && <5
-    , directory
     , exon ==1.4.*
-    , filepath
     , hedgehog ==1.1.*
     , hix
     , incipit-base ==0.5.*

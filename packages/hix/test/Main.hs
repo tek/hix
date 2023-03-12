@@ -2,6 +2,12 @@ module Main where
 
 import Hedgehog (TestT, property, test, withTests)
 import Hix.Test.CabalTest (test_cabal)
+import Hix.Test.PreprocTest (
+  test_preprocInsertPrelude,
+  test_preprocReplacePrelude,
+  test_preprocSelfExport,
+  test_preprocSingleLineModule, test_preprocSelfExport2,
+  )
 import Test.Tasty (TestName, TestTree, defaultMain, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 
@@ -15,7 +21,14 @@ unitTest desc =
 tests :: TestTree
 tests =
   testGroup "all" [
-    unitTest "parse cabal file" test_cabal
+    unitTest "parse cabal file" test_cabal,
+    testGroup "preprocess source file" [
+      unitTest "insert prelude import" test_preprocInsertPrelude,
+      unitTest "replace prelude imports" test_preprocReplacePrelude,
+      unitTest "single line module decl" test_preprocSingleLineModule,
+      unitTest "self exporting module, inline" test_preprocSelfExport,
+      unitTest "self exporting module, separate line" test_preprocSelfExport2
+    ]
   ]
 
 main :: IO ()

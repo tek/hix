@@ -63,7 +63,7 @@ The full set of `outputs` looks roughly like this:
     ghcid = { ... }; # Run a function in `ghcid`
     hls = { ... }; # Run HLS
     hpack = { ... }; # Run `hpack`
-    hpack-verbose = { ... }; # Run `hpack`
+    hpack-quiet = { ... }; # Run `hpack`
     release = { ... }; # Run `cabal upload --publish`
     tags { ... }; # Run `hasktags`
   };
@@ -431,7 +431,7 @@ The parameters are as follows:
 
 This can be combined nicely with tools like [vim-test].
 
-Runners are taken from the parameters `ghci.testScripts` and `ghci.testRunners` and some built-in ones:
+Runners are taken from the options `ghci.scripts` and `ghci.runners` and some built-in ones:
 
 |Name|Type|
 |---|---|
@@ -440,41 +440,45 @@ Runners are taken from the parameters `ghci.testScripts` and `ghci.testRunners` 
 |`tasty-tree`|`Tasty.TestTree`|
 |`generic`|`IO ()`|
 
-`testScripts` is an attrset mapping the runner name to a function `(moduleName :: String) -> (ghciScript :: String)`,
+`ghci.scripts` is an attrset mapping the runner name to a function `(moduleName :: String) -> (ghciScript :: String)`,
 which should load the modules necessary to run the test:
 
 ```nix
 {
-  tasty-tree = module: ''
-    :load ${module}
-    import ${module}
-    import Test.Tasty (defaultMain)
-  '';
+  ghci.scripts = {
+    tasty-tree = module: ''
+      :load ${module}
+      import ${module}
+      import Test.Tasty (defaultMain)
+    '';
+  };
 }
 ```
 
-`testRunners` is an attrset mapping the runner name to a function
+`ghci.runners` is an attrset mapping the runner name to a function
 `(functionName :: String) -> (haskellExpression :: String)`:
 
 ```nix
 {
-  tasty-tree = name: "defaultMain ${name}";
+  ghci.runners = {
+    tasty-tree = name: "defaultMain ${name}";
+  };
 }
 ```
 
-The global option `testConfig` is used for the `config` parameters as described in [Commands](#commands).
-It is called with the basic project as first arg and the executed test as second arg.
+The option `ghcid.testConfig` is used for the `config` parameters as described in [Commands](#commands).
+It is called with an attrset containing the test parameters.
 
-For example, setting the environment variable `BROWSER` to the path to chromium for tests:
+For example, setting the environment variable `BROWSER` to the path to chromium for integration tests:
 
 ```nix
 {
-  hix.flake {
-    ...
-    testConfig = { pkgs, ... }: _: {
-      env.BROWSER = "${pkgs.ungoogled-chromium}/bin/chromium";
+hix.flake ({config, lib, ...}: {
+  testConfig = {type, ...}:
+    lib.optionalAttrs (type == "integration") {
+      env.BROWSER = "${config.pkgs.ungoogled-chromium}/bin/chromium";
     };
-  };
+  });
 }
 ```
 

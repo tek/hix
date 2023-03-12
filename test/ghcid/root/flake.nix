@@ -3,16 +3,17 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }:
-  let
+  outputs = { hix, ... }: let
+
     flake = hix.lib.flake {
-      base = ./.;
-      packages.root = ./.;
-      overrides = { hackage, ... }: {
-        incipit-base = hackage "0.1.0.0" "0pw3wr3yjwg4zphndnzazb7ycmjmrfqn57sjlkiqlb4hnwxk1xmk";
+      packages = {
+        root = ./.;
+        dep = ./dep;
       };
-      ghci.preludePackage = "incipit-base";
-      ghci.preludeModule = "Incipit.Prelude";
+      main = "root";
+      overrides = { hackage, ... }: {
+        incipit-base = hackage "0.5.0.0" "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
+      };
       ghcid.commands = {
         test = {
           script = ''
@@ -39,18 +40,6 @@
     ghcid =
       cfg.ghcid;
 
-    cmdArgs = {
-      packages.root = ./.;
-      script = ''
-        :load Root.Lib
-        import Root.Lib
-        putStrLn "before"
-        putStrLn string
-        putStrLn "after"
-      '';
-      search = [];
-    };
-
     cmd = cfg.internal.basicPkgs.writeScript "ghci-test" ''
       nix develop -c ${ghcid.shells.test.ghciCommand.cmdline}
     '';
@@ -67,7 +56,7 @@
       testConfig_searchPath =
         let
           path = (ghcid.run { type = "integration"; }).ghciCommand.searchP;
-        in concatStringsSep ":" (take 4 (splitString ":" path));
+        in concatStringsSep ":" (take 6 (splitString ":" path));
 
       inherit (ghcid.shells.test) mainScript;
     };

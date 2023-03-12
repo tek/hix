@@ -82,18 +82,20 @@ in {
     library.dependencies = [
       "Cabal"
       "exon ^>= 1.4"
+      "extra"
       "filepattern"
+      "generic-lens"
+      "lens"
+      "lens-regex-pcre"
       "optparse-applicative"
+      "random"
       "path"
-      "path-io"
       "transformers"
     ];
 
     tests.hix-unit = exe "hix" "test" {
       dependencies = [
         "Cabal"
-        "directory"
-        "filepath"
         "exon ^>= 1.4"
         "hedgehog ^>= 1.1"
         "path"

@@ -4,17 +4,14 @@
     cd ./root
     nix flake update
 
-    search_path='-i$PWD/src:$PWD/lib:extra-search:$PWD/root/integration'
+    search_path='-i$PWD/dep/src:$PWD/src:$PWD/dep/lib:$PWD/lib:extra-search:$PWD/root/integration'
     result=$(nix eval --raw .#ghcid.testConfig_searchPath)
     if [[ "$result" != "$search_path" ]]
     then
       fail "search path set from test config doesn't match:\n$result"
     fi
 
-    script=':load Prelude
-import Prelude
-:set -XImplicitPrelude
-:load Root.Lib
+    script=':load Root.Lib
 import Root.Lib
 putStrLn string'
     result=$(nix eval --raw .#ghcid.script)
@@ -28,7 +25,6 @@ putStrLn string'
       fail "'ensure-vm' is not called in the 'mainScript'."
     fi
 
-    nix run .#ghci-test <<< :quit 2>&1
     output=$(nix run .#ghci-test <<< :quit 2>&1)
 
     if [[ ! "$output" =~ 'Prelude works' ]]

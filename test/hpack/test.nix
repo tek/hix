@@ -4,7 +4,7 @@ let
   target = builtins.toFile "cabal-target" ''
   cabal-version: 2.0
 
-  -- This file has been generated from package.yaml by hpack version 0.34.7.
+  -- This file has been generated from package.yaml by hpack version 0.35.0.
   --
   -- see: https://github.com/sol/hpack
 
@@ -25,12 +25,12 @@ let
       , incipit ==5
     mixins:
         incipit hiding (Prelude)
+    default-language: Haskell2010
     if false
       other-modules:
           Paths_root
       autogen-modules:
           Paths_root
-    default-language: Haskell2010
 
   executable run
     main-is: Main.hs
