@@ -11,7 +11,7 @@ let
 
     modules = projectModules: import ./modules/all-modules.nix {
       inherit inputs;
-      projectModules = toList projectModules;
+      projectModules = map compat.check (toList projectModules);
     };
 
     flake = projectModules:

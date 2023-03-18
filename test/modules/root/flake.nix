@@ -7,32 +7,30 @@
 
   outputs = { hix, dep1, dep2, ... }:
   hix.lib.flake ({ lib, ... }: {
-    base = ./.;
     main = "root";
     packages = {
-      root = ./.;
-      sub = ./sub;
-    };
-    hpack.packages.root = {
-      name = "root";
-      version = "1";
-      library = {
-        source-dirs = "src";
-        dependencies = [
-          "base >= 4 && < 6"
-          "sub"
-          "dep2"
-          "dep1"
-          "stm-chans"
-        ];
+      root = {
+        src = ./.;
+        cabal = {
+          version = "1";
+          base = "base >= 4 && < 6";
+        };
+        library = {
+          enable = true;
+          source-dirs = "src";
+          dependencies = [
+            "sub"
+            "dep2"
+            "dep1"
+            "stm-chans"
+          ];
+        };
+        executables.run = {};
       };
-      executables.run = {
-        main = "Main.hs";
-        source-dirs = "app";
-        dependencies = [
-          "base >= 4 && < 6"
-          "root"
-        ];
+      sub = {
+        src = ./sub;
+        library.enable = true;
+        library.source-dirs = "src";
       };
     };
     compat.enable = true;

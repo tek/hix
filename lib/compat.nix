@@ -2,6 +2,8 @@
 with lib;
 let
 
+  joinPath = concatStringsSep ".";
+
   deprecated = fatal: option: advice:
   (if fatal then throw else warn) "The option '${option}' is deprecated. ${advice}.";
 
@@ -12,32 +14,63 @@ let
 
   deprecatedPath = fatal: path: advice: args:
   if hasAttrByPath path args
-  then deprecated fatal (concatStringsSep "." path) advice args
+  then deprecated fatal (joinPath path) advice args
   else args;
 
   deprecatedPathRename = fatal: path: new: args:
   deprecatedPath fatal path (renameAdvice new) args;
 
-  actIf = cond: path: f: args:
-  if cond (attrByPath path null args) then f args else args;
+  notAttrs = a: !(isAttrs a);
 
-  normalizeCompat = { compat ? true, ... }@args:
-  let normalizedCompat = if isAttrs compat then compat else { enable = compat; };
-  in args // { compat = normalizedCompat; };
+  actIf = cond: path: f: args: let
+    target = attrByPath path null args;
+  in if target != null && cond target then f args else args;
+
+  actIfAny = cond: path: f: args: let
+    target = attrByPath path null args;
+  in if target == null
+  then args
+  else if !(isAttrs target)
+  then throw "The option '${joinPath path}' must be an attrset."
+  else if any cond (attrValues target) then f args else args;
+
+  normalizeCompat = args:
+  if args ? compat && isBool args.compat
+  then args // { compat.enable = args.compat; }
+  else args;
+
+  packagesError = ''
+  The type of the option 'packages.<package-name>' has been changed from a path to a module.
+  To get the old behaviour, use 'packages.<package-name>.src = ./foo'.
+  '';
+
+  preludeError = ''
+  The Prelude is now read from cabal files for ghci and can be set in 'packages.cabal.prelude'
+  '';
 
   checkDeprecated = args:
   pipe args [
     (deprecatedPathRename true ["ghci" "extraArgs"] "ghci.args")
     (deprecatedPathRename true ["compiler"] "devGhc.compiler")
     (deprecatedPathRename true ["versionFile"] "hackage.versionFile")
-    (deprecatedPath false ["ghci" "extensions"] "Extensions are now read from cabal files")
-    (actIf isBool ["compat"] (deprecatedRenamePath false "compat" "compat.enable"))
+    (deprecatedPath true ["ghci" "extensions"]
+      "Extensions are now read from cabal files for ghci and can be set in 'packages.cabal.extensions'")
+    (deprecatedPath true ["ghci" "preludePackage"] preludeError)
+    (deprecatedPath true ["ghci" "preludeModule"] preludeError)
+    (actIf notAttrs ["compat"] (deprecatedRename false "compat" "compat.enable"))
     (actIf isFunction ["ghcid" "commands"] (throw "The option 'ghcid.commands' must be a module."))
+    (actIfAny notAttrs ["packages"] (throw packagesError))
+    (deprecatedPath true ["hpack" "packages"] "Cabal config has been moved to the top-level option 'packages'")
     normalizeCompat
   ];
 
+  checkDeprecated' = mod:
+  if isFunction mod
+  then args: checkDeprecated (mod args)
+  else checkDeprecated mod;
+
 in {
   inherit deprecated deprecatedRename;
-  check = checkDeprecated;
+  check = checkDeprecated';
   warn = deprecatedRename false;
 }

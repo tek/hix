@@ -7,8 +7,8 @@
 
     flake = hix.lib.flake {
       packages = {
-        root = ./.;
-        dep = ./dep;
+        root.src = ./.;
+        dep.src = ./dep;
       };
       main = "root";
       overrides = { hackage, ... }: {

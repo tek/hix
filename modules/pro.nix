@@ -1,83 +1,56 @@
 { config, lib, ... }:
 with lib;
-let
+{
+  internal.cabal-extra = {
 
-  extensions = [
-    "AllowAmbiguousTypes"
-    "ApplicativeDo"
-    "BangPatterns"
-    "BinaryLiterals"
-    "BlockArguments"
-    "ConstraintKinds"
-    "DataKinds"
-    "DefaultSignatures"
-    "DeriveAnyClass"
-    "DeriveDataTypeable"
-    "DeriveFoldable"
-    "DeriveFunctor"
-    "DeriveGeneric"
-    "DeriveLift"
-    "DeriveTraversable"
-    "DerivingStrategies"
-    "DerivingVia"
-    "DisambiguateRecordFields"
-    "DoAndIfThenElse"
-    "DuplicateRecordFields"
-    "EmptyCase"
-    "EmptyDataDecls"
-    "ExistentialQuantification"
-    "FlexibleContexts"
-    "FlexibleInstances"
-    "FunctionalDependencies"
-    "GADTs"
-    "GeneralizedNewtypeDeriving"
-    "InstanceSigs"
-    "KindSignatures"
-    "LambdaCase"
-    "LiberalTypeSynonyms"
-    "MultiParamTypeClasses"
-    "MultiWayIf"
-    "NamedFieldPuns"
-    "OverloadedLabels"
-    "OverloadedLists"
-    "OverloadedStrings"
-    "PackageImports"
-    "PartialTypeSignatures"
-    "PatternGuards"
-    "PatternSynonyms"
-    "PolyKinds"
-    "QuantifiedConstraints"
-    "QuasiQuotes"
-    "RankNTypes"
-    "RecordWildCards"
-    "RecursiveDo"
-    "RoleAnnotations"
-    "ScopedTypeVariables"
-    "StandaloneDeriving"
-    "TemplateHaskell"
-    "TupleSections"
-    "TypeApplications"
-    "TypeFamilies"
-    "TypeFamilyDependencies"
-    "TypeOperators"
-    "TypeSynonymInstances"
-    "UndecidableInstances"
-    "UnicodeSyntax"
-    "ViewPatterns"
-  ];
-in {
+    default-extensions = [
+      "GHC2021"
+      "AllowAmbiguousTypes"
+      "ApplicativeDo"
+      "BlockArguments"
+      "DataKinds"
+      "DefaultSignatures"
+      "DeriveAnyClass"
+      "DerivingStrategies"
+      "DerivingVia"
+      "DisambiguateRecordFields"
+      "DuplicateRecordFields"
+      "FunctionalDependencies"
+      "GADTs"
+      "LambdaCase"
+      "LiberalTypeSynonyms"
+      "MultiWayIf"
+      "OverloadedLabels"
+      "OverloadedLists"
+      "OverloadedStrings"
+      "PackageImports"
+      "PartialTypeSignatures"
+      "PatternSynonyms"
+      "QuantifiedConstraints"
+      "QuasiQuotes"
+      "RecordWildCards"
+      "RecursiveDo"
+      "RoleAnnotations"
+      "TemplateHaskell"
+      "TypeFamilies"
+      "TypeFamilyDependencies"
+      "UndecidableInstances"
+      "UnicodeSyntax"
+      "ViewPatterns"
+    ];
 
-  ghci = {
-
-    inherit extensions;
-
-    ghcOptions = [
-      "-Werror"
+    ghc-options = [
       "-Wall"
+      "-Widentities"
+      "-Wincomplete-uni-patterns"
+      "-Wmissing-deriving-strategies"
       "-Wredundant-constraints"
       "-Wunused-type-patterns"
-      "-Widentities"
+      "-Wunused-packages"
     ];
+
   };
+
+  ghci.ghcOptions = ["-Werror"];
 
 }

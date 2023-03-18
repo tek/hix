@@ -6,7 +6,7 @@ cabal-version: 2.2
 
 name:           hix
 version:        0.1.0.0
-synopsis:       Haskell Development Build Tools
+synopsis:       Haskell/Nix development build tools
 description:    See https://hackage.haskell.org/package/hix/docs/Hix.html
 category:       Build
 homepage:       https://git.tryp.io/tek/hix
@@ -33,81 +33,55 @@ library
   hs-source-dirs:
       lib
   default-extensions:
+      GHC2021
       AllowAmbiguousTypes
       ApplicativeDo
-      BangPatterns
-      BinaryLiterals
       BlockArguments
-      ConstraintKinds
       DataKinds
       DefaultSignatures
       DeriveAnyClass
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
       DerivingVia
       DisambiguateRecordFields
-      DoAndIfThenElse
       DuplicateRecordFields
-      EmptyCase
-      EmptyDataDecls
-      ExistentialQuantification
-      FlexibleContexts
-      FlexibleInstances
       FunctionalDependencies
       GADTs
-      GeneralizedNewtypeDeriving
-      InstanceSigs
-      KindSignatures
       LambdaCase
       LiberalTypeSynonyms
-      MultiParamTypeClasses
       MultiWayIf
-      NamedFieldPuns
       OverloadedLabels
       OverloadedLists
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
-      PatternGuards
       PatternSynonyms
-      PolyKinds
       QuantifiedConstraints
       QuasiQuotes
-      RankNTypes
       RecordWildCards
       RecursiveDo
       RoleAnnotations
-      ScopedTypeVariables
-      StandaloneDeriving
       TemplateHaskell
-      TupleSections
-      TypeApplications
       TypeFamilies
       TypeFamilyDependencies
-      TypeOperators
-      TypeSynonymInstances
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -Wno-partial-type-signatures
+      OverloadedRecordDot
+      NoFieldSelectors
+  ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
-    , base >=4.12 && <5
+    , base ==4.*
     , exon ==1.4.*
-    , extra
-    , filepattern
-    , generic-lens
+    , extra ==1.7.*
+    , filepattern ==0.1.*
+    , generic-lens ==2.2.*
     , incipit-base ==0.5.*
-    , lens
-    , lens-regex-pcre
-    , optparse-applicative
-    , path
-    , random
+    , lens ==5.1.*
+    , lens-regex-pcre ==1.1.*
+    , optparse-applicative ==0.17.*
+    , path ==0.9.*
+    , random ==1.2.*
     , transformers
   mixins:
       base hiding (Prelude)
@@ -120,70 +94,44 @@ executable hix
   hs-source-dirs:
       app
   default-extensions:
+      GHC2021
       AllowAmbiguousTypes
       ApplicativeDo
-      BangPatterns
-      BinaryLiterals
       BlockArguments
-      ConstraintKinds
       DataKinds
       DefaultSignatures
       DeriveAnyClass
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
       DerivingVia
       DisambiguateRecordFields
-      DoAndIfThenElse
       DuplicateRecordFields
-      EmptyCase
-      EmptyDataDecls
-      ExistentialQuantification
-      FlexibleContexts
-      FlexibleInstances
       FunctionalDependencies
       GADTs
-      GeneralizedNewtypeDeriving
-      InstanceSigs
-      KindSignatures
       LambdaCase
       LiberalTypeSynonyms
-      MultiParamTypeClasses
       MultiWayIf
-      NamedFieldPuns
       OverloadedLabels
       OverloadedLists
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
-      PatternGuards
       PatternSynonyms
-      PolyKinds
       QuantifiedConstraints
       QuasiQuotes
-      RankNTypes
       RecordWildCards
       RecursiveDo
       RoleAnnotations
-      ScopedTypeVariables
-      StandaloneDeriving
       TemplateHaskell
-      TupleSections
-      TypeApplications
       TypeFamilies
       TypeFamilyDependencies
-      TypeOperators
-      TypeSynonymInstances
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -Wno-partial-type-signatures -threaded -rtsopts -with-rtsopts=-N
+      OverloadedRecordDot
+      NoFieldSelectors
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      base >=4.12 && <5
+      base ==4.*
     , hix
     , incipit-base ==0.5.*
   mixins:
@@ -192,7 +140,7 @@ executable hix
     , incipit-base hiding (IncipitBase)
   default-language: Haskell2010
 
-test-suite hix-unit
+test-suite hix-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
@@ -202,77 +150,51 @@ test-suite hix-unit
   hs-source-dirs:
       test
   default-extensions:
+      GHC2021
       AllowAmbiguousTypes
       ApplicativeDo
-      BangPatterns
-      BinaryLiterals
       BlockArguments
-      ConstraintKinds
       DataKinds
       DefaultSignatures
       DeriveAnyClass
-      DeriveDataTypeable
-      DeriveFoldable
-      DeriveFunctor
-      DeriveGeneric
-      DeriveLift
-      DeriveTraversable
       DerivingStrategies
       DerivingVia
       DisambiguateRecordFields
-      DoAndIfThenElse
       DuplicateRecordFields
-      EmptyCase
-      EmptyDataDecls
-      ExistentialQuantification
-      FlexibleContexts
-      FlexibleInstances
       FunctionalDependencies
       GADTs
-      GeneralizedNewtypeDeriving
-      InstanceSigs
-      KindSignatures
       LambdaCase
       LiberalTypeSynonyms
-      MultiParamTypeClasses
       MultiWayIf
-      NamedFieldPuns
       OverloadedLabels
       OverloadedLists
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
-      PatternGuards
       PatternSynonyms
-      PolyKinds
       QuantifiedConstraints
       QuasiQuotes
-      RankNTypes
       RecordWildCards
       RecursiveDo
       RoleAnnotations
-      ScopedTypeVariables
-      StandaloneDeriving
       TemplateHaskell
-      TupleSections
-      TypeApplications
       TypeFamilies
       TypeFamilyDependencies
-      TypeOperators
-      TypeSynonymInstances
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-  ghc-options: -Wall -Wredundant-constraints -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Widentities -Wunused-packages -Wno-partial-type-signatures -threaded -rtsopts -with-rtsopts=-N
+      OverloadedRecordDot
+      NoFieldSelectors
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
-    , base >=4.12 && <5
+    , base ==4.*
     , exon ==1.4.*
     , hedgehog ==1.1.*
     , hix
     , incipit-base ==0.5.*
-    , path
-    , path-io
+    , path ==0.9.*
+    , path-io ==1.7.*
     , tasty ==1.4.*
     , tasty-hedgehog ==1.3.*
     , transformers

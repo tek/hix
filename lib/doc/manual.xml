@@ -9,7 +9,7 @@
   <title>Hix Manual</title>
 </info>
 <para>
-  This page lists all option definitions for the Haskell/Nix build library
+  This page lists all option declarations for the Haskell/Nix build library
   <link xlink:href="https://git.tryp.io/tek/hix">Hix</link>.
 </para>
 <xi:include href="./nmd-result/hix-options.xml" />

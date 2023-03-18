@@ -39,4 +39,4 @@ let
     else gen-cabal.simpleCabalDrv api name pkg
   );
 
-in api: builtins.mapAttrs (checkIfd api) config.internal.packages
+in api: builtins.mapAttrs (checkIfd api) config.packages

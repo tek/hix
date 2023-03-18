@@ -5,7 +5,7 @@ let
   inherit (config) pkgs;
 
   packageCall = n: p:
-  if (config.hpack.packages != null || config.auto) && hasAttr n packages
+  if hasAttr n packages
   then "synthetic ${n} ${p} ${toFile "package.yaml" (toJSON packages.${n})}"
   else "regular ${n} ${p}";
 

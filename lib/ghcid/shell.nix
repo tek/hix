@@ -1,4 +1,4 @@
-{ lib, config, command, withModules, }:
+{ lib, config, command, util, }:
 with builtins;
 with lib;
 let
@@ -12,7 +12,7 @@ let
   getRunner = c: key: c.ghci.runners.${key} or c.ghci.runners.generic;
 
   withShellConfig = overrides:
-  withModules config [{ ghcid.shellConfig = overrides; }];
+  util.withModules config [{ ghcid.shellConfig = overrides; }];
 
   wantGhcid = config.shell.ghcid.enable;
   vanillaGhcid = config.shell.ghcid.vanilla;
@@ -84,7 +84,7 @@ in rec {
     runner ? "generic",
     shellConfig ? {},
   }:
-  withModules config [
+  util.withModules config [
     { ghcid.testConfig = _: config.ghcid.shellConfig; }
     { ghcid.testConfig = _: { search = ["$PWD/${pkg}/${type}"]; }; }
     { ghcid.testConfig = _: shellConfig; }

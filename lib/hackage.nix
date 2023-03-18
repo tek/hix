@@ -1,4 +1,4 @@
-{ lib, config, unlines, foldMapAttrs, ... }:
+{ lib, config, util, ... }:
 with builtins;
 with lib;
 let
@@ -190,7 +190,7 @@ let
     '';
 
   uploadAll = source: publish:
-  mkScript "cabal-upload-all" (unlines (
+  mkScript "cabal-upload-all" (util.unlines (
     ["version=\${1:-}"] ++
     optionals source (sourceCommands publish) ++
     docCommands publish ++
@@ -211,7 +211,7 @@ let
   '';
 
   uploadPackage = source: publish: name:
-  mkScript "cabal-upload-package" (unlines (
+  mkScript "cabal-upload-package" (util.unlines (
     ["version=\${1:-}"] ++
     optional source (sourceCommand publish name) ++
     [(docCommand publish name)] ++
@@ -227,7 +227,7 @@ let
         "upload-${type}-${n}" = upload n;
         "bump-${type}-${n}" = version n;
       };
-    in foldMapAttrs target allTargets;
+    in util.foldMapAttrs target allTargets;
 
   uploadCandidates =
     uploadPackageApps true false "candidate";

@@ -1,5 +1,3 @@
-{-# language OverloadedRecordDot #-}
-
 module Hix.Cabal where
 
 import Control.Monad.Trans.Except (ExceptT (ExceptT), throwE)

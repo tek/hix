@@ -1,4 +1,4 @@
-{ global, ghcOverlay, util }:
+{ global, util }:
 { lib, config, ... }:
 with lib;
 {
@@ -71,7 +71,7 @@ with lib;
     nixpkgs = mkDefault global.inputs.nixpkgs;
 
     pkgs = let
-      go = ghcOverlay {
+      go = util.ghcOverlay {
         inherit (config) overrides compiler overrideKeys;
         inherit (config.nixpkgs) rev;
         inherit (config) name;

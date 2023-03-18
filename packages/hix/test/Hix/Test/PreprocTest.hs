@@ -1,5 +1,3 @@
-{-# language OverloadedRecordDot #-}
-
 module Hix.Test.PreprocTest where
 
 import Data.ByteString.Builder (toLazyByteString)

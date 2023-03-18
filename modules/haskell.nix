@@ -1,11 +1,13 @@
-{ config, lib, mergeOverrides, normalizeOverrides, relativePackages, ghcOverlay, util, ... }:
+{ config, lib, util, ... }:
 with lib;
 with types;
 let
 
   global = config;
 
-  ghcModule = import ./ghc.nix { inherit global ghcOverlay util; };
+  ghcModule = import ./ghc.nix { inherit global util; };
+  packageModule = import ./package.nix { inherit global util; };
+  cabalOptionsModule = import ./cabal-options.nix { inherit util; };
 
   compatProject = { name, config, ... }: {
     options = {
@@ -24,7 +26,7 @@ let
       prefix = mkOption {
         type = str;
         description = ''
-        All compat check derivation are prefixed with this, so you would run:
+        All compat check derivations are prefixed with this, so you would run:
          <literal>nix build .#{prefix}-{package}</literal>.
         '';
       };
@@ -63,7 +65,7 @@ let
     "943" = {};
     "925" = {};
     "902" = {};
-    "8107" = {};
+    "8107" = { enable = false; };
     "884" = { enable = false; };
   };
 
@@ -77,7 +79,7 @@ let
       inherit config lib;
       localPackage = api@{ fast, ... }: p: fast (config.localPackage api p);
     };
-    withDeps = normalizeOverrides config.overrides config.deps config.depsFull;
+    withDeps = util.normalizeOverrides config.overrides config.deps config.depsFull;
   in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
 
   baseFromPackages = let
@@ -103,15 +105,16 @@ in {
     };
 
     packages = mkOption {
-      type = attrsOf (either path attrs);
+      type = attrsOf (submodule packageModule);
       description = ''
-        The project's Cabal packages, with keys being the Cabal names and values pointing to the directory containing
-        the Cabal file.
+      The project's Cabal packages, with Cabal package names as keys and package config as values.
+      The config is processed with [HPack](https://github.com/sol/hpack).
+      Consult the docs for the package options to learn how this is translated.
       '';
       example = literalExpression ''
       {
-        spaceship = ./.;
-        spaceship-api = ./api;
+        spaceship.src = ./.;
+        spaceship-api = { src = ./api; dependencies = ["aeson"]; library.enable = true; };
       }
       '';
     };
@@ -125,11 +128,42 @@ in {
       '';
     };
 
+    cabal = mkOption {
+      type = unspecified;
+      description = ''
+      Cabal options that are applied to all packages and components.
+
+      If you define any options here, they will be merged with definitions that are set in packages or components.
+      This means that the default priority handling applies – definitions in components don't automatically override
+      those in packages or the global config.
+      You will need to use <literal>mkDefault</literal> or <literal>mkForce</literal>, or even
+      <literal>mkOverride</literal> if you define an option at all three levels.
+
+      **Note**: In order to enable cascading of these options, the definitions are not evaluated in-place, but when
+      evaluating packages and components. Therefore, referring to these values with e.g.
+      <literal>config.cabal.version</literal> does not work as expected if the value uses an option property like
+      <literal>mkIf</literal> or <literal>mkOverride</literal>.
+      You can use {option}`cabal-config` for this purpose, though.
+      '';
+      default = {};
+    };
+
+    # TODO use readOnly for other instances of this
+    cabal-config = mkOption {
+      type = submoduleWith { modules = [config.cabal cabalOptionsModule]; };
+      readOnly = true;
+      description = ''
+      Evaluated version of {option}`cabal`, for referencing in other config values.
+      May not be set by the user.
+      '';
+      default = {};
+    };
+
     auto = mkOption {
       type = bool;
       default = false;
       description = ''
-        Generate Cabal files on the fly if none is present in the source directory (or a
+        Generate the Cabal file on the fly if none is present in the source directory (or a
         <literal>package.yaml</literal>).
       '';
     };
@@ -158,15 +192,6 @@ in {
       description = ''
         The GHC version used for internal tasks and as default for the dev package set.
       '';
-    };
-
-    dependencies = mkOption {
-      type = listOf str;
-      default = [];
-      description = ''
-        Cabal dependencies used for all packages when generating config.
-      '';
-      example = literalExpression ''["aeson" "containers"]'';
     };
 
     overrides = mkOption {
@@ -318,13 +343,6 @@ in {
         type = util.types.ghc;
       };
 
-      packages = mkOption {
-        type = attrsOf attrs;
-        description = ''
-          The project's Cabal packages, canonicalized from <literal>packages</literal>.
-        '';
-      };
-
       packageNames = mkOption {
         type = listOf str;
       };
@@ -335,6 +353,11 @@ in {
 
       relativePackages = mkOption {
         type = attrsOf str;
+      };
+
+      cabal-extra = mkOption {
+        type = attrsOf unspecified;
+        default = {};
       };
 
       hixCli = {
@@ -390,15 +413,13 @@ in {
 
       basicGhc = config.internal.basicPkgs.haskell.packages.${config.mainCompiler};
 
-      overrides = mergeOverrides [config.extraOverrides overrides];
+      overrides = util.mergeOverrides [config.extraOverrides overrides];
 
-      packages = mapAttrs (_: p: if isAttrs p then p else { src = p; }) config.packages;
+      packageNames = attrNames config.packages;
 
-      packageNames = attrNames config.internal.packages;
+      packagePaths = mapAttrs (_: p: p.src) config.packages;
 
-      packagePaths = mapAttrs (_: p: p.src) config.internal.packages;
-
-      relativePackages = relativePackages config.base config.internal.packagePaths;
+      relativePackages = util.relativePackages config.base config.internal.packagePaths;
 
       hixCli = let
         cfg = config.internal.hixCli;

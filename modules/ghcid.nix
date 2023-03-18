@@ -1,4 +1,4 @@
-{ lib, config, withModules, ... }:
+{ lib, config, util, ... }:
 with builtins;
 with lib;
 with types;
@@ -7,7 +7,7 @@ let
 
   vanillaGhc = config.devGhc.vanillaGhc;
 
-  ghcidLib = import ../lib/ghcid/default.nix { inherit lib config withModules; };
+  ghcidLib = import ../lib/ghcid/default.nix { inherit lib config util; };
 
   vmConfig = import ./vm.nix config;
 

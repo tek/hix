@@ -206,31 +206,6 @@ in {
       default = "";
     };
 
-    preludePackage = mkOption {
-      description = ''
-        The Cabal package in which the <literal>Prelude</literal> is defined.
-        This will be used to disambiguate the import of a custom prelude <literal>Prelude</literal>.
-        If this option and <literal>ghci.preludeModule</literal> are both <literal>null</literal>, no action will be
-        taken.
-        If any of the two are set, GHCi will be started with <literal>-XNoImplicitPrelude</literal>
-        and a temporary search path containing a reexport of the <literal>Prelude</literal> will be set.
-      '';
-      type = nullOr str;
-      default = null;
-      example = "relude";
-    };
-
-    preludeModule = mkOption {
-      description = ''
-      The module name of the custom <literal>Prelude</literal>.
-      See <literal>preludePackage</literal> for details.
-      If <literal>preludePackage</literal> is not set, it is assumed that this module is part of the current project.
-      '';
-      type = nullOr str;
-      default = null;
-      example = "Relude";
-    };
-
     command = mkOption {
       description = "Internal API function for creating GHCi commands.";
       type = functionTo unspecified;
@@ -250,10 +225,6 @@ in {
 
     args =
       config.ghci.ghcOptions
-      ++
-      optional newerThan810 "-Wunused-packages"
-      # ++
-      # optional preludeFix "-XNoImplicitPrelude -XPackageImports"
       ++
       ["-F" "-pgmF" (toString config.ghci.preprocessor)]
       ;

@@ -49,7 +49,7 @@ let
   f (modulesRaw config extra).config;
 
   foldAttrs =
-  foldl' (z: a: z // a) {};
+  foldl' lib.mergeAttrs {};
 
   foldMapAttrs = f: xs:
   foldAttrs (map f xs);
@@ -58,6 +58,43 @@ let
   if hasAttrByPath path attrs
   then updateManyAttrsByPath [{ inherit path; update = f; }] attrs
   else attrs;
+
+  mergeAttr = a: b:
+  if isAttrs a
+  then mergeAttrset a b
+  else if isList a
+  then a ++ b
+  else b;
+
+  mergeAttrset = l: r:
+  let
+    f = name:
+    if hasAttr name l && hasAttr name r
+    then mergeAttr l.${name} r.${name}
+    else l.${name} or r.${name};
+  in genAttrs (concatMap attrNames [l r]) f;
+
+  mergeAuto = a: b:
+  if b == null
+  then a
+  else if isList a
+  then a ++ b
+  else if isAttrs a
+  then mergeAttrset a b
+  else b;
+
+  mergeAll' = z: items:
+  foldl' mergeAuto z items;
+
+  mergeAll = items:
+  if length items == 0
+  then throw "Internal error: passed empty list to 'mergeAll'."
+  else mergeAll' (head items) (tail items);
+
+  toTitle = s:
+  if stringLength s == 0
+  then s
+  else toUpper (substring 0 1 s) + substring 1 (-1) s;
 
 in {
   inherit
@@ -73,6 +110,12 @@ in {
   foldAttrs
   foldMapAttrs
   over
+  mergeAttr
+  mergeAttrset
+  mergeAuto
+  mergeAll'
+  mergeAll
+  toTitle
   ;
 
   overrides = import ./overrides.nix { inherit lib; };

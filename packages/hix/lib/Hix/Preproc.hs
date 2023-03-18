@@ -1,5 +1,3 @@
-{-# language OverloadedRecordDot, NoFieldSelectors #-}
-
 module Hix.Preproc where
 
 import Control.Lens (IndexedTraversal', has, index, ix, preview, (%~), (.~), (^..))

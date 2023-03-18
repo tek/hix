@@ -1,5 +1,5 @@
 {
-  description = "Haskell Development Build Tools";
+  description = "Haskell/Nix development build tools";
 
   inputs = {
     nixpkgs.url = github:NixOS/nixpkgs/b139e44d78c36c69bcbb825b20dbfa51e7738347;

@@ -1,9 +1,9 @@
-{ lib, config, unlines, foldMapAttrs, ... }:
+{ lib, config, util, ... }:
 with builtins;
 with lib;
 let
 
-  logic = import ../lib/hackage.nix { inherit lib config unlines foldMapAttrs; };
+  logic = import ../lib/hackage.nix { inherit lib config util; };
 
   isYaml = file: match ".*\.yaml" file != null;
 

@@ -162,6 +162,8 @@ in {
       in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps main // {
         inherit ghcid;
         hls = app "${config.shell.hls.app}";
+        gen-cabal = app "${config.hpack.script}";
+        gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
         hpack = app "${config.hpack.script}";
         hpack-quiet = app "${config.hpack.scriptQuiet}";
         tags = app "${tags.app}";

@@ -1,11 +1,11 @@
-{ lib, config, foldAttrs, foldMapAttrs, over, ... }:
+{ lib, config, util, ... }:
 with builtins;
 with lib;
 with types;
 let
 
   maybeDefaultApp = name: a:
-  if name == config.hpack.defaultApp
+  if name == config.defaultApp
   then { default = a; }
   else {};
 
@@ -14,169 +14,119 @@ let
   in { ${name} = a; } // maybeDefaultApp name a;
 
   packageApps = outputs: pname: conf:
-  foldAttrs (mapAttrsToList (app (outputs.${pname})) (conf.executables or {}));
+  util.foldAttrs (mapAttrsToList (app (outputs.${pname})) (conf.executables or {}));
 
-  defaultMeta = {
-    version = "0.1.0.0";
-    license = "GPL-3";
-  };
+  commonAttrs = [
+    "ghc-options"
+    "dependencies"
+    "default-extensions"
+  ];
 
-  base = { name = "base"; version = ">= 4 && < 5"; };
+  mkPrelude = prelude: base: let
+    mod = prelude.module;
+    preludePackageBase = if isAttrs prelude.package then prelude.package else { name = prelude.package; };
+    preludePackage = preludePackageBase // {
+      mixin = optionals (mod != "Prelude") [
+        "(${mod} as Prelude)"
+        "hiding (${mod})"
+      ];
+    };
+  in [preludePackage] ++ optional (base != null) base;
 
-  baseDep = { dependencies = [base]; };
+  mkPathsBlocker = name:
+  { when = { condition = false; generated-other-modules = "Paths_${replaceStrings ["-"] ["_"] name}"; }; };
 
-  inferPackageConf = pname: pkg: let
+  generateComponent = pkg: conf: let
 
-    packageDeps = pkg.dependencies or [];
-    extraDeps = config.dependencies ++ packageDeps;
+    prelude = conf.prelude;
+    base = conf.base;
 
-    ensureDeps = addLib: comp: let
-      deps = extraDeps ++ comp.dependencies or [];
-    in comp // { dependencies = optional addLib pname ++ (if deps == [] then [base] else deps); };
+    basic = { inherit (conf) ghc-options dependencies default-extensions source-dirs; };
 
-    allDirs = ["lib" "src" "app" "test" "tests" "integration"];
+    preludeDeps = {
+      dependencies =
+        if prelude == null
+        then optional (base != null) base
+        else mkPrelude prelude conf.baseHide;
+    };
 
-    hasMain = dir: pathExists "${pkg.src}/${dir}/Main.hs";
+    paths = if conf.paths then {} else mkPathsBlocker pkg.name;
 
-    hasNoMain = dir: pathExists "${pkg.src}/${dir}" && !(hasMain dir);
+  in util.mergeAll [
+    preludeDeps
+    basic
+    paths
+    conf.cabal
+  ];
 
-    inferDirStatus = dir:
-    let srcDir = "${pkg.src}/${dir}";
-    in optionalAttrs (pathExists srcDir) { ${dir} = pathExists "${srcDir}/Main.hs"; };
+  generateLib = pkg: conf:
+  { library = generateComponent pkg conf; };
 
-    existing = foldMapAttrs inferDirStatus allDirs;
+  generateExe = pkg: conf:
+  { ${conf.name} = { inherit (conf) main; } // generateComponent pkg conf; };
 
-    specified = let
-      check = comp:
-        optional (hasAttr "source-dirs" comp) comp.source-dirs;
-    in
-    (if hasAttr "library" pkg then check pkg.library else []) ++
-    concatMap check ((attrValues (pkg.executables or {})) ++ (attrValues (pkg.tests or {})))
-    ;
+  generateExes = name: conf: let
+    plural = "${name}s";
+    exes = optional conf.${name}.enable conf.${name} ++ attrValues conf.${plural};
+  in { ${plural} = util.foldMapAttrs (generateExe conf) exes; };
 
-    available = filterAttrs (n: _: !(elem n specified)) existing;
+  generatePackageConf = name: conf: let
 
-    mkExe = source-dirs: { inherit source-dirs; main = "Main.hs"; };
+    cabal = conf.cabal-config;
 
-    amend = type: dirs: key: dir: conf: name: let
-      notFound = throw ''
-        The ${type} '${name}' was specified without a 'source-dirs' attribute.
-        Hix chooses either ${dirs} in this case, if one of those directories contains 'Main.hs'.
-        These conditions are not satisfied.
-      '';
-    in
-    if dir == null
-    then notFound
-    else over [key name] (a: a // mkExe dir) conf;
+    basic = { inherit (conf) name; inherit (cabal) version; };
 
-    inferExe = dir: optionalAttrs (dir != null) { executables.${pname} = mkExe dir; };
+    optAttrs = [
+      "author"
+      "license"
+      "license-file"
+      "copyright"
+      "build-type"
+    ];
 
-    checkExe = conf: let
-      inferredDir = findFirst hasMain null ["app" "src"];
-      comps = conf.executables;
-      exe = head (attrNames comps);
-      new =
-        if hasAttr "executables" conf
-        then
-          if length (attrNames comps) == 1 && !(hasAttr "source-dirs" comps.${exe})
-          then amend "executable" "'app' or 'src'" "executables" inferredDir conf exe
-          else conf
-        else conf // inferExe inferredDir
-        ;
-    in over ["executables"] (mapAttrs (_: ensureDeps (conf ? library))) new;
+    opt = util.foldMapAttrs (a: let v = cabal.${a}; in optionalAttrs (v != null) { ${a} = v; }) optAttrs;
 
-    inferTest = dir: optionalAttrs (dir != null) { tests."${pname}-${dir}" = mkExe dir; };
+    desc = optionalAttrs (conf.description != null) { inherit (conf) description; };
 
-    checkTest = conf: let
-      inferredDir = findFirst hasMain null ["test" "tests" "integration"];
-      test = head (attrNames conf.tests);
-      new =
-        if hasAttr "tests" conf
-        then
-          if length (attrNames conf.tests) == 1 && !(hasAttr "source-dirs" conf.tests.${test})
-          then amend "test" "'test', 'tests' or 'integration'" "tests" inferredDir conf test
-          else conf
-        else conf // inferTest inferredDir
-        ;
-    in over ["tests"] (mapAttrs (_: ensureDeps (conf ? library))) new;
+    library = optionalAttrs conf.library.enable (generateLib conf conf.library);
+    exes = generateExes "executable" conf;
+    tests = generateExes "test" conf;
+    benches = generateExes "benchmark" conf;
 
-    amendLib = conf: let
-      noLib = throw ''
-        The library for '${pname}' was specified without a 'source-dirs' attribute.
-        Hix chooses either 'lib' or 'src' in this case, if one of those directories does not contain 'Main.hs'.
-        These conditions are not satisfied.
-      '';
-      inferredDir =
-        findFirst hasNoMain noLib ["lib" "src"];
-    in over ["library"] (a: a // { source-dirs = inferredDir; }) conf;
+  in util.mergeAll [
+    cabal.meta
+    basic
+    opt
+    desc
+    library
+    exes
+    tests
+    benches
+    cabal.cabal
+  ];
 
-    inferLib = let
-      use = dir: { library.source-dirs = dir; };
-    in
-      if hasNoMain "lib"
-      then use "lib"
-      else if hasNoMain "src"
-      then use "src"
-      else {};
-
-    checkLib = conf: let
-      new =
-        if hasAttr "library" conf
-        then
-          if !(hasAttr "source-dirs" conf.library)
-          then amendLib conf
-          else conf
-        else conf // inferLib
-        ;
-    in over ["library"] (ensureDeps false) new;
-
-    subdirs = (checkTest (checkExe (checkLib pkg)));
-
-    root =
-      if pathExists "${pkg.src}/Main.hs"
-      then { executables.${pname} = ensureDeps false (mkExe "."); }
-      else { library = ensureDeps false { source-dirs = "."; }; }
-      ;
-
-    couldInfer = subdirs ? library || subdirs ? executables || subdirs ? tests;
-
-    full = defaultMeta // { name = pname; } // (if couldInfer then subdirs else root);
-
-    clean = removeAttrs full ["dependencies" "src"];
-
-  in clean;
-
-  infer =
-    mapAttrs inferPackageConf config.internal.packages;
+  infer = mapAttrs generatePackageConf config.packages;
 
   script = import ../lib/hpack.nix { inherit config; verbose = true; };
 
   scriptQuiet = import ../lib/hpack.nix { inherit config; };
 
 in {
+  options = {
 
-  options.hpack = {
+    defaultApp = mkOption {
+      type = str;
+      description = ''
+      The name of an executable in {option}`packages` that should be assigned to
+      <literal>packages.default</literal>.
+      '';
+    };
 
-      packages = mkOption {
-        type = nullOr (attrsOf unspecified);
-        description = ''
-        Cabal configuration in the <literal>hpack</literal> schema.
-        It will be encoded as JSON and passed to <literal>hpack</literal> to generate a Cabal file.
-        '';
-        default = null;
-      };
+    hpack = {
 
       apps = mkOption {
         type = functionTo unspecified;
         default = _: {};
-      };
-
-      defaultApp = mkOption {
-        type = str;
-        description = ''
-          The name of an executable in <literal>hpack.packages</literal> that should be assigned to
-          <literal>packages.default</literal>.
-        '';
       };
 
       script = mkOption {
@@ -204,22 +154,24 @@ in {
         };
 
       };
-
+    };
   };
 
-  config.hpack = {
+  config = {
 
-    internal.packages = mkDefault (if config.hpack.packages == null then infer else config.hpack.packages);
+    defaultApp = mkDefault config.main;
 
-    apps =
-      mkDefault (outputs: foldl (a: b: a // b) {} (mapAttrsToList (packageApps outputs) config.hpack.internal.packages));
+    hpack = {
 
-    defaultApp =
-      mkDefault config.main;
+      internal.packages = mapAttrs generatePackageConf config.packages;
 
-    script = script;
+      apps =
+        mkDefault (outputs: util.foldAttrs (mapAttrsToList (packageApps outputs) config.hpack.internal.packages));
 
-    scriptQuiet = scriptQuiet;
+      script = script;
+
+      scriptQuiet = scriptQuiet;
+
+    };
   };
-
 }

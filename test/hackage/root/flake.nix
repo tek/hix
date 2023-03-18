@@ -5,8 +5,7 @@
 
   outputs = { hix, ... }:
   hix.lib.flake {
-    base = ./.;
-    packages.root = ./.;
+    packages.root.src = ./.;
     compat.enable = false;
     hackage = {
       commit = true;

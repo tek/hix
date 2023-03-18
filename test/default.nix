@@ -7,7 +7,7 @@ let
   tests = {
     modules = test "modules";
     ghcid = test "ghcid";
-    hpack = test "hpack";
+    packages = test "packages";
     hackage = test "hackage";
     auto-1 = test "auto-1";
     auto-2 = test "auto-2";

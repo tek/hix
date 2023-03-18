@@ -7,12 +7,13 @@
   hix.lib.auto {
     packages.root = {
       src = ./.;
-      dependencies = ["aeson"];
+      cabal.dependencies = ["aeson"];
+      library.enable = true;
       library.dependencies = ["messagepack"];
-      executables.root.main = "Main.hs";
-      tests.root-test.main = "Main.hs";
+      executables.root.enable = true;
+      test.enable = true;
     };
-    dependencies = ["base" "polysemy"];
+    cabal.dependencies = ["base" "polysemy"];
     compat.enable = false;
     devGhc.compiler = "ghc902";
   };

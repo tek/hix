@@ -5,29 +5,30 @@
 
   outputs = { hix, ... }:
   hix.lib.auto {
-    packages.root = ./.;
-    compat.enable = false;
-    devGhc.compiler = "ghc902";
-    hpack.packages.root =
-    let
+    cabal = {
       base = { name = "base"; version = ">= 4.12 && < 5"; };
-    in {
-      name = "root";
-      author = "Author McCodeface";
       version = "23";
-      license = "BSD-2-Clause-Patent";
+      license = "GPL-3";
+      meta = {
+        author = "Author McCodeface";
+      };
+    };
+    packages.root = {
+      src = ./.;
 
       library = {
+        enable = true;
         source-dirs = "src";
-        dependencies = ["transformers >= 0 && < 100" "aeson" base];
-        when = { condition = "false"; generated-other-modules = "Paths_root"; };
+        dependencies = ["transformers >= 0 && < 100" "aeson"];
+        paths = false;
       };
 
       executables.run = {
-        main = "Main.hs";
-        source-dirs = "app";
-        dependencies = [base "root" "polysemy"];
+        dependencies = ["polysemy"];
       };
+
     };
+    compat.enable = false;
+    devGhc.compiler = "ghc902";
   };
 }

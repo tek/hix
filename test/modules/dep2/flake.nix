@@ -5,8 +5,10 @@
 
   outputs = { hix, ... }:
   hix.lib.flake {
-    base = ./.;
-    packages.dep2 = ./.;
+    packages.dep2 = {
+      src = ./.;
+      library.enable = true;
+    };
     compat.enable = false;
     overrides = {
       dev = { hackage, ... }: {

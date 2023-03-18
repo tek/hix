@@ -1,4 +1,4 @@
-{ lib, config, withModules, overrides, ghcOverlay, util, ... }:
+{ lib, config, util, ... }:
 with builtins;
 with lib;
 with types;
@@ -9,9 +9,9 @@ let
 
   cfg = config.shell.hls;
 
-  ghcModule = import ./ghc.nix { inherit global ghcOverlay util; };
+  ghcModule = import ./ghc.nix { inherit global util; };
 
-  ghcidLib = import ../lib/ghcid/default.nix { inherit lib config withModules; };
+  ghcidLib = import ../lib/ghcid/default.nix { inherit lib config util; };
 in {
   options.shell = {
 

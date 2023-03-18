@@ -5,7 +5,13 @@
 
   outputs = { hix, ... }:
   hix.lib.auto {
-    packages.root = ./.;
+    packages.root = {
+      src = ./.;
+      executable = {
+        enable = true;
+        source-dirs = ".";
+      };
+    };
     compat.enable = false;
     devGhc.compiler = "ghc902";
   };

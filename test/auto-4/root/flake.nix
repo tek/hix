@@ -5,8 +5,15 @@
 
   outputs = { hix, ... }:
   hix.lib.auto {
-    packages.root = { src = ./.; dependencies = ["aeson"]; };
-    dependencies = ["base" "polysemy"];
+    packages.root = {
+      src = ./.;
+      cabal.dependencies = ["aeson"];
+      executable = {
+        enable = true;
+        source-dirs = ".";
+      };
+    };
+    cabal.dependencies = ["base" "polysemy"];
     compat.enable = false;
     devGhc.compiler = "ghc902";
   };

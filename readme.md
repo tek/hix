@@ -1,41 +1,44 @@
 # About
 
-A set of tools for developing on a Haskell project with Nix build.
-Provides out-of-the-box setup for package overrides, `ghcid`, `haskell-language-server`, [thax], and `cabal upload`.
+Hix is a set of tools for developing a Haskell project with a Nix build definition.
+It provides out-of-the-box setup for package overrides, `ghcid`, `haskell-language-server`, [thax], and `cabal upload`.
 
 There is a dedicated page for the documentation of the library's [options].
 
 # Basic usage
 
-The main service provided by *hix* is the construction of a set of [flake] outputs with useful functionality for
+The main service provided by Hix is the construction of a set of [flake] outputs with useful functionality for
 Haskell development.
 A flake is an organizational unit for *nix* projects that usually corresponds to a repository.
 It is configured in the file `flake.nix`, residing at the project's root directory, by defining a set of inputs
 (dependencies that can be flakes or arbitrary source trees) and outputs (derivations, shells, overlays etc.).
 
 The library's main entry point, `hix.lib.flake`, should be evaluated in the flake's `outputs` function.
-Assuming the simplest possible project setup consisting of a single Cabal library named `spaceship` with the file
-`spaceship.cabal` in the project's root directory, the only necessary arguments are the project's root directory as
-`base`; and a mapping from Cabal package names to directories as `packages`:
+Assuming the simplest possible project setup consisting of a single Cabal package named `spaceship` with an executable
+module at `app/Main.hs`, the only necessary config option is the package name mapped to the source directory:
 
 ```nix
 # flake.nix
 {
   description = "Spaceship";
   inputs.hix.url = github:tek/hix;
-  outputs = { hix, ... }: hix.lib.flake { base = ./.; packages = { spaceship = ./.; }; };
+  outputs = { hix, ... }: hix.lib.flake { packages.spaceship.src = ./.; };
 }
 ```
 
 This generates an output set that contains, among other things, the set `packages`, which is where `nix build` looks for
-derivations, making it possible to build the `spaceship` library with the command:
+derivations, making it possible to build and run the `spaceship` package with the commands:
 
 ```
+nix run .#gen-cabal
 nix build .#spaceship
+nix run .#spaceship
 ```
+
+The first command is not necessary if you provide the Cabal file yourself.
 
 Furthermore, the set `apps`, which is consulted by `nix run`, is populated with several tools, like a `ghcid` launcher.
-This app allows the developer to run arbitrary functions in `ghci`, instantly recompiling and re-executing on every
+This app allows the developer to run arbitrary functions in GHCi, instantly recompiling and re-executing on every
 change.
 For example, the function `main` from the module `Main` in the directory `app` in the package at the root directory
 (`.`) can be executed with this command:
@@ -50,7 +53,7 @@ This shell environment can be entered interactively to run `cabal` with an appro
 
 ```
 nix develop
-cabal v2-build all
+cabal v2-build spaceship
 ```
 
 The full set of `outputs` looks roughly like this:
@@ -90,12 +93,11 @@ While there is a dedicated [options] page that lists all of them, here are a few
 
 |Name|Default|Description|
 |---|---|---|
-|`base`||Path to the project root, should be specified as `./.`.|
 |`packages`||Local Cabal [packages](#packages).|
 |`main`|`packages.<singleton>`|The package used for `defaultPackage`. Defaults only if `packages` has one entry.|
-|`devGhc.compiler`|`"ghc902"`|The attribute name of the GHC package set to use for development.|
+|`devGhc.compiler`|`"ghc925"`|The attribute name of the GHC package set to use for development.|
 |`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
-|`compat.versions`|`["925" "902" "8107" "884"]`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
+|`compat.projects`|`{"943" = {}; "925" = {}; "902" = {};}`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
 
 While these options can be passed to `hix.lib.flake` as regular function arguments, the function actually treats its
 argument as a NixOS module.
@@ -106,10 +108,9 @@ This allows complex configuration for more advanced projects with the ability to
   outputs = { hix, ... }:
   let
     module = { config, ... }: {
-       base = ./.;
-       packages = { spaceship = ./.; };
+       packages = { spaceship.src = ./.; };
        output.systems = ["x86_64-linux" "aarch64-linux"];
-       devGhc.compiler = if config.system == "aarch64-linux" then "ghc884" else "ghc925";
+       devGhc.compiler = if config.system == "aarch64-linux" then "ghc902" else "ghc925";
     };
   in hix.lib.flake module;
 }
@@ -119,13 +120,13 @@ For even more elaborate setups, `hix.lib.flake` also accepts a *list* of modules
 
 ## Packages
 
-The `packages` parameter is a set mapping project names to file system paths.
+The `packages` option is a set mapping package names to their configuration.
 The simplest configuration, for a project with one Cabal file at the root, is:
 
 ```nix
 {
   packages = {
-    spaceship = ./.;
+    spaceship.src = ./.;
   };
 }
 ```
@@ -135,14 +136,84 @@ For multiple packages:
 ```nix
 {
   packages = {
-    spaceship-core = ./packages/core;
-    spaceship-api = ./packages/api;
+    spaceship-core.src = ./packages/core;
+    spaceship-api.src = ./packages/api;
   };
 }
 ```
 
-This configuration is used by `hix.haskell` to create `cabal2nix` derivations for the packages, by the `ghcid`
-helpers to configure the include paths, and by the `cabal upload` scripts.
+This configuration is used to create `cabal2nix` derivations for the packages, by GHCi apps to configure the include
+paths, and by the Hackage upload apps.
+
+### Cabal configuration
+
+The flake app `gen-cabal` transforms the configuration in `packages` to Cabal files in the respective source
+directories.
+[Many configuration options](options) are available to customize these files:
+
+```nix
+{config, lib, ...}: {
+
+  cabal = {
+    author = "Your Name";
+    version = lib.mkDefault "0.5";
+    ghc-options = ["-Wall"];
+    default-extensions = ["OverloadedRecordDot" "DataKinds"];
+    meta = {
+      category = "Statistics";
+    };
+  };
+
+  packages = {
+    spaceship = {
+
+      cabal = {
+        version = "0.8";
+        ghc-options = ["-Werror"];
+        dependencies = ["transformers"];
+      };
+
+      library = {
+        enable = true;
+        dependencies = ["aeson"];
+        ghc-options = ["-Wunused-imports"];
+      };
+
+      executable = {
+        enable = true;
+        source-dirs = "src";
+      };
+
+      tests.unit = {
+        dependencies = ["hedgehog" "tasty"];
+      };
+
+    };
+  };
+}
+```
+
+Running the flake app will convert these options to JSON and pass them to [HPack], which generates a Cabal file:
+
+```shell
+nix run .#gen-cabal
+```
+
+The options in the top-level and package-level `cabal` modules cascade down into all packages and components,
+respectively.
+
+For example, the option `ghc-options = ["-Wall"]` will be used for all packages, and the same option (`[-Werror]`) in
+the `spaceship` config will be used for all components in that package.
+For list options, like `ghc-options` or `dependencies`, these will be merged, so that components will get all values
+defined in the two `cabal` modules as well as those in the component config.
+
+All options except for `src` have defaults, and specifying only the source dir will result in a cabal file that contains
+a single executable using the `app` directory for Haskell sources.
+
+The `meta` option is a freeform attribute set that will be passed verbatim to HPack at the package level.
+
+Another freeform option, `cabal.cabal` (or just `cabal` at the component level), is used at the level it is defined and
+does not cascade down.
 
 ### Minimal Derivations
 
@@ -160,12 +231,11 @@ The main package's minimal derivation is additionally available as the package `
 nix build .#min
 ```
 
-
 ## GHC Compatibility Checks
 
 If the `compat.enable` argument is `true`, the flake will have additional outputs named like
 `compat-902-spaceship-core`.
-These derivations don't share the same overrides as the main (`dev`) project.
+These derivations don't share the same dependency overrides with the main (`dev`) project.
 This allows testing the project with the default packages from the hackage snapshot that nixpkgs uses for this version.
 Each of these versions can have their own overrides, as described in the next section.
 
@@ -181,7 +251,8 @@ the development dependencies and one that is used for _all_ package sets:
     all = ...;
     dev = ...;
     ghc902 = ...;
-    ghc8107 = ...;
+    ghc925 = ...;
+    ghc943 = ...;
   };
 }
 ```
@@ -337,18 +408,6 @@ If a dependency's local packages should be included (and built directly from the
 
 # Tools
 
-## *hpack*
-
-These commands run `hpack` in each directory in `packages` (the second variant suppresses output):
-
-```
-nix run .#hpack
-nix run .#hpack-quiet
-```
-
-Instead of conventional `yaml` files, *Hix* allows the configuration to be specified as nix expressions.
-If the option `hpack.packages.${name}` is set, it is converted to an *hpack* file.
-
 ## `devShell` and `ghcid`
 
 The project's local packages with all their dependencies are made available in the `devShell`, which can be entered with
@@ -356,14 +415,11 @@ The project's local packages with all their dependencies are made available in t
 In there, `cabal` commands work as expected.
 Additionally, `ghcid` may be run with the proper configuration so that it watches all source files.
 
-`ghcid` and `ghci` have several configuration options:
+`ghcid` and GHCi have several configuration options:
 
 |Name|Default|Description|
 |---|---|---|
-|`ghci.args`|`["-Werror" "-Wall" "-Wredundant-constraints" "-Wunused-type-patterns" "-Widentities"]`|Passed directly to `ghci`.|
-|`ghci.options_ghc`|`null`|If non-null, passed to `ghci` as `-optF`.|
-|`ghci.preludePackage`|`null`|Cabal package containing the custom `Prelude`.|
-|`ghci.preludeModule`|`null`|Module containing the custom `Prelude`.|
+|`ghci.args`|`[]`|Passed directly to GHCi.|
 |`ghcid.commands`|`{}`|An attrset of submodules, each configuring a [command](#commands).|
 |`ghcid.shellConfig`|`{}`|Extra configuration for all `ghcid` apps, like extra search paths.|
 |`ghcid.testConfig`|`_: {}`|Extra configuration for the test command.|
@@ -426,7 +482,7 @@ The parameters are as follows:
   `packages/spaceship-api`).
 2. Name of the module that contains the function (`Spaceship.Test.LaunchTest`).
 3. Name of the function (`test_launch`).
-4. Cabal component directory (`lib`, `app`, `test`) in the package, passed to `ghci` as `-i` (module search path).
+4. Cabal component directory (`lib`, `app`, `test`) in the package, passed to GHCi as `-i` (module search path).
 5. Runner for the function.
 
 This can be combined nicely with tools like [vim-test].
@@ -498,14 +554,22 @@ effect of a nixpkgs update.
 
 ### Custom Preludes
 
-**TL;DR**: Set `ghci.preludeModule = "Relude";` if you're using a nonstandard `Prelude`, or
-`ghci.preludePackage = "somedep";` if that module is also named `Prelude`.
+If you're using a nonstandard `Prelude`, set these options (using `relude` as an example):
 
-Various workarounds are necessary to replicate Cabal's environment in `ghcid`, since it does not read `.cabal` files.
-It is especially complicated to accommodate the case of a custom `Prelude`, in particular when it is defined in an
-external dependency.
+```nix
+{
+  cabal.prelude = {
+    enable = true;
+    package = {
+      name = "relude";
+      version = "^>= 1.2";
+    };
+    module = "Relude";
+  };
+}
+```
 
-As an example, when using [relude], the *hpack* file usually looks like this:
+This will produce HPack config containing something like:
 
 ```yaml
 dependencies:
@@ -514,47 +578,20 @@ dependencies:
     mixin:
       - hiding (Prelude)
   - name: relude
+    version: "^>= 1.2"
     mixin:
       - (Relude as Prelude)
       - hiding (Relude)
 ```
 
-Since `ghcid` has no knowledge of these mixins, `ghci` will simply `import Prelude` and catch the only module by that
-name on the package path, which is the one from `base`.
+For GHCi, using a custom prelude isn't quite as simple as adding Cabal mixins, since it does not read Cabal config
+files.
+It's possible to use `cabal repl` as the `ghcid` command to get around that, but automatic recompilation on file changes
+doesn't work well with that method if you want to run tests, because Cabal doesn't support multiple components in the
+repl unless you use the latest version.
 
-To interfere with the `Prelude` loading mechanism, `ghci` is first executed with `-XNoImplicitPrelude`, to avoid the
-automatic import that happens before anything else is executed.
-
-In the `ghci` script that also contains the test command setup, `Prelude` has to be loaded, imported and made implicit
-again:
-
-```
-:load Prelude
-import Prelude
-:set -XImplicitPrelude
-```
-
-The goal is now to make `ghci` see only the correct `Prelude` at this point, and ensure this for different kinds of setups.
-
-For this purpose, there are two configuration options: `ghci.preludePackage` and `ghci.preludeModule`.
-
-When either of them is set, the `Prelude` machinery will be altered to import the specified module (or `Prelude` if
-`null`) is imported from the specified package (or the local project if `null`).
-This is achieved by writing a temporary file to the store, containing a reexport:
-
-```haskell
-module Prelude (module Relude) where
-import "relude" Relude
-```
-
-The package import is used to disambiguate the case in which multiple dependencies have the target module.
-In this case, this is unnecessary, but if the package defines the actual module `Prelude`, `ghci` would still fail
-without the package name.
-
-Now this file's directory, which is in the *nix* store, is specified as a search path option to `ghci`, as in
-`-i/nix/store/xxxx-prelude-reexport/`.
-This causes the directory to be treated as part of the local project, allowing the commands `:load Prelude` and `import
-Prelude` to be executed unambiguously!
+In order to compensate for that, the `ghcid` app uses a GHC preprocessor that reads the Cabal file for each module and
+inserts the Prelude, as well as extensions and `ghc-options`, into the header.
 
 ## Haskell Language Server
 
@@ -602,5 +639,6 @@ nix run .#release -- spaceship-api -v 2.5.0.1
 
 [options]: https://tryp.io/hix/index.html
 [flake]: https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html
+[HPack]: https://github.com/sol/hpack
 [thax]: https://github.com/tek/thax
 [vim-test]: https://github.com/vim-test/vim-test
