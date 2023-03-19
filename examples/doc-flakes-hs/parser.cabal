@@ -1,0 +1,21 @@
+cabal-version: 1.12
+name: parser
+version: 0.1.0.0
+
+library
+  exposed-modules:
+      Parser
+  hs-source-dirs:
+      lib
+  build-depends:
+      aeson ==2.0.*
+    , base ==4.*
+    , bytestring
+
+executable parser
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  build-depends:
+      base ==4.*
+    , parser

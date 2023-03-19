@@ -16,55 +16,55 @@ let
 
       env = mkOption {
         type = attrsOf (either int str);
-        description = "Verbatim environment variables for the ghcid process.";
+        description = mdDoc "Verbatim environment variables for the ghcid process.";
         default = {};
       };
 
       buildInputs = mkOption {
         type = listOf package;
-        description = "Packages to add to the shell environment.";
+        description = mdDoc "Packages to add to the shell environment.";
         default = [];
       };
 
       haskellPackages = mkOption {
         type = functionTo (listOf package);
-        description = "Haskell packages to make available to Cabal and GHCi.";
+        description = mdDoc "Haskell packages to make available to Cabal and GHCi.";
         default = _: [];
       };
 
       search = mkOption {
         type = listOf str;
-        description = "Search paths for GHCid to compile and watch files.";
+        description = mdDoc "Search paths for GHCid to compile and watch files.";
         default = [];
       };
 
       restarts = mkOption {
         type = listOf str;
-        description = "Files that should trigger a restart of GHCid, like '.cabal' files.";
+        description = mdDoc "Files that should trigger a restart of GHCid, like '.cabal' files.";
         default = [];
       };
 
       preCommand = mkOption {
-        description = "Shell command that should be executed before GHCi (on every reload).";
+        description = mdDoc "Shell command that should be executed before GHCi (on every reload).";
         type = lines;
         default = "";
       };
 
       preStartCommand = mkOption {
         type = lines;
-        description = "Shell command that should be executed before `ghcid` (once).";
+        description = mdDoc "Shell command that should be executed before `ghcid` (once).";
         default = "";
       };
 
       exitCommand = mkOption {
         type = lines;
-        description = "Shell command that should be executed after `ghcid` exits.";
+        description = mdDoc "Shell command that should be executed after `ghcid` exits.";
         default = "";
       };
 
       vm = mkOption {
         type = submodule (vmConfig config);
-        description = "Configuration for a `qemu` VM that is started before and stopped after the command runs.";
+        description = mdDoc "Configuration for a `qemu` VM that is started before and stopped after the command runs.";
         default = {};
       };
 
@@ -75,18 +75,18 @@ let
     options = {
 
       shellConfig = mkOption {
-        description = "This command's nix shell configuration.";
+        description = mdDoc "This command's nix shell configuration.";
         type = runConfig;
         default = {};
       };
 
       script = mkOption {
-        description = "GHCi commands to execute before running the test.";
+        description = mdDoc "GHCi commands to execute before running the test.";
         type = lines;
       };
 
       test = mkOption {
-        description = "The expression that is evaluated repeatedly.";
+        description = mdDoc "The expression that is evaluated repeatedly.";
         type = str;
       };
 
@@ -97,50 +97,50 @@ in {
   options.ghcid = {
 
     shellConfig = mkOption {
-      description = "The shell configuration shared by all commands and shells.";
+      description = mdDoc "The shell configuration shared by all commands and shells.";
       type = runConfig;
       default = {};
     };
 
     testConfig = mkOption {
-      description = "The shell configuration shared by all tests.";
+      description = mdDoc "The shell configuration shared by all tests.";
       type = functionTo runConfig;
       default = {};
     };
 
     commands = mkOption {
-      description = "The ghcid commands exposed as flake apps.";
+      description = mdDoc "The ghcid commands exposed as flake apps.";
       type = attrsOf ghcidCommand;
       default = {};
     };
 
     shells = mkOption {
-      description = "The shells generated for the commands.";
+      description = mdDoc "The shells generated for the commands.";
       type = unspecified;
     };
 
     shell = mkOption {
-      description = "The default shell generated for use by the flake output <literal>devShell</literal>.";
+      description = mdDoc "The default shell generated for use by the flake output `devShell`.";
       type = unspecified;
     };
 
     apps = mkOption {
-      description = "The flake apps generated for the commands.";
+      description = mdDoc "The flake apps generated for the commands.";
       type = unspecified;
     };
 
     run = mkOption {
-      description = "Internal function used to run ghcid tests.";
+      description = mdDoc "Internal function used to run ghcid tests.";
       type = unspecified;
     };
 
     test = mkOption {
-      description = "The generated app that runs a ghcid test.";
+      description = mdDoc "The generated app that runs a ghcid test.";
       type = functionTo unspecified;
     };
 
     lib = mkOption {
-      description = "The internal logic for devshells and ghcid.";
+      description = mdDoc "The internal logic for devshells and ghcid.";
       type = unspecified;
     };
 

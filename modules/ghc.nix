@@ -5,59 +5,64 @@ with lib;
   options = with types; {
     name = mkOption {
       type = str;
-      description = "An identifier used for describing the package set.";
+      description = mdDoc "An identifier used for describing the package set.";
       default = "unnamed";
     };
 
     compiler = mkOption {
       type = str;
-      description = "The attribute name for a GHC version in the set <literal>haskell.packages</literal>.";
+      description = mdDoc "The attribute name for a GHC version in the set `haskell.packages`.";
     };
 
     overrides = mkOption {
       type = util.types.cabalOverrides;
-      description = "The overrides used for this package set, defaulting to the global overrides.";
+      description = mdDoc "The overrides used for this package set, defaulting to the global overrides.";
     };
 
     overrideKeys = mkOption {
       type = listOf str;
-      description = "The keys of the overrides used for this package set, in increasing order of precedence.";
+      description = mdDoc "The keys of the overrides used for this package set, in increasing order of precedence.";
     };
 
     nixpkgs = mkOption {
       type = util.types.nixpkgs;
-      description = "The flake input pointing to a nixpkgs commit used as the basis for the package set.";
+      description = mdDoc "The flake input pointing to a nixpkgs commit used as the basis for the package set.";
     };
 
     nixpkgsOptions = mkOption {
       type = attrsOf unspecified;
-      description = "Additional options to pass to nixpkgs when importing.";
+      description = mdDoc "Additional options to pass to nixpkgs when importing.";
       default = {};
     };
 
+    # TODO readOnly
     pkgs = mkOption {
       type = util.types.pkgs;
+      description = mdDoc "The nixpkgs set used for this GHC.";
     };
 
     crossPkgs = mkOption {
       type = util.types.pkgs;
-      description = ''
+      description = mdDoc ''
       This option can be used to override the pkgs set used for the Haskell package set, for example an element of
-      <literal>pkgsCross</literal>: <literal>devGhc.crossPkgs = config.devGhc.pkgs.pkgsCross.musl64</literal>
+      `pkgsCross`: `devGhc.crossPkgs = config.devGhc.pkgs.pkgsCross.musl64`
       '';
     };
 
     overlays = mkOption {
       type = listOf util.types.overlay;
       default = [];
+      description = mdDoc "Additional nixpkgs overlays.";
     };
 
     vanillaGhc = mkOption {
       type = util.types.ghc;
+      description = mdDoc "The package set without overrides.";
     };
 
     ghc = mkOption {
       type = util.types.ghc;
+      description = mdDoc "The package set with overrides.";
     };
   };
 

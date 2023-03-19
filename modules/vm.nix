@@ -95,52 +95,52 @@ in {
     name = mkOption {
       type = str;
       default = "hix-vm";
-      description = "Used for the temporary directory storing the image.";
+      description = mdDoc "Used for the temporary directory storing the image.";
     };
 
     dir = mkOption {
       type = str;
-      description = "The directory in which the image will be stored.";
+      description = mdDoc "The directory in which the image will be stored.";
     };
 
     port = mkOption {
       type = port;
-      description = "Port from which the `ssh` port is calculated (`+ 22`).";
+      description = mdDoc "Port from which the `ssh` port is calculated (`+ 22`).";
       default = 10000;
     };
 
     ports = mkOption {
       type = listOf (attrsOf unspecified);
-      description = "Additional port forwardings in the format expected by `virtualisation.forwardPorts`.";
+      description = mdDoc "Additional port forwardings in the format expected by `virtualisation.forwardPorts`.";
       default = [];
     };
 
     postgres = mkOption {
       type = postgresConf config;
-      description = "Config for running a PostgreSQL server in the VM.";
+      description = mdDoc "Config for running a PostgreSQL server in the VM.";
       default = {};
     };
 
     conf = mkOption {
       type = attrsOf unspecified;
-      description = "Additional config merged into the basic NixOS config for the VM.";
+      description = mdDoc "Additional config merged into the basic NixOS config for the VM.";
       default = {};
     };
 
     pidfile = mkOption {
       type = str;
-      description = "The file storing the qemu process' process ID.";
+      description = mdDoc "The file storing the qemu process' process ID.";
     };
 
     image = mkOption {
       type = str;
-      description = "The path to the image file.";
+      description = mdDoc "The path to the image file.";
     };
 
     headless = mkOption {
       type = bool;
       default = true;
-      description = ''
+      description = mdDoc ''
       VMs are run without a graphical connection to their console.
       For debugging purposes, this option can be disabled to show the window.
       '';
@@ -148,7 +148,7 @@ in {
 
     vm = mkOption {
       type = unspecified;
-      description = "The final derivation for the VM.";
+      description = mdDoc "The final derivation for the VM.";
     };
 
   };

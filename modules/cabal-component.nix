@@ -23,18 +23,18 @@ in
 
   options = with types; {
 
-    enable = mkEnableOption enableDesc // { default = !single; };
+    enable = mkEnableOption (mdDoc enableDesc) // { default = !single; };
 
     name = mkOption {
-      description = "The name of the ${sort}, defaulting to the attribute name in the config or the package name.";
+      description = mdDoc "The name of the ${sort}, defaulting to the attribute name in the config or the package name.";
       type = str;
       default = if single then pkgName + suff else name;
     };
 
     source-dirs = mkOption {
       type = either str (listOf str);
-      description = "Directories with Haskell sources.";
-      default = src;
+      description = mdDoc "Directories with Haskell sources.";
+      default = if single then src else name;
     };
 
   };

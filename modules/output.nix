@@ -60,14 +60,14 @@ in {
     output = {
       systems = mkOption {
         type = listOf str;
-        description = "The systems for which to create outputs.";
+        description = mdDoc "The systems for which to create outputs.";
         default = ["x86_64-linux"];
       };
 
       transform = mkOption {
         type = functionTo (functionTo unspecified);
         default = _: id;
-        description = ''
+        description = mdDoc ''
         A function taking the dev project and the generated outputs and returning modified outputs.
         The return value is not merged with the original outputs.
         '';
@@ -76,18 +76,18 @@ in {
       amend = mkOption {
         type = functionTo (functionTo unspecified);
         default = _: _: {};
-        description = ''
+        description = mdDoc ''
         A function taking the dev project and the generated outputs and returning additional outputs.
         The return value is merged with the original outputs.
         '';
       };
 
       extraPackages = mkOption {
-        description = ''
+        description = mdDoc ''
         Names of packages that will be added to the flake outputs, despite not being declared in
-        <literal>options.packages</literal>.
-        This may be a simple Hackage package like <literal>aeson</literal> or a local package that is added in
-        <literal>options.overrides</literal> due to the way its source is obtained.
+        `options.packages`.
+        This may be a simple Hackage package like `aeson` or a local package that is added in
+        `options.overrides` due to the way its source is obtained.
         '';
         type = listOf str;
         default = [];
@@ -103,27 +103,27 @@ in {
 
       packages = mkOption {
         type = lazyAttrsOf package;
-        description = "The flake output attribute <literal>packages</literal>.";
+        description = mdDoc "The flake output attribute `packages`.";
       };
 
       checks = mkOption {
         type = lazyAttrsOf package;
-        description = "The flake output attribute <literal>checks</literal>.";
+        description = mdDoc "The flake output attribute `checks`.";
       };
 
       legacyPackages = mkOption {
         type = lazyAttrsOf unspecified;
-        description = "The flake output attribute <literal>legacyPackages</literal>.";
+        description = mdDoc "The flake output attribute `legacyPackages`.";
       };
 
       devShells = mkOption {
         type = lazyAttrsOf package;
-        description = "The flake output attribute <literal>devShells</literal>.";
+        description = mdDoc "The flake output attribute `devShells`.";
       };
 
       apps = mkOption {
         type = lazyAttrsOf unspecified;
-        description = "The flake output attribute <literal>apps</literal>.";
+        description = mdDoc "The flake output attribute `apps`.";
       };
 
     };

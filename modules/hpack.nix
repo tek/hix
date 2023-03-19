@@ -16,12 +16,6 @@ let
   packageApps = outputs: pname: conf:
   util.foldAttrs (mapAttrsToList (app (outputs.${pname})) (conf.executables or {}));
 
-  commonAttrs = [
-    "ghc-options"
-    "dependencies"
-    "default-extensions"
-  ];
-
   mkPrelude = prelude: base: let
     mod = prelude.module;
     preludePackageBase = if isAttrs prelude.package then prelude.package else { name = prelude.package; };
@@ -41,13 +35,13 @@ let
     prelude = conf.prelude;
     base = conf.base;
 
-    basic = { inherit (conf) ghc-options dependencies default-extensions source-dirs; };
+    basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 
     preludeDeps = {
       dependencies =
-        if prelude == null
-        then optional (base != null) base
-        else mkPrelude prelude conf.baseHide;
+        if prelude.enable
+        then mkPrelude prelude conf.baseHide
+        else optional (base != null) base;
     };
 
     paths = if conf.paths then {} else mkPathsBlocker pkg.name;
@@ -116,9 +110,9 @@ in {
 
     defaultApp = mkOption {
       type = str;
-      description = ''
+      description = mdDoc ''
       The name of an executable in {option}`packages` that should be assigned to
-      <literal>packages.default</literal>.
+      `packages.default`.
       '';
     };
 
@@ -131,19 +125,19 @@ in {
 
       script = mkOption {
         type = path;
-        description = ''
-          The script that generates a Cabal file in each of the directories configured in <literal>packages</literal> by
-          executing <literal>hpack</literal>.
-          It is intended to be run manually in the package directory using <literal>nix run .#hpack</literal>.
-          If <literal>hpack.packages</literal> is defined, it is used to synthesize a <literal>package.yaml</literal>.
+        description = mdDoc ''
+          The script that generates a Cabal file in each of the directories configured in `packages` by
+          executing `hpack`.
+          It is intended to be run manually in the package directory using `nix run .#hpack`.
+          If `hpack.packages` is defined, it is used to synthesize a `package.yaml`.
           Otherwise, the file needs to be present in the source directory.
         '';
       };
 
       scriptQuiet = mkOption {
         type = path;
-        description = ''
-          Same as <literal>script</literal>, but suppress all output.
+        description = mdDoc ''
+          Same as `script`, but suppress all output.
         '';
       };
 

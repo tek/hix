@@ -33,7 +33,6 @@ library
   hs-source-dirs:
       lib
   default-extensions:
-      GHC2021
       AllowAmbiguousTypes
       ApplicativeDo
       BlockArguments
@@ -87,14 +86,13 @@ library
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
     , incipit-base hiding (IncipitBase)
-  default-language: Haskell2010
+  default-language: GHC2021
 
 executable hix
   main-is: Main.hs
   hs-source-dirs:
       app
   default-extensions:
-      GHC2021
       AllowAmbiguousTypes
       ApplicativeDo
       BlockArguments
@@ -138,7 +136,7 @@ executable hix
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
     , incipit-base hiding (IncipitBase)
-  default-language: Haskell2010
+  default-language: GHC2021
 
 test-suite hix-test
   type: exitcode-stdio-1.0
@@ -150,7 +148,6 @@ test-suite hix-test
   hs-source-dirs:
       test
   default-extensions:
-      GHC2021
       AllowAmbiguousTypes
       ApplicativeDo
       BlockArguments
@@ -202,4 +199,4 @@ test-suite hix-test
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
     , incipit-base hiding (IncipitBase)
-  default-language: Haskell2010
+  default-language: GHC2021

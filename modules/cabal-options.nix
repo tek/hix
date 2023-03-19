@@ -9,17 +9,19 @@ let
   preludeModule = {
 
     options = with types; {
-      enable = mkEnableOption "the alternative Prelude";
+      enable = mkEnableOption (mdDoc "the alternative Prelude");
 
       package = mkOption {
-        description = "The package containing the alternative Prelude.";
+        description = mdDoc "The package containing the alternative Prelude.";
         type = util.types.cabalDep;
+        example = literalExpression ''"relude"'';
       };
 
       module = mkOption {
-        description = "The module name of the alternative Prelude.";
+        description = mdDoc "The module name of the alternative Prelude.";
         type = str;
         default = "Prelude";
+        example = literalExpression ''"Relude"'';
       };
     };
 
@@ -30,7 +32,7 @@ in {
   options = with types; {
 
     license = mkOption {
-      description = ''
+      description = mdDoc ''
       The license for all packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -39,7 +41,7 @@ in {
     };
 
     license-file = mkOption {
-      description = ''
+      description = mdDoc ''
       The name of the file containing the license text for all packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -48,7 +50,7 @@ in {
     };
 
     version = mkOption {
-      description = ''
+      description = mdDoc ''
       The version for all packages in this option tree.
       '';
       type = str;
@@ -56,7 +58,7 @@ in {
     };
 
     author = mkOption {
-      description = ''
+      description = mdDoc ''
       The author of the packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -65,7 +67,7 @@ in {
     };
 
     copyrightYear = mkOption {
-      description = ''
+      description = mdDoc ''
       The year for the copyright string.
       '';
       type = str;
@@ -73,9 +75,9 @@ in {
     };
 
     copyright = mkOption {
-      description = ''
+      description = mdDoc ''
       The copyright string for the packages in this option tree.
-      The default is to combine {option}`copyrightYear` and {option}`author`;
+      The default is to combine [](#opt-cabal-copyrightYear) and {option}`author`;
       May be `null` to omit it from the config.
       '';
       type = nullOr str;
@@ -83,7 +85,7 @@ in {
     };
 
     build-type = mkOption {
-      description = ''
+      description = mdDoc ''
       The build type for the packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -92,19 +94,19 @@ in {
     };
 
     ghc-options = mkOption {
-      description = "GHC options for all components in this option tree.";
+      description = mdDoc "GHC options for all components in this option tree.";
       type = listOf str;
       example = literalExpression ''["-Wunused-imports" "-j6" "-XGHC2021"]'';
       default = [];
     };
 
     ghc-options-exe = mkOption {
-      description = ''
+      description = mdDoc ''
       GHC options for all executables in this option tree.
-      The purpose of this is to allow {option}`ghc-options` to use it as the default for executables without requiring
+      The purpose of this is to allow [](#opt-cabal-ghc-options) to use it as the default for executables without requiring
       complicated overrides to disable it.
       If you don't want to use these options, set this option to `[]` instead of forcing other values in
-      {option}`ghc-options`.
+      [](#opt-cabal-ghc-options).
       These options are not used for benchmarks.
       '';
       type = listOf str;
@@ -116,27 +118,33 @@ in {
     };
 
     default-extensions = mkOption {
-      description = "GHC extensions for all components in this option tree.";
+      description = mdDoc "GHC extensions for all components in this option tree.";
       type = listOf str;
       example = literalExpression ''["DataKinds" "FlexibleContexts" "OverloadedLists"]'';
       default = [];
     };
 
+    language = mkOption {
+      description = mdDoc "The default extension set used for all components in this option tree.";
+      type = str;
+      default = "GHC2021";
+    };
+
     dependencies = mkOption {
-      description = "Cabal dependencies used for all components in this option tree.";
+      description = mdDoc "Cabal dependencies used for all components in this option tree.";
       type = listOf (either str (attrsOf unspecified));
       example = literalExpression ''["aeson" "containers"]'';
       default = [];
     };
 
     base = mkOption {
-      description = "The dependency spec for the <literal>base</literal> package.";
+      description = mdDoc "The dependency spec for the `base` package.";
       type = hixtypes.cabalDep;
       default = "base >= 4 && < 5";
     };
 
     baseHide = mkOption {
-      description = "The dependency spec for the <literal>base</literal> package used when {option}`prelude` is set.";
+      description = mdDoc "The dependency spec for the `base` package used when [](#opt-cabal-prelude) is set.";
       type = hixtypes.cabalDep;
       default = {
         name = "base";
@@ -146,25 +154,25 @@ in {
     };
 
     prelude = mkOption {
-      description = "Configure an alternative Prelude package.";
+      description = mdDoc "Configure an alternative Prelude package.";
       type = nullOr (submodule preludeModule);
-      default = null;
+      default = {};
     };
 
     paths = mkOption {
-      description = ''
-      Cabal generates the module <literal>Paths_packagename</literal> for each component, which provides access to data
+      description = mdDoc ''
+      Cabal generates the module `Paths_packagename` for each component, which provides access to data
       files included in a package, but is rarely used.
-      This may cause trouble if {option}`prelude` is configured to use an alternative Prelude that does not export some
+      This may cause trouble if [](#opt-cabal-prelude) is configured to use an alternative Prelude that does not export some
       of the names used in this module.
-      Setting this option to <literal>false</literal> prevents this module from being generated.
+      Setting this option to `false` prevents this module from being generated.
       '';
       type = bool;
       default = true;
     };
 
     dependOnLibrary = mkOption {
-      description = ''
+      description = mdDoc ''
       Convenience feature that automatically adds a dependency on the library component to all executable components, if
       the library exists.
       '';
@@ -173,7 +181,7 @@ in {
     };
 
     testSuffix = mkOption {
-      description = ''
+      description = mdDoc ''
       This string is appended to the package name to form the single test component.
       For example, given the config:
       ```
@@ -190,9 +198,9 @@ in {
     };
 
     exeSuffix = mkOption {
-      description = ''
+      description = mdDoc ''
       This string is appended to the package name to form the single executable component.
-      See {option}`testSuffix` for an example.
+      See [](#opt-cabal-testSuffix) for an example.
       The default is to use no suffix, resulting in the same name as the package and library.
       '';
       type = str;
@@ -200,18 +208,20 @@ in {
     };
 
     benchSuffix = mkOption {
-      description = ''
+      description = mdDoc ''
       This string is appended to the package name to form the single benchmark component.
-      See {option}`testSuffix` for an example.
+      See [](#opt-cabal-testSuffix) for an example.
       '';
       type = str;
       default = "-bench";
     };
 
     meta = mkOption {
-      description = ''
+      description = mdDoc ''
       Verbatim top-level Cabal configuration in [HPack](https://github.com/sol/hpack) format.
+
       Cascades down into all packages.
+
       This should only be used for keys that have no corresponding module option, otherwise the values defined in a
       package might be overridden by option definitions in the global config.
       '';
@@ -220,11 +230,15 @@ in {
     };
 
     cabal = mkOption {
-      description = ''
+      description = mdDoc ''
       Verbatim Cabal configuration in [HPack](https://github.com/sol/hpack) format.
-      Does not cascade into packages and components.
-      **Note**: This unconditionally overrides all option definitions with the same keys if they are not mergeable (like
-      lists and attrsets).
+
+      Cascades down into all packages and modules.
+
+      ::: {.note}
+      This unconditionally overrides all option definitions with the same keys if they are not mergeable (like lists and
+      attrsets).
+      :::
       '';
       type = attrsOf unspecified;
       default = {};

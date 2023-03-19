@@ -13,39 +13,39 @@ let
     options = {
       enable = mkOption {
         type = bool;
-        description = "Whether this version should be included.";
+        description = mdDoc "Whether this version should be included.";
         default = true;
       };
 
       name = mkOption {
         type = str;
-        description = "The name is used in the default prefix as <literal>compat-{name}</literal>.";
+        description = mdDoc "The name is used in the default prefix as `compat-{name}`.";
         default = name;
       };
 
       prefix = mkOption {
         type = str;
-        description = ''
+        description = mdDoc ''
         All compat check derivations are prefixed with this, so you would run:
-         <literal>nix build .#{prefix}-{package}</literal>.
+         `nix build .#{prefix}-{package}`.
         '';
       };
 
       version = mkOption {
         type = str;
         default = "ghc${name}";
-        description = ''
-          The attribute name for a GHC version in the set <literal>haskell.packages</literal> used for this compat
+        description = mdDoc ''
+          The attribute name for a GHC version in the set `haskell.packages` used for this compat
           project.
         '';
       };
 
       ghc = mkOption {
         type = submodule ghcModule;
-        description = ''
+        description = mdDoc ''
         The GHC config used for this compat project.
-        The default uses <literal>version</literal> for the <literal>compiler</literal> option, adds the version to
-        <literal>overrideKeys</literal> and uses the nixpkgs input named <literal>nixpkgs_{version}</literal>.
+        The default uses `version` for the `compiler` option, adds the version to
+        `overrideKeys` and uses the nixpkgs input named `nixpkgs_{version}`.
         '';
       };
     };
@@ -100,13 +100,13 @@ in {
 
     base = mkOption {
       type = path;
-      description = "The project's base directory.";
+      description = mdDoc "The project's base directory.";
       example = literalExpression "./.";
     };
 
     packages = mkOption {
       type = attrsOf (submodule packageModule);
-      description = ''
+      description = mdDoc ''
       The project's Cabal packages, with Cabal package names as keys and package config as values.
       The config is processed with [HPack](https://github.com/sol/hpack).
       Consult the docs for the package options to learn how this is translated.
@@ -121,28 +121,28 @@ in {
 
     main = mkOption {
       type = str;
-      description = ''
-        The name of a key in <literal>packages</literal> that is considered to be the main package.
-        This package will be assigned to the <literal>defaultPackage</literal> flake output that is built by a plain
-        <literal>nix build</literal>.
+      description = mdDoc ''
+        The name of a key in `packages` that is considered to be the main package.
+        This package will be assigned to the `defaultPackage` flake output that is built by a plain
+        `nix build`.
       '';
     };
 
     cabal = mkOption {
       type = unspecified;
-      description = ''
+      description = mdDoc ''
       Cabal options that are applied to all packages and components.
 
       If you define any options here, they will be merged with definitions that are set in packages or components.
       This means that the default priority handling applies – definitions in components don't automatically override
       those in packages or the global config.
-      You will need to use <literal>mkDefault</literal> or <literal>mkForce</literal>, or even
-      <literal>mkOverride</literal> if you define an option at all three levels.
+      You will need to use `mkDefault` or `mkForce`, or even
+      `mkOverride` if you define an option at all three levels.
 
       **Note**: In order to enable cascading of these options, the definitions are not evaluated in-place, but when
       evaluating packages and components. Therefore, referring to these values with e.g.
-      <literal>config.cabal.version</literal> does not work as expected if the value uses an option property like
-      <literal>mkIf</literal> or <literal>mkOverride</literal>.
+      `config.cabal.version` does not work as expected if the value uses an option property like
+      `mkIf` or `mkOverride`.
       You can use {option}`cabal-config` for this purpose, though.
       '';
       default = {};
@@ -150,9 +150,9 @@ in {
 
     # TODO use readOnly for other instances of this
     cabal-config = mkOption {
-      type = submoduleWith { modules = [config.cabal cabalOptionsModule]; };
+      type = submoduleWith { modules = [cabalOptionsModule config.cabal config.internal.cabal-extra]; };
       readOnly = true;
-      description = ''
+      description = mdDoc ''
       Evaluated version of {option}`cabal`, for referencing in other config values.
       May not be set by the user.
       '';
@@ -162,34 +162,34 @@ in {
     auto = mkOption {
       type = bool;
       default = false;
-      description = ''
+      description = mdDoc ''
         Generate the Cabal file on the fly if none is present in the source directory (or a
-        <literal>package.yaml</literal>).
+        `package.yaml`).
       '';
     };
 
     forceCabal2nix = mkOption {
       type = bool;
       default = false;
-      description = "Whether to use cabal2nix even if there is no Cabal file.";
+      description = mdDoc "Whether to use cabal2nix even if there is no Cabal file.";
     };
 
     forceCabalGen = mkOption {
       type = bool;
       default = false;
-      description = "Whether to generate a Cabal file from Nix config even if there is one in the source directory.";
+      description = mdDoc "Whether to generate a Cabal file from Nix config even if there is one in the source directory.";
     };
 
     ifd = mkOption {
       type = bool;
       default = true;
-      description = "Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.";
+      description = mdDoc "Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.";
     };
 
     mainCompiler = mkOption {
       type = str;
       default = "ghc925";
-      description = ''
+      description = mdDoc ''
         The GHC version used for internal tasks and as default for the dev package set.
       '';
     };
@@ -197,7 +197,7 @@ in {
     overrides = mkOption {
       type = util.types.cabalOverrides;
       default = {};
-      description = ''
+      description = mdDoc ''
         Cabal package specifications and overrides injected into GHC package sets.
         Each override spec is a list of dep functions, which are called with a set of combinators and resources like
         nixpkgs and should return an attrset containing either derivations or a transformation built from those
@@ -205,10 +205,10 @@ in {
         The combinators are described in
         <link xlink:href="https://github.com/tek/hix#built-in-depspec-combinators">readme.md</link>.
         If this is given as a single deps function or a list thereof, it will be converted to
-        <literal>{ all = [o]; dev = [o]; }</literal> (without the brackets for a list).
-        The keys are used to select the override functions requested by a package set's <literal>overrideKeys</literal>
+        `{ all = [o]; dev = [o]; }` (without the brackets for a list).
+        The keys are used to select the override functions requested by a package set's `overrideKeys`
         option, with identical package names in later entries overriding earlier ones (cumulatively, like the earlier
-        ones being in <literal>super</literal>).
+        ones being in `super`).
       '';
       example = literalExpression ''
       {
@@ -226,16 +226,16 @@ in {
     extraOverrides = mkOption {
       type = lazyAttrsOf (listOf unspecified);
       default = {};
-      description = ''
-        Like <literal>overrides</literal>, but expected to be in normalized form. This allows for extensions of Hix to
-        add overrides from multiple locations, since the <literal>listOf</literal> aggregates all definitions.
+      description = mdDoc ''
+        Like `overrides`, but expected to be in normalized form. This allows for extensions of Hix to
+        add overrides from multiple locations, since the `listOf` aggregates all definitions.
       '';
     };
 
     localPackage = mkOption {
       type = unspecified;
       default = _: id;
-      description = ''
+      description = mdDoc ''
         A function that takes dep combinators and a derivation and returns a modified version of that derivation.
         Called for each cabal2nix derivation of the local packages before inserting it into the overrides.
       '';
@@ -247,7 +247,7 @@ in {
     profiling = mkOption {
       type = bool;
       default = true;
-      description = ''
+      description = mdDoc ''
         Global default for whether to build local packages and dependency overrides with profiling enabled.
       '';
     };
@@ -256,17 +256,17 @@ in {
       enable = mkOption {
         type = bool;
         default = true;
-        description = ''
-          Create derivations in <literal>outputs.checks</literal> that build the packages with different GHC versions.
-          The set of versions is configured by <literal>compat.versions</literal>
+        description = mdDoc ''
+          Create derivations in `outputs.checks` that build the packages with different GHC versions.
+          The set of versions is configured by `compat.versions`
         '';
       };
 
       projects = mkOption {
         type = attrsOf (submodule compatProject);
-        description = ''
+        description = mdDoc ''
           The set of GHC versions for which additional checks should be generated, numbers corresponding to the suffix
-          of the package set, as in <literal>pkgs.haskell.packages.ghc902</literal>.
+          of the package set, as in `pkgs.haskell.packages.ghc902`.
           The values configure the package set used for this version.
         '';
       };
@@ -275,9 +275,9 @@ in {
     deps = mkOption {
       type = listOf path;
       default = [];
-      description = ''
+      description = mdDoc ''
         Flake inputs containing hix projects whose overrides are merged into this project's.
-        The <literal>local</literal> overrides are ignored to prevent the dependencies' project packages from being
+        The `local` overrides are ignored to prevent the dependencies' project packages from being
         injected into the compat checks.
       '';
     };
@@ -285,41 +285,41 @@ in {
     depsFull = mkOption {
       type = listOf path;
       default = [];
-      description = ''
+      description = mdDoc ''
         Flake inputs containing hix projects whose overrides are merged into this project's.
-        Unlike <literal>deps</literal>, this includes the <literal>local</literal> overrides.
+        Unlike `deps`, this includes the `local` overrides.
       '';
     };
 
     depsProf = mkOption {
       type = listOf path;
       default = [];
-      description = ''
+      description = mdDoc ''
         Flake inputs containing hix projects whose overrides are merged into this project's.
-        Unlike <literal>deps</literal>, this includes the <literal>local</literal> overrides.
-        Unlike <literal>depsFull</literal>, the local packages are forced to be built with profiling enabled.
+        Unlike `deps`, this includes the `local` overrides.
+        Unlike `depsFull`, the local packages are forced to be built with profiling enabled.
       '';
     };
 
     devGhc = mkOption {
       type = submodule ghcModule;
-      description = ''
+      description = mdDoc ''
         The GHC package set with overrides that is used primarily, like when building the default package with
-        <literal>nix build</literal> or running shells.
+        `nix build` or running shells.
       '';
     };
 
     pkgs = mkOption {
       type = util.types.pkgs;
-      description = ''
-        The nixpkgs attrset used by <literal>devGhc</literal>.
+      description = mdDoc ''
+        The nixpkgs attrset used by `devGhc`.
       '';
     };
 
     minDevGhc = mkOption {
       type = submodule ghcModule;
-      description = ''
-        A copy of <literal>devGhc</literal> in which the derivations of the local packages have some features disabled
+      description = mdDoc ''
+        A copy of `devGhc` in which the derivations of the local packages have some features disabled
         (haddock, profiling) to speed up compilation.
       '';
     };
@@ -328,9 +328,9 @@ in {
 
       overrides = mkOption {
         type = attrsOf (listOf unspecified);
-        description = ''
-          Internal option that computes the full overrides, combining <literal>overrides</literal> with the full
-          overrides from <literal>deps</literal> and the local package derivations.
+        description = mdDoc ''
+          Internal option that computes the full overrides, combining `overrides` with the full
+          overrides from `deps` and the local package derivations.
         '';
       };
 
@@ -363,13 +363,13 @@ in {
       hixCli = {
 
         ghc = mkOption {
-          description = "The GHC config used for the Hix CLI, defaulting to the dev GHC without overrides.";
+          description = mdDoc "The GHC config used for the Hix CLI, defaulting to the dev GHC without overrides.";
           type = submodule ghcModule;
         };
 
         overrides = mkOption {
           type = util.types.cabalOverrides;
-          description = "The overrides used for the CLI client.";
+          description = mdDoc "The overrides used for the CLI client.";
         };
 
         package = mkOption {

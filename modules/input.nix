@@ -19,25 +19,25 @@ let
 
   input = name: mkOption {
     type = types.unspecified;
-    description = "The ${name} repository.";
+    description = mdDoc "The ${name} repository.";
   };
 
   nixpkgsInput = name: mkOption {
     type = util.types.nixpkgs;
-    description = "The ${name} repository.";
+    description = mdDoc "The ${name} repository.";
   };
 
 in {
   options = {
     system = mkOption {
-      description = "This option is set dynamically for each configured system.";
+      description = mdDoc "This option is set dynamically for each configured system.";
       type = types.str;
     };
 
     inputs = genAttrs nixpkgsRepos nixpkgsInput // genAttrs repos input;
 
     input.ghcNixpkgs = mkOption {
-      description = "An attrset mapping GHC versions to the nixpkgs inputs used to build them.";
+      description = mdDoc "An attrset mapping GHC versions to the nixpkgs inputs used to build them.";
       type = types.lazyAttrsOf util.types.nixpkgs;
     };
   };

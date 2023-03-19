@@ -15,6 +15,44 @@
         "type": "github"
       }
     },
+    "hix": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs",
+        "nixpkgs_doc": "nixpkgs_doc",
+        "nixpkgs_ghc8107": [
+          "hix",
+          "nixpkgs"
+        ],
+        "nixpkgs_ghc884": "nixpkgs_ghc884",
+        "nixpkgs_ghc902": [
+          "hix",
+          "nixpkgs"
+        ],
+        "nixpkgs_ghc925": [
+          "hix",
+          "nixpkgs"
+        ],
+        "nixpkgs_ghc943": [
+          "hix",
+          "nixpkgs"
+        ],
+        "nixpkgs_nmd": "nixpkgs_nmd",
+        "nmd": "nmd",
+        "obelisk": "obelisk",
+        "thax": "thax"
+      },
+      "locked": {
+        "lastModified": 1679247442,
+        "narHash": "sha256-jbcOtuFHotXIcHXfNY9Ic9p4WGWlxa3J80i7C6uU/6w=",
+        "path": "/home/tek/code/tek/haskell/hix",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/tek/code/tek/haskell/hix",
+        "type": "path"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1672057183,
@@ -114,26 +152,7 @@
     },
     "root": {
       "inputs": {
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs",
-        "nixpkgs_doc": "nixpkgs_doc",
-        "nixpkgs_ghc8107": [
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc884": "nixpkgs_ghc884",
-        "nixpkgs_ghc902": [
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc925": [
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc943": [
-          "nixpkgs"
-        ],
-        "nixpkgs_nmd": "nixpkgs_nmd",
-        "nmd": "nmd",
-        "obelisk": "obelisk",
-        "thax": "thax"
+        "hix": "hix"
       }
     },
     "thax": {

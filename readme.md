@@ -7,7 +7,7 @@ There is a dedicated page for the documentation of the library's [options].
 
 # Basic usage
 
-The main service provided by Hix is the construction of a set of [flake] outputs with useful functionality for
+The primary functionality provided by Hix is the construction of a set of [flake] outputs with useful utilities for
 Haskell development.
 A flake is an organizational unit for *nix* projects that usually corresponds to a repository.
 It is configured in the file `flake.nix`, residing at the project's root directory, by defining a set of inputs
@@ -30,14 +30,15 @@ This generates an output set that contains, among other things, the set `package
 derivations, making it possible to build and run the `spaceship` package with the commands:
 
 ```
-nix run .#gen-cabal
-nix build .#spaceship
-nix run .#spaceship
+nix run path:.#gen-cabal
+nix build path:.#spaceship
+nix run path:.#spaceship
 ```
 
-The first command is not necessary if you provide the Cabal file yourself.
+The first command is not necessary if you provide the Cabal file yourself, and `path:` is optional if you add all files
+to git before running (or don't use git).
 
-Furthermore, the set `apps`, which is consulted by `nix run`, is populated with several tools, like a `ghcid` launcher.
+Additionally, the set `apps`, which is consulted by `nix run`, is populated with several tools, like a `ghcid` launcher.
 This app allows the developer to run arbitrary functions in GHCi, instantly recompiling and re-executing on every
 change.
 For example, the function `main` from the module `Main` in the directory `app` in the package at the root directory

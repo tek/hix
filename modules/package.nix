@@ -24,7 +24,7 @@ let
 
       main = mkOption {
         type = str;
-        description = "The file name of the main module.";
+        description = mdDoc "The file name of the main module.";
         default = "Main.hs";
       };
 
@@ -56,7 +56,8 @@ let
         (withoutVerbatim global.internal.cabal-extra)
         (withoutVerbatim pkgConfig.cabal)
         main
-    ];
+      ];
+      description = "submodule of cabal-options and cabal-component";
     };
 
   libSubmodule = component libModule "lib" "library" null true;
@@ -72,19 +73,19 @@ in {
   options = with types; {
 
     name = mkOption {
-      description = "The name of the package, defaulting to the attribute name in the config.";
+      description = mdDoc "The name of the package, defaulting to the attribute name in the config.";
       type = str;
       default = name;
     };
 
     src = mkOption {
-      description = "The root directory of the package.";
+      description = mdDoc "The root directory of the package.";
       type = path;
       example = literalExpression "./packages/api";
     };
 
     library = mkOption {
-      description = ''
+      description = mdDoc ''
       The library for this package.
       '';
       type = libSubmodule;
@@ -92,61 +93,61 @@ in {
     };
 
     executable = mkOption {
-      description = ''
+      description = mdDoc ''
       The single executable for this package.
-      To define multiple executables, use {option}`executables`.
+      To define multiple executables, use [](#opt-package-executables).
       '';
       type = exeSubmodule true true;
       default = {};
     };
 
     executables = mkOption {
-      description = ''
+      description = mdDoc ''
       Executables for this package.
-      If {option}`executable` is defined, it will be added.
+      If [](#opt-package-executable) is defined, it will be added.
       '';
       type = attrsOf (exeSubmodule false false);
       default = {};
     };
 
     test = mkOption {
-      description = ''
+      description = mdDoc ''
       The single test suite for this package.
-      To define multiple test suites, use {option}`tests`.
+      To define multiple test suites, use [](#opt-package-tests).
       '';
       type = testSubmodule true;
       default = {};
     };
 
     tests = mkOption {
-      description = ''
+      description = mdDoc ''
       Test suites for this package.
-      If {option}`test` is defined, it will be added.
+      If [](#opt-package-test) is defined, it will be added.
       '';
       type = attrsOf (testSubmodule false);
       default = {};
     };
 
     benchmark = mkOption {
-      description = ''
+      description = mdDoc ''
       The single benchmark for this package.
-      To define multiple benchmarks, use {option}`benchmarks`.
+      To define multiple benchmarks, use [](#opt-package-benchmarks).
       '';
       type = benchSubmodule true;
       default = {};
     };
 
     benchmarks = mkOption {
-      description = ''
+      description = mdDoc ''
       Benchmarks for this package.
-      If {option}`benchmark` is defined, it will be added.
+      If [](#opt-package-benchmark) is defined, it will be added.
       '';
       type = attrsOf (benchSubmodule false);
       default = {};
     };
 
     rootModule = mkOption {
-      description = ''
+      description = mdDoc ''
       A convenience option that is used to generate a Hackage link.
       It should denote the module that represents the most high-level API of the package, if applicable.
       The default is to replace dashes in the name with dots.
@@ -155,24 +156,25 @@ in {
     };
 
     hackageLink = mkOption {
-      description = ''
+      description = mdDoc ''
       A convenience option containing the URL to the Hackage page using the package name.
       '';
       type = str;
     };
 
     hackageRootLink = mkOption {
-      description = ''
+      description = mdDoc ''
       A convenience option containing the URL to the root module's documentation on Hackage using the package name and
-      {option}`rootModule`.
+      [](#opt-package-rootModule).
       '';
       type = str;
     };
 
     description = mkOption {
-      description = ''
+      description = mdDoc ''
       The Cabal description of this packages.
-      The default is a link to the {option}`rootModule` on Hackage, using the option {option}`hackageRootLink`.
+      The default is a link to the [](#opt-package-rootModule) on Hackage, using the option
+      [](#opt-package-hackageRootLink).
       May be `null` to omit it from the config.
       '';
       type = nullOr str;
@@ -181,29 +183,31 @@ in {
 
     cabal = mkOption {
       type = unspecified;
-      description = ''
+      description = mdDoc ''
       Cabal options that are applied to all components.
+
       **Note**: In order to enable cascading of these options, the definitions are not evaluated in-place, but when
       evaluating components. Therefore, referring to these values with e.g.
-      <literal>config.packages.name.cabal.version</literal> does not work as expected if the value uses an option
-      property like <literal>mkIf</literal> or <literal>mkOverride</literal>.
-      You can use {option}`cabal-config` for this purpose, though.
+      `config.packages.name.cabal.version` does not work as expected if the value uses an option
+      property like `mkIf` or `mkOverride`.
+      You can use [](#opt-package-cabal-config) for this purpose, though.
       '';
       default = {};
     };
 
     cabal-config = mkOption {
-      type = submoduleWith { modules =
-        [
-          (withoutVerbatim global.internal.cabal-extra)
-          (withoutVerbatim global.cabal)
-          config.cabal
+      type = submoduleWith {
+        modules = [
           cabalOptionsModule
+          global.internal.cabal-extra
+          global.cabal
+          config.cabal
         ];
+        description = "submodule of cabal-options";
       };
       readOnly = true;
-      description = ''
-      Evaluated version of {option}`cabal`, for referencing in other config values.
+      description = mdDoc ''
+      Evaluated version of [](#opt-package-cabal), for referencing in other config values.
       May not be set by the user.
       '';
       default = {};

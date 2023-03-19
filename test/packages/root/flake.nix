@@ -9,9 +9,10 @@
     cabal = {
       dependencies = ["base >= 4 && < 6"];
       ghc-options = ["-Wunused-imports"];
-      default-extensions = ["GHC2021"];
+      default-extensions = ["DataKinds"];
       version = lib.mkDefault "13";
       meta.author = "Author McCodeface";
+      cabal.default-language = "GHC2021";
     };
     packages = {
 

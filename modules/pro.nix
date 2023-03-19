@@ -4,7 +4,6 @@ with lib;
   internal.cabal-extra = {
 
     default-extensions = [
-      "GHC2021"
       "AllowAmbiguousTypes"
       "ApplicativeDo"
       "BlockArguments"

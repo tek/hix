@@ -32,11 +32,10 @@ hix.pro ({config, lib, ...}: {
   outputs = {
 
     packages = let
-      nmd_pkgs = import inputs.nixpkgs_nmd { inherit (config) system; };
-      docs = import ./doc/default.nix { inherit inputs; pkgs = nmd_pkgs; };
+      pkgs = import inputs.nixpkgs_doc { inherit (config) system; };
+      docs = import ./doc/default.nix { inherit config pkgs; };
     in {
-      docs = docs.docs.html;
-      man = docs.docs.manPages;
+      docs = docs.pkg;
     };
 
     apps = let
