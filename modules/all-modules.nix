@@ -31,9 +31,13 @@ let
     ./haskell.nix
     ./hpack.nix
     ./output.nix
+    ./shell.nix
+    ./shells.nix
+    ./services.nix
+    ./envs.nix
+    ./commands.nix
     ./ghci.nix
     ./ghcid.nix
-    ./shell.nix
     ./hackage.nix
     inputsConfig
     helpers

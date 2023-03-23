@@ -7,7 +7,7 @@ let
 
   ghcModule = import ./ghc.nix { inherit global util; };
   packageModule = import ./package.nix { inherit global util; };
-  cabalOptionsModule = import ./cabal-options.nix { inherit util; };
+  cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
   compatProject = { name, config, ... }: {
     options = {
@@ -117,6 +117,7 @@ in {
         spaceship-api = { src = ./api; dependencies = ["aeson"]; library.enable = true; };
       }
       '';
+      default = {};
     };
 
     main = mkOption {
@@ -434,9 +435,10 @@ in {
           };
         };
 
+        # TODO replace this with `inputs.hix` to avoid incompatibility
         ghc = {
           name = "hix";
-          compiler = config.devGhc.compiler;
+          compiler = "ghc925";
           nixpkgs = config.devGhc.nixpkgs;
           nixpkgsOptions = config.devGhc.nixpkgsOptions;
           overrides = cfg.overrides;

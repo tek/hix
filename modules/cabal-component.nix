@@ -1,3 +1,4 @@
+{global}:
 {
   pkgName,
   src,
@@ -18,8 +19,9 @@ let
 
   suff = if suffix == null then "" else config.${suffix};
 
-in
-{
+  envModule = import ./env.nix { inherit global; };
+
+in {
 
   options = with types; {
 
@@ -35,6 +37,12 @@ in
       type = either str (listOf str);
       description = mdDoc "Directories with Haskell sources.";
       default = if single then src else name;
+    };
+
+    env = mkOption {
+      description = "";
+      type = submodule envModule;
+      default = global.defaultEnv;
     };
 
   };

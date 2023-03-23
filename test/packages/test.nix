@@ -2,7 +2,7 @@
 let
 
   targetDep = builtins.toFile "cabal-target-dep" ''
-  cabal-version: 2.2
+  cabal-version: 1.12
 
   -- This file has been generated from package.yaml by hpack version 0.35.0.
   --
@@ -13,7 +13,7 @@ let
   description:    See https://hackage.haskell.org/package/dep/docs/Dep.html
   author:         Author McCodeface
   maintainer:     Author McCodeface
-  license:        BSD-2-Clause-Patent
+  license:        GPL-3
   build-type:     Simple
 
   library
@@ -21,21 +21,19 @@ let
         Dep.Lib
     other-modules:
         Paths_dep
-    autogen-modules:
-        Paths_dep
     hs-source-dirs:
         lib
     default-extensions:
         OverloadedRecordDot
-        GHC2021
+        DataKinds
     ghc-options: -Wall -Werror -Wunused-imports
     build-depends:
         base >=4 && <6
-    default-language: Haskell2010
+    default-language: GHC2021
   '';
 
   targetRoot = builtins.toFile "cabal-target-root" ''
-  cabal-version: 2.2
+  cabal-version: 2.0
 
   -- This file has been generated from package.yaml by hpack version 0.35.0.
   --
@@ -46,7 +44,7 @@ let
   description:    See https://hackage.haskell.org/package/root/docs/Root.html
   author:         Author McCodeface
   maintainer:     Author McCodeface
-  license:        BSD-2-Clause-Patent
+  license:        GPL-3
   build-type:     Simple
 
   library
@@ -55,7 +53,7 @@ let
     hs-source-dirs:
         src
     default-extensions:
-        GHC2021
+        DataKinds
     ghc-options: -Wunused-imports
     build-depends:
         aeson
@@ -63,7 +61,7 @@ let
       , incipit ==5
     mixins:
         incipit hiding (Prelude)
-    default-language: Haskell2010
+    default-language: GHC2021
 
   executable run
     main-is: Run.hs
@@ -74,13 +72,13 @@ let
     hs-source-dirs:
         app
     default-extensions:
-        GHC2021
+        DataKinds
     ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wunused-imports
     build-depends:
         base >=4 && <6
       , dep
       , root
-    default-language: Haskell2010
+    default-language: GHC2021
 
   test-suite root-unit
     type: exitcode-stdio-1.0
@@ -92,12 +90,12 @@ let
     hs-source-dirs:
         test
     default-extensions:
-        GHC2021
+        DataKinds
     ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wunused-imports
     build-depends:
         base >=4 && <6
       , root
-    default-language: Haskell2010
+    default-language: GHC2021
   '';
 
 in {

@@ -24,6 +24,7 @@
     library.enable = true;
     library.dependencies = [
       "Cabal"
+      "aeson ^>= 2.0"
       "exon ^>= 1.4"
       "extra ^>= 1.7"
       "filepattern ^>= 0.1"

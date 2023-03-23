@@ -12,7 +12,9 @@ let
   ghcModule = import ./ghc.nix { inherit global util; };
 
   ghcidLib = import ../lib/ghcid/default.nix { inherit lib config util; };
+
 in {
+
   options.shell = {
 
     hls = {

@@ -67,9 +67,12 @@ library
       ViewPatterns
       OverloadedRecordDot
       NoFieldSelectors
+      OverloadedRecordDot
+      NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
+    , aeson ==2.0.*
     , base ==4.*
     , exon ==1.4.*
     , extra ==1.7.*
@@ -127,6 +130,8 @@ executable hix
       ViewPatterns
       OverloadedRecordDot
       NoFieldSelectors
+      OverloadedRecordDot
+      NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       base ==4.*
@@ -144,6 +149,7 @@ test-suite hix-test
   other-modules:
       Hix.Test.CabalFile
       Hix.Test.CabalTest
+      Hix.Test.GhcidTest
       Hix.Test.PreprocTest
   hs-source-dirs:
       test
@@ -180,6 +186,8 @@ test-suite hix-test
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
+      OverloadedRecordDot
+      NoFieldSelectors
       OverloadedRecordDot
       NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages

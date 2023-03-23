@@ -7,6 +7,7 @@ let
   tests = {
     modules = test "modules";
     ghcid = test "ghcid";
+    ghcid-new = test "ghcid-new";
     packages = test "packages";
     hackage = test "hackage";
     auto-1 = test "auto-1";
@@ -15,6 +16,7 @@ let
     auto-4 = test "auto-4";
     auto-5 = test "auto-5";
     cross = test "cross";
+    service = test "service";
   };
 
   testA = n: t: "${n} ${t}";
@@ -24,7 +26,6 @@ let
 in {
   main = pkgs.writeScript "hix-tests" ''
   #!${pkgs.zsh}/bin/zsh
-  set -e
   hix_dir=$PWD
   tmpdir=/tmp/hix-test-temp
   if (( $# == 0 ))
@@ -51,6 +52,7 @@ in {
 
   runtest()
   {
+    setopt local_options err_return
     current="$1"
     test="''${tests[$current]}"
     if [[ -z $test ]]
@@ -69,11 +71,23 @@ in {
   rm -rf $tmpdir
   mkdir -p $tmpdir
 
+  failure=0
   for target in $=targets
   do
     runtest $target
+    if [[ $? != 0 ]]
+    then
+      echo '>>> Test failed: $target'
+      failure=$(( failure + 1 ))
+    fi
   done
 
-  echo '>>> All tests succeeded.'
+  if [[ $failure == 0 ]]
+  then
+    echo '>>> All tests succeeded.'
+  else
+    echo '>>> $failure tests failed.'
+    exit 1
+  fi
   '';
 }

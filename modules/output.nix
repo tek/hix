@@ -154,10 +154,10 @@ in {
         ghcid-run = ghcid-test.shell;
       };
 
-      devShells.default = config.ghcid.shell;
+      devShells = mapAttrs (_: s: s.derivation) config.shells // { default = config.ghcid.shell; };
 
       apps = let
-        app = program: { type = "app"; inherit program; };
+        app = program: { type = "app"; program = "${program}"; };
         ghcid = ghcid-test.app;
       in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps main // {
         inherit ghcid;
@@ -168,6 +168,9 @@ in {
         hpack-quiet = app "${config.hpack.scriptQuiet}";
         tags = app "${tags.app}";
         show-config = show-config.app;
+        cli = app "${config.internal.hixCli.package}/bin/hix";
+        c = mapAttrs (_: c: app "${c.path}") config.commands;
+        ghcid-new = app config.ghcid.new;
       };
 
     };

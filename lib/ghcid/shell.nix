@@ -52,10 +52,7 @@ in rec {
   in {
     inherit shellCommand;
     command = shellCommand.script;
-    shell = shellFor {
-      packageNames = mainPackageNames;
-      inherit shellConfig;
-    };
+    shell = shellFor { inherit shellConfig; };
   };
 
   runShell = name: args: let
@@ -82,12 +79,10 @@ in rec {
     name ? "main",
     type ? "test",
     runner ? "generic",
-    shellConfig ? {},
   }:
   util.withModules config [
     { ghcid.testConfig = _: config.ghcid.shellConfig; }
     { ghcid.testConfig = _: { search = ["$PWD/${pkg}/${type}"]; }; }
-    { ghcid.testConfig = _: shellConfig; }
   ] (c: runEnv "test" {
       cwd = pkg;
       shellConfig = c.ghcid.testConfig { inherit pkg module name type runner; };

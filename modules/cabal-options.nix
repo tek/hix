@@ -1,4 +1,4 @@
-{ util, }:
+{ global, util, }:
 { lib, config, ... }:
 with lib;
 
@@ -127,7 +127,7 @@ in {
     language = mkOption {
       description = mdDoc "The default extension set used for all components in this option tree.";
       type = str;
-      default = "GHC2021";
+      default = if versionAtLeast global.devGhc.version "9.2" then "GHC2021" else "Haskell2010";
     };
 
     dependencies = mkOption {

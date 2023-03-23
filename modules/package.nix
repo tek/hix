@@ -6,8 +6,8 @@ let
   pkgConfig = config;
   pkgName = name;
 
-  cabalOptionsModule = import ./cabal-options.nix { inherit util; };
-  cabalComponentModule = import ./cabal-component.nix;
+  cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
+  cabalComponentModule = import ./cabal-component.nix { inherit global; };
 
   libModule = {...}: {
 
@@ -82,6 +82,12 @@ in {
       description = mdDoc "The root directory of the package.";
       type = path;
       example = literalExpression "./packages/api";
+    };
+
+    env = mkOption {
+      description = "";
+      type = submodule envModule;
+      default = config.defaultEnv;
     };
 
     library = mkOption {
@@ -188,8 +194,8 @@ in {
 
       **Note**: In order to enable cascading of these options, the definitions are not evaluated in-place, but when
       evaluating components. Therefore, referring to these values with e.g.
-      `config.packages.name.cabal.version` does not work as expected if the value uses an option
-      property like `mkIf` or `mkOverride`.
+      `config.packages.name.cabal.version` does not work as expected if the value uses an option property like `mkIf` or
+      `mkOverride`.
       You can use [](#opt-package-cabal-config) for this purpose, though.
       '';
       default = {};
@@ -213,6 +219,17 @@ in {
       default = {};
     };
 
+    components = mkOption {
+      description = "";
+      type = listOf unspecified;
+    };
+
+    subpath = mkOption {
+      description = "";
+      type = str;
+      readOnly = true;
+    };
+
   };
 
   config = {
@@ -224,6 +241,18 @@ in {
     hackageRootLink = mkDefault "${config.hackageLink}/docs/${config.rootModule}.html";
 
     description = mkDefault "See ${config.hackageRootLink}";
+
+    components =
+      optional config.library.enable config.library ++
+      optional config.executable.enable config.executable ++
+      attrValues config.executables ++
+      optional config.test.enable config.test ++
+      attrValues config.tests ++
+      optional config.benchmark.enable config.benchmark ++
+      attrValues config.benchmarks
+      ;
+
+    subpath = util.packageSubpath global.base config.src;
 
   };
 

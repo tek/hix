@@ -29,7 +29,7 @@ putStrLn string'
 
     if [[ ! "$output" =~ 'Prelude works' ]]
     then
-      fail "invalid output of ghci command:\n$output"
+      fail "invalid output from ghci command:\n$output"
     fi
   '';
 }

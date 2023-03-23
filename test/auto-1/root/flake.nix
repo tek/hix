@@ -24,6 +24,7 @@
       };
 
       executables.run = {
+        source-dirs = "app";
         dependencies = ["polysemy"];
       };
 

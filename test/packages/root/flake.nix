@@ -12,7 +12,7 @@
       default-extensions = ["DataKinds"];
       version = lib.mkDefault "13";
       meta.author = "Author McCodeface";
-      cabal.default-language = "GHC2021";
+      cabal.language = "GHC2021";
     };
     packages = {
 

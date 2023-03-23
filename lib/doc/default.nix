@@ -2,15 +2,16 @@
 with pkgs.lib;
 let
   lib = pkgs.lib;
+  global = config;
 
   options = import ./options.nix { inherit pkgs; };
   inherit (options) namePh;
 
   util = import ../with-config.nix { inherit config lib util; };
 
-  mod-ghc = options.module "ghc" { global = config; inherit util; };
+  mod-ghc = options.module "ghc" { inherit global util; };
 
-  mod-cabal-options = options.module "cabal-options" { inherit util; };
+  mod-cabal-options = options.module "cabal-options" { inherit global util; };
 
   compExcept = [["source-dirs"] ["name"]];
   compMultiExcept = [[namePh "source-dirs"] [namePh "name"]];

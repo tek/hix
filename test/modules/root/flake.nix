@@ -25,7 +25,7 @@
             "stm-chans"
           ];
         };
-        executables.run = {};
+        executables.run = { source-dirs = "app"; };
       };
       sub = {
         src = ./sub;

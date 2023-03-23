@@ -64,6 +64,13 @@ with lib;
       type = util.types.ghc;
       description = mdDoc "The package set with overrides.";
     };
+
+    version = mkOption {
+      description = "The GHC version.";
+      type = str;
+      readOnly = true;
+    };
+
   };
 
   config = {
@@ -90,8 +97,10 @@ with lib;
 
     crossPkgs = mkDefault config.pkgs;
 
+    vanillaGhc = mkDefault ((import config.nixpkgs { inherit (global) system; }).haskell.packages.${config.compiler});
+
     ghc = config.crossPkgs.hixPackages;
 
-    vanillaGhc = mkDefault ((import config.nixpkgs { inherit (global) system; }).haskell.packages.${config.compiler});
+    version = config.ghc.ghc.version;
   };
 }

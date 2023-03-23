@@ -2,11 +2,13 @@ module Main where
 
 import Hedgehog (TestT, property, test, withTests)
 import Hix.Test.CabalTest (test_cabal)
+import Hix.Test.GhcidTest (test_ghcid)
 import Hix.Test.PreprocTest (
   test_preprocInsertPrelude,
   test_preprocReplacePrelude,
   test_preprocSelfExport,
-  test_preprocSingleLineModule, test_preprocSelfExport2,
+  test_preprocSelfExport2,
+  test_preprocSingleLineModule,
   )
 import Test.Tasty (TestName, TestTree, defaultMain, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
@@ -27,7 +29,8 @@ tests =
       unitTest "replace prelude imports" test_preprocReplacePrelude,
       unitTest "single line module decl" test_preprocSingleLineModule,
       unitTest "self exporting module, inline" test_preprocSelfExport,
-      unitTest "self exporting module, separate line" test_preprocSelfExport2
+      unitTest "self exporting module, separate line" test_preprocSelfExport2,
+      unitTest "run ghcid" test_ghcid
     ]
   ]
 
