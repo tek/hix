@@ -10,6 +10,8 @@ import System.IO.Error (tryIOError)
 data Error =
   PreprocError Text
   |
+  GhcidError Text
+  |
   NoMatch Text
   deriving stock (Eq, Show, Generic)
 
@@ -23,6 +25,13 @@ printPreprocError ::
   m ()
 printPreprocError msg =
   liftIO (Text.hPutStrLn stderr [exon|>>> Preprocessor generator failed: #{msg}|])
+
+printGhcidError ::
+  MonadIO m =>
+  Text ->
+  m ()
+printGhcidError msg =
+  liftIO (Text.hPutStrLn stderr [exon|>>> Invalid ghcid config: #{msg}|])
 
 sourceError :: Text -> Path b t -> Text
 sourceError reason source =

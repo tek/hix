@@ -10,13 +10,26 @@ import Distribution.PackageDescription (
 import Exon (exon)
 import Hedgehog (TestT, evalMaybe, (===))
 import Hix.Preproc (preprocessModule)
-import Hix.Test.CabalFile (testPackage)
 import Path (absfile)
+
+import Hix.Test.CabalFile (testPackage, testPackageNoPrelude)
 
 pragmas :: Text
 pragmas =
   [exon|{-# options_ghc -Wall -Wunused-imports #-}
 {-# language AllowAmbiguousTypes, NoApplicativeDo #-}|]
+
+preprocTestNoPrelude ::
+  HasCallStack =>
+  ByteString ->
+  Text ->
+  TestT IO ()
+preprocTestNoPrelude module_ target =
+  withFrozenCallStack do
+    pkg <- liftIO testPackageNoPrelude
+    info <- evalMaybe (pkg.condLibrary <&> \ l -> l.condTreeData.libBuildInfo)
+    let result = toLazyByteString (preprocessModule [absfile|/foo/bar/Foo.hs|] info "Hix_Dummy" module_)
+    Text.lines target === Text.lines (decodeUtf8 result)
 
 preprocTest ::
   HasCallStack =>
@@ -210,3 +223,21 @@ f = 1
 test_preprocSelfExport2 :: TestT IO ()
 test_preprocSelfExport2 =
   preprocTest moduleSelfExport2 targetSelfExport2
+
+moduleNoPrelude :: ByteString
+moduleNoPrelude =
+  [exon|module Main where
+import System.Exit (exitSuccess)
+|]
+
+targetNoPrelude :: Text
+targetNoPrelude =
+  [exon|#{pragmas}
+{-# line 1 "/foo/bar/Foo.hs" #-}
+module Main where
+import System.Exit (exitSuccess)
+|]
+
+test_noPrelude :: TestT IO ()
+test_noPrelude =
+  preprocTestNoPrelude moduleNoPrelude targetNoPrelude

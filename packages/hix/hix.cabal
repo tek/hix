@@ -27,6 +27,9 @@ library
       Hix
       Hix.Cabal
       Hix.Data.Error
+      Hix.Data.GhciConfig
+      Hix.Data.GhcidTest
+      Hix.Ghci
       Hix.Options
       Hix.Optparse
       Hix.Preproc
@@ -83,8 +86,10 @@ library
     , lens-regex-pcre ==1.1.*
     , optparse-applicative ==0.17.*
     , path ==0.9.*
+    , path-io ==1.7.*
     , random ==1.2.*
     , transformers
+    , unix
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)

@@ -7,7 +7,7 @@ let
   tests = {
     modules = test "modules";
     ghcid = test "ghcid";
-    ghcid-new = test "ghcid-new";
+    ghci = test "ghci";
     packages = test "packages";
     hackage = test "hackage";
     auto-1 = test "auto-1";
@@ -77,7 +77,7 @@ in {
     runtest $target
     if [[ $? != 0 ]]
     then
-      echo '>>> Test failed: $target'
+      echo ">>> Test failed: $target"
       failure=$(( failure + 1 ))
     fi
   done
@@ -86,7 +86,7 @@ in {
   then
     echo '>>> All tests succeeded.'
   else
-    echo '>>> $failure tests failed.'
+    echo ">>> $failure tests failed."
     exit 1
   fi
   '';

@@ -106,6 +106,42 @@ let
     cmdline = "ghci ${toString config.ghci.args} ${searchP} -ghci-script ${scriptFile}";
   };
 
+  componentConf = c: {
+    inherit (c) name;
+    inherit (c.env) runner;
+    sourceDirs = c.source-dirs;
+  };
+
+  packageConf = p: {
+    inherit (p) name src;
+    components = mapAttrs (_: componentConf) p.componentsSet;
+  };
+
+  # TODO add to this set:
+  # - runner
+  # - search path
+  # - imports
+  # - component-dependent ghci args
+  # - restarts
+  # - cwd
+  cliJson = pkgs.writeText "hix-cli-json" (toJSON {
+    packages = mapAttrs (_: packageConf) config.packages;
+    setup = config.ghci.setup;
+    run = config.ghci.run;
+    args = config.ghci.args;
+  });
+
+  cli = config.internal.hixCli.exe;
+
+  flakeApp = config.pkgs.writeScript "ghci-module" ''
+  #!${config.pkgs.bashInteractive}/bin/bash
+  set -eu
+  config=$(cat ${config.ghci.cliJson})
+  env_runner=$(${cli} ghci-env -c "$config" $@)
+  ghci_cmd=$(${cli} ghci-cmd -c "$config" $@)
+  $env_runner "eval $ghci_cmd"
+  '';
+
 in {
 
   options.ghci = with types; {
@@ -193,6 +229,19 @@ in {
       type = functionTo unspecified;
     };
 
+    cliJson = mkOption {
+      description = "Internal option encoding relevant config as JSON for use with the Hix CLI.";
+      type = path;
+      readOnly = true;
+      default = cliJson;
+    };
+
+    flakeApp = mkOption {
+      description = "";
+      type = path;
+      default = flakeApp;
+    };
+
   };
 
   config.ghci = {
@@ -202,7 +251,7 @@ in {
     run = defaultRun;
 
     # TODO extract default-language from cabal in the preprocessor
-    ghcOptions = ["-j${toString config.ghci.cores}" "+RTS -A64M -RTS" "-XHaskell2010"];
+    ghcOptions = ["-j${toString config.ghci.cores}" "+RTS -A64M -RTS"];
 
     preprocessor = mkDefault (import ../lib/preprocessor.nix {
       inherit pkgs;

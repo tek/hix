@@ -14,11 +14,13 @@ import Test.Tasty (TestName, TestTree, defaultMain, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 
 unitTest ::
+  HasCallStack =>
   TestName ->
   TestT IO () ->
   TestTree
-unitTest desc =
-  testProperty desc . withTests 1 . property . test
+unitTest desc t =
+  withFrozenCallStack do
+    testProperty desc (withTests 1 (property (test t)))
 
 tests :: TestTree
 tests =

@@ -364,6 +364,14 @@ needPreludeExtensions = \case
 pattern NeedPreludeExtensions :: PreludeAction
 pattern NeedPreludeExtensions <- (needPreludeExtensions -> True)
 
+needDummy :: CustomPrelude -> Bool
+needDummy = \case
+  NoCustomPrelude -> False
+  CustomPrelude _ action -> needPreludeExtensions action
+
+pattern NeedDummy :: CustomPrelude
+pattern NeedDummy <- (needDummy -> True)
+
 preludeExtensions :: CustomPrelude -> Builder
 preludeExtensions = \case
   CustomPrelude _ NeedPreludeExtensions ->
@@ -380,17 +388,25 @@ explicitPreludeImport lineNo = \case
   _ -> mempty
 
 dummyDecl ::
+  CustomPrelude ->
   Builder ->
   DummyExportName ->
   Builder
-dummyDecl lineNo (DummyExportName n) =
+dummyDecl NeedDummy lineNo (DummyExportName n) =
   lineB [exon|type #{byteString n} = Int|] <> lineNo
+dummyDecl _ _ _ =
+  mempty
 
-replaceDummy :: Bool -> DummyExportName -> ByteString -> ByteString
-replaceDummy True _ =
-  dummyExportPlaceholderRegex . index 0 . match .~ ""
-replaceDummy False (DummyExportName n) =
+replaceDummy ::
+  CustomPrelude ->
+  Bool ->
+  DummyExportName ->
+  ByteString ->
+  ByteString
+replaceDummy NeedDummy False (DummyExportName n) =
   dummyExportPlaceholderRegex . index 0 . match .~ [exon|#{n},|]
+replaceDummy _ _ _ =
+  dummyExportPlaceholderRegex . index 0 . match .~ ""
 
 assemble ::
   Path Abs File ->
@@ -404,10 +420,10 @@ assemble source Header {..} exts options dummyExportName =
   foldMap lineB exts <>
   preludeExtensions prelude <>
   linePragma 1 <>
-  byteString (replaceDummy exportsSelf dummyExportName moduleString) <>
+  byteString (replaceDummy prelude exportsSelf dummyExportName moduleString) <>
   explicitPreludeImport (linePragma moduleEndLine) prelude <>
   importsString <>
-  dummyDecl (linePragma importsEndLine) dummyExportName <>
+  dummyDecl prelude (linePragma importsEndLine) dummyExportName <>
   rest
   where
     linePragma n =

@@ -224,6 +224,11 @@ in {
       type = listOf unspecified;
     };
 
+    componentsSet = mkOption {
+      description = "";
+      type = attrsOf unspecified;
+    };
+
     subpath = mkOption {
       description = "";
       type = str;
@@ -250,6 +255,16 @@ in {
       attrValues config.tests ++
       optional config.benchmark.enable config.benchmark ++
       attrValues config.benchmarks
+      ;
+
+    componentsSet =
+      optionalAttrs config.library.enable { library = config.library; } //
+      optionalAttrs config.executable.enable { ${config.executable.name} = config.executable; } //
+      config.executables //
+      optionalAttrs config.test.enable { ${config.test.name} = config.test; } //
+      config.tests //
+      optionalAttrs config.benchmark.enable { ${config.benchmark.name} = config.benchmark; } //
+      config.benchmarks
       ;
 
     subpath = util.packageSubpath global.base config.src;

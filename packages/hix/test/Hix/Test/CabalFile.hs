@@ -44,3 +44,30 @@ test-suite hix-unit
 testPackage :: IO (GenericPackageDescription)
 testPackage =
   parseString parseGenericPackageDescription silent "hix" testCabal
+
+testCabalNoPrelude :: ByteString
+testCabalNoPrelude =
+  [exon|cabal-version: 2.2
+name: hix
+version: 0.1.0.0
+common stuff
+  default-extensions:
+      ScopedTypeVariables
+library
+  exposed-modules:
+      Hix
+  hs-source-dirs:
+      lib
+  default-extensions:
+      AllowAmbiguousTypes
+      NoApplicativeDo
+  ghc-options: -Wall -Wunused-imports
+  build-depends:
+      Cabal
+    , base >=4.12 && <5
+  default-language: Haskell2010
+|]
+
+testPackageNoPrelude :: IO (GenericPackageDescription)
+testPackageNoPrelude =
+  parseString parseGenericPackageDescription silent "hix" testCabalNoPrelude

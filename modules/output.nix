@@ -170,7 +170,8 @@ in {
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
         c = mapAttrs (_: c: app "${c.path}") config.commands;
-        ghcid-new = app config.ghcid.new;
+        ghcid-new = app config.ghcid.flakeApp;
+        ghci = app config.ghci.flakeApp;
       };
 
     };

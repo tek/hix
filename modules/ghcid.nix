@@ -11,63 +11,15 @@ let
 
   vmConfig = import ./vm.nix config;
 
-  componentByPath = comp: util.foldMapAttrs (d: { ${d} = comp.env.runner; }) (toList comp.source-dirs);
+  cli = config.internal.hixCli.exe;
 
-  byPath = name: pkg: nameValuePair pkg.subpath (util.foldMapAttrs componentByPath pkg.components);
-
-  # TODO add to this set:
-  # - runner
-  # - search path
-  # - imports
-  # - component-dependent ghci args
-  # - restarts
-  # - cwd
-  ghcidConfig = {
-    by-path = mapAttrs' byPath config.packages;
-    setup = config.ghci.setup;
-    run = config.ghci.run;
-  };
-
-  restart = f: ''--restart="${f}"'';
-
-  ghcidCmd =
-    command: test: restarts:
-    ''
-      ghcid ${toString (map restart restarts)} --command="${command}" --test='${test}'
-    '';
-
-  mainDir = config.internal.relativePackages.${config.main};
-
-  jqQuery = path: let
-    q = concatMapStringsSep "." (n: ''\"${n}\"'') path;
-  in ''$(jq ".${q}" <<< "$config")'';
-
-  tmpdir = ''''${TMPDIR-/tmp}/hix/$USER'';
-
-  # TODO jq from pkgs
-  script-new = config.pkgs.writeScript "ghcid-new" ''
+  flakeApp = config.pkgs.writeScript "ghcid-new" ''
   #!${config.pkgs.bashInteractive}/bin/bash
   set -eu
-  config=$(cat ${pkgs.writeText "ghcid-config" (toJSON ghcidConfig)})
-  pkg=''${1-${mainDir}} mod=''${2-Main} fun=''${3-main} type=''${4-test} runner=''${5-generic}
-  echo $pkg $mod $fun $type $runner
-  echo $config
-  env_runner=${jqQuery ["by-path" "$pkg" "$type"]}
-  echo $env_runner
-  setup=${jqQuery ["setup" "$runner"]}
-  echo $setup
-  run=${jqQuery ["run" "$runner"]}
-  echo $run
-  mkdir -p ${tmpdir}
-  script=$(mktemp --tmpdir "hix/$USER/ghci-XXXXXX")
-  cat >$script <<EOF
-  $setup
-  :load $mod
-  import $mod
-  ($run) $fun
-  EOF
-  command="ghci ${toString config.ghci.args} $search -ghci-script $script"
-  eval $env_runner ${ghcidCmd "$command" "$test" []}
+  config=$(cat ${config.ghci.cliJson})
+  env_runner=$(${cli} ghci-env -c "$config" $@)
+  ghcid_cmd=$(${cli} ghcid-cmd -c "$config" $@)
+  $env_runner "eval $ghcid_cmd"
   '';
 
   runConfig = submodule ({ config, ... }: {
@@ -203,10 +155,10 @@ in {
       type = unspecified;
     };
 
-    new = mkOption {
+    flakeApp = mkOption {
       description = "";
       type = path;
-      default = script-new;
+      default = flakeApp;
     };
 
   };

@@ -32,9 +32,11 @@
       "lens ^>= 5.1"
       "lens-regex-pcre ^>= 1.1"
       "optparse-applicative ^>= 0.17"
-      "random ^>= 1.2"
       "path ^>= 0.9"
+      "path-io ^>= 1.7"
+      "random ^>= 1.2"
       "transformers"
+      "unix"
     ];
 
     executable.enable = true;
