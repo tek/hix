@@ -309,7 +309,7 @@ let
   |---|---|---|
   |`packages`||Local Cabal [packages](#packages).|
   |`main`|`packages.<singleton>`|The package used for `defaultPackage`. Defaults only if `packages` has one entry.|
-  |`devGhc.compiler`|`"ghc925"`|The attribute name of the GHC package set to use for development.|
+  |`envs.dev.ghc.compiler`|`"ghc925"`|The attribute name of the GHC package set to use for development.|
   |`overrides`|`{}`|[Dependency Overrides](#dependency-overrides).|
   |`compat.projects`|`{"943" = {}; "925" = {}; "902" = {};}`|GHC versions for which [compatibility checks](#ghc-compatibility-checks) should be created.|
 
@@ -324,7 +324,7 @@ let
       module = { config, ... }: {
         packages = { spaceship.src = ./.; };
         output.systems = ["x86_64-linux" "aarch64-linux"];
-        devGhc.compiler = if config.system == "aarch64-linux" then "ghc902" else "ghc925";
+        envs.dev.ghc.compiler = if config.system == "aarch64-linux" then "ghc902" else "ghc925";
       };
     in hix.lib.flake module;
   }

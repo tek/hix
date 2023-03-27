@@ -3,7 +3,7 @@ with lib;
 with types;
 let
 
-  project = config.devGhc;
+  project = config.envs.dev.ghc;
 
   outPackagesFor = packages: ghc:
   genAttrs packages (n: ghc.${n} // { inherit ghc; });

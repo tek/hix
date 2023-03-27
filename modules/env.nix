@@ -34,14 +34,14 @@ let
   '';
 
   # TODO move to env config
-  vanillaGhc = global.devGhc.vanillaGhc;
+  vanillaGhc = global.envs.dev.ghc.vanillaGhc;
   wantGhcid = global.shell.ghcid.enable;
   vanillaGhcid = global.shell.ghcid.vanilla;
 
   ghcidDep =
   if vanillaGhcid
   then global.pkgs.haskell.lib.dontCheck vanillaGhc.ghcid
-  else global.devGhc.ghc.ghcid;
+  else global.envs.dev.ghc.ghc.ghcid;
 
   # TODO add targetDeps
   buildInputs = let

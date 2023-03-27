@@ -36,7 +36,7 @@ with lib;
       "UndecidableInstances"
       "UnicodeSyntax"
       "ViewPatterns"
-    ] ++ optionals (versionAtLeast config.devGhc.version "9.2") ["OverloadedRecordDot" "NoFieldSelectors"];
+    ] ++ optionals (versionAtLeast config.envs.dev.ghc.version "9.2") ["OverloadedRecordDot" "NoFieldSelectors"];
 
     ghc-options = [
       "-Wall"

@@ -50,9 +50,10 @@ let
 
   checkDeprecated = args:
   pipe args [
+    (deprecatedPathRename true ["envs.dev.ghc"] "envs.dev.ghc")
     (deprecatedPathRename true ["compat" "projects"] "compat.versions")
     (deprecatedPathRename true ["ghci" "extraArgs"] "ghci.args")
-    (deprecatedPathRename true ["compiler"] "devGhc.compiler")
+    (deprecatedPathRename true ["compiler"] "envs.dev.ghc.compiler")
     (deprecatedPathRename true ["versionFile"] "hackage.versionFile")
     (deprecatedPath true ["ghci" "extensions"]
       "Extensions are now read from cabal files for ghci and can be set in 'packages.cabal.extensions'")

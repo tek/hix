@@ -127,7 +127,7 @@ in {
     language = mkOption {
       description = mdDoc "The default extension set used for all components in this option tree.";
       type = str;
-      default = if versionAtLeast global.devGhc.version "9.2" then "GHC2021" else "Haskell2010";
+      default = if versionAtLeast global.envs.dev.ghc.version "9.2" then "GHC2021" else "Haskell2010";
     };
 
     dependencies = mkOption {

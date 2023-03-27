@@ -3,7 +3,7 @@ with builtins;
 with lib;
 with types;
 let
-  inherit (config.devGhc) pkgs;
+  inherit (config.envs.dev.ghc) pkgs;
 
   global = config;
 
@@ -75,11 +75,11 @@ in {
 
     ghc = {
       name = "hls";
-      compiler = config.devGhc.compiler;
-      nixpkgs = config.devGhc.nixpkgs;
-      nixpkgsOptions = config.devGhc.nixpkgsOptions;
+      compiler = config.envs.dev.ghc.compiler;
+      nixpkgs = config.envs.dev.ghc.nixpkgs;
+      nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
       overrideKeys = [];
-      overlays = config.devGhc.overlays ++ cfg.overlays;
+      overlays = config.envs.dev.ghc.overlays ++ cfg.overlays;
     };
 
     package = mkDefault cfg.ghc.ghc.haskell-language-server;

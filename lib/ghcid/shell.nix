@@ -4,7 +4,7 @@ with lib;
 let
   pkgs = config.internal.basicPkgs;
 
-  vanillaGhc = config.devGhc.vanillaGhc;
+  vanillaGhc = config.envs.dev.ghc.vanillaGhc;
 
   mainPackageNames = config.internal.packageNames;
 
@@ -31,9 +31,9 @@ in rec {
     hsPkgs = g:
       targetDeps g ++ shellConfig.haskellPackages g;
     devInputs = [
-      (config.devGhc.ghc.ghcWithPackages hsPkgs)
+      (config.envs.dev.ghc.ghc.ghcWithPackages hsPkgs)
       config.shell.hls.package
-    ] ++ optional wantGhcid (if vanillaGhcid then config.pkgs.haskell.lib.dontCheck vanillaGhc.ghcid else config.devGhc.ghc.ghcid);
+    ] ++ optional wantGhcid (if vanillaGhcid then config.pkgs.haskell.lib.dontCheck vanillaGhc.ghcid else config.envs.dev.ghc.ghc.ghcid);
     args = {
       name = "ghci-shell";
       buildInputs = devInputs ++ shellConfig.buildInputs;

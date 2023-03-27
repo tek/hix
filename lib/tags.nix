@@ -1,7 +1,7 @@
 { config }:
 let
   inherit (config.inputs) thax;
-  inherit (config.devGhc) compiler pkgs ghc;
+  inherit (config.envs.dev.ghc) compiler pkgs ghc;
 
   tags = thax.tags { inherit pkgs compiler; };
 

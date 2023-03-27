@@ -252,26 +252,10 @@ in {
       '';
     };
 
-    devGhc = mkOption {
-      type = submodule ghcModule;
-      description = mdDoc ''
-        The GHC package set with overrides that is used primarily, like when building the default package with
-        `nix build` or running shells.
-      '';
-    };
-
     pkgs = mkOption {
       type = util.types.pkgs;
       description = mdDoc ''
-        The nixpkgs attrset used by `devGhc`.
-      '';
-    };
-
-    minDevGhc = mkOption {
-      type = submodule ghcModule;
-      description = mdDoc ''
-        A copy of `devGhc` in which the derivations of the local packages have some features disabled
-        (haddock, profiling) to speed up compilation.
+        The nixpkgs attrset used by the default GHC.
       '';
     };
 
@@ -354,18 +338,7 @@ in {
       ''
     );
 
-    devGhc = { name = "dev"; };
-
-    pkgs = mkDefault config.devGhc.pkgs;
-
-    minDevGhc = {
-      name = "min";
-      compiler = config.devGhc.compiler;
-      nixpkgs = config.devGhc.nixpkgs;
-      nixpkgsOptions = config.devGhc.nixpkgsOptions;
-      overrideKeys = ["localMin" "all" config.minDevGhc.compiler "dev"];
-      overlays = config.devGhc.overlays;
-    };
+    pkgs = mkDefault config.envs.dev.ghc.pkgs;
 
     internal = {
 
@@ -398,11 +371,11 @@ in {
         ghc = {
           name = "hix";
           compiler = "ghc925";
-          nixpkgs = config.devGhc.nixpkgs;
-          nixpkgsOptions = config.devGhc.nixpkgsOptions;
+          nixpkgs = config.envs.dev.ghc.nixpkgs;
+          nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
           overrides = cfg.overrides;
           overrideKeys = ["hix"];
-          overlays = config.devGhc.overlays;
+          overlays = config.envs.dev.ghc.overlays;
         };
 
         package = cfg.ghc.ghc.hix;

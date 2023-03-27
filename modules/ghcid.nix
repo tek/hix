@@ -3,9 +3,9 @@ with builtins;
 with lib;
 with types;
 let
-  inherit (config.devGhc) pkgs;
+  inherit (config.envs.dev.ghc) pkgs;
 
-  vanillaGhc = config.devGhc.vanillaGhc;
+  vanillaGhc = config.envs.dev.ghc.vanillaGhc;
 
   ghcidLib = import ../lib/ghcid/default.nix { inherit lib config util; };
 
