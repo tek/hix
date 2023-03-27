@@ -14,11 +14,11 @@ import Hix.Data.GhciConfig (
   SourceDirs (SourceDirs),
   )
 import qualified Hix.Data.GhcidTest as GhcidTest
-import Hix.Ghci (withGhcidCmdline, ghcidEnv)
+import Hix.Ghci (ghcidCmdlineFromOptions, ghcidEnv)
 import qualified Hix.Options as Options
-import Hix.Options (GhcidModuleSpec (GhcidModuleSpec), GhciOptions (GhciOptions))
-import Path (Abs, Dir, File, Path, Rel, absdir, absfile, reldir)
-import Path.IO (withSystemTempDir)
+import Hix.Options (GhciOptions (GhciOptions), GhcidModuleSpec (GhcidModuleSpec))
+import Path (Abs, Dir, File, Path, Rel, absfile, reldir)
+import Path.IO (getCurrentDir, withSystemTempDir)
 
 component :: ComponentName -> Path Rel Dir -> ComponentConfig
 component name dir =
@@ -31,7 +31,7 @@ options =
       packages = [
         ("api", PackageConfig {
           name = "api",
-          src = [absdir|/tmp/hix-test/packages/api|],
+          src = [reldir|packages/api|],
           components = [
             ("library", component "api" [reldir|lib|]),
             ("server", component "server" [reldir|app|]),
@@ -40,7 +40,7 @@ options =
         }),
         ("core", PackageConfig {
           name = "core",
-          src = [absdir|/tmp/hix-test/packages/core|],
+          src = [reldir|packages/core|],
           components = [
             ("library", component "core" [reldir|lib|]),
             ("core-test", component "core-test" [reldir|test|])
@@ -56,20 +56,26 @@ options =
       module_ = "Api.ServerTest",
       sourceDir = SourceDir [reldir|test|]
     },
-    test = "test_server",
+    test = Just "test_server",
     runner = "generic"
   }
 
-target :: Path Abs File -> Text
-target scriptFile =
-  [exon|ghcid --command="ghci -Werror -i/tmp/hix-test/packages/api/test/:/tmp/hix-test/packages/api/lib/:/tmp/hix-test/packages/core/lib/ -ghci-script=#{pathText scriptFile}" --test='(check . property . test) test_server'|]
+target ::
+  Path Abs Dir ->
+  Path Abs File ->
+  Text
+target cwd scriptFile =
+  [exon|ghcid --command="ghci -Werror -i#{dir}packages/api/test/:#{dir}packages/api/lib/:#{dir}packages/core/lib/ -ghci-script=#{pathText scriptFile}" --test='(check . property . test) test_server'|]
+  where
+    dir = pathText cwd
 
 test_ghcid :: TestT IO ()
 test_ghcid = do
+  cwd <- getCurrentDir
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
-    runExceptT (withGhcidCmdline tmp options \ cmdline -> pure cmdline)
+    runExceptT (ghcidCmdlineFromOptions tmp options)
   cmdline <- evalEither res
-  target cmdline.scriptFile === cmdline.cmdline
+  target cwd cmdline.ghci.scriptFile === cmdline.cmdline
 
 test_componentEnv :: TestT IO ()
 test_componentEnv =

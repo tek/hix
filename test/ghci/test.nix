@@ -7,7 +7,7 @@
 
     output=$(nix run .#ghci -- -p root -t main <<< ':quit')
 
-    if [[ ! $output =~ 'one module loaded' ]] || [[ ! $output =~ 'ghci test success' ]]
+    if [[ ! $output =~ 'two modules loaded' ]] || [[ ! $output =~ 'test-endpoint' ]]
     then
       fail "Failure in ghci:\n$output"
     fi

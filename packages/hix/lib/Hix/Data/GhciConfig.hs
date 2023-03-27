@@ -46,7 +46,7 @@ data ComponentConfig =
 data PackageConfig =
   PackageConfig {
     name :: PackageName,
-    src :: Path Abs Dir,
+    src :: Path Rel Dir,
     components :: Map ComponentName ComponentConfig
   }
   deriving stock (Eq, Show, Generic)

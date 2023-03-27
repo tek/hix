@@ -26,6 +26,7 @@ import Path (
   Dir,
   File,
   Path,
+  Rel,
   filename,
   isProperPrefixOf,
   parseRelDir,
@@ -35,7 +36,7 @@ import Path (
   toFilePath,
   (</>),
   )
-import Path.IO (createDirIfMissing, getTempDir, openTempFile)
+import Path.IO (createDirIfMissing, getCurrentDir, getTempDir, openTempFile)
 import System.IO (hClose)
 import System.Posix.User (getLoginName)
 
@@ -55,12 +56,14 @@ targetForModule opts spec = do
 
 targetForFile :: GhciOptions -> GhcidFileSpec -> ExceptT Error IO (PackageConfig, ComponentConfig)
 targetForFile opts (GhcidFileSpec file) = do
-  (pkg, subpath) <- note "No package contains this file" (firstJust matchPackage (Map.elems opts.config.packages))
+  cwd <- getCurrentDir
+  fileRel <- stripProperPrefix cwd file
+  (pkg, subpath) <- note "No package contains this file" (firstJust (matchPackage fileRel) (Map.elems opts.config.packages))
   comp <- note "No component source dir contains this file" (find (matchSourceDir subpath) (Map.elems pkg.components))
   pure (pkg, comp)
   where
-    matchPackage pkg@PackageConfig {src} = do
-      subpath <- stripProperPrefix src file
+    matchPackage fileRel pkg@PackageConfig {src} = do
+      subpath <- stripProperPrefix src fileRel
       pure (pkg, subpath)
     matchSourceDir subpath comp = any @[] (\ (SourceDir dir) -> isProperPrefixOf dir subpath) (coerce comp.sourceDirs)
 
@@ -87,18 +90,18 @@ import #{module_}|]
     module_ = moduleName opt
     GhciSetupCode setup = fold (opt.config.setup !? opt.runner)
 
-componentSearchPaths :: PackageConfig -> ComponentConfig -> [Path Abs Dir]
+componentSearchPaths :: PackageConfig -> ComponentConfig -> [Path Rel Dir]
 componentSearchPaths pkg comp = do
   SourceDir dir <- coerce comp.sourceDirs
   pure (pkg.src </> dir)
 
-librarySearchPaths :: Map PackageName PackageConfig -> [Path Abs Dir]
+librarySearchPaths :: Map PackageName PackageConfig -> [Path Rel Dir]
 librarySearchPaths pkgs = do
   pkg <- Map.elems pkgs
   comp <- maybeToList (pkg.components !? "library")
   componentSearchPaths pkg comp
 
-searchPath :: Map PackageName PackageConfig -> PackageConfig -> ComponentConfig -> [Path Abs Dir]
+searchPath :: Map PackageName PackageConfig -> PackageConfig -> ComponentConfig -> [Path Rel Dir]
 searchPath pkgs pkg comp =
   nubOrd (componentSearchPaths pkg comp <> librarySearchPaths pkgs)
 
@@ -111,12 +114,13 @@ testRun opt test =
 
 assemble :: GhciOptions -> ExceptT Error IO GhcidTest
 assemble opt = do
+  cwd <- getCurrentDir
   (pkg, comp) <- targetComponent opt
   pure GhcidTest {
     script = ghciScript opt,
     test = testRun opt <$> opt.test,
     args = opt.config.args,
-    searchPath = searchPath opt.config.packages pkg comp
+    searchPath = (cwd </>) <$> searchPath opt.config.packages pkg comp
     }
 
 hixTempDir ::
@@ -149,10 +153,10 @@ ghciCmdline ::
   Path Abs File ->
   Maybe (Path Abs File )->
   GhciRun
-ghciCmdline test shellScriptFile runScriptFile = do
+ghciCmdline test scriptFile runScriptFile = do
   GhciRun {..}
   where
-    shell = [exon|##{Text.unwords (coerce test.args)} #{sp} -ghci-script=##{toFilePath shellScriptFile}|]
+    shell = [exon|##{Text.unwords (coerce test.args)} #{sp} -ghci-script=##{toFilePath scriptFile}|]
     run = runScriptFile <&> \ f -> [exon|-ghci-script=##{toFilePath f}|]
     sp = foldMap searchPathArg (nonEmpty test.searchPath)
 

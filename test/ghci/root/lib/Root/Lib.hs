@@ -1,9 +1,12 @@
+{-# language OverloadedStrings #-}
+
 module Root.Lib where
 
-import Polysemy
-import Data.Aeson
-import Data.MessagePack
+import qualified Data.ByteString.Lazy.Char8 as ByteString
+import Network.HTTP.Client
 
-string :: String
-string =
-  "string"
+test :: IO ()
+test = do
+  man <- newManager defaultManagerSettings
+  res <- httpLbs "http://localhost:22000/test" man
+  ByteString.putStrLn (responseBody res)

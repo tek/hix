@@ -1,4 +1,6 @@
 module Main where
 
+import Root.Lib (test)
+
 main :: IO ()
-main = putStrLn "ghci test success"
+main = test

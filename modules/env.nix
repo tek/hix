@@ -42,12 +42,16 @@ let
   else global.devGhc.ghc.ghcid;
 
   # TODO add targetDeps
-  buildInputs =
-    config.buildInputs ++
-    [global.shell.hls.package] ++
-    optional wantGhcid ghcidDep ++
-    [(global.devGhc.ghc.ghcWithPackages (ghc: map (n: ghc.${n}) config.haskellPackages))]
-    ;
+  buildInputs = let
+    isNotTarget = p: !(p ? pname && elem p.pname global.internal.packageNames);
+    bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
+    targetDeps = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
+  in
+  config.buildInputs ++
+  [global.shell.hls.package] ++
+  optional wantGhcid ghcidDep ++
+  [(global.devGhc.ghc.ghcWithPackages (ghc: targetDeps ghc ++ map (n: ghc.${n}) config.haskellPackages))]
+  ;
 
   preamble = ''
     quitting=0
@@ -155,7 +159,7 @@ in {
 
     services = mkOption {
       description = mdDoc "Services for this env";
-      type = listOf (submodule serviceModule);
+      type = listOf (either str (submodule serviceModule));
       default = [];
     };
 

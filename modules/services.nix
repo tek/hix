@@ -9,13 +9,19 @@ let
 in {
   options = with types; {
 
-    services = {
+    services = mkOption {
+      description = "Services";
+      type = attrsOf (submodule serviceModule);
+      default = {};
+    };
+
+    service-configs = {
 
       postgres = mkOption {
         description = "PostgreSQL server";
         type = submoduleWith {
-          modules = [serviceModule postgresModule];
-          description = "submodule of service and postgres";
+          modules = [postgresModule];
+          description = "Postgres submodule";
         };
         default = {};
       };

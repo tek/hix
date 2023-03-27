@@ -2,9 +2,10 @@ module Main where
 
 import Hedgehog (TestT, property, test, withTests)
 import Hix.Test.CabalTest (test_cabal)
-import Hix.Test.GhcidTest (test_ghcid)
+import Hix.Test.GhcidTest (test_componentEnv, test_ghcid)
 import Hix.Test.PreprocTest (
   test_preprocInsertPrelude,
+  test_preprocNoPrelude,
   test_preprocReplacePrelude,
   test_preprocSelfExport,
   test_preprocSelfExport2,
@@ -32,7 +33,9 @@ tests =
       unitTest "single line module decl" test_preprocSingleLineModule,
       unitTest "self exporting module, inline" test_preprocSelfExport,
       unitTest "self exporting module, separate line" test_preprocSelfExport2,
-      unitTest "run ghcid" test_ghcid
+      unitTest "self exporting module, separate line" test_preprocNoPrelude,
+      unitTest "run ghcid" test_ghcid,
+      unitTest "component env" test_componentEnv
     ]
   ]
 

@@ -8,9 +8,12 @@ let
 
   types = import ./types.nix { inherit lib; };
 
+  packageRel = util.packageSubpath config.base;
+
 in basic // {
   inherit
   paramApp
   types
+  packageRel
   ;
 }

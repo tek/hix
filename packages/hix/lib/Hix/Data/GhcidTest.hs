@@ -1,6 +1,6 @@
 module Hix.Data.GhcidTest where
 
-import Path (Abs, Dir, Path)
+import Path (Abs, Dir, File, Path)
 
 import Hix.Data.GhciConfig (GhciArgs)
 
@@ -17,7 +17,8 @@ data GhciRun =
   GhciRun {
     test :: GhcidTest,
     shell :: Text,
-    run :: Maybe Text
+    run :: Maybe Text,
+    scriptFile :: Path Abs File
   }
   deriving stock (Eq, Show, Generic)
 

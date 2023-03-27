@@ -238,6 +238,6 @@ module Main where
 import System.Exit (exitSuccess)
 |]
 
-test_noPrelude :: TestT IO ()
-test_noPrelude =
+test_preprocNoPrelude :: TestT IO ()
+test_preprocNoPrelude =
   preprocTestNoPrelude moduleNoPrelude targetNoPrelude
