@@ -5,11 +5,17 @@
     nix flake update
     nix run .#hpack
 
-    output=$(nix run .#ghci -- -p root -t main <<< ':quit')
+    check()
+    {
+      local output=$1
+      if [[ ! $output =~ 'two modules loaded' ]] || [[ ! $output =~ 'test-endpoint' ]]
+      then
+        fail "Failure in ghci:\n$output"
+      fi
+    }
 
-    if [[ ! $output =~ 'two modules loaded' ]] || [[ ! $output =~ 'test-endpoint' ]]
-    then
-      fail "Failure in ghci:\n$output"
-    fi
+    check "$(nix run .#ghci -- -p root -t main <<< ':quit')"
+
+    check "$(nix run .#env.test.ghci -- -p root -t main <<< ':quit')"
   '';
 }

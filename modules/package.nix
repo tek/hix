@@ -7,7 +7,7 @@ let
   pkgName = name;
 
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
-  cabalComponentModule = import ./cabal-component.nix { inherit global; };
+  cabalComponentModule = import ./cabal-component.nix { inherit global util; };
 
   libModule = {...}: {
 

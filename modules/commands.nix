@@ -1,12 +1,8 @@
-{config, lib, ...}:
+{config, lib, util, ...}:
 with lib;
 let
 
-  commandModule = import ./command.nix { global = config; };
-
-  ghcidCommand = ''
-  config=$(<${toJSON ghcidConfig})
-  '';
+  commandModule = import ./command.nix { global = config; inherit util; };
 
 in {
   options = with types; {
@@ -20,11 +16,6 @@ in {
   };
 
   config = {
-
-    commands.ghcid = {
-      env = mkDefault config.defaultEnv;
-      command = ghcidCommand;
-    };
 
   };
 }

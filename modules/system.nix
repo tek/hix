@@ -11,6 +11,7 @@ in {
 
     systemOutputs = mkOption {
       type = unspecified;
+      readOnly = true;
     };
 
   };

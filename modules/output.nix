@@ -40,19 +40,19 @@ let
 
   showConfig = import ../lib/show-config.nix { inherit config lib util; };
 
+  # TODO use the json method and print in cli
   show-config = util.paramApp {
     name = "show-config";
     func = showConfig;
     params = ["path"];
   };
 
-  ghcid-test =
-    util.paramApp {
-      name = "ghcid";
-      func = config.ghcid.lib.shell.test;
-      params = ["pkg" "module" "name" "type" "runner"];
-      shellName = "ghcid-run";
-    };
+  app = program: { type = "app"; program = "${program}"; };
+
+  # TODO add hls (needs ghc in env)
+  envApps = env: {
+    ${env.name} = { ghci = app (config.ghci.flakeAppWithEnv env); ghcid = app (config.ghcid.flakeAppWithEnv env); };
+  };
 
 in {
   options = {
@@ -148,29 +148,23 @@ in {
       legacyPackages = {
         inherit project config;
         inherit (project) pkgs ghc;
-        ghcid = config.ghcid;
-        shell = config.ghcid.shell;
         show-config = show-config.shell;
-        ghcid-run = ghcid-test.shell;
       };
 
       devShells = mapAttrs (_: s: s.derivation) config.shells // { default = config.ghcid.shell; };
 
-      apps = let
-        app = program: { type = "app"; program = "${program}"; };
-        ghcid = ghcid-test.app;
-      in config.ghcid.apps // config.hackage.output.apps // config.hpack.apps main // {
-        inherit ghcid;
+      apps = config.ghcid.apps // config.hackage.output.apps // config.hpack.apps main // {
         hls = app "${config.shell.hls.app}";
         gen-cabal = app "${config.hpack.script}";
         gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
         hpack = app "${config.hpack.script}";
         hpack-quiet = app "${config.hpack.scriptQuiet}";
-        tags = app "${tags.app}";
+        tags = app tags.app;
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
         c = mapAttrs (_: c: app "${c.path}") config.commands;
-        ghcid-new = app config.ghcid.flakeApp;
+        env = util.foldMapAttrs envApps (attrValues config.envs);
+        ghcid = app config.ghcid.flakeApp;
         ghci = app config.ghci.flakeApp;
       };
 

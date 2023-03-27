@@ -1,4 +1,4 @@
-{global}:
+{global, util}:
 {
   pkgName,
   src,
@@ -19,7 +19,7 @@ let
 
   suff = if suffix == null then "" else config.${suffix};
 
-  envModule = import ./env.nix { inherit global; };
+  envModule = import ./env.nix { inherit global util; };
 
 in {
 

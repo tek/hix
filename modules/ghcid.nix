@@ -13,7 +13,15 @@ let
 
   cli = config.internal.hixCli.exe;
 
-  flakeApp = config.pkgs.writeScript "ghcid-new" ''
+  flakeAppWithEnv = env: config.pkgs.writeScript "ghcid-env-run" ''
+  #!${config.pkgs.bashInteractive}/bin/bash
+  set -eu
+  config=$(cat ${config.ghci.cliJson})
+  ghcid_cmd=$(${cli} ghcid-cmd -c "$config" $@)
+  ${env.runner} "eval $ghcid_cmd"
+  '';
+
+  flakeApp = config.pkgs.writeScript "ghcid-run" ''
   #!${config.pkgs.bashInteractive}/bin/bash
   set -eu
   config=$(cat ${config.ghci.cliJson})
@@ -159,6 +167,14 @@ in {
       description = "";
       type = path;
       default = flakeApp;
+      readOnly = true;
+    };
+
+    flakeAppWithEnv = mkOption {
+      description = "";
+      type = functionTo path;
+      default = flakeAppWithEnv;
+      readOnly = true;
     };
 
   };

@@ -1,9 +1,9 @@
-{global, ...}:
+{global, util, ...}:
 {name, config, lib, ...}:
 with lib;
 let
 
-  envModule = import ./env.nix { inherit global; };
+  envModule = import ./env.nix { inherit global util; };
 
 in {
   options = with types; {

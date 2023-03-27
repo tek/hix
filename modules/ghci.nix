@@ -134,7 +134,15 @@ let
 
   cli = config.internal.hixCli.exe;
 
-  flakeApp = config.pkgs.writeScript "ghci-module" ''
+  flakeAppWithEnv = env: config.pkgs.writeScript "ghci-env-run" ''
+  #!${config.pkgs.bashInteractive}/bin/bash
+  set -eu
+  config=$(cat ${config.ghci.cliJson})
+  ghci_cmd=$(${cli} ghci-cmd -c "$config" $@)
+  ${env.runner} "eval $ghci_cmd"
+  '';
+
+  flakeApp = config.pkgs.writeScript "ghci-run" ''
   #!${config.pkgs.bashInteractive}/bin/bash
   set -eu
   config=$(cat ${config.ghci.cliJson})
@@ -237,10 +245,20 @@ in {
       default = cliJson;
     };
 
+    # TODO these can probably be moved to util
+    # TODO merge util into lib
     flakeApp = mkOption {
       description = "";
       type = path;
       default = flakeApp;
+      readOnly = true;
+    };
+
+    flakeAppWithEnv = mkOption {
+      description = "";
+      type = functionTo path;
+      default = flakeAppWithEnv;
+      readOnly = true;
     };
 
   };

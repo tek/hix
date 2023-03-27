@@ -1,9 +1,11 @@
-{global, ...}:
+{global, util, ...}:
 {name, config, lib, ...}:
 with lib;
 let
 
   serviceModule = import ./service.nix { inherit lib global; };
+
+  ghcModule = import ./ghc.nix { inherit global util; };
 
   vmLib = import ../lib/vm-new.nix { inherit (global) pkgs; };
 
@@ -166,6 +168,12 @@ in {
     env = mkOption {
       description = "Environment variables";
       type = attrsOf str;
+      default = {};
+    };
+
+    ghc = mkOption {
+      description = "";
+      type = submodule ghcModule;
       default = {};
     };
 
