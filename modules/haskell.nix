@@ -9,58 +9,6 @@ let
   packageModule = import ./package.nix { inherit global util; };
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
-  compatProject = { name, config, ... }: {
-    options = {
-      enable = mkOption {
-        type = bool;
-        description = mdDoc "Whether this version should be included.";
-        default = true;
-      };
-
-      name = mkOption {
-        type = str;
-        description = mdDoc "The name is used in the default prefix as `compat-{name}`.";
-        default = name;
-      };
-
-      prefix = mkOption {
-        type = str;
-        description = mdDoc ''
-        All compat check derivations are prefixed with this, so you would run:
-         `nix build .#{prefix}-{package}`.
-        '';
-      };
-
-      version = mkOption {
-        type = str;
-        default = "ghc${name}";
-        description = mdDoc ''
-          The attribute name for a GHC version in the set `haskell.packages` used for this compat
-          project.
-        '';
-      };
-
-      ghc = mkOption {
-        type = submodule ghcModule;
-        description = mdDoc ''
-        The GHC config used for this compat project.
-        The default uses `version` for the `compiler` option, adds the version to
-        `overrideKeys` and uses the nixpkgs input named `nixpkgs_{version}`.
-        '';
-      };
-    };
-
-    config = {
-      prefix = mkDefault "compat-${config.name}";
-      ghc = {
-        name = config.name;
-        compiler = config.version;
-        overrideKeys = ["local" "all" "compat" config.ghc.compiler];
-        nixpkgs = global.input.ghcNixpkgs."${config.ghc.compiler}" or global.inputs.nixpkgs;
-      };
-    };
-  };
-
   compatProjects = {
     "943" = {};
     "925" = {};
@@ -254,23 +202,25 @@ in {
     };
 
     compat = {
+
       enable = mkOption {
         type = bool;
         default = true;
         description = mdDoc ''
           Create derivations in `outputs.checks` that build the packages with different GHC versions.
-          The set of versions is configured by `compat.versions`
+          The set of versions is configured by [](#opt-compat-versions).
         '';
       };
 
-      projects = mkOption {
-        type = attrsOf (submodule compatProject);
-        description = mdDoc ''
-          The set of GHC versions for which additional checks should be generated, numbers corresponding to the suffix
-          of the package set, as in `pkgs.haskell.packages.ghc902`.
-          The values configure the package set used for this version.
+      versions = mkOption {
+        description = ''
+        The GHC versions for which to create compat checks. Defaults to [](#opt-ghcVersion).
+        There has to be an env in [](#opt-envs) with the version as its name for each of these.
         '';
+        type = listOf str;
+        default = config.ghcVersions;
       };
+
     };
 
     deps = mkOption {
@@ -416,8 +366,6 @@ in {
       overrideKeys = ["localMin" "all" config.minDevGhc.compiler "dev"];
       overlays = config.devGhc.overlays;
     };
-
-    compat.projects = compatProjects;
 
     internal = {
 

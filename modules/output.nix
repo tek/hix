@@ -9,13 +9,14 @@ let
   genAttrs packages (n: ghc.${n} // { inherit ghc; });
 
   compatChecks = let
-    prefixed = prf: mapAttrs' (n: v: { name = "${prf}-${n}"; value = v; });
-    compatCheck = ver: conf:
-    if conf.enable
-    then prefixed conf.prefix (outPackagesFor config.internal.packageNames conf.ghc.ghc)
-    else {};
+    prefixed = conf: mapAttrs' (n: v: { name = "${conf.ghc.compiler}-${n}"; value = v; });
+    compatCheck = ver: let
+      conf = config.envs.${ver};
+    in
+    optionalAttrs conf.enable
+    (prefixed conf (outPackagesFor config.internal.packageNames conf.ghc.ghc));
   in
-    foldl (z: v: z // v) {} (mapAttrsToList compatCheck config.compat.projects);
+    util.foldMapAttrs compatCheck config.ghcVersions;
 
   releaseDrv =
     import ../lib/release-derivation.nix {

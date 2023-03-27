@@ -50,6 +50,7 @@ let
 
   checkDeprecated = args:
   pipe args [
+    (deprecatedPathRename true ["compat" "projects"] "compat.versions")
     (deprecatedPathRename true ["ghci" "extraArgs"] "ghci.args")
     (deprecatedPathRename true ["compiler"] "devGhc.compiler")
     (deprecatedPathRename true ["versionFile"] "hackage.versionFile")

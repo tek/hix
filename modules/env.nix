@@ -52,7 +52,7 @@ let
   config.buildInputs ++
   [global.shell.hls.package] ++
   optional wantGhcid ghcidDep ++
-  [(global.devGhc.ghc.ghcWithPackages (ghc: targetDeps ghc ++ map (n: ghc.${n}) config.haskellPackages))]
+  [(config.ghc.ghc.ghcWithPackages (ghc: targetDeps ghc ++ map (n: ghc.${n}) config.haskellPackages))]
   ;
 
   preamble = ''
