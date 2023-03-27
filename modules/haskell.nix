@@ -143,35 +143,7 @@ in {
       '';
     };
 
-    overrides = mkOption {
-      type = util.types.cabalOverrides;
-      default = {};
-      description = mdDoc ''
-        Cabal package specifications and overrides injected into GHC package sets.
-        Each override spec is a list of dep functions, which are called with a set of combinators and resources like
-        nixpkgs and should return an attrset containing either derivations or a transformation built from those
-        combinators.
-        The combinators are described in
-        <link xlink:href="https://github.com/tek/hix#built-in-depspec-combinators">readme.md</link>.
-        If this is given as a single deps function or a list thereof, it will be converted to
-        `{ all = [o]; dev = [o]; }` (without the brackets for a list).
-        The keys are used to select the override functions requested by a package set's `overrideKeys`
-        option, with identical package names in later entries overriding earlier ones (cumulatively, like the earlier
-        ones being in `super`).
-      '';
-      example = literalExpression ''
-      {
-        all = [{ hackage, fast, jailbreak, ... }: {
-          aeson = fast (hackage "2.0.0.0" "sha54321");
-          http-client = unbreak;
-        }];
-        ghc925 = [{ source, minimal, ... }: {
-          lens = minimal (source.root inputs.lens);
-        }];
-      }
-      '';
-    };
-
+    # TODO migrate
     extraOverrides = mkOption {
       type = lazyAttrsOf (listOf unspecified);
       default = {};
@@ -261,14 +233,6 @@ in {
 
     internal = {
 
-      overrides = mkOption {
-        type = attrsOf (listOf unspecified);
-        description = mdDoc ''
-          Internal option that computes the full overrides, combining `overrides` with the full
-          overrides from `deps` and the local package derivations.
-        '';
-      };
-
       basicPkgs = mkOption {
         type = unspecified;
         readOnly = true;
@@ -346,7 +310,8 @@ in {
 
       basicGhc = config.internal.basicPkgs.haskell.packages.${config.mainCompiler};
 
-      overrides = util.mergeOverrides [config.extraOverrides overrides];
+      # TODO extraOverrides is still needed for ribosome etc.
+      # overrides = util.mergeOverrides [config.extraOverrides overrides];
 
       packageNames = attrNames config.packages;
 
@@ -358,14 +323,14 @@ in {
         cfg = config.internal.hixCli;
       in {
 
-        overrides = mkDefault {
-          hix = {hackage, source, fast, notest, ...}: {
+        overrides = mkDefault (
+          {hackage, source, fast, notest, ...}: {
             exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";
             flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
             incipit-base = hackage "0.5.0.0" "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
             hix = notest (fast (source.root ../packages/hix));
-          };
-        };
+          }
+        );
 
         # TODO replace this with `inputs.hix` to avoid incompatibility
         ghc = {
@@ -373,8 +338,7 @@ in {
           compiler = "ghc925";
           nixpkgs = config.envs.dev.ghc.nixpkgs;
           nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
-          overrides = cfg.overrides;
-          overrideKeys = ["hix"];
+          overrides = mkForce cfg.overrides;
           overlays = config.envs.dev.ghc.overlays;
         };
 

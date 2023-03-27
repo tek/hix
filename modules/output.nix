@@ -27,7 +27,7 @@ let
   base = outPackagesFor (config.internal.packageNames ++ config.output.extraPackages) project.ghc;
 
   main = let
-    extra = n: base.${n} // { min = config.minDevGhc.ghc.${n}; release = releaseDrv base.${n}; };
+    extra = n: base.${n} // { min = config.envs.min.ghc.ghc.${n}; release = releaseDrv base.${n}; };
   in
     base // genAttrs config.internal.packageNames extra;
 
@@ -147,8 +147,8 @@ in {
       checks = main // extraChecks;
 
       legacyPackages = {
-        inherit project config;
-        inherit (project) pkgs ghc;
+        inherit config;
+        inherit (config.envs.dev.ghc) pkgs ghc;
         show-config = show-config.shell;
       };
 

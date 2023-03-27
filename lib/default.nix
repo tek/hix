@@ -17,6 +17,8 @@ let
 
   mergeOverrides = zipAttrsWith (_: concatLists);
 
+  concatOverrides = foldl' (a: b: toList a ++ toList b) [];
+
   normalizeOverrides = project: deps: depsFull:
   let
     local = if isAttrs project then project else { all = project; dev = project; };
@@ -96,11 +98,15 @@ let
   then s
   else toUpper (substring 0 1 s) + substring 1 (-1) s;
 
+  minGhc = version: env:
+  versionAtLeast env.ghc.version version;
+
 in {
   inherit
   packageSubpath
   relativePackages
   mergeOverrides
+  concatOverrides
   normalizeOverrides
   overridesFor
   asFunction
@@ -116,6 +122,7 @@ in {
   mergeAll'
   mergeAll
   toTitle
+  minGhc
   ;
 
   overrides = import ./overrides.nix { inherit lib; };

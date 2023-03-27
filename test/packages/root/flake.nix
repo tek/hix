@@ -6,6 +6,7 @@
   outputs = { hix, ... }:
   hix.lib.flake ({lib, ...}: {
     main = "root";
+    ghcVersions = ["ghc925"];
     cabal = {
       dependencies = ["base >= 4 && < 6"];
       ghc-options = ["-Wunused-imports"];

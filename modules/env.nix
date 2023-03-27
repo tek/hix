@@ -43,16 +43,15 @@ let
   then global.pkgs.haskell.lib.dontCheck vanillaGhc.ghcid
   else global.envs.dev.ghc.ghc.ghcid;
 
-  # TODO add targetDeps
   buildInputs = let
-    isNotTarget = p: !(p ? pname && elem p.pname global.internal.packageNames);
+    isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
-    targetDeps = g: builtins.filter isNotTarget (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
+    localDeps = g: builtins.filter isNotLocal (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
   in
   config.buildInputs ++
   [global.shell.hls.package] ++
   optional wantGhcid ghcidDep ++
-  [(config.ghc.ghc.ghcWithPackages (ghc: targetDeps ghc ++ map (n: ghc.${n}) config.haskellPackages))]
+  [(config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ map (n: ghc.${n}) config.haskellPackages))]
   ;
 
   preamble = ''
@@ -177,6 +176,14 @@ in {
       default = {};
     };
 
+    overrides = mkOption {
+      type = util.types.cabalOverrides;
+      default = [];
+      description = mdDoc ''
+      TODO
+      '';
+    };
+
     buildInputs = mkOption {
       description = "";
       type = listOf package;
@@ -187,6 +194,12 @@ in {
       description = "";
       type = listOf str;
       default = [];
+    };
+
+    localDeps = mkOption {
+      description = "Add dependencies of local packages.";
+      type = bool;
+      default = true;
     };
 
     setup-pre = mkOption {
@@ -303,6 +316,13 @@ in {
 
     };
 
+    # TODO type
+    internal.overridesInherited = mkOption {
+      type = util.types.cabalOverrides;
+      description = mdDoc "The inherited overrides used for this env, like local packages and global overrides.";
+      default = global.internal.overridesLocal;
+    };
+
   };
 
   config = {
@@ -310,6 +330,8 @@ in {
     enable = mkDefault true;
 
     services = optional (config.wait > 0) waitService;
+
+    ghc.overrides = mkDefault (util.concatOverrides [config.internal.overridesInherited config.overrides]);
 
     vm = {
 

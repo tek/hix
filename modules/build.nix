@@ -10,7 +10,7 @@ let
 
     allSystems = config.inputs.flake-utils.lib.eachSystem config.output.systems oneSystem;
 
-  in allSystems // { inherit (config.internal) overrides; };
+  in allSystems // { overrides = config.exportedOverrides; };
 
 in
   hixlib.withModules {} modules build

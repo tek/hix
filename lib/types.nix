@@ -1,7 +1,10 @@
 { lib, }:
 with lib;
 with types;
+
 let
+
+  util = import ./default.nix { inherit lib; };
 
   cabalDepModule = {
     options = {
@@ -55,7 +58,9 @@ in {
   cabalOverrides = mkOptionType {
     name = "cabal-overrides";
     description = "A Haskell package override function specified in the Hix DSL";
-    merge = mergeOneOption;
+    descriptionClass = "noun";
+    check = a: isFunction a || (isList a && all isFunction a);
+    merge = _: defs: concatLists (map (a: toList a.value) defs);
   };
 
   ghc = mkOptionType {

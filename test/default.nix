@@ -5,7 +5,7 @@ let
   test = name: (import (./. + "/${name}/test.nix") { inherit pkgs; }).test;
 
   tests = {
-    modules = test "modules";
+    deps = test "deps";
     ghcid = test "ghcid";
     ghci = test "ghci";
     packages = test "packages";

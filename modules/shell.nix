@@ -78,7 +78,7 @@ in {
       compiler = config.envs.dev.ghc.compiler;
       nixpkgs = config.envs.dev.ghc.nixpkgs;
       nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
-      overrideKeys = [];
+      overrides = [];
       overlays = config.envs.dev.ghc.overlays ++ cfg.overlays;
     };
 

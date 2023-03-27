@@ -96,7 +96,7 @@ in {
     ghc-options = mkOption {
       description = mdDoc "GHC options for all components in this option tree.";
       type = listOf str;
-      example = literalExpression ''["-Wunused-imports" "-j6" "-XGHC2021"]'';
+      example = literalExpression ''["-Wunused-imports" "-j6"]'';
       default = [];
     };
 
@@ -125,9 +125,15 @@ in {
     };
 
     language = mkOption {
-      description = mdDoc "The default extension set used for all components in this option tree.";
+      description = mdDoc ''
+      The default extension set used for all components in this option tree.
+      It is set to `GHC2021` if the GHC versions of all defined envs are 9.2 or greater, and `Haskell2010` otherwise.
+      '';
       type = str;
-      default = if versionAtLeast global.envs.dev.ghc.version "9.2" then "GHC2021" else "Haskell2010";
+      default =
+        if all (util.minGhc "9.2") (attrValues global.envs)
+        then "GHC2021"
+        else "Haskell2010";
     };
 
     dependencies = mkOption {

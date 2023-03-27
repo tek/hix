@@ -10,10 +10,8 @@
       library.enable = true;
     };
     compat.enable = false;
-    overrides = {
-      dev = { hackage, ... }: {
-        stm-chans = hackage "1.0.0" "13ml9byhsid341z9y52dav7nxv479n0j0w2qmsbj0rglz59aicgp";
-      };
+    overrides = { hackage, ... }: {
+      stm-chans = hackage "1.0.0" "13ml9byhsid341z9y52dav7nxv479n0j0w2qmsbj0rglz59aicgp";
     };
   };
 }

@@ -8,10 +8,11 @@ let
 
   ghcVersionEnv = compiler: {
     ghc = {
+      name = compiler;
       inherit compiler;
-      overrideKeys = ["local" "all" "compat" compiler];
       nixpkgs = config.input.ghcNixpkgs.${compiler} or config.inputs.nixpkgs;
     };
+    internal.overridesInherited = util.overridesGlobal [compiler];
   };
 
   ghcVersionEnvs = genAttrs config.ghcVersions ghcVersionEnv;
@@ -47,15 +48,21 @@ in {
   config = {
     envs = ghcVersionEnvs // {
 
-      dev.ghc.name = "dev";
+      dev = {
+        ghc.name = "dev";
+        internal.overridesInherited = util.overridesGlobal ["dev"];
+      };
 
-      min.ghc = {
-        name = "min";
-        compiler = config.envs.dev.ghc.compiler;
-        nixpkgs = config.envs.dev.ghc.nixpkgs;
-        nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
-        overrideKeys = ["localMin" "all" config.envs.min.ghc.compiler "dev"];
-        overlays = config.envs.dev.ghc.overlays;
+      min = {
+        ghc = {
+          name = "min";
+          compiler = config.envs.dev.ghc.compiler;
+          nixpkgs = config.envs.dev.ghc.nixpkgs;
+          nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
+          overlays = config.envs.dev.ghc.overlays;
+        };
+        internal.overridesInherited =
+          util.concatOverrides [(util.overridesGlobalMin ["dev"]) config.envs.dev.overrides];
       };
 
     };

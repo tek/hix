@@ -16,12 +16,8 @@ with lib;
 
     overrides = mkOption {
       type = util.types.cabalOverrides;
-      description = mdDoc "The overrides used for this package set, defaulting to the global overrides.";
-    };
-
-    overrideKeys = mkOption {
-      type = listOf str;
-      description = mdDoc "The keys of the overrides used for this package set, in increasing order of precedence.";
+      description = mdDoc "The overrides used for this package set.";
+      default = [];
     };
 
     nixpkgs = mkOption {
@@ -35,7 +31,6 @@ with lib;
       default = {};
     };
 
-    # TODO readOnly
     pkgs = mkOption {
       type = util.types.pkgs;
       description = mdDoc "The nixpkgs set used for this GHC.";
@@ -76,17 +71,12 @@ with lib;
   config = {
     compiler = mkDefault global.mainCompiler;
 
-    overrides = mkDefault global.internal.overrides;
-
-    overrideKeys = mkDefault ["local" "all" config.compiler "dev"];
-
     nixpkgs = mkDefault global.inputs.nixpkgs;
 
     pkgs = let
       go = util.ghcOverlay {
-        inherit (config) overrides compiler overrideKeys;
+        inherit (config) compiler name overrides;
         inherit (config.nixpkgs) rev;
-        inherit (config) name;
       };
       options = recursiveUpdate {
         inherit (global) system;

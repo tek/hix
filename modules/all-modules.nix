@@ -35,6 +35,7 @@ let
     ./shells.nix
     ./services.nix
     ./envs.nix
+    ./overrides.nix
     ./commands.nix
     ./ghci.nix
     ./ghcid.nix
