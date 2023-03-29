@@ -3,7 +3,11 @@
 with lib;
 let
 
+  envConfig = config;
+
   serviceModule = import ./service.nix { inherit lib global; };
+
+  envServiceModule = import ./env-service.nix { inherit lib global; };
 
   ghcModule = import ./ghc.nix { inherit global util; };
 
@@ -109,19 +113,6 @@ let
     virtualisation.vmVariant.virtualisation.forwardPorts = map servicePort ports;
   };
 
-  waitService = {
-    ports = [{ guest = 15000; host = 1; }];
-    nixos.systemd.services.hix-wait = {
-      wantedBy = ["multi-user.target"];
-      serviceConfig = {
-        ExecStart = "${global.pkgs.socat}/bin/socat TCP-L:15000,fork SYSTEM:'echo running'";
-      };
-    };
-  };
-
-  serviceConfig = service:
-  [service.nixos-base service.nixos (servicePorts service.ports)];
-
   vmConfig = {
     virtualisation.vmVariant.virtualisation = {
       diskImage = config.vm.image;
@@ -141,11 +132,42 @@ let
     system.stateVersion = "22.05";
   };
 
+  serviceConfig = service:
+  [service.nixos-base service.nixos (servicePorts service.ports)];
+
   combinedConfig =
     [vmConfig] ++
     optional config.defaults nixosDefaults ++
-    concatMap serviceConfig config.services
+    concatMap (s: serviceConfig s.resolve) (attrValues config.internal.resolvedServices)
     ;
+
+  resolveServiceModule = {name, config, ...}: let
+    service = envConfig.services.${name};
+  in {
+    options = with types; {
+      name = mkOption {
+        description = "";
+        type = str;
+        default = name;
+      };
+
+      resolve = mkOption {
+        description = "";
+        type = submoduleWith {
+          modules = [
+            serviceModule
+            global.services.${name}
+            { inherit (service) enable; }
+            service.config
+          ] ++ optional (hasAttr name global.service) global.service.${name};
+        };
+        default = {};
+      };
+    };
+  };
+
+  resolveService = n: s:
+  {};
 
 in {
   options = with types; {
@@ -160,8 +182,8 @@ in {
 
     services = mkOption {
       description = mdDoc "Services for this env";
-      type = listOf (either str (submodule serviceModule));
-      default = [];
+      type = attrsOf (submodule envServiceModule);
+      default = {};
     };
 
     env = mkOption {
@@ -316,11 +338,20 @@ in {
 
     };
 
-    # TODO type
-    internal.overridesInherited = mkOption {
-      type = util.types.cabalOverrides;
-      description = mdDoc "The inherited overrides used for this env, like local packages and global overrides.";
-      default = global.internal.overridesLocal;
+    internal = {
+
+      overridesInherited = mkOption {
+        type = util.types.cabalOverrides;
+        description = mdDoc "The inherited overrides used for this env, like local packages and global overrides.";
+        default = global.internal.overridesLocal;
+      };
+
+      resolvedServices = mkOption {
+        description = "";
+        type = attrsOf (submodule resolveServiceModule);
+        default = mapAttrs resolveService config.services;
+      };
+
     };
 
   };
@@ -329,13 +360,16 @@ in {
 
     enable = mkDefault true;
 
-    services = optional (config.wait > 0) waitService;
+    services.hix-internal-env-wait = {
+      enable = config.wait > 0;
+      config = { inherit (config) wait; };
+    };
 
     ghc.overrides = mkDefault (util.concatOverrides [config.internal.overridesInherited config.overrides]);
 
     vm = {
 
-      enable = mkDefault (length config.services > (if config.wait > 0 then 1 else 0));
+      enable = mkDefault (length (attrNames config.services) > (if config.wait > 0 then 1 else 0));
 
       derivation = mkDefault (
         let nixosArgs = {

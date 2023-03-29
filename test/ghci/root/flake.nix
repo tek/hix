@@ -15,7 +15,7 @@
     };
     mainCompiler = "ghc902";
     envs.test = {
-      services = [config.services.test];
+      services.test.enable = true;
     };
     services.test = {
       nixos.services.nginx = {

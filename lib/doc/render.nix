@@ -8,11 +8,10 @@
 with pkgs.lib;
 
 let
-  docbook_xsl_ns = pkgs.docbook-xsl-ns.override { withManOptDedupPatch = true; };
-
   nixpkgsDoc = pkgs.path + "/doc";
   manpageUrls = nixpkgsDoc + "/manpage-urls.json";
 
+  # TODO make prefix more configurable, automatically prefix nested attrsets
   renderOptions = {name, options}: ''
 
   ```{=include=} options
@@ -43,7 +42,7 @@ let
   ```
   '';
 
-  manualHTML = pkgs.runCommand "nixos-manual-html" {
+  renderManual = pkgs.runCommand "nixos-manual-html" {
     nativeBuildInputs = [pkgs.nixos-render-docs];
     meta.description = "The Hix manual in HTML format";
     allowedReferences = ["out"];
@@ -70,7 +69,6 @@ let
 
 
 in {
-  inherit manualHTML;
+  inherit renderManual;
   inherit (optionsDoc) optionsJSON;
-  manualHTMLIndex = "${manualHTML}/share/doc/hix/index.html";
 }
