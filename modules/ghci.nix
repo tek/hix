@@ -114,7 +114,7 @@ let
 
   packageConf = p: {
     inherit (p) name;
-    src = p.srcRelative;
+    src = p.subpath;
     components = mapAttrs (_: componentConf) p.componentsSet;
   };
 

@@ -7,7 +7,8 @@ let
   excluded = loc: { type, path, except ? [] }: let
     plen = length path;
     llen = length loc;
-    properPrefix = plen < llen && take plen loc == path;
+    isPrefix = take plen loc == path;
+    properPrefix = plen < llen && isPrefix;
     suffix = drop plen loc;
     isMatch = path == loc;
     notExempt = !(any (e: suffix == e) except);
@@ -16,6 +17,8 @@ let
   then properPrefix && notExempt
   else if type == "eq"
   then isMatch
+  else if type == "full"
+  then isPrefix
   else error "invalid option exclude type: ${type}";
 
   excludedByAny = loc: any (excluded loc);

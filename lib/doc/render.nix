@@ -3,7 +3,6 @@
   util,
   header,
   chapters,
-  revision,
 }:
 with pkgs.lib;
 
@@ -55,7 +54,7 @@ let
     cp -r ${pkgs.documentation-highlighter} $dst/highlightjs
     nixos-render-docs -j $NIX_BUILD_CORES manual html \
       --manpage-urls ${manpageUrls} \
-      --revision ${escapeShellArg revision} \
+      --revision default \
       --stylesheet style.css \
       --stylesheet overrides.css \
       --stylesheet highlightjs/mono-blue.css \

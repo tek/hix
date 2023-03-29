@@ -9,8 +9,16 @@ let
 
   util = import ../with-config.nix { inherit config lib util; };
 
+  prose = import ./prose.nix {};
+
   mod-ghc = options.module "ghc" { inherit global util; };
 
+  # cabalOptionsExclude = [
+  #   { type = "eq"; path = ["language"]; }
+  # ];
+
+  # TODO remove if it works
+  # mod-cabal-options = options.moduleWithout cabalOptionsExclude "cabal-options" { inherit global util; };
   mod-cabal-options = options.module "cabal-options" { inherit global util; };
 
   compExcept = [["source-dirs"] ["name"]];
@@ -25,6 +33,8 @@ let
     { type = "sub"; path = ["tests"]; except = compMultiExcept; }
     { type = "sub"; path = ["benchmark"]; except = compExcept; }
     { type = "sub"; path = ["benchmarks"]; except = compMultiExcept; }
+    { type = "eq"; path = ["components"]; }
+    { type = "eq"; path = ["componentsSet"]; }
   ];
 
   mod-package = options.moduleWithout packageExclude "package" { global = config; inherit util; };
@@ -32,7 +42,7 @@ let
   text = content: { type = "text"; inherit content; };
   opt = name: options: { type = "options"; content = { inherit name options; }; };
 
-  chapters = [
+  chapters = with prose; [
     {
       tag = "intro";
       heading = "Introduction";
@@ -50,19 +60,18 @@ let
         (opt "package" mod-package)
       ];
     }
-    {
-      tag = "devshell";
-      heading = "Development shells";
-      fragments = [
-        (text devshell)
-      ];
-    }
+    # {
+    #   tag = "devshell";
+    #   heading = "Development shells";
+    #   fragments = [
+    #     (text devshell)
+    #   ];
+    # }
   ];
 
-  # TODO remove revision
-  man = import ./manual.nix { inherit pkgs util header chapters; revision = "default"; };
+  render = import ./render.nix { inherit pkgs util chapters; inherit (prose) header; };
 
 in {
-  json = man.optionsJSON;
-  pkg = man.renderManual;
+  json = render.optionsJSON;
+  pkg = render.renderManual;
 }

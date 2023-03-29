@@ -9,6 +9,7 @@ let
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
   cabalComponentModule = import ./cabal-component.nix { inherit global util; };
 
+  # TODO remove
   libModule = {...}: {
 
     options = with types; {
@@ -84,20 +85,12 @@ in {
       example = literalExpression "./packages/api";
     };
 
-    srcRelative = mkOption {
-      description = mdDoc ''
-      The root directory of the package relative to the project root.
-      Computed from [](#opt-src).
-      '';
-      type = str;
-      readOnly = true;
-    };
-
-    env = mkOption {
-      description = "";
-      type = submodule envModule;
-      default = config.defaultEnv;
-    };
+    # TODO activate
+    # env = mkOption {
+    #   description = "";
+    #   type = submodule envModule;
+    #   default = config.defaultEnv;
+    # };
 
     library = mkOption {
       description = mdDoc ''
@@ -239,7 +232,7 @@ in {
     };
 
     subpath = mkOption {
-      description = "";
+      description = mdDoc "The computed relative path of the package root directory.";
       type = str;
       readOnly = true;
     };
@@ -247,8 +240,6 @@ in {
   };
 
   config = {
-
-    srcRelative = util.packageRel config.src;
 
     rootModule = mkDefault (concatMapStringsSep "." util.toTitle (splitString "-" config.name));
 

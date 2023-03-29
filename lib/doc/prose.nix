@@ -1,6 +1,6 @@
 {}: let
 
-  exampleFile = path: builtins.readFile (../../../examples + "/${path}");
+  exampleFile = path: builtins.readFile (../../examples + "/${path}");
 
 in {
 
@@ -386,7 +386,7 @@ in {
 
   Unlike the derivation, this will only recompile files that have changed when executed repeatedly.
 
-  ### Haskell Language Server
+  ### Haskell Language Server {#hls}
 
   The devshell includes HLS in the path, making it possible to instruct your editor to execute
   `nix develop -c haskell-language-server-wrapper`.
@@ -396,7 +396,7 @@ in {
   nix run .#hls
   ```
 
-  ### GHCi
+  ### GHCi {#ghci}
 
   During development, it is often desirable to execute a test whenever some code was changed.
   A common aproach to this is to load  the test module in GHCi.

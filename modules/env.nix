@@ -154,12 +154,13 @@ let
       resolve = mkOption {
         description = "";
         type = submoduleWith {
-          modules = [
+          modules = optionals (name != "‹name›") [
             serviceModule
             global.services.${name}
             { inherit (service) enable; }
             service.config
-          ] ++ optional (hasAttr name global.service) global.service.${name};
+          ] ++
+          optional (hasAttr name global.service) global.service.${name};
         };
         default = {};
       };
