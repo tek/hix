@@ -8,9 +8,9 @@ let
     #!${pkgs.zsh}/bin/zsh
     if ${pkgs.procps}/bin/pgrep -F ${vm.pidfile} -L -f ${vm.pidfile} &>/dev/null
     then
-      print '>>> vm already running' >&2
+      print '>>> VM already running' >&2
     else
-      print '>>> starting vm' >&2
+      print '>>> Starting VM' >&2
       mkdir -p ${vm.dir}
       rm -f ${vm.pidfile}
       ${vm.derivation}/bin/run-nixos-vm ${display vm} -daemonize -pidfile ${vm.pidfile}
@@ -22,10 +22,10 @@ let
     pid=$(${pkgs.procps}/bin/pgrep -F ${vm.pidfile} -L -f ${vm.pidfile})
     if [[ $? == 0 ]]
     then
-      print '>>> killing vm' >&2
+      print '>>> Killing VM' >&2
       kill $pid
     else
-      print '>>> vm not running' >&2
+      print '>>> VM not running' >&2
     fi
   '';
 

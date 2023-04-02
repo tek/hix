@@ -5,24 +5,24 @@
 
   outputs = { hix, ... }: hix.lib.flake ({config, ...}: let
 
-  testService = {
-    enable = true;
-    ports = [{ guest = 5000; host = 5; }];
-    nixos = {
-      systemd.services.test = {
-        wantedBy = ["multi-user.target"];
-        serviceConfig = {
-          ExecStart = "${config.pkgs.socat}/bin/socat TCP-L:5000,fork SYSTEM:'echo received'";
+  in {
+
+    services.test = {
+      enable = true;
+      ports = [{ guest = 5000; host = 5; }];
+      nixos = {
+        systemd.services.test = {
+          wantedBy = ["multi-user.target"];
+          serviceConfig = {
+            ExecStart = "${config.pkgs.socat}/bin/socat TCP-L:5000,fork SYSTEM:'echo received'";
+          };
         };
       };
     };
-  };
-
-  in {
 
     envs.test = {
       basePort = 15000;
-      services = [testService];
+      services.test.enable = true;
     };
 
     commands.test = {

@@ -34,7 +34,7 @@ in {
       Whether this command should determine the env based on a target component specified by command line arguments.
       '';
       type = bool;
-      default = true;
+      default = false;
     };
 
     path = mkOption {

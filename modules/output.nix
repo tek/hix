@@ -33,11 +33,11 @@ let
   devOutputs = let
     ghc = config.envs.dev.ghc.ghc;
     minGhc = config.envs.min.ghc.ghc;
-    package = name: ghc.${name} // { release = releaseDrv ghc.${name}; min = minGhc.${name}; };
-    local = genAttrs config.internal.packageNames package;
+    extra = name: pkg: pkg // { release = releaseDrv ghc.${name}; min = minGhc.${name}; };
+    local = mapAttrs extra config.envs.dev.derivations;
   in local // {
-    default = local.${global.main};
-    min = local.${global.main}.min;
+    default = local.${config.main};
+    min = local.${config.main}.min;
   };
 
 in {
@@ -121,8 +121,9 @@ in {
         show-config = show-config.shell;
       };
 
-      # TODO
-      devShells = mapAttrs (_: s: s.derivation) config.shells // { default = throw "not implemented"; };
+      devShells = let
+        shells = mapAttrs (_: e: e.shell) config.envs;
+      in shells // { default = shells.dev; };
 
       apps = let
         commands = mapAttrs (_: c: app "${c.path}") config.commands;
@@ -135,7 +136,7 @@ in {
         tags = app tags.app;
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
-        c = commands;
+        cmd = commands;
         env = util.foldMapAttrs envApps (attrValues config.envs);
         ghcid = commands.ghcid;
         ghci = commands.ghci;

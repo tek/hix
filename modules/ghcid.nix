@@ -103,5 +103,7 @@ in {
     env_run "eval $ghcid_cmd"
     '';
 
+    component = true;
+
   };
 }

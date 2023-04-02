@@ -102,5 +102,7 @@ in {
     env_run "eval $ghci_cmd"
     '';
 
+    component = true;
+
   };
 }

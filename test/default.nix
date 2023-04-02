@@ -49,6 +49,24 @@ in {
   }
   ${if keep then "" else ''trap "rm -rf $tmpdir" EXIT''}
 
+  check()
+  {
+    output=$(eval $1)
+    if [[ $output != $2 ]]
+    then
+      fail "$3:\n$output"
+    fi
+  }
+
+  check_match()
+  {
+    output=$(eval $1)
+    if [[ ! $output =~ $2 ]]
+    then
+      fail "$3:\n$output"
+    fi
+  }
+
   runtest()
   {
     setopt local_options err_return

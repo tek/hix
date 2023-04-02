@@ -37,8 +37,13 @@ let
 
   nestedPackages = lazyAttrsOf (either package nestedPackages);
 
-  # TODO concrete type
-  flakeApp = lazyAttrsOf str;
+  flakeApp = mkOptionType {
+    name = "flake-app";
+    description = "A flake output of type 'app'";
+    descriptionClass = "noun";
+    check = a: isAttrs a && a ? type && a ? program;
+    merge = mergeOneOption;
+  };
 
   nestedFlakeApps = lazyAttrsOf (either flakeApp nestedFlakeApps);
 

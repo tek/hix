@@ -67,17 +67,17 @@ let
       if [[ $quitting == 0 ]]
       then
         quitting=1
-        if [[ -n $1 ]]
+        if [[ -n ''${1-} ]]
         then
-          echo ">>> terminated by signal $1" >&2
+          echo ">>> Terminated by signal $1" >&2
         fi
         ${config.exit-pre}
         ${optionalString config.vm.enable config.vm.exit}
         ${config.exit}
         # kill zombie GHCs
-        ${global.pkgs.procps}/bin/pkill -9 -x -P 1 ghc
+        ${global.pkgs.procps}/bin/pkill -9 -x -P 1 ghc || true
       fi
-      if [[ -n $1 ]]
+      if [[ -n ''${1-} ]]
       then
         exit 1
       fi
@@ -169,9 +169,9 @@ let
     };
   };
 
-  extraPackages = genAttrs global.output.extraPackages (n: ghc.${n});
-
   ghc = config.ghc.ghc;
+
+  extraPackages = genAttrs global.output.extraPackages (n: ghc.${n});
 
   localPackages = genAttrs global.internal.packageNames (n: ghc.${n} // { inherit ghc; });
 
@@ -258,6 +258,15 @@ in {
       description = mdDoc "";
       type = str;
       default = preamble;
+    };
+
+    shell = mkOption {
+      description = mdDoc "";
+      type = package;
+      default = global.pkgs.stdenv.mkDerivation {
+        inherit (config) name buildInputs;
+        shellHook = config.code;
+      };
     };
 
     runner = mkOption {

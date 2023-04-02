@@ -32,7 +32,6 @@ let
     ./hpack.nix
     ./output.nix
     ./shell.nix
-    ./shells.nix
     ./services.nix
     ./envs.nix
     ./overrides.nix

@@ -119,7 +119,7 @@ in {
     hpack = {
 
       apps = mkOption {
-        type = lazyAttrsOf path;
+        type = lazyAttrsOf util.types.flakeApp;
         default = {};
       };
 
@@ -159,7 +159,9 @@ in {
 
       internal.packages = mapAttrs generatePackageConf config.packages;
 
-      apps = mkDefault (util.foldAttrs (mapAttrsToList (packageApps config.derivations) config.hpack.internal.packages));
+      apps = mkDefault (
+        util.foldAttrs (mapAttrsToList (packageApps config.envs.dev.derivations) config.hpack.internal.packages)
+      );
 
       script = script;
 

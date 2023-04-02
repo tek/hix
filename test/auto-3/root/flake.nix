@@ -12,7 +12,6 @@
         source-dirs = ".";
       };
     };
-    compat.enable = false;
     envs.dev.ghc.compiler = "ghc902";
   };
 }
