@@ -28,16 +28,7 @@ let
 
   base = outPackagesFor (config.internal.packageNames ++ config.output.extraPackages) project.ghc;
 
-  main = let
-    extra = n: base.${n} // { min = config.envs.min.ghc.ghc.${n}; release = releaseDrv base.${n}; };
-  in
-    base // genAttrs config.internal.packageNames extra;
-
   extraChecks = if config.compat.enable then compatChecks else {};
-
-  transformed = config.output.transform main config.outputs;
-
-  amended = config.output.amend main transformed;
 
   tags = import ../lib/tags.nix { inherit config; };
 
@@ -52,7 +43,7 @@ let
 
   app = program: { type = "app"; program = "${program}"; };
 
-  # TODO add hls (needs ghc in env)
+  # TODO add hls
   envApps = env: {
     ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
   };
@@ -60,29 +51,22 @@ let
 in {
   options = {
 
+    # TODO copy this to env and reference dev here
+    # XXX this is most significant for abstracting away from a static, privileged dev env
+    derivations = mkOption {
+      description = mdDoc "The derivations for the local Cabal packages.";
+      type = lazyAttrsOf package;
+      default = let
+        extra = n: base.${n} // { min = config.envs.min.ghc.ghc.${n}; release = releaseDrv base.${n}; };
+      in base // genAttrs config.internal.packageNames extra;
+    };
+
     output = {
+
       systems = mkOption {
         type = listOf str;
         description = mdDoc "The systems for which to create outputs.";
         default = ["x86_64-linux"];
-      };
-
-      transform = mkOption {
-        type = functionTo (functionTo unspecified);
-        default = _: id;
-        description = mdDoc ''
-        A function taking the dev project and the generated outputs and returning modified outputs.
-        The return value is not merged with the original outputs.
-        '';
-      };
-
-      amend = mkOption {
-        type = functionTo (functionTo unspecified);
-        default = _: _: {};
-        description = mdDoc ''
-        A function taking the dev project and the generated outputs and returning additional outputs.
-        The return value is merged with the original outputs.
-        '';
       };
 
       extraPackages = mkOption {
@@ -97,6 +81,10 @@ in {
       };
 
       final = mkOption {
+        description = mdDoc ''
+        The final flake outputs computed by Hix, defaulting to {#opt-outputs}.
+        May be overriden for unusual customizations.
+        '';
         type = unspecified;
       };
 
@@ -136,17 +124,17 @@ in {
   config = {
 
     output = {
-      final = mkDefault (recursiveUpdate transformed amended);
+      final = mkDefault config.outputs;
     };
 
     outputs = {
 
       packages = {
-        min = main.${config.main}.min;
-        default = main.${config.main};
-      } // main // extraChecks;
+        min = config.derivations.${config.main}.min;
+        default = config.derivations.${config.main};
+      } // config.derivations // extraChecks;
 
-      checks = main // extraChecks;
+      checks = config.derivations // extraChecks;
 
       legacyPackages = {
         inherit config;
@@ -156,7 +144,9 @@ in {
 
       devShells = mapAttrs (_: s: s.derivation) config.shells // { default = config.ghcid.shell; };
 
-      apps = config.ghcid.apps // config.hackage.output.apps // config.hpack.apps main // {
+      apps = let
+        commands = mapAttrs (_: c: app "${c.path}") config.commands;
+      in config.hackage.output.apps // config.hpack.apps // {
         hls = app "${config.shell.hls.app}";
         gen-cabal = app "${config.hpack.script}";
         gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
@@ -165,10 +155,10 @@ in {
         tags = app tags.app;
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
-        c = mapAttrs (_: c: app "${c.path}") config.commands;
+        c = commands;
         env = util.foldMapAttrs envApps (attrValues config.envs);
-        ghcid = app config.ghcid.flakeApp;
-        ghci = app config.ghci.flakeApp;
+        ghcid = commands.ghcid;
+        ghci = commands.ghci;
       };
 
     };

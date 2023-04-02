@@ -29,6 +29,7 @@ import Options.Applicative (
   )
 import Path (Abs, File, Path, reldir)
 import Prelude hiding (Mod)
+import Data.Aeson (FromJSON)
 
 data PreprocOptions =
   PreprocOptions {
@@ -52,12 +53,10 @@ data ComponentSpec =
   ComponentForModule ModuleSpec
   deriving stock (Eq, Show, Generic)
 
-data GhciOptions =
-  GhciOptions {
-    config :: GhciConfig,
-    component :: ComponentSpec,
+data TestOptions =
+  TestOptions {
     test :: Maybe Text,
-    runner :: RunnerName
+    runner :: Maybe RunnerName
   }
   deriving stock (Eq, Show, Generic)
 
@@ -68,11 +67,18 @@ data ComponentEnvOptions =
   }
   deriving stock (Eq, Show, Generic)
 
+data GhciOptions =
+  GhciOptions {
+    config :: GhciConfig,
+    component :: ComponentSpec,
+    test :: TestOptions
+  }
+  deriving stock (Eq, Show, Generic)
+
 data ComponentEnvCommandOptions =
   ComponentEnvCommandOptions {
     options :: ComponentEnvOptions,
-    test :: Maybe Text,
-    runner :: RunnerName
+    test :: TestOptions
   }
   deriving stock (Eq, Show, Generic)
 
@@ -144,47 +150,45 @@ specParser =
 
 testParser :: Parser (Maybe Text)
 testParser =
-  optional (strOption (long "test" <> short 't' <> help "The test function that will be executed"))
+  optional (strOption (long "test" <> short 't' <> help "The Haskell function that should be executed"))
 
-runnerParser :: Parser RunnerName
+runnerParser :: Parser (Maybe RunnerName)
 runnerParser =
-  strOption (
-    long "runner"
+  optional (strOption (
+    long "run"
     <>
     short 'r'
     <>
-    help "The runner function that can execute the test function as IO"
-    <>
-    value "generic"
-  )
+    help "The name of the command defined in the Hix option 'ghci.run'"
+  ))
+
+jsonConfigParser ::
+  FromJSON a =>
+  Parser a
+jsonConfigParser =
+  option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config")
+
+testOptionsParser :: Parser TestOptions
+testOptionsParser = do
+  test <- testParser
+  runner <- runnerParser
+  pure TestOptions {..}
 
 envParser :: Parser ComponentEnvCommandOptions
-envParser =
-  ComponentEnvCommandOptions
-  <$>
-  (
-    ComponentEnvOptions
-    <$>
-    option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config")
-    <*>
-    specParser
-  )
-  <*>
-  testParser
-  <*>
-  runnerParser
+envParser = do
+  options <- do
+    config <- jsonConfigParser
+    component <- specParser
+    pure ComponentEnvOptions {..}
+  test <- testOptionsParser
+  pure ComponentEnvCommandOptions {..}
 
 ghciParser :: Parser GhciOptions
-ghciParser =
-  GhciOptions
-  <$>
-  option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config")
-  <*>
-  specParser
-  <*>
-  testParser
-  <*>
-  runnerParser
+ghciParser = do
+  config <- jsonConfigParser
+  component <- specParser
+  test <- testOptionsParser
+  pure GhciOptions {..}
 
 commands ::
   Mod CommandFields Command

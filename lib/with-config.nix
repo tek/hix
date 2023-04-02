@@ -47,6 +47,10 @@ let
 
     packages = mapAttrs (_: packageConf) config.packages;
 
+    # TODO add to this set:
+    # - component-dependent ghci args
+    # - restarts
+    # - cwd
     ghci = {
       inherit packages;
       setup = config.ghci.setup;

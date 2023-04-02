@@ -14,7 +14,13 @@
       fi
     }
 
-    check "$(nix run .#c.ghci -- -p root -t main <<< ':quit')"
+    output="$(nix run .#ghci -- -p root -d lib -m Root.Lib -r print <<< ':quit')"
+    if [[ ! $output =~ 'print success' ]]
+    then
+      fail "ghci test 1 does not contain 'print success'"
+    fi
+
+    check "$(nix run .#ghci -- -p root -t main <<< ':quit')"
 
     check "$(nix run .#env.test.ghci -- -p root -t main <<< ':quit')"
   '';

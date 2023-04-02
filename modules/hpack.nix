@@ -119,8 +119,8 @@ in {
     hpack = {
 
       apps = mkOption {
-        type = functionTo unspecified;
-        default = _: {};
+        type = lazyAttrsOf path;
+        default = {};
       };
 
       script = mkOption {
@@ -159,8 +159,7 @@ in {
 
       internal.packages = mapAttrs generatePackageConf config.packages;
 
-      apps =
-        mkDefault (outputs: util.foldAttrs (mapAttrsToList (packageApps outputs) config.hpack.internal.packages));
+      apps = mkDefault (util.foldAttrs (mapAttrsToList (packageApps config.derivations) config.hpack.internal.packages));
 
       script = script;
 

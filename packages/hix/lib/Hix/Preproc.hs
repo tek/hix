@@ -24,6 +24,7 @@ import Language.Haskell.Extension (Extension (DisableExtension, EnableExtension,
 import Path (Abs, File, Path, toFilePath)
 import Prelude hiding (group)
 import System.Random (randomRIO)
+import Language.Haskell.Extension (Language(UnknownLanguage))
 
 type Regex = IndexedTraversal' Int ByteString Match
 
@@ -87,7 +88,10 @@ extensionsPragma info
   | null exts = Nothing
   | otherwise = Just (languagePragma exts)
   where
-    exts = mapMaybe extension info.defaultExtensions
+    exts = maybeToList (dlExtension =<< info.defaultLanguage) ++ mapMaybe extension info.defaultExtensions
+    dlExtension = \case
+      UnknownLanguage _ -> Nothing
+      lang -> Just (stringUtf8 (show lang))
 
 optionsPragma :: Builder -> Builder
 optionsPragma opts =
@@ -446,6 +450,7 @@ preprocessModule source info dummyExportName inLines =
     header = scanHeader customPrelude inLines
 
 -- TODO add common stanzas
+-- TODO when an error occurs, output an empty file and insert an error as a warning pragma or something
 preprocess :: PreprocOptions -> ExceptT Error IO ()
 preprocess PreprocOptions {..} = do
   info <- buildInfoForFile source

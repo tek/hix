@@ -26,5 +26,6 @@
       };
       ports = [{ host = 2000; guest = 80; }];
     };
+    ghci.run.print = ''putStrLn "print success"'';
   });
 }

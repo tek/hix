@@ -6,7 +6,6 @@ let
 
   tests = {
     deps = test "deps";
-    ghcid = test "ghcid";
     ghci = test "ghci";
     packages = test "packages";
     hackage = test "hackage";

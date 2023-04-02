@@ -11,16 +11,24 @@ import Hix.Data.Error (Error (GhcidError), pathText)
 import qualified Hix.Data.GhciConfig as GhciConfig
 import Hix.Data.GhciConfig (
   ComponentConfig,
+  GhciConfig,
   GhciRunExpr (GhciRunExpr),
   GhciSetupCode (GhciSetupCode),
+  ModuleName (ModuleName),
   PackageConfig (PackageConfig),
   PackageName,
-  SourceDir (SourceDir), ModuleName (ModuleName),
+  SourceDir (SourceDir),
   )
 import qualified Hix.Data.GhcidTest as GhcidTest
 import Hix.Data.GhcidTest (GhciRun (GhciRun), GhcidRun (GhcidRun), GhcidTest (GhcidTest))
 import qualified Hix.Options as Options
-import Hix.Options (GhciOptions (GhciOptions), ModuleSpec, ComponentSpec (ComponentForModule, ComponentForFile), ComponentEnvOptions (ComponentEnvOptions))
+import Hix.Options (
+  ComponentEnvOptions (ComponentEnvOptions),
+  ComponentSpec (ComponentForFile, ComponentForModule),
+  GhciOptions (GhciOptions),
+  ModuleSpec,
+  TestOptions (TestOptions),
+  )
 import Path (
   Abs,
   Dir,
@@ -88,7 +96,7 @@ ghciScript opt =
 import #{module_}|]
   where
     ModuleName module_ = moduleName opt
-    GhciSetupCode setup = fold (opt.config.setup !? opt.runner)
+    GhciSetupCode setup = fold (flip Map.lookup opt.config.setup =<< opt.test.runner)
 
 componentSearchPaths :: PackageConfig -> ComponentConfig -> [Path Rel Dir]
 componentSearchPaths pkg comp = do
@@ -105,12 +113,14 @@ searchPath :: Map PackageName PackageConfig -> PackageConfig -> ComponentConfig 
 searchPath pkgs pkg comp =
   nubOrd (componentSearchPaths pkg comp <> librarySearchPaths pkgs)
 
-testRun :: GhciOptions -> Text -> Text
-testRun opt test =
-  [exon|#{run}#{test}|]
-  where
-    run | Just (GhciRunExpr r) <- opt.config.run !? opt.runner = [exon|(#{r}) |]
-        | otherwise = ""
+testRun :: GhciConfig -> TestOptions -> Maybe Text
+testRun config = \case
+  TestOptions test (Just runner) | Just (GhciRunExpr run) <- config.run !? runner ->
+    Just [exon|(#{run}) #{fold test}|]
+  TestOptions (Just test) _ ->
+    Just test
+  TestOptions Nothing _ ->
+    Nothing
 
 assemble :: GhciOptions -> ExceptT Error IO GhcidTest
 assemble opt = do
@@ -118,7 +128,7 @@ assemble opt = do
   (pkg, comp) <- targetComponent envOpt
   pure GhcidTest {
     script = ghciScript opt,
-    test = testRun opt <$> opt.test,
+    test = testRun opt.config opt.test,
     args = opt.config.args,
     searchPath = (cwd </>) <$> searchPath opt.config.packages pkg comp
     }
@@ -153,9 +163,9 @@ searchPathArg paths =
 ghciCmdline ::
   GhcidTest ->
   Path Abs File ->
-  Maybe (Path Abs File )->
+  Maybe (Path Abs File) ->
   GhciRun
-ghciCmdline test scriptFile runScriptFile = do
+ghciCmdline test scriptFile runScriptFile =
   GhciRun {..}
   where
     shell = [exon|##{Text.unwords (coerce test.args)} #{sp} -ghci-script=##{toFilePath scriptFile}|]

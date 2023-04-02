@@ -13,23 +13,6 @@ let
 
   cli = config.internal.hixCli.exe;
 
-  flakeAppWithEnv = env: config.pkgs.writeScript "ghcid-env-run" ''
-  #!${config.pkgs.bashInteractive}/bin/bash
-  set -eu
-  config=$(cat ${config.ghci.cliJson})
-  ghcid_cmd=$(${cli} ghcid-cmd -c "$config" $@)
-  ${env.runner} "eval $ghcid_cmd"
-  '';
-
-  flakeApp = config.pkgs.writeScript "ghcid-run" ''
-  #!${config.pkgs.bashInteractive}/bin/bash
-  set -eu
-  config=$(cat ${config.ghci.cliJson})
-  env_runner=$(${cli} component-env -c "$config" $@)
-  ghcid_cmd=$(${cli} ghcid-cmd -c "$config" $@)
-  $env_runner "eval $ghcid_cmd"
-  '';
-
   runConfig = submodule ({ config, ... }: {
     options = {
 
@@ -81,57 +64,11 @@ let
         default = "";
       };
 
-      vm = mkOption {
-        type = submodule (vmConfig config);
-        description = mdDoc "Configuration for a `qemu` VM that is started before and stopped after the command runs.";
-        default = {};
-      };
-
     };
   });
 
-  ghcidCommand = submodule {
-    options = {
-
-      shellConfig = mkOption {
-        description = mdDoc "This command's nix shell configuration.";
-        type = runConfig;
-        default = {};
-      };
-
-      script = mkOption {
-        description = mdDoc "GHCi commands to execute before running the test.";
-        type = lines;
-      };
-
-      test = mkOption {
-        description = mdDoc "The expression that is evaluated repeatedly.";
-        type = str;
-      };
-
-    };
-  };
-
 in {
   options.ghcid = {
-
-    shellConfig = mkOption {
-      description = mdDoc "The shell configuration shared by all commands and shells.";
-      type = runConfig;
-      default = {};
-    };
-
-    testConfig = mkOption {
-      description = mdDoc "The shell configuration shared by all tests.";
-      type = functionTo runConfig;
-      default = {};
-    };
-
-    commands = mkOption {
-      description = mdDoc "The ghcid commands exposed as flake apps.";
-      type = attrsOf ghcidCommand;
-      default = {};
-    };
 
     shells = mkOption {
       description = mdDoc "The shells generated for the commands.";
@@ -143,53 +80,28 @@ in {
       type = unspecified;
     };
 
-    apps = mkOption {
-      description = mdDoc "The flake apps generated for the commands.";
-      type = unspecified;
-    };
-
-    run = mkOption {
-      description = mdDoc "Internal function used to run ghcid tests.";
-      type = unspecified;
-    };
-
-    test = mkOption {
-      description = mdDoc "The generated app that runs a ghcid test.";
-      type = functionTo unspecified;
-    };
-
     lib = mkOption {
       description = mdDoc "The internal logic for devshells and ghcid.";
       type = unspecified;
     };
 
-    flakeApp = mkOption {
-      description = "";
-      type = path;
-      default = flakeApp;
-      readOnly = true;
-    };
-
-    flakeAppWithEnv = mkOption {
-      description = "";
-      type = functionTo path;
-      default = flakeAppWithEnv;
-      readOnly = true;
-    };
-
   };
 
   config.ghcid = {
-    testConfig = mkDefault (_: config.ghcid.shellConfig);
-
     shells = mkDefault (mapAttrs ghcidLib.shell.runShell config.ghcid.commands);
-
-    apps = mkDefault (mapAttrs ghcidLib.shell.app config.ghcid.commands);
-
-    run = mkDefault ghcidLib.shell.run;
 
     shell = mkDefault (ghcidLib.shell.shellWith { inherit (config.ghcid) shellConfig; });
 
     lib = ghcidLib;
+  };
+
+  config.commands.ghcid = {
+
+    command = ''
+    config=$(cat ${util.json.ghciFile})
+    ghcid_cmd=$(${cli} ghcid-cmd -c "$config" ''${env_args[@]} ''${cmd_args[@]})
+    env_run "eval $ghcid_cmd"
+    '';
+
   };
 }
