@@ -330,6 +330,7 @@ in {
   '';
 
   # TODO create example fixture for the first snippet
+  # TODO example for defining a service
   environments = ''
   ## Environments {#envs}
 
@@ -346,20 +347,110 @@ in {
 
   ```nix
   {
-    envs.example = {
-      ghc.compiler = "ghc943";
-      services.postgres.enable = true;
-    };
-    service
+    outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
+      envs.example = {
+        ghc.compiler = "ghc943";
+        services.postgres = {
+          enable = true;
+          config = {
+            dbName = "test-db";
+          };
+        };
+        buildInputs = [config.pkgs.socat];
+      };
+      service.postgres = {
+        dbUser = "root";
+      };
+    });
   }
   ```
+
+  The service configuration might seem a bit confusing.
+  When specifying `services.postgres` in the environment config, the name `postgres` is looked up in both of the global
+  options `services` and `service`.
+  The former is the _generic_ service config, while the latter contains options specific to the service, here
+  PostgreSQL.
+  Both of them are defined as built-in options in Hix, but you can define your own.
+
+  When the VM for this environment is created, NixOS config is read from `services.postgres.nixos` (The built-in, top
+  level one).
+  The definition of that option then uses `service.postgres` to configure the service.
+  Extra configuration given in `envs.example.services.postgres.config` is added to the global config in
+  `service.postgres`, so that the VM in this environment uses `root` for the user and `test-db` for the database name,
+  but any other environment would only use the user.
+
+  ### Using environments {#envs-use}
 
   An environment can be used in different ways.
   A derivation only uses the GHC, Cabal and the project dependencies as inputs, while an execution of GHCid is preceded
   by booting a VM if any services are configured.
-  For the latter (or any command the user configures), the environment provides a script that wraps the command with the
-  startup/shutdown code for the VM and adds all build inputs to the `$PATH`.
+  For the latter (or any [command](#commands) the user configures), the environment provides a script that wraps the
+  command with the startup/shutdown code for the VM and adds all build inputs to the `$PATH`.
 
+  The default environment is called `dev` and is used for everything that doesn't have a custom environment.
+  For instance, the default devshell uses this environment when entered with `nix develop`.
+  Running `cabal build` in that shell will use the configured GHC.
+
+  ### Configuring GHC {#ghc}
+
+  The most important part of an environment is the associated GHC.
+  As is visible in the above example, the option `ghc.compiler` in an env is used to select the package set
+  corresponding to a version.
+  These package sets are predefined by nixpkgs – each snapshot has a certain number of GHC versions with packages
+  obtained from Stackage and Hackage.
+
+  The GHC executable provided by an environment comes preloaded with all dependencies declared in the project's Cabal
+  files (which amounts to those declared in `packages`).
+  When running `ghci`, those dependencies are importable.
+
+  The default package set doesn't always provide the version of a package that the project requires – for example,
+  sometimes you want to use a newer version than the stable one in a Stackage snapshot.
+  For this purpose, Hix offers a DSL for package overrides:
+
+  ```nix
+  {
+    envs.dev.overrides = {hackage, ...}: {
+      streamly = hackage "0.9.0" "1ab5n253krgccc66j7ch1lx328b1d8mhkfz4szl913chr9pmbv3q";
+    };
+  }
+  ```
+
+  Overrides are defined as a function that produces a set mapping package names to dependency specifications and takes
+  as its argument a set of combinators and metadata for declaring those specifications, like the `hackage` combinator
+  used above that takes a version and Nix store hash to fetch a package directly from Hackage.
+  They can be specified at different levels, like dependencies: At the top level for all environments, in each
+  individual environment, and on the `ghc` module in an environment (although the latter is populated by Hix with the
+  mreged global and local overrides).
+
+  Overrides can be exported from the flake in order to reuse them in other projects.
+  When a downstream flake has project `foo` as an input, setting `deps = [foo]` will cause `foo`'s overrides to be
+  incorporated into the local ones.
+  Furthermore, the option `depsFull` will additionally include `foo`'s local packages in the overrides.
+
+  ### Commands {#commands}
+
+  Services in an environment are relevant when executing a command, which consists of an arbitrary shell script
+  associated with an environment.
+  When the command is executed, the environment's `code` option will be run beforehand, which boots the VM with the
+  services and sets up an exit hook for shutting it down.
+  `code` is a script assembled from other options, notably `setup-pre`, `setup`, `exit-pre` and `exit`.
+
+  A commands can be defined as follows:
+
+  ``` nix
+  # TODO
+  ```
+
+  #### Built-in commands {#commands-builtin}
+
+  Blah TODO
+
+  ### Environment options {#submodule-env}
+
+  '';
+
+  commandOptionsHeader = ''
+  ### Command options {#submodule-command}
   '';
 
   # TODO integrate into envs

@@ -16,7 +16,7 @@ import Hix.Data.GhciConfig (
 import qualified Hix.Data.GhcidTest as GhcidTest
 import Hix.Ghci (ghcidCmdlineFromOptions, ghcidEnv)
 import qualified Hix.Options as Options
-import Hix.Options (GhciOptions (GhciOptions), GhcidModuleSpec (GhcidModuleSpec))
+import Hix.Options (GhciOptions (GhciOptions), ModuleSpec (ModuleSpec), ComponentSpec (ComponentForModule), ComponentEnvOptions (ComponentEnvOptions))
 import Path (Abs, Dir, File, Path, Rel, absfile, reldir)
 import Path.IO (getCurrentDir, withSystemTempDir)
 
@@ -51,9 +51,9 @@ options =
       run = [("generic", ("check . property . test"))],
       args = ["-Werror"]
     },
-    spec = Right GhcidModuleSpec {
+    component = ComponentForModule ModuleSpec {
       package = "api",
-      module_ = "Api.ServerTest",
+      mod = "Api.ServerTest",
       sourceDir = SourceDir [reldir|test|]
     },
     test = Just "test_server",
@@ -79,4 +79,4 @@ test_ghcid = do
 
 test_componentEnv :: TestT IO ()
 test_componentEnv =
-  dbgs =<< liftIO (runExceptT (ghcidEnv options))
+  dbgs =<< liftIO (runExceptT (ghcidEnv (ComponentEnvOptions options.config.packages options.component)))

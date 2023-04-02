@@ -3,6 +3,8 @@ with lib;
 with types;
 let
 
+  envCommand = import ../lib/command.nix { inherit config util; };
+
   project = config.envs.dev.ghc;
 
   outPackagesFor = packages: ghc:
@@ -52,7 +54,7 @@ let
 
   # TODO add hls (needs ghc in env)
   envApps = env: {
-    ${env.name} = { ghci = app (config.ghci.flakeAppWithEnv env); ghcid = app (config.ghcid.flakeAppWithEnv env); };
+    ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
   };
 
 in {

@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  util,
   ...
 }:
 with builtins;
@@ -146,7 +147,7 @@ let
   #!${config.pkgs.bashInteractive}/bin/bash
   set -eu
   config=$(cat ${config.ghci.cliJson})
-  env_runner=$(${cli} ghci-env -c "$config" $@)
+  env_runner=$(${cli} component-env -c "$config" $@)
   ghci_cmd=$(${cli} ghci-cmd -c "$config" $@)
   $env_runner "eval $ghci_cmd"
   '';
@@ -244,23 +245,6 @@ in {
       readOnly = true;
       default = cliJson;
     };
-
-    # TODO these can probably be moved to util
-    # TODO merge util into lib
-    flakeApp = mkOption {
-      description = "";
-      type = path;
-      default = flakeApp;
-      readOnly = true;
-    };
-
-    flakeAppWithEnv = mkOption {
-      description = "";
-      type = functionTo path;
-      default = flakeAppWithEnv;
-      readOnly = true;
-    };
-
   };
 
   config.ghci = {
@@ -273,8 +257,7 @@ in {
     ghcOptions = ["-j${toString config.ghci.cores}" "+RTS -A64M -RTS"];
 
     preprocessor = mkDefault (import ../lib/preprocessor.nix {
-      inherit pkgs;
-      cli = "${config.internal.hixCli.package}/bin/hix";
+      inherit pkgs cli;
       extraCode = config.ghci.preprocessorExtraCode;
     });
 
@@ -285,5 +268,15 @@ in {
     runners = builtinTestRunners;
 
     command = mkDefault command;
+  };
+
+  config.commands.ghci = {
+
+    command = ''
+    config=$(cat ${util.json.ghciFile})
+    ghci_cmd=$(${cli} ghci-cmd -c "$config" ''${env_args[@]} ''${cmd_args[@]})
+    env_run "eval $ghci_cmd"
+    '';
+
   };
 }

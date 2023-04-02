@@ -29,6 +29,42 @@ let
     config.internal.overridesLocalMin
   ];
 
+  json = let
+
+    inherit (config) pkgs;
+
+    componentConf = c: {
+      inherit (c) name;
+      inherit (c.env) runner;
+      sourceDirs = c.source-dirs;
+    };
+
+    packageConf = p: {
+      inherit (p) name;
+      src = p.subpath;
+      components = mapAttrs (_: componentConf) p.componentsSet;
+    };
+
+    packages = mapAttrs (_: packageConf) config.packages;
+
+    ghci = {
+      inherit packages;
+      setup = config.ghci.setup;
+      run = config.ghci.run;
+      args = config.ghci.args;
+    };
+
+    jsonFile = name: value: pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
+
+  in {
+    inherit packages ghci;
+
+    packagesFile = jsonFile "packages-config" packages;
+
+    ghciFile = jsonFile "ghci-config" ghci;
+
+  };
+
 in basic // {
   inherit
   paramApp
@@ -36,5 +72,6 @@ in basic // {
   packageRel
   overridesGlobal
   overridesGlobalMin
+  json
   ;
 }

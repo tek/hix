@@ -30,4 +30,5 @@ jsonOption ::
   ReadM a
 jsonOption = do
   raw <- readerAsk
-  leftA (\ e -> readerError [exon|Invalid json: #{e}|]) (eitherDecodeStrict' (encodeUtf8 raw))
+  leftA (\ e -> readerError [exon|Invalid json: #{e}
+#{raw}|]) (eitherDecodeStrict' (encodeUtf8 raw))

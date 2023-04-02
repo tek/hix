@@ -25,7 +25,7 @@ let
   #!${config.pkgs.bashInteractive}/bin/bash
   set -eu
   config=$(cat ${config.ghci.cliJson})
-  env_runner=$(${cli} ghci-env -c "$config" $@)
+  env_runner=$(${cli} component-env -c "$config" $@)
   ghcid_cmd=$(${cli} ghcid-cmd -c "$config" $@)
   $env_runner "eval $ghcid_cmd"
   '';

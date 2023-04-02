@@ -12,8 +12,6 @@ hix.pro ({config, lib, ...}: {
 
   cabal = {
 
-    default-extensions = ["OverloadedRecordDot" "NoFieldSelectors"];
-
     prelude = {
       enable = true;
       package = {
@@ -27,15 +25,17 @@ hix.pro ({config, lib, ...}: {
 
   };
 
+  envs.dev.ghc.compiler = "ghc925";
+
   compat.enable = false;
 
   outputs = {
 
     packages = let
       pkgs = import inputs.nixpkgs_doc { inherit (config) system; };
-      docs = import ./doc/default.nix { inherit config pkgs; };
+      docs = import ./doc/default.nix { inherit inputs pkgs; };
     in {
-      docs = docs.pkg;
+      docs = docs.html;
     };
 
     apps = let

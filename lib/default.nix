@@ -101,6 +101,8 @@ let
   minGhc = version: env:
   versionAtLeast env.ghc.version version;
 
+  empty = v: if isAttrs v then empty (attrNames v) else v == [];
+
 in {
   inherit
   packageSubpath
@@ -123,6 +125,7 @@ in {
   mergeAll
   toTitle
   minGhc
+  empty
   ;
 
   overrides = import ./overrides.nix { inherit lib; };

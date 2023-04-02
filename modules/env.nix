@@ -58,6 +58,9 @@ let
   [(config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ map (n: ghc.${n}) config.haskellPackages))]
   ;
 
+  exportShellVars = vars:
+  optionalString (!(util.empty vars)) "export ${toShellVars config.env}";
+
   preamble = ''
     quitting=0
     quit() {
@@ -83,9 +86,8 @@ let
     trap "quit TERM" TERM
     trap "quit KILL" KILL
     trap quit EXIT
-    export ${toShellVars config.env}'' +
-    optionalString (buildInputs != []) ''export PATH="${makeBinPath buildInputs}:$PATH"'' +
-    ''
+    ${exportShellVars config.env}
+    export PATH="${makeBinPath buildInputs}:$PATH"
     ${config.setup-pre}
     ${optionalString config.vm.enable config.vm.setup}
     ${optionalString (config.vm.enable && config.wait > 0) waitScript}
@@ -146,13 +148,13 @@ let
   in {
     options = with types; {
       name = mkOption {
-        description = "";
+        description = mdDoc "";
         type = str;
         default = name;
       };
 
       resolve = mkOption {
-        description = "";
+        description = mdDoc "";
         type = submoduleWith {
           modules = optionals (name != "‹name›") [
             serviceModule
@@ -188,13 +190,13 @@ in {
     };
 
     env = mkOption {
-      description = "Environment variables";
+      description = mdDoc "Environment variables";
       type = attrsOf str;
       default = {};
     };
 
     ghc = mkOption {
-      description = "";
+      description = mdDoc "";
       type = submodule ghcModule;
       default = {};
     };
@@ -208,95 +210,95 @@ in {
     };
 
     buildInputs = mkOption {
-      description = "";
+      description = mdDoc "";
       type = listOf package;
       default = [];
     };
 
     haskellPackages = mkOption {
-      description = "";
+      description = mdDoc "";
       type = listOf str;
       default = [];
     };
 
     localDeps = mkOption {
-      description = "Add dependencies of local packages.";
+      description = mdDoc "Add dependencies of local packages.";
       type = bool;
       default = true;
     };
 
     setup-pre = mkOption {
-      description = "Commands to run before the service VM has started.";
+      description = mdDoc "Commands to run before the service VM has started.";
       type = str;
       default = "";
     };
 
     setup = mkOption {
-      description = "Commands to run after the service VM has started.";
+      description = mdDoc "Commands to run after the service VM has started.";
       type = str;
       default = "";
     };
 
     exit-pre = mkOption {
-      description = "Command to run before the service VM is shut down.";
+      description = mdDoc "Command to run before the service VM is shut down.";
       type = str;
       default = "";
     };
 
     exit = mkOption {
-      description = "Command to run when the env exits.";
+      description = mdDoc "Command to run when the env exits.";
       type = str;
       default = "";
     };
 
     code = mkOption {
-      description = "";
+      description = mdDoc "";
       type = str;
       default = preamble;
     };
 
     runner = mkOption {
-      description = "";
+      description = mdDoc "";
       type = path;
       default = runner;
     };
 
     basePort = mkOption {
-      description = "The number as a base for ports in this env's VM, like ssh getting `basePort + 22`.";
+      description = mdDoc "The number as a base for ports in this env's VM, like ssh getting `basePort + 22`.";
       type = port;
       default = 20000;
     };
 
     defaults = mkOption {
-      description = "Whether to use the common NixOS options for VMs.";
+      description = mdDoc "Whether to use the common NixOS options for VMs.";
       type = bool;
       default = true;
     };
 
     wait = mkOption {
-      description = "Wait for the VM to complete startup within the given number of seconds. 0 disables the feature.";
+      description = mdDoc "Wait for the VM to complete startup within the given number of seconds. 0 disables the feature.";
       type = int;
       default = 30;
     };
 
     ghcid = mkOption {
-      description = "";
+      description = mdDoc "";
       type = bool;
       default = true;
     };
 
     hls = mkOption {
-      description = "";
+      description = mdDoc "";
       type = bool;
       default = true;
     };
 
     vm = {
 
-      enable = mkEnableOption "the service VM for this env";
+      enable = mkEnableOption (mdDoc "the service VM for this env");
 
       dir = mkOption {
-        description = "";
+        description = mdDoc "";
         type = str;
         default = "/tmp/hix-vm/$USER/${config.name}";
       };
@@ -323,17 +325,17 @@ in {
       };
 
       setup = mkOption {
-        description = "Commands for starting the VM.";
+        description = mdDoc "Commands for starting the VM.";
         type = str;
       };
 
       exit = mkOption {
-        description = "Commands for shutting down the VM.";
+        description = mdDoc "Commands for shutting down the VM.";
         type = str;
       };
 
       derivation = mkOption {
-        description = "The VM derivation";
+        description = mdDoc "The VM derivation";
         type = path;
       };
 
@@ -348,7 +350,7 @@ in {
       };
 
       resolvedServices = mkOption {
-        description = "";
+        description = mdDoc "";
         type = attrsOf (submodule resolveServiceModule);
         default = mapAttrs resolveService config.services;
       };

@@ -17,18 +17,18 @@ let
     "884" = { enable = false; };
   };
 
-  overrides =
-  let
-    local = import ../deps/local.nix {
-      inherit config lib;
-      inherit (config) localPackage;
-    };
-    localMin = import ../deps/local.nix {
-      inherit config lib;
-      localPackage = api@{ fast, ... }: p: fast (config.localPackage api p);
-    };
-    withDeps = util.normalizeOverrides config.overrides config.deps config.depsFull;
-  in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
+  # overrides =
+  # let
+  #   local = import ../deps/local.nix {
+  #     inherit config lib;
+  #     inherit (config) localPackage;
+  #   };
+  #   localMin = import ../deps/local.nix {
+  #     inherit config lib;
+  #     localPackage = api@{ fast, ... }: p: fast (config.localPackage api p);
+  #   };
+  #   withDeps = util.normalizeOverrides config.overrides config.deps config.depsFull;
+  # in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
 
   baseFromPackages = let
     pkg = head (attrValues config.internal.packagePaths);

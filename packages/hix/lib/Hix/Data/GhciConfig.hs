@@ -29,6 +29,11 @@ newtype PackageName =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
 
+newtype ModuleName =
+  ModuleName { unModuleName :: Text }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
+
 newtype ComponentName =
   ComponentName { unComponentName :: Text }
   deriving stock (Eq, Show, Generic)
@@ -72,9 +77,11 @@ newtype GhciArgs =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsList, Ord, FromJSON)
 
+type PackagesConfig = Map PackageName PackageConfig
+
 data GhciConfig =
   GhciConfig {
-    packages :: Map PackageName PackageConfig,
+    packages :: PackagesConfig,
     setup :: Map RunnerName GhciSetupCode,
     run :: Map RunnerName GhciRunExpr,
     args :: GhciArgs

@@ -1,7 +1,11 @@
-{ pkgs, config, }:
+{ inputs, pkgs, }:
 with pkgs.lib;
 let
   lib = pkgs.lib;
+
+  modules = [{ inherit (pkgs) system; }] ++ import ../../modules/all-modules.nix { inherit inputs; projectModules = []; };
+  config = (evalModules { inherit modules; }).config;
+
   global = config;
 
   options = import ./options.nix { inherit pkgs; };
@@ -39,6 +43,20 @@ let
 
   mod-package = options.moduleWithout packageExclude "package" { global = config; inherit util; };
 
+  envExclude = [
+    { type = "sub"; path = ["ghc"]; }
+    # { type = "sub"; path = ["vm"]; }
+    { type = "sub"; path = ["services"]; }
+  ];
+
+  mod-env = options.moduleWithout envExclude "env" { global = config; inherit util; };
+
+  commandExclude = [
+    { type = "sub"; path = ["env"]; }
+  ];
+
+  mod-command = options.moduleWithout commandExclude "command" { global = config; inherit util; };
+
   text = content: { type = "text"; inherit content; };
   opt = name: options: { type = "options"; content = { inherit name options; }; };
 
@@ -58,6 +76,10 @@ let
         (opt "cabal" mod-cabal-options)
         (text packageOptions)
         (opt "package" mod-package)
+        (text environments)
+        (opt "env" mod-env)
+        (text commandOptionsHeader)
+        (opt "command" mod-command)
       ];
     }
     # {
@@ -73,5 +95,5 @@ let
 
 in {
   json = render.optionsJSON;
-  pkg = render.renderManual;
+  html = render.renderManual;
 }

@@ -1,6 +1,6 @@
 module Hix.Options where
 
-import Hix.Data.GhciConfig (GhciConfig, PackageName, RunnerName, SourceDir (SourceDir))
+import Hix.Data.GhciConfig (GhciConfig, ModuleName, PackageName, PackagesConfig, RunnerName, SourceDir (SourceDir))
 import Hix.Optparse (absFileOption, jsonOption, relDirOption)
 import Options.Applicative (
   CommandFields,
@@ -38,22 +38,39 @@ data PreprocOptions =
   }
   deriving stock (Eq, Show, Generic)
 
-newtype GhcidFileSpec =
-  GhcidFileSpec { unGhcidFileSpec :: Path Abs File }
-  deriving stock (Eq, Show, Generic)
-
-data GhcidModuleSpec =
-  GhcidModuleSpec {
+data ModuleSpec =
+  ModuleSpec {
     package :: PackageName,
     sourceDir :: SourceDir,
-    module_ :: Text
+    mod :: ModuleName
   }
+  deriving stock (Eq, Show, Generic)
+
+data ComponentSpec =
+  ComponentForFile (Path Abs File)
+  |
+  ComponentForModule ModuleSpec
   deriving stock (Eq, Show, Generic)
 
 data GhciOptions =
   GhciOptions {
     config :: GhciConfig,
-    spec :: Either GhcidFileSpec GhcidModuleSpec,
+    component :: ComponentSpec,
+    test :: Maybe Text,
+    runner :: RunnerName
+  }
+  deriving stock (Eq, Show, Generic)
+
+data ComponentEnvOptions =
+  ComponentEnvOptions {
+    config :: PackagesConfig,
+    component :: ComponentSpec
+  }
+  deriving stock (Eq, Show, Generic)
+
+data ComponentEnvCommandOptions =
+  ComponentEnvCommandOptions {
+    options :: ComponentEnvOptions,
     test :: Maybe Text,
     runner :: RunnerName
   }
@@ -62,7 +79,7 @@ data GhciOptions =
 data Command =
   Preproc PreprocOptions
   |
-  GhciEnv GhciOptions
+  ComponentEnv ComponentEnvCommandOptions
   |
   GhcidCmd GhciOptions
   |
@@ -101,9 +118,9 @@ preprocParser =
   fileParser "out" "The path to the output file"
 
 -- TODO also allow package by reldir and component by name
-moduleSpecParser :: Parser GhcidModuleSpec
-moduleSpecParser =
-  GhcidModuleSpec
+componentForModuleParser :: Parser ModuleSpec
+componentForModuleParser =
+  ModuleSpec
   <$>
   strOption (long "package" <> short 'p' <> help "The name of the test package")
   <*>
@@ -113,40 +130,72 @@ moduleSpecParser =
   where
     sourceDirHelp = "The relative path to the component in the package"
 
-fileSpecParser :: Parser GhcidFileSpec
-fileSpecParser =
-  GhcidFileSpec
+componentForFileParser :: Parser ComponentSpec
+componentForFileParser =
+  ComponentForFile
   <$>
   option absFileOption (long "file" <> short 'f' <> help "The absolute file path of the test module")
 
-specParser :: Parser (Either GhcidFileSpec GhcidModuleSpec)
+specParser :: Parser ComponentSpec
 specParser =
-  (Right <$> moduleSpecParser)
+  (ComponentForModule <$> componentForModuleParser)
   <|>
-  (Left <$> fileSpecParser)
+  componentForFileParser
 
-ghcidParser :: Parser GhciOptions
-ghcidParser =
+testParser :: Parser (Maybe Text)
+testParser =
+  optional (strOption (long "test" <> short 't' <> help "The test function that will be executed"))
+
+runnerParser :: Parser RunnerName
+runnerParser =
+  strOption (
+    long "runner"
+    <>
+    short 'r'
+    <>
+    help "The runner function that can execute the test function as IO"
+    <>
+    value "generic"
+  )
+
+envParser :: Parser ComponentEnvCommandOptions
+envParser =
+  ComponentEnvCommandOptions
+  <$>
+  (
+    ComponentEnvOptions
+    <$>
+    option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config")
+    <*>
+    specParser
+  )
+  <*>
+  testParser
+  <*>
+  runnerParser
+
+ghciParser :: Parser GhciOptions
+ghciParser =
   GhciOptions
   <$>
   option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config")
   <*>
   specParser
   <*>
-  optional (strOption (long "test" <> short 't' <> help "The test function that will be executed"))
+  testParser
   <*>
-  strOption (long "runner" <> help "The runner function that can execute the test function as IO" <> value "generic")
+  runnerParser
 
-preprocCommand ::
+commands ::
   Mod CommandFields Command
-preprocCommand =
+commands =
   command "preproc" (Preproc <$> info preprocParser (progDesc "Preprocess a source file for use with ghcid"))
   <>
-  command "ghci-env" (GhciEnv <$> info ghcidParser (progDesc "Find the env runner for a component"))
+  command "component-env" (ComponentEnv <$> info envParser (progDesc "Find the env runner for a component"))
   <>
-  command "ghci-cmd" (GhciCmd <$> info ghcidParser (progDesc "Print a ghci cmdline to load a module in a Hix env"))
+  command "ghci-cmd" (GhciCmd <$> info ghciParser (progDesc "Print a ghci cmdline to load a module in a Hix env"))
   <>
-  command "ghcid-cmd" (GhcidCmd <$> info ghcidParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
+  command "ghcid-cmd" (GhcidCmd <$> info ghciParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
 
 globalParser :: Parser GlobalOptions
 globalParser = do
@@ -156,7 +205,7 @@ globalParser = do
 appParser ::
   Parser Options
 appParser =
-  Options <$> globalParser <*> hsubparser (mconcat [preprocCommand])
+  Options <$> globalParser <*> hsubparser commands
 
 parseCli ::
   IO Options

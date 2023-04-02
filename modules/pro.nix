@@ -1,6 +1,8 @@
 { config, lib, ... }:
 with lib;
 {
+  ghcVersions = ["ghc925" "ghc943"];
+
   internal.cabal-extra = {
 
     default-extensions = [

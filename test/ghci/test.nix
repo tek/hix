@@ -14,7 +14,7 @@
       fi
     }
 
-    check "$(nix run .#ghci -- -p root -t main <<< ':quit')"
+    check "$(nix run .#c.ghci -- -p root -t main <<< ':quit')"
 
     check "$(nix run .#env.test.ghci -- -p root -t main <<< ':quit')"
   '';

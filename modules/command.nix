@@ -3,41 +3,51 @@
 with lib;
 let
 
+  inherit (global) pkgs;
+
   envModule = import ./env.nix { inherit global util; };
+
+  envCommand = import ../lib/command.nix { config = global; inherit util; };
 
 in {
   options = with types; {
 
     name = mkOption {
-      description = "Name";
+      description = mdDoc "Name";
       type = str;
       default = name;
     };
 
     env = mkOption {
-      description = "The env for the command";
+      description = mdDoc "The default env for the command.";
       type = submodule envModule;
-      default = {};
+      default = global.envs.dev;
     };
 
     command = mkOption {
+      description = mdDoc "The script executed by this command.";
       type = str;
     };
 
+    component = mkOption {
+      description = mdDoc ''
+      Whether this command should determine the env based on a target component specified by command line arguments.
+      '';
+      type = bool;
+      default = true;
+    };
+
     path = mkOption {
-      description = "The final executable.";
+      description = mdDoc "The final executable.";
       type = path;
+      readOnly = true;
     };
 
   };
 
   config = {
 
-    path = global.pkgs.writeScript "hix-command-${config.name}" ''
-    #!${global.pkgs.bashInteractive}/bin/bash
-    ${config.env.code}
-    ${config.command}
-    '';
+    path = (envCommand { command = config; inherit (config) env; }).path;
 
   };
 }
