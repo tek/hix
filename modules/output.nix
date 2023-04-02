@@ -5,31 +5,6 @@ let
 
   envCommand = import ../lib/command.nix { inherit config util; };
 
-  project = config.envs.dev.ghc;
-
-  outPackagesFor = packages: ghc:
-  genAttrs packages (n: ghc.${n} // { inherit ghc; });
-
-  compatChecks = let
-    prefixed = conf: mapAttrs' (n: v: { name = "${conf.ghc.compiler}-${n}"; value = v; });
-    compatCheck = ver: let
-      conf = config.envs.${ver};
-    in
-    optionalAttrs conf.enable
-    (prefixed conf (outPackagesFor config.internal.packageNames conf.ghc.ghc));
-  in
-    util.foldMapAttrs compatCheck config.ghcVersions;
-
-  releaseDrv =
-    import ../lib/release-derivation.nix {
-      inherit lib;
-      hsLib = config.pkgs.haskell.lib;
-    };
-
-  base = outPackagesFor (config.internal.packageNames ++ config.output.extraPackages) project.ghc;
-
-  extraChecks = if config.compat.enable then compatChecks else {};
-
   tags = import ../lib/tags.nix { inherit config; };
 
   showConfig = import ../lib/show-config.nix { inherit config lib util; };
@@ -48,18 +23,25 @@ let
     ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
   };
 
+  versionDerivations = genAttrs config.ghcVersions (v: config.envs.${v}.derivations);
+
+  releaseDrv = import ../lib/release-derivation.nix {
+    inherit lib;
+    hsLib = config.pkgs.haskell.lib;
+  };
+
+  devOutputs = let
+    ghc = config.envs.dev.ghc.ghc;
+    minGhc = config.envs.min.ghc.ghc;
+    package = name: ghc.${name} // { release = releaseDrv ghc.${name}; min = minGhc.${name}; };
+    local = genAttrs config.internal.packageNames package;
+  in local // {
+    default = local.${global.main};
+    min = local.${global.main}.min;
+  };
+
 in {
   options = {
-
-    # TODO copy this to env and reference dev here
-    # XXX this is most significant for abstracting away from a static, privileged dev env
-    derivations = mkOption {
-      description = mdDoc "The derivations for the local Cabal packages.";
-      type = lazyAttrsOf package;
-      default = let
-        extra = n: base.${n} // { min = config.envs.min.ghc.ghc.${n}; release = releaseDrv base.${n}; };
-      in base // genAttrs config.internal.packageNames extra;
-    };
 
     output = {
 
@@ -93,12 +75,12 @@ in {
     outputs = {
 
       packages = mkOption {
-        type = lazyAttrsOf package;
+        type = util.types.nestedPackages;
         description = mdDoc "The flake output attribute `packages`.";
       };
 
       checks = mkOption {
-        type = lazyAttrsOf package;
+        type = util.types.nestedPackages;
         description = mdDoc "The flake output attribute `checks`.";
       };
 
@@ -108,12 +90,12 @@ in {
       };
 
       devShells = mkOption {
-        type = lazyAttrsOf package;
+        type = util.types.nestedPackages;
         description = mdDoc "The flake output attribute `devShells`.";
       };
 
       apps = mkOption {
-        type = lazyAttrsOf unspecified;
+        type = util.types.nestedFlakeApps;
         description = mdDoc "The flake output attribute `apps`.";
       };
 
@@ -129,12 +111,9 @@ in {
 
     outputs = {
 
-      packages = {
-        min = config.derivations.${config.main}.min;
-        default = config.derivations.${config.main};
-      } // config.derivations // extraChecks;
+      packages = devOutputs // versionDerivations;
 
-      checks = config.derivations // extraChecks;
+      checks = config.envs.dev.derivations // optionalAttrs config.compat.enable versionDerivations;
 
       legacyPackages = {
         inherit config;
@@ -142,7 +121,8 @@ in {
         show-config = show-config.shell;
       };
 
-      devShells = mapAttrs (_: s: s.derivation) config.shells // { default = config.ghcid.shell; };
+      # TODO
+      devShells = mapAttrs (_: s: s.derivation) config.shells // { default = throw "not implemented"; };
 
       apps = let
         commands = mapAttrs (_: c: app "${c.path}") config.commands;

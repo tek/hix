@@ -169,8 +169,11 @@ let
     };
   };
 
-  resolveService = n: s:
-  {};
+  extraPackages = genAttrs global.output.extraPackages (n: ghc.${n});
+
+  ghc = config.ghc.ghc;
+
+  localPackages = genAttrs global.internal.packageNames (n: ghc.${n} // { inherit ghc; });
 
 in {
   options = with types; {
@@ -276,7 +279,8 @@ in {
     };
 
     wait = mkOption {
-      description = mdDoc "Wait for the VM to complete startup within the given number of seconds. 0 disables the feature.";
+      description =
+        mdDoc "Wait for the VM to complete startup within the given number of seconds. 0 disables the feature.";
       type = int;
       default = 30;
     };
@@ -291,6 +295,14 @@ in {
       description = mdDoc "";
       type = bool;
       default = true;
+    };
+
+    derivations = mkOption {
+      description = mdDoc ''
+      The derivations for the local Cabal packages using this env's GHC, as well as the [](#opt-extraPackages).
+      '';
+      type = lazyAttrsOf package;
+      default = localPackages // extraPackages;
     };
 
     vm = {
@@ -349,10 +361,11 @@ in {
         default = global.internal.overridesLocal;
       };
 
+      # TODO simplify this
       resolvedServices = mkOption {
         description = mdDoc "";
         type = attrsOf (submodule resolveServiceModule);
-        default = mapAttrs resolveService config.services;
+        default = mapAttrs (_: _: {}) config.services;
       };
 
     };

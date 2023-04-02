@@ -35,7 +35,15 @@ let
     };
   };
 
+  nestedPackages = lazyAttrsOf (either package nestedPackages);
+
+  # TODO concrete type
+  flakeApp = lazyAttrsOf str;
+
+  nestedFlakeApps = lazyAttrsOf (either flakeApp nestedFlakeApps);
+
 in {
+  inherit nestedPackages flakeApp nestedFlakeApps;
 
   nixpkgs = mkOptionType {
     name = "nixpkgs";
