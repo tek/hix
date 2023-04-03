@@ -32,8 +32,7 @@ let
     config=$(cat ${util.json.envFile env})
     ${splitArgs}
     env_runner=$(${cli} env -c "$config" ''${env_args[@]})
-    export env_args
-    $env_runner "${exe} ''${cmd_args[@]}"
+    env_args="''${env_args[*]}" $env_runner "${exe} ''${cmd_args[@]}"
     ''
     else ''
     ${env.code}

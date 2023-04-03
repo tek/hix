@@ -490,7 +490,7 @@ in {
   The third method is to specify a Haskell source file and let Hix figure out which component it belongs to:
 
   ```
-  $ nix run .#cmd.number -- -p root -d app
+  $ nix run .#cmd.number -- -f /path/to/NumberTest.hs
   2
   ```
 
@@ -504,6 +504,39 @@ in {
   #### Built-in commands {#commands-builtin}
 
   Hix provides two special commands for executing a function in GHCi or GHCid.
+
+  The `ghcid` command in particular is highly useful for repeatedly executing a test whenever a source file is written.
+  Compilation is very fast since GHCi doesn't need to link the executable and doesn't perform optimization in the
+  default mode, leading to sub-second feedback loops on small projects (or dependency closures).
+
+  ```
+  nix run .#ghci -- -p root -r server
+  nix run .#ghcid -- -p root -t test_server -r hedgehog-unit
+  ```
+
+  Their interface is mostly identical to the generic commands described above, while taking three additional, optional
+  command line options:
+
+  - The name of a module (`-m`), defaulting to `Main`.
+    This module is loaded in GHCi and hence only its dependencies are (re)compiled.
+
+  - The name of a Haskell test function (`-t`) that will be called after the module was loaded successfully.
+    See next bullet for defaults.
+
+  - The name of an attribute in the Hix option `ghci.run` (`-r`).
+    This option contains a Haskell expression for each key which will be executed after the module was loaded
+    successfully.
+    If a test function was specified, this expression will be applied to it.
+    If the runner wasn't specified, the test function will be run directly.
+    If neither this nor the test function was specified, the `ghci` command will drop to interactive mode directly while
+    the `ghcid` command defaults to `main`.
+
+  For example, the built-in `hedgehog-unit` entry in `ghci.run` has the value `check . withTests 1 . property . test`.
+  When specifying the name of a Hedgehog test like in the example above, the evaluated epression will be:
+
+  ```
+  ghci> (check . withTests 1 . property . test) test_server
+  ```
 
   ### Services {#services}
 

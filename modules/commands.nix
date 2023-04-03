@@ -4,6 +4,8 @@ let
 
   commandModule = import ./command.nix { global = config; inherit util; };
 
+  cli = config.internal.hixCli.exe;
+
 in {
   options = with types; {
 

@@ -9,15 +9,15 @@ import Distribution.PackageDescription (
   )
 import Exon (exon)
 import Hedgehog (TestT, evalMaybe, (===))
-import Hix.Preproc (preprocessModule)
 import Path (absfile)
 
+import Hix.Preproc (preprocessModule)
 import Hix.Test.CabalFile (testPackage, testPackageNoPrelude)
 
 pragmas :: Text
 pragmas =
   [exon|{-# options_ghc -Wall -Wunused-imports #-}
-{-# language AllowAmbiguousTypes, NoApplicativeDo #-}|]
+{-# language Haskell2010, AllowAmbiguousTypes, NoApplicativeDo #-}|]
 
 preprocTestNoPrelude ::
   HasCallStack =>

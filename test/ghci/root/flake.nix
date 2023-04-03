@@ -11,7 +11,7 @@
       library.dependencies = ["http-client" "bytestring"];
       executables.root = { enable = true; source-dirs = "app"; };
       test.enable = true;
-      test.env = config.envs.test;
+      test.env = "test";
     };
     compiler = "ghc902";
     envs.test.services.test.enable = true;

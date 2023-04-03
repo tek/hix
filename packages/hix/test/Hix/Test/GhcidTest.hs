@@ -4,25 +4,42 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (runExceptT)
 import Exon (exon)
 import Hedgehog (TestT, evalEither, (===))
+import Path (Abs, Dir, File, Path, Rel, absfile, reldir)
+import Path.IO (getCurrentDir, withSystemTempDir)
+
 import Hix.Data.Error (pathText)
 import Hix.Data.GhciConfig (
   ComponentConfig (..),
   ComponentName,
+  EnvRunner (EnvRunner),
   GhciConfig (..),
   PackageConfig (..),
   SourceDir (SourceDir),
-  SourceDirs (SourceDirs),
+  SourceDirs (SourceDirs), EnvConfig (EnvConfig),
   )
 import qualified Hix.Data.GhcidTest as GhcidTest
-import Hix.Ghci (ghcidCmdlineFromOptions, ghcidEnv)
+import Hix.Ghci (ghcidCmdlineFromOptions)
 import qualified Hix.Options as Options
-import Hix.Options (GhciOptions (GhciOptions), ModuleSpec (ModuleSpec), ComponentSpec (ComponentForModule), EnvRunnerOptions (EnvRunnerOptions))
-import Path (Abs, Dir, File, Path, Rel, absfile, reldir)
-import Path.IO (getCurrentDir, withSystemTempDir)
+import Hix.Options (
+  ComponentSpec (ComponentForModule),
+  EnvRunnerOptions (EnvRunnerOptions),
+  GhciOptions (GhciOptions),
+  ModuleSpec (ModuleSpec),
+  TestOptions (TestOptions),
+  )
+import Hix.Env (envRunner)
+
+runner :: EnvRunner
+runner =
+  EnvRunner [absfile|/tmp/hix/test/env.bash|]
 
 component :: ComponentName -> Path Rel Dir -> ComponentConfig
 component name dir =
-  ComponentConfig {name, sourceDirs = SourceDirs [SourceDir dir], runner = [absfile|/tmp/hix/test/env.bash|]}
+  ComponentConfig {
+    name,
+    sourceDirs = SourceDirs [SourceDir dir],
+    runner = Just runner
+  }
 
 options :: GhciOptions
 options =
@@ -56,8 +73,10 @@ options =
       mod = "Api.ServerTest",
       sourceDir = SourceDir [reldir|test|]
     },
-    test = Just "test_server",
-    runner = "generic"
+    test = TestOptions {
+      test = Just "test_server",
+      runner = Just "generic"
+    }
   }
 
 target ::
@@ -78,5 +97,8 @@ test_ghcid = do
   target cwd cmdline.ghci.scriptFile === cmdline.cmdline
 
 test_componentEnv :: TestT IO ()
-test_componentEnv =
-  dbgs =<< liftIO (runExceptT (ghcidEnv (EnvRunnerOptions options.config.packages options.component)))
+test_componentEnv = do
+  res <- evalEither =<< liftIO (runExceptT (envRunner conf))
+  runner === res
+  where
+    conf = EnvRunnerOptions (EnvConfig options.config.packages (EnvRunner [absfile|/default|])) (Just options.component)

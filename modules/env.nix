@@ -88,6 +88,7 @@ let
     trap quit EXIT
     ${exportShellVars config.env}
     export PATH="${makeBinPath buildInputs}:$PATH"
+    export env_args
     ${config.setup-pre}
     ${optionalString config.vm.enable config.vm.setup}
     ${optionalString (config.vm.enable && config.wait > 0) waitScript}
