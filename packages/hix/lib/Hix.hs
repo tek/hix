@@ -1,11 +1,13 @@
 module Hix where
 
 import Control.Monad.Trans.Except (ExceptT, runExceptT)
+
 import Hix.Data.Error (Error (..), printGhcidError, printPreprocError)
-import Hix.Ghci (printGhciCmdline, printGhciEnv, printGhcidCmdline)
+import Hix.Env (printEnvRunner)
+import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
 import qualified Hix.Options as Options
 import Hix.Options (
-  Command (ComponentEnv, GhciCmd, GhcidCmd, Preproc),
+  Command (EnvRunner, GhciCmd, GhcidCmd, Preproc),
   GlobalOptions (GlobalOptions),
   Options (Options),
   parseCli,
@@ -26,7 +28,7 @@ handleError GlobalOptions {verbose} = \case
 runCommand :: Command -> ExceptT Error IO ()
 runCommand = \case
   Preproc opts -> preprocess opts
-  ComponentEnv opts -> printGhciEnv opts.options
+  EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts
   GhciCmd opts -> printGhciCmdline opts
 

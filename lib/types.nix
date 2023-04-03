@@ -1,4 +1,4 @@
-{ lib, }:
+{ config, lib, }:
 with lib;
 with types;
 
@@ -83,5 +83,13 @@ in {
   };
 
   cabalDep = either str (submodule cabalDepModule);
+
+  env = mkOptionType {
+    name = "env-ref";
+    description = "Name of an environment defined in config.envs";
+    descriptionClass = "noun";
+    check = a: isString a;
+    merge = mergeOneOption;
+  };
 
 }

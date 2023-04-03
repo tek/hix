@@ -20,8 +20,8 @@ in {
 
     env = mkOption {
       description = mdDoc "The default env for the command.";
-      type = submodule envModule;
-      default = global.envs.dev;
+      type = util.types.env;
+      default = "dev";
     };
 
     command = mkOption {
@@ -47,7 +47,7 @@ in {
 
   config = {
 
-    path = (envCommand { command = config; inherit (config) env; }).path;
+    path = (envCommand { command = config; env = global.envs.${config.env}; }).path;
 
   };
 }

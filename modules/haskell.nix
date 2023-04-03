@@ -17,19 +17,6 @@ let
     "884" = { enable = false; };
   };
 
-  # overrides =
-  # let
-  #   local = import ../deps/local.nix {
-  #     inherit config lib;
-  #     inherit (config) localPackage;
-  #   };
-  #   localMin = import ../deps/local.nix {
-  #     inherit config lib;
-  #     localPackage = api@{ fast, ... }: p: fast (config.localPackage api p);
-  #   };
-  #   withDeps = util.normalizeOverrides config.overrides config.deps config.depsFull;
-  # in withDeps // { all = (withDeps.local or []) ++ withDeps.all; local = [local]; localMin = [localMin]; };
-
   baseFromPackages = let
     pkg = head (attrValues config.internal.packagePaths);
     next = p:
@@ -135,7 +122,7 @@ in {
       description = mdDoc "Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.";
     };
 
-    mainCompiler = mkOption {
+    compiler = mkOption {
       type = str;
       default = "ghc925";
       description = mdDoc ''
@@ -306,9 +293,9 @@ in {
 
     internal = {
 
-      basicPkgs = import config.inputs."nixpkgs_${config.mainCompiler}" { inherit (config) system; };
+      basicPkgs = import config.inputs."nixpkgs_${config.compiler}" { inherit (config) system; };
 
-      basicGhc = config.internal.basicPkgs.haskell.packages.${config.mainCompiler};
+      basicGhc = config.internal.basicPkgs.haskell.packages.${config.compiler};
 
       # TODO extraOverrides is still needed for ribosome etc.
       # overrides = util.mergeOverrides [config.extraOverrides overrides];

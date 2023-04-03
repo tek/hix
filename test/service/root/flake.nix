@@ -3,9 +3,7 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }: hix.lib.flake ({config, ...}: let
-
-  in {
+  outputs = { hix, ... }: hix.lib.flake ({config, ...}: {
 
     services.test = {
       enable = true;

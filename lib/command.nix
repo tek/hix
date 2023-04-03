@@ -23,21 +23,21 @@ let
   done
   '';
 
+  exe = pkgs.writeScript "command-${command.name}" command.command;
+
+  # TODO change config to be a file parameter in the cli
   script =
     if command.component
     then ''
-    config=$(cat ${util.json.packagesFile})
+    config=$(cat ${util.json.envFile env})
     ${splitArgs}
-    env_runner=$(${cli} component-env -c "$config" ''${env_args[@]})
-    env_run()
-    {
-      $env_runner $@
-    }
-    ${command.command}
+    env_runner=$(${cli} env -c "$config" ''${env_args[@]})
+    export env_args
+    $env_runner "${exe} ''${cmd_args[@]}"
     ''
     else ''
     ${env.code}
-    ${command.command}
+    ${exe}
     '';
 
 in {

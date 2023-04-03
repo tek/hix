@@ -85,13 +85,6 @@ in {
       example = literalExpression "./packages/api";
     };
 
-    # TODO activate
-    # env = mkOption {
-    #   description = "";
-    #   type = submodule envModule;
-    #   default = config.defaultEnv;
-    # };
-
     library = mkOption {
       description = mdDoc ''
       The library for this package.

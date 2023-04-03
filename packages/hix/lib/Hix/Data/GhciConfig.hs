@@ -39,11 +39,21 @@ newtype ComponentName =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
 
+newtype EnvName =
+  EnvName { unEnvName :: Text }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
+
+newtype EnvRunner =
+  EnvRunner (Path Abs File)
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (FromJSON)
+
 data ComponentConfig =
   ComponentConfig {
     name :: ComponentName,
     sourceDirs :: SourceDirs,
-    runner :: Path Abs File
+    runner :: Maybe EnvRunner
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -78,6 +88,14 @@ newtype GhciArgs =
   deriving newtype (IsList, Ord, FromJSON)
 
 type PackagesConfig = Map PackageName PackageConfig
+
+data EnvConfig =
+  EnvConfig {
+    packages :: PackagesConfig,
+    defaultEnv :: EnvRunner
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON)
 
 data GhciConfig =
   GhciConfig {

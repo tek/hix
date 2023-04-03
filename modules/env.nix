@@ -11,7 +11,7 @@ let
 
   ghcModule = import ./ghc.nix { inherit global util; };
 
-  vmLib = import ../lib/vm-new.nix { inherit (global) pkgs; };
+  vmLib = import ../lib/vm.nix { inherit (global) pkgs; };
 
   waitSeconds = toString config.wait;
 
@@ -194,7 +194,7 @@ in {
 
     env = mkOption {
       description = mdDoc "Environment variables";
-      type = attrsOf str;
+      type = attrsOf (either int str);
       default = {};
     };
 
@@ -307,8 +307,11 @@ in {
     };
 
     derivations = mkOption {
+      # description = mdDoc ''
+      # The derivations for the local Cabal packages using this env's GHC, as well as the [](#opt-extraPackages).
+      # '';
       description = mdDoc ''
-      The derivations for the local Cabal packages using this env's GHC, as well as the [](#opt-extraPackages).
+      The derivations for the local Cabal packages using this env's GHC, as well as the TODO
       '';
       type = lazyAttrsOf package;
       default = localPackages // extraPackages;

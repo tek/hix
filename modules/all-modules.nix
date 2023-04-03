@@ -12,7 +12,6 @@ let
       nixpkgs_ghc8107
       nixpkgs_ghc884
       flake-utils
-      obelisk
       thax
       ;
     };
@@ -37,7 +36,6 @@ let
     ./overrides.nix
     ./commands.nix
     ./ghci.nix
-    ./ghcid.nix
     ./hackage.nix
     inputsConfig
     helpers

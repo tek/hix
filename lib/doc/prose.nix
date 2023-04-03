@@ -349,52 +349,54 @@ in {
   {
     outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
       envs.example = {
+
         ghc.compiler = "ghc943";
+
+        buildInputs = [config.pkgs.socat];
+
         services.postgres = {
           enable = true;
-          config = {
-            dbName = "test-db";
-          };
+          config = { dbName = "test-db"; };
         };
-        buildInputs = [config.pkgs.socat];
-      };
-      service.postgres = {
-        dbUser = "root";
+
       };
     });
   }
   ```
 
-  The service configuration might seem a bit confusing.
-  When specifying `services.postgres` in the environment config, the name `postgres` is looked up in both of the global
-  options `services` and `service`.
-  The former is the _generic_ service config, while the latter contains options specific to the service, here
-  PostgreSQL.
-  Both of them are defined as built-in options in Hix, but you can define your own.
-
-  When the VM for this environment is created, NixOS config is read from `services.postgres.nixos` (The built-in, top
-  level one).
-  The definition of that option then uses `service.postgres` to configure the service.
-  Extra configuration given in `envs.example.services.postgres.config` is added to the global config in
-  `service.postgres`, so that the VM in this environment uses `root` for the user and `test-db` for the database name,
-  but any other environment would only use the user.
-
   ### Using environments {#envs-use}
 
-  An environment can be used in different ways.
-  A derivation only uses the GHC, Cabal and the project dependencies as inputs, while an execution of GHCid is preceded
-  by booting a VM if any services are configured.
-  For the latter (or any [command](#commands) the user configures), the environment provides a script that wraps the
-  command with the startup/shutdown code for the VM and adds all build inputs to the `$PATH`.
+  An environment can be used in different ways: By a derivation, a devshell, or a [command](#commands).
+  A derivation only uses the GHC, Cabal and the project dependencies as inputs, while a command execution, like GHCid,
+  is preceded by booting a VM if any services are configured.
+  For the latter, the environment provides a script that wraps the command with the startup/shutdown code for the VM and
+  adds all build inputs to the `$PATH`.
+
+  The simplest way to use an environment is as a devshell:
+
+  ```
+  $ nix develop .#example
+  >>> Starting VM
+  >>> Waiting 30 seconds for VM to boot...
+  $ ghc --version
+  The Glorious Glasgow Haskell Compilation System, version 9.4.3
+  $ exit
+  >>> Killing VM
+  ```
+
+  ::: {.note}
+  Using `nix develop -c some-command` to execute a shell command in an environment will fail to stop the VM afterwards.
+  Use a [command](#commands) for one-shot executions.
+  :::
 
   The default environment is called `dev` and is used for everything that doesn't have a custom environment.
-  For instance, the default devshell uses this environment when entered with `nix develop`.
+  For instance, the default devshell uses this environment when entered with `nix develop` without an explicit argument.
   Running `cabal build` in that shell will use the configured GHC.
 
   ### Configuring GHC {#ghc}
 
   The most important part of an environment is the associated GHC.
-  As is visible in the above example, the option `ghc.compiler` in an env is used to select the package set
+  As demonstrated in the above example, the option `ghc.compiler` in an environment is used to select the package set
   corresponding to a version.
   These package sets are predefined by nixpkgs – each snapshot has a certain number of GHC versions with packages
   obtained from Stackage and Hackage.
@@ -409,7 +411,7 @@ in {
 
   ```nix
   {
-    envs.dev.overrides = {hackage, ...}: {
+    overrides = {hackage, ...}: {
       streamly = hackage "0.9.0" "1ab5n253krgccc66j7ch1lx328b1d8mhkfz4szl913chr9pmbv3q";
     };
   }
@@ -435,15 +437,105 @@ in {
   services and sets up an exit hook for shutting it down.
   `code` is a script assembled from other options, notably `setup-pre`, `setup`, `exit-pre` and `exit`.
 
-  A commands can be defined as follows:
+  A command can be defined as follows:
 
-  ``` nix
-  # TODO
+  ```nix
+  {
+    commands.integration-test = {
+      env = "example";
+      command = "cabal test api-integration";
+    };
+  }
+  ```
+
+  This assumes that your project contains some Cabal component named `api-integration` that needs a PostgreSQL server
+  running.
+  When executing this command, the setup code from the previously defined environment `example` will be executed,
+  starting the virtual machine, before running the specified Cabal command line:
+
+  ```
+  nix run .#cmd.integration-test
+  ```
+
+  #### Component-dependent environments {#commands-component-env}
+
+  When the command option `component` is set to `true`, the command will take two argument lists, separated by a `--`.
+  The first batch of arguments is passed to the Hix CLI to select the environment, the second one is assigned to the
+  environment variable `$cmd_args` to be used by the command script.
+
+  This allows the user to select an environment dynamically from the command line, without having to statically
+  associate it in the Nix config or use complex expressions with nested invocations of Nix, realized by encoding all
+  components and environments as JSON and extracting the environment runner based on the CLI arguments.
+
+  There are three alternative selection methods, illustrated by this example:
+
+  ```
+  ${exampleFile "doc-env-selection/flake.nix"}
+  ```
+
+  The first method is to use the flake app path to select an environment by name, then append the command name:
+
+  ```
+  $ nix run .#env.three.number
+  3
+  ```
+
+  The second method is to select a component by its package name and source directory:
+
+  ```
+  $ nix run .#cmd.number -- -p root -d app
+  2
+  ```
+
+  The third method is to specify a Haskell source file and let Hix figure out which component it belongs to:
+
+  ```
+  $ nix run .#cmd.number -- -p root -d app
+  2
+  ```
+
+  If no selection arguments are given, the command's default environment is used:
+
+  ```
+  $ nix run .#cmd.number
+  1
   ```
 
   #### Built-in commands {#commands-builtin}
 
-  Blah TODO
+  Hix provides two special commands for executing a function in GHCi or GHCid.
+
+  ### Services {#services}
+
+  ```nix
+  {
+    outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
+      envs.example = {
+
+        services.postgres = {
+          enable = true;
+          config = { dbName = "test-db"; };
+        };
+
+      };
+
+      service.postgres = { dbUser = "root"; };
+    });
+  }
+  ```
+
+  When specifying `services.postgres` in the environment config, the name `postgres` is looked up in both of the global
+  options `services` and `service`.
+  The former is the _generic_ service config, while the latter contains options specific to the service, here
+  PostgreSQL.
+  Both of them are defined as built-in options in Hix, but you can define your own.
+
+  When the VM for this environment is created, NixOS config is read from `services.postgres.nixos` (The built-in, top
+  level one).
+  The definition of that option then uses `service.postgres` to configure the service.
+  Extra configuration given in `envs.example.services.postgres.config` is added to the global config in
+  `service.postgres`, so that the VM in this environment uses `root` for the user and `test-db` for the database name,
+  but any other environment would only use the user.
 
   ### Environment options {#submodule-env}
 
@@ -451,63 +543,6 @@ in {
 
   commandOptionsHeader = ''
   ### Command options {#submodule-command}
-  '';
-
-  # TODO integrate into envs
-  devshell = ''
-  When building a derivation for our package, the environment with GHC, Cabal and dependencies is contained in the build
-  process.
-  The same environment can be loaded into an interactive shell for the manual execution of arbitrary commands:
-
-  ```
-  nix develop
-  ```
-
-  This command examines the derivation given as the flake output `devShells.default` and makes all of its inputs
-  available.
-  Hix creates a devshell that provides GHC with Cabal and the project's dependencies in its package database, as well as
-  a range of other tools.
-
-  Once this shell is running, we can execute Cabal manually, resulting in the same build that is executed by the
-  derivation:
-
-  ```
-  cabal build parser
-  ```
-
-  Unlike the derivation, this will only recompile files that have changed when executed repeatedly.
-
-  ### Haskell Language Server {#hls}
-
-  The devshell includes HLS in the path, making it possible to instruct your editor to execute
-  `nix develop -c haskell-language-server-wrapper`.
-  For convenience, this is also exposed as a flake app:
-
-  ```
-  nix run .#hls
-  ```
-
-  ### GHCi {#ghci}
-
-  During development, it is often desirable to execute a test whenever some code was changed.
-  A common aproach to this is to load  the test module in GHCi.
-  This task can be automated by using [ghcid](https://github.com/ndmitchell/ghcid), a wrapper around GHCi that reloads a
-  module and its changed dependencies and runs a function when a file change is detected.
-
-  Hix offers an interface for running `ghcid`:
-
-  ```
-  nix run .#ghcid -- ./. Main main test generic
-  ```
-
-  The meaning of the arguments is:
-
-  - The Cabal package at `./.` (root of the project)
-  - Import the module `Main`
-  - Run the function `main`
-  - Module is in the subdirectory `test`
-  - The test runner is `generic` (for simple `IO` functions)
-
   '';
 
 }

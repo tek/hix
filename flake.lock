@@ -2,11 +2,11 @@
   "nodes": {
     "flake-utils": {
       "locked": {
-        "lastModified": 1667395993,
-        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
+        "lastModified": 1678901627,
+        "narHash": "sha256-U02riOqrKKzwjsxc/400XnElV+UtPUQWpANPlyazjH0=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
+        "rev": "93a2b84fc4b70d9e089d029deacc3583435c2ed6",
         "type": "github"
       },
       "original": {
@@ -79,39 +79,6 @@
         "type": "github"
       }
     },
-    "nmd": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1666190571,
-        "narHash": "sha256-Z1hc7M9X6L+H83o9vOprijpzhTfOBjd0KmUTnpHAVjA=",
-        "ref": "refs/heads/master",
-        "rev": "b75d312b4f33bd3294cd8ae5c2ca8c6da2afc169",
-        "revCount": 35,
-        "type": "git",
-        "url": "https://gitlab.com/rycee/nmd"
-      },
-      "original": {
-        "type": "git",
-        "url": "https://gitlab.com/rycee/nmd"
-      }
-    },
-    "obelisk": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1650800768,
-        "narHash": "sha256-bBr61MzVFyIMpsri8inOPxCHSL1ogFbpb3uGS7pZ+X0=",
-        "owner": "tek",
-        "repo": "obelisk",
-        "rev": "7991b4d86be0ae04e22bcbe91607d99eb113c2c2",
-        "type": "github"
-      },
-      "original": {
-        "owner": "tek",
-        "ref": "ghc9",
-        "repo": "obelisk",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
@@ -131,8 +98,6 @@
           "nixpkgs"
         ],
         "nixpkgs_nmd": "nixpkgs_nmd",
-        "nmd": "nmd",
-        "obelisk": "obelisk",
         "thax": "thax"
       }
     },

@@ -26,9 +26,11 @@ library
   exposed-modules:
       Hix
       Hix.Cabal
+      Hix.Component
       Hix.Data.Error
       Hix.Data.GhciConfig
       Hix.Data.GhcidTest
+      Hix.Env
       Hix.Ghci
       Hix.Options
       Hix.Optparse

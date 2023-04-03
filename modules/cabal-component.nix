@@ -28,7 +28,8 @@ in {
     enable = mkEnableOption (mdDoc enableDesc) // { default = !single; };
 
     name = mkOption {
-      description = mdDoc "The name of the ${sort}, defaulting to the attribute name in the config or the package name.";
+      description =
+        mdDoc "The name of the ${sort}, defaulting to the attribute name in the config or the package name.";
       type = str;
       default = if single then pkgName + suff else name;
     };
@@ -41,8 +42,8 @@ in {
 
     env = mkOption {
       description = "";
-      type = submodule envModule;
-      default = global.defaultEnv;
+      type = nullOr util.types.env;
+      default = null;
     };
 
   };

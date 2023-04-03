@@ -4,11 +4,8 @@
   util,
   ...
 }:
-with builtins;
 with lib;
 let
-
-  pkgs = config.pkgs;
 
   # TODO remove
   cwdScript = cwd:
@@ -85,24 +82,12 @@ in {
     ghcOptions = ["-j${toString config.ghci.cores}" "+RTS -A64M -RTS"];
 
     preprocessor = mkDefault (
-      pkgs.writeScript "ghci-preprocessor" ''
-      #!${pkgs.bash}/bin/bash
+      config.pkgs.writeScript "ghci-preprocessor" ''
+      #!${config.pkgs.bash}/bin/bash
       ${cli} preproc --source "$1" --in "$2" --out "$3"
       ''
     );
 
     args = config.ghci.ghcOptions ++ ["-F" "-pgmF" (toString config.ghci.preprocessor)];
-  };
-
-  config.commands.ghci = {
-
-    command = ''
-    config=$(cat ${util.json.ghciFile})
-    ghci_cmd=$(${cli} ghci-cmd -c "$config" ''${env_args[@]} ''${cmd_args[@]})
-    env_run "eval $ghci_cmd"
-    '';
-
-    component = true;
-
   };
 }

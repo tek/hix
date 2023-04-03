@@ -26,6 +26,7 @@ printPreprocError ::
 printPreprocError msg =
   liftIO (Text.hPutStrLn stderr [exon|>>> Preprocessor generator failed: #{msg}|])
 
+-- TODO this message is outdated and it's used by the component env command as well
 printGhcidError ::
   MonadIO m =>
   Text ->
@@ -49,3 +50,7 @@ tryIO f ma =
 tryPreproc :: IO a -> ExceptT Error IO a
 tryPreproc =
   tryIO PreprocError
+
+note :: Text -> Maybe a -> ExceptT Error IO a
+note err =
+  maybe (throwE (GhcidError err)) pure

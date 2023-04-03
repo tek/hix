@@ -13,7 +13,6 @@ let
 
   repos = [
     "flake-utils"
-    "obelisk"
     "thax"
   ];
 

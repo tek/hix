@@ -4,8 +4,6 @@ with lib;
 
 let
 
-  hixtypes = import ../lib/types.nix { inherit lib; };
-
   preludeModule = {
 
     options = with types; {
@@ -145,13 +143,13 @@ in {
 
     base = mkOption {
       description = mdDoc "The dependency spec for the `base` package.";
-      type = hixtypes.cabalDep;
+      type = util.types.cabalDep;
       default = "base >= 4 && < 5";
     };
 
     baseHide = mkOption {
       description = mdDoc "The dependency spec for the `base` package used when [](#opt-cabal-prelude) is set.";
-      type = hixtypes.cabalDep;
+      type = util.types.cabalDep;
       default = {
         name = "base";
         version = ">= 4 && < 5";

@@ -1,13 +1,19 @@
 module Hix.Ghci where
 
-import Control.Monad.Trans.Except (ExceptT, throwE)
-import Data.List.Extra (firstJust, nubOrd)
+import Control.Monad.Trans.Except (ExceptT)
+import Data.List.Extra (nubOrd)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import Exon (exon)
-import Hix.Data.Error (Error (GhcidError), pathText)
+import Path (Abs, Dir, File, Path, Rel, filename, parseRelDir, reldir, splitExtension, toFilePath, (</>))
+import Path.IO (createDirIfMissing, getCurrentDir, getTempDir, openTempFile)
+import System.IO (hClose)
+import System.Posix.User (getLoginName)
+
+import Hix.Component (targetComponent)
+import Hix.Data.Error (Error, pathText)
 import qualified Hix.Data.GhciConfig as GhciConfig
 import Hix.Data.GhciConfig (
   ComponentConfig,
@@ -15,7 +21,7 @@ import Hix.Data.GhciConfig (
   GhciRunExpr (GhciRunExpr),
   GhciSetupCode (GhciSetupCode),
   ModuleName (ModuleName),
-  PackageConfig (PackageConfig),
+  PackageConfig,
   PackageName,
   SourceDir (SourceDir),
   )
@@ -23,65 +29,14 @@ import qualified Hix.Data.GhcidTest as GhcidTest
 import Hix.Data.GhcidTest (GhciRun (GhciRun), GhcidRun (GhcidRun), GhcidTest (GhcidTest))
 import qualified Hix.Options as Options
 import Hix.Options (
-  ComponentEnvOptions (ComponentEnvOptions),
   ComponentSpec (ComponentForFile, ComponentForModule),
   GhciOptions (GhciOptions),
-  ModuleSpec,
   TestOptions (TestOptions),
   )
-import Path (
-  Abs,
-  Dir,
-  File,
-  Path,
-  Rel,
-  filename,
-  isProperPrefixOf,
-  parseRelDir,
-  reldir,
-  splitExtension,
-  stripProperPrefix,
-  toFilePath,
-  (</>),
-  )
-import Path.IO (createDirIfMissing, getCurrentDir, getTempDir, openTempFile)
-import System.IO (hClose)
-import System.Posix.User (getLoginName)
 
 -- TODO IO errors in this module
 
-note :: Text -> Maybe a -> ExceptT Error IO a
-note err =
-  maybe (throwE (GhcidError err)) pure
-
-targetForModule :: ComponentEnvOptions -> ModuleSpec -> ExceptT Error IO (PackageConfig, ComponentConfig)
-targetForModule opts spec = do
-  pkg <- note "No such package" (opts.config !? spec.package)
-  comp <- note "No component for source dir" (find matchSourceDir (Map.elems pkg.components))
-  pure (pkg, comp)
-  where
-    matchSourceDir comp = elem @[] spec.sourceDir (coerce comp.sourceDirs)
-
-targetForFile :: ComponentEnvOptions -> Path Abs File -> ExceptT Error IO (PackageConfig, ComponentConfig)
-targetForFile opts file = do
-  cwd <- getCurrentDir
-  fileRel <- stripProperPrefix cwd file
-  (pkg, subpath) <- note "No package contains this file" (firstJust (matchPackage fileRel) (Map.elems opts.config))
-  comp <- note "No component source dir contains this file" (find (matchSourceDir subpath) (Map.elems pkg.components))
-  pure (pkg, comp)
-  where
-    matchPackage fileRel pkg@PackageConfig {src} = do
-      subpath <- stripProperPrefix src fileRel
-      pure (pkg, subpath)
-    matchSourceDir subpath comp = any @[] (\ (SourceDir dir) -> isProperPrefixOf dir subpath) (coerce comp.sourceDirs)
-
-targetComponent :: ComponentEnvOptions -> ExceptT Error IO (PackageConfig, ComponentConfig)
-targetComponent = \case
-  opts@ComponentEnvOptions {component = ComponentForModule spec} ->
-    targetForModule opts spec
-  opts@ComponentEnvOptions {component = ComponentForFile spec} ->
-    targetForFile opts spec
-
+-- TODO this doesn't work for multi-segment module names
 moduleName :: GhciOptions -> ModuleName
 moduleName = \case
   GhciOptions {component = ComponentForModule spec} -> spec.mod
@@ -125,15 +80,13 @@ testRun config = \case
 assemble :: GhciOptions -> ExceptT Error IO GhcidTest
 assemble opt = do
   cwd <- getCurrentDir
-  (pkg, comp) <- targetComponent envOpt
+  (pkg, comp) <- targetComponent opt.config.packages opt.component
   pure GhcidTest {
     script = ghciScript opt,
     test = testRun opt.config opt.test,
     args = opt.config.args,
     searchPath = (cwd </>) <$> searchPath opt.config.packages pkg comp
     }
-  where
-    envOpt = ComponentEnvOptions opt.config.packages opt.component
 
 hixTempDir ::
   ExceptT Error IO (Path Abs Dir)
@@ -205,13 +158,3 @@ printGhcidCmdline opt = do
   tmp <- hixTempDir
   cmd <- ghcidCmdlineFromOptions tmp opt
   liftIO (Text.putStrLn cmd.cmdline)
-
-ghcidEnv :: ComponentEnvOptions -> ExceptT Error IO (Path Abs File)
-ghcidEnv opts = do
-  (_, target) <- targetComponent opts
-  pure target.runner
-
-printGhciEnv :: ComponentEnvOptions -> ExceptT Error IO ()
-printGhciEnv opts = do
-  runner <- ghcidEnv opts
-  liftIO (Text.putStrLn (pathText runner))

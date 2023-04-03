@@ -1,7 +1,6 @@
 module Hix.Options where
 
-import Hix.Data.GhciConfig (GhciConfig, ModuleName, PackageName, PackagesConfig, RunnerName, SourceDir (SourceDir))
-import Hix.Optparse (absFileOption, jsonOption, relDirOption)
+import Data.Aeson (FromJSON)
 import Options.Applicative (
   CommandFields,
   Mod,
@@ -29,7 +28,9 @@ import Options.Applicative (
   )
 import Path (Abs, File, Path, reldir)
 import Prelude hiding (Mod)
-import Data.Aeson (FromJSON)
+
+import Hix.Data.GhciConfig (EnvConfig, EnvName, GhciConfig, ModuleName, PackageName, RunnerName, SourceDir (SourceDir))
+import Hix.Optparse (absFileOption, jsonOption, relDirOption)
 
 data PreprocOptions =
   PreprocOptions {
@@ -60,10 +61,10 @@ data TestOptions =
   }
   deriving stock (Eq, Show, Generic)
 
-data ComponentEnvOptions =
-  ComponentEnvOptions {
-    config :: PackagesConfig,
-    component :: ComponentSpec
+data EnvRunnerOptions =
+  EnvRunnerOptions {
+    config :: EnvConfig,
+    component :: Maybe ComponentSpec
   }
   deriving stock (Eq, Show, Generic)
 
@@ -75,9 +76,9 @@ data GhciOptions =
   }
   deriving stock (Eq, Show, Generic)
 
-data ComponentEnvCommandOptions =
-  ComponentEnvCommandOptions {
-    options :: ComponentEnvOptions,
+data EnvRunnerCommandOptions =
+  EnvRunnerCommandOptions {
+    options :: EnvRunnerOptions,
     test :: TestOptions
   }
   deriving stock (Eq, Show, Generic)
@@ -85,7 +86,7 @@ data ComponentEnvCommandOptions =
 data Command =
   Preproc PreprocOptions
   |
-  ComponentEnv ComponentEnvCommandOptions
+  EnvRunner EnvRunnerCommandOptions
   |
   GhcidCmd GhciOptions
   |
@@ -142,11 +143,15 @@ componentForFileParser =
   <$>
   option absFileOption (long "file" <> short 'f' <> help "The absolute file path of the test module")
 
-specParser :: Parser ComponentSpec
-specParser =
-  (ComponentForModule <$> componentForModuleParser)
+componentSpecParser :: Parser ComponentSpec
+componentSpecParser =
+  ComponentForModule <$> componentForModuleParser
   <|>
   componentForFileParser
+
+envNameParser :: Parser EnvName
+envNameParser =
+  strOption (long "env" <> short 'e' <> help "The name of the environment")
 
 testParser :: Parser (Maybe Text)
 testParser =
@@ -174,19 +179,19 @@ testOptionsParser = do
   runner <- runnerParser
   pure TestOptions {..}
 
-envParser :: Parser ComponentEnvCommandOptions
+envParser :: Parser EnvRunnerCommandOptions
 envParser = do
   options <- do
     config <- jsonConfigParser
-    component <- specParser
-    pure ComponentEnvOptions {..}
+    component <- optional componentSpecParser
+    pure EnvRunnerOptions {..}
   test <- testOptionsParser
-  pure ComponentEnvCommandOptions {..}
+  pure EnvRunnerCommandOptions {..}
 
 ghciParser :: Parser GhciOptions
 ghciParser = do
   config <- jsonConfigParser
-  component <- specParser
+  component <- componentSpecParser
   test <- testOptionsParser
   pure GhciOptions {..}
 
@@ -195,7 +200,7 @@ commands ::
 commands =
   command "preproc" (Preproc <$> info preprocParser (progDesc "Preprocess a source file for use with ghcid"))
   <>
-  command "component-env" (ComponentEnv <$> info envParser (progDesc "Find the env runner for a component"))
+  command "env" (EnvRunner <$> info envParser (progDesc "Print the env runner for a component or a named env"))
   <>
   command "ghci-cmd" (GhciCmd <$> info ghciParser (progDesc "Print a ghci cmdline to load a module in a Hix env"))
   <>

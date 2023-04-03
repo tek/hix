@@ -6,7 +6,7 @@ let
 
   paramApp = import ./param-app.nix { inherit config lib util; };
 
-  types = import ./types.nix { inherit lib; };
+  types = import ./types.nix { inherit config lib; };
 
   packageRel = util.packageSubpath config.base;
 
@@ -35,7 +35,7 @@ let
 
     componentConf = c: {
       inherit (c) name;
-      inherit (c.env) runner;
+      runner = if c.env == null then null else config.envs.${c.env}.runner;
       sourceDirs = c.source-dirs;
     };
 
@@ -46,6 +46,11 @@ let
     };
 
     packages = mapAttrs (_: packageConf) config.packages;
+
+    env = default: {
+      inherit packages;
+      defaultEnv = default.runner;
+    };
 
     # TODO add to this set:
     # - component-dependent ghci args
@@ -63,7 +68,7 @@ let
   in {
     inherit packages ghci;
 
-    packagesFile = jsonFile "packages-config" packages;
+    envFile = default: jsonFile "env-config" (env default);
 
     ghciFile = jsonFile "ghci-config" ghci;
 

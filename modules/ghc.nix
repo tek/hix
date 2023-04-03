@@ -69,7 +69,7 @@ with lib;
   };
 
   config = {
-    compiler = mkDefault global.mainCompiler;
+    compiler = mkDefault global.compiler;
 
     nixpkgs = mkDefault global.inputs.nixpkgs;
 
