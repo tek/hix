@@ -27,13 +27,13 @@ in {
 
     nixos = mkOption {
       description = "NixOS config used for the service VM.";
-      type = unspecified;
+      type = deferredModule;
       default = {};
     };
 
     nixos-base = mkOption {
       description = "NixOS base config used for the service VM.";
-      type = unspecified;
+      type = deferredModule;
       default = {};
     };
 

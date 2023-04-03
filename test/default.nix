@@ -16,6 +16,7 @@ let
     auto-5 = test "auto-5";
     cross = test "cross";
     service = test "service";
+    postgres = test "postgres";
     env = test "env";
   };
 

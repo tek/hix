@@ -380,6 +380,11 @@ in {
   >>> Waiting 30 seconds for VM to boot...
   $ ghc --version
   The Glorious Glasgow Haskell Compilation System, version 9.4.3
+  $ psql "host=localhost port=25432 user=test password=test dbname=test" -c 'select 1'
+  ?column?
+  ----------
+          1
+  (1 row)
   $ exit
   >>> Killing VM
   ```
@@ -540,35 +545,71 @@ in {
 
   ### Services {#services}
 
+  Services use in environments and commands can be user-defined in a flake:
+
+  ```
+  {
+    services.http = {
+      nixos.services.nginx = {
+        enable = true;
+        virtualHosts.localhost.locations."/test".return = "200 Yay!";
+      };
+      ports = [{ host = 2000; guest = 80; }];
+    };
+
+    envs.test = {
+      basePort = 10000;
+      services = ["http"];
+    };
+  }
+  ```
+
+  This defines a service named `http` that runs an nginx with a single endpoint at `/test` and exposes it in the host
+  system at port offset 2000 (relative to an environment's `basePort`).
+  The environment `test` references the service, so when a command uses this environment, a VM will be started:
+
+  ```
+  nix run .#env.test.ghcid -- -p root
+  ```
+
+  Since the environment uses `basePort = 10000`, the nginx server will listen on port 12000.
+
+  Hix provides built-in services, like the previously mentioned PostgreSQL server, that have specialized configuration
+  options.
+  These are located in an identically named module under `service` (singular), e.g. the service defined at
+  `services.postgres` is configured in `service.postgres`.
+  These modules don't have a shared structure but are consumed with special logic by the definition of
+  `services.<name>.nixos-base` to compute the NixOS configuration.
+
+  Additional NixOS config can be specified by the user as described before, in `services.<name>.nixos`.
+
+  Furthermore, an environment may provide Hix config overrides in `envs.<name>.services.<name>.config` that is combined
+  with the config in `service.<name>`.
+
   ```nix
   {
     outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
+
+      # Add NixOS config to the default config computed by Hix
+      services.postgres.nixos = { users.users.postgres.extraGroups = ["docker"]; };
+
+      # Configure PostgreSQL specifically, used by `services.postgres.nixos-base` internally
+      service.postgres = { dbUser = "root"; };
+
       envs.example = {
 
         services.postgres = {
+          # Declare that this environment uses `services.postgres`
           enable = true;
+          # Add overrides for the configuration in `service.postgres`
           config = { dbName = "test-db"; };
         };
 
       };
 
-      service.postgres = { dbUser = "root"; };
     });
   }
   ```
-
-  When specifying `services.postgres` in the environment config, the name `postgres` is looked up in both of the global
-  options `services` and `service`.
-  The former is the _generic_ service config, while the latter contains options specific to the service, here
-  PostgreSQL.
-  Both of them are defined as built-in options in Hix, but you can define your own.
-
-  When the VM for this environment is created, NixOS config is read from `services.postgres.nixos` (The built-in, top
-  level one).
-  The definition of that option then uses `service.postgres` to configure the service.
-  Extra configuration given in `envs.example.services.postgres.config` is added to the global config in
-  `service.postgres`, so that the VM in this environment uses `root` for the user and `test-db` for the database name,
-  but any other environment would only use the user.
 
   ### Environment options {#submodule-env}
 

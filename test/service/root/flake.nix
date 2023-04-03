@@ -24,9 +24,22 @@
     };
 
     commands.test = {
-      env = config.envs.test;
+      env = "test";
       command = ''
       ${config.pkgs.socat}/bin/socat -T 1 - TCP:localhost:${toString (config.envs.test.basePort + 5)} <<< 'ping'
+      '';
+    };
+
+    envs.db = {
+      basePort = 16000;
+      services.postgres = {
+        enable = true;
+      };
+    };
+
+    commands.db-test = {
+      env = "db";
+      command = ''
       '';
     };
 

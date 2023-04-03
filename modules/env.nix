@@ -157,13 +157,15 @@ let
       resolve = mkOption {
         description = mdDoc "";
         type = submoduleWith {
-          modules = optionals (name != "‹name›") [
+          modules = optionals (name != "‹name›") ([
             serviceModule
-            global.services.${name}
             { inherit (service) enable; }
-            service.config
           ] ++
-          optional (hasAttr name global.service) global.service.${name};
+          optional (hasAttr name global.services) global.services.${name} ++
+          optionals (hasAttr name global.internal.services) [
+            global.internal.services.${name}
+            service.config
+          ]);
         };
         default = {};
       };
@@ -322,10 +324,16 @@ in {
 
       enable = mkEnableOption (mdDoc "the service VM for this env");
 
+      name = mkOption {
+        description = mdDoc "Name of the VM, used in the directory housing the image file.";
+        type = str;
+        default = config.name;
+      };
+
       dir = mkOption {
         description = mdDoc "";
         type = str;
-        default = "/tmp/hix-vm/$USER/${config.name}";
+        default = "/tmp/hix-vm/$USER/${config.vm.name}";
       };
 
       pidfile = mkOption {
@@ -389,10 +397,7 @@ in {
 
     enable = mkDefault true;
 
-    services.hix-internal-env-wait = {
-      enable = config.wait > 0;
-      config = { inherit (config) wait; };
-    };
+    services.hix-internal-env-wait.enable = config.wait > 0;
 
     ghc.overrides = mkDefault (util.concatOverrides [config.internal.overridesInherited config.overrides]);
 
