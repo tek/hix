@@ -1,42 +1,112 @@
 module Hix.Component where
 
-import Control.Monad.Trans.Except (ExceptT)
+import Control.Monad.Trans.Reader (ask)
 import Data.List.Extra (firstJust)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
-import Path (Abs, File, Path, isProperPrefixOf, stripProperPrefix)
-import Path.IO (getCurrentDir)
+import qualified Data.Text as Text
+import Exon (exon)
+import Path (Abs, Dir, File, Path, Rel, SomeBase (Abs, Rel), isProperPrefixOf, stripProperPrefix)
 
-import Hix.Data.Error (Error, note)
+import Hix.Data.Error (pathText)
 import qualified Hix.Data.GhciConfig as GhciConfig
-import Hix.Data.GhciConfig (ComponentConfig, PackageConfig (PackageConfig), PackagesConfig, SourceDir (SourceDir))
+import Hix.Data.GhciConfig (
+  ComponentConfig,
+  PackageConfig (PackageConfig),
+  PackageName (PackageName),
+  PackagesConfig,
+  SourceDir (SourceDir),
+  Target (Target),
+  )
+import qualified Hix.Monad as Monad
+import Hix.Monad (Env (Env), M, noteEnv)
 import qualified Hix.Options as Options
-import Hix.Options (ComponentSpec (ComponentForFile, ComponentForModule), ModuleSpec)
+import Hix.Options (
+  ComponentCoords,
+  ComponentSpec (ComponentSpec),
+  PackageSpec (PackageSpec),
+  TargetSpec (TargetForComponent, TargetForFile),
+  )
 
-componentForModule :: PackagesConfig -> ModuleSpec -> ExceptT Error IO (PackageConfig, ComponentConfig)
-componentForModule config spec = do
-  pkg <- note "No such package" (config !? spec.package)
-  comp <- note "No component for source dir" (find matchSourceDir (Map.elems pkg.components))
-  pure (pkg, comp)
+tryPackageByDir ::
+  PackagesConfig ->
+  Path Rel Dir ->
+  Maybe PackageConfig
+tryPackageByDir config dir =
+  find match (Map.elems config)
   where
-    matchSourceDir comp = elem @[] spec.sourceDir (coerce comp.sourceDirs)
+    match pkg = pkg.src == dir
 
-componentForFile :: PackagesConfig -> Path Abs File -> ExceptT Error IO (PackageConfig, ComponentConfig)
-componentForFile config file = do
-  cwd <- getCurrentDir
-  fileRel <- stripProperPrefix cwd file
-  (pkg, subpath) <- note "No package contains this file" (firstJust (matchPackage fileRel) (Map.elems config))
-  comp <- note "No component source dir contains this file" (find (matchSourceDir subpath) (Map.elems pkg.components))
-  pure (pkg, comp)
+packageByDir ::
+  PackagesConfig ->
+  Path Rel Dir ->
+  M PackageConfig
+packageByDir config dir =
+  noteEnv [exon|No package at this directory: #{pathText dir}|] (tryPackageByDir config dir)
+
+packageForSpec ::
+  PackagesConfig ->
+  PackageSpec ->
+  M PackageConfig
+packageForSpec config = \case
+  PackageSpec _ (Just (Abs dir)) -> do
+    Env {root} <- ask
+    rel <- noteEnv [exon|Path is not a subdirectory of the project root: #{pathText dir}|] (stripProperPrefix root dir)
+    packageByDir config rel
+  PackageSpec (PackageName name) (Just (Rel dir)) | Text.elem '/' name ->
+    packageByDir config dir
+  PackageSpec name dir ->
+    noteEnv [exon|No package matching '##{name}'|] (config !? name <|> (tryDir =<< dir))
+    where
+      tryDir = \case
+        Abs _ -> Nothing
+        Rel rd -> tryPackageByDir config rd
+
+matchComponent :: ComponentConfig -> ComponentSpec -> Bool
+matchComponent candidate = \case
+  ComponentSpec name dir ->
+    candidate.name == name || any (\ d -> elem @[] d (coerce candidate.sourceDirs)) dir
+
+componentError :: PackageName -> ComponentSpec -> Text
+componentError pname spec =
+  [exon|No component with name or source dir '##{name}' in the package '##{pname}'|]
   where
-    matchPackage fileRel pkg@PackageConfig {src} = do
+    name = spec.name
+
+targetForComponent ::
+  PackagesConfig ->
+  ComponentCoords ->
+  M Target
+targetForComponent config spec = do
+  package <- packageForSpec config spec.package
+  component <- noteEnv (componentError package.name spec.component) (find match (Map.elems package.components))
+  pure Target {..}
+  where
+    match = flip matchComponent spec.component
+
+targetForFile ::
+  PackagesConfig ->
+  Path Abs File ->
+  M Target
+targetForFile config file = do
+  Env {root} <- ask
+  fileRel <- stripProperPrefix root file
+  (package, subpath) <- noteEnv "No package contains this file" (firstJust (matchPackage fileRel) (Map.elems config))
+  component <- noteEnv "No component source dir contains this file" (find (matchSourceDir subpath) (Map.elems package.components))
+  pure Target {..}
+  where
+    matchPackage fileRel package@PackageConfig {src} = do
       subpath <- stripProperPrefix src fileRel
-      pure (pkg, subpath)
-    matchSourceDir subpath comp = any @[] (\ (SourceDir dir) -> isProperPrefixOf dir subpath) (coerce comp.sourceDirs)
+      pure (package, subpath)
+    matchSourceDir subpath component =
+      any @[] (\ (SourceDir dir) -> isProperPrefixOf dir subpath) (coerce component.sourceDirs)
 
-targetComponent :: PackagesConfig -> ComponentSpec -> ExceptT Error IO (PackageConfig, ComponentConfig)
+targetComponent ::
+  PackagesConfig ->
+  TargetSpec ->
+  M Target
 targetComponent config = \case
-  ComponentForModule spec ->
-    componentForModule config spec
-  ComponentForFile spec ->
-    componentForFile config spec
+  TargetForComponent spec ->
+    targetForComponent config spec
+  TargetForFile spec ->
+    targetForFile config spec

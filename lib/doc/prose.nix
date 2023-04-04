@@ -471,6 +471,8 @@ in {
   This allows the user to select an environment dynamically from the command line, without having to statically
   associate it in the Nix config or use complex expressions with nested invocations of Nix, realized by encoding all
   components and environments as JSON and extracting the environment runner based on the CLI arguments.
+  The primary use case for this is to use a different environment when running a GHCid test, like running a database
+  server for integration tests.
 
   There are three alternative selection methods, illustrated by this example:
 
@@ -485,17 +487,18 @@ in {
   3
   ```
 
-  The second method is to select a component by its package name and source directory:
+  The second method is to select a component by its package name or directory and component name or source directory:
 
   ```
-  $ nix run .#cmd.number -- -p root -d app
+  $ nix run .#cmd.number -- -p api -c server
+  $ nix run .#cmd.number -- -p packages/api -c app
   2
   ```
 
   The third method is to specify a Haskell source file and let Hix figure out which component it belongs to:
 
   ```
-  $ nix run .#cmd.number -- -f /path/to/NumberTest.hs
+  $ nix run .#cmd.number -- -f /path/to/packages/api/test/NumberTest.hs
   2
   ```
 
@@ -599,6 +602,7 @@ in {
         services.postgres = {
           # Declare that this environment uses `services.postgres`
           enable = true;
+
           # Add overrides for the configuration in `service.postgres`
           config = { dbName = "test-db"; };
         };

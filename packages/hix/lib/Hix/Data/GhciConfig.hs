@@ -67,6 +67,13 @@ data PackageConfig =
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
 
+data Target =
+  Target {
+    package :: PackageConfig,
+    component :: ComponentConfig
+  }
+  deriving stock (Eq, Show, Generic)
+
 newtype RunnerName =
   RunnerName { unRunnerName :: Text }
   deriving stock (Eq, Show, Generic)

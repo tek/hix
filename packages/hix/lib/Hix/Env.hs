@@ -1,25 +1,25 @@
 module Hix.Env where
 
-import Control.Monad.Trans.Except (ExceptT)
 import qualified Data.Text.IO as Text
 
 import Hix.Component (targetComponent)
-import Hix.Data.Error (Error, pathText)
+import Hix.Data.Error (pathText)
 import qualified Hix.Data.GhciConfig as GhciConfig
-import Hix.Data.GhciConfig (EnvRunner (EnvRunner), PackagesConfig)
+import Hix.Data.GhciConfig (EnvRunner (EnvRunner), PackagesConfig, Target (Target))
+import Hix.Monad (M)
 import qualified Hix.Options as Options
-import Hix.Options (ComponentSpec, EnvRunnerOptions (EnvRunnerOptions))
+import Hix.Options (EnvRunnerOptions (EnvRunnerOptions), TargetSpec)
 
-componentRunner :: PackagesConfig -> ComponentSpec -> ExceptT Error IO (Maybe EnvRunner)
-componentRunner config component = do
-    (_, target) <- targetComponent config component
-    pure target.runner
+componentRunner :: PackagesConfig -> TargetSpec -> M (Maybe EnvRunner)
+componentRunner config spec = do
+  Target {component} <- targetComponent config spec
+  pure component.runner
 
-envRunner :: EnvRunnerOptions -> ExceptT Error IO EnvRunner
-envRunner EnvRunnerOptions{component, config} =
+envRunner :: EnvRunnerOptions -> M EnvRunner
+envRunner EnvRunnerOptions {component, config} =
   fromMaybe config.defaultEnv . join <$> traverse (componentRunner config.packages) component
 
-printEnvRunner :: EnvRunnerOptions -> ExceptT Error IO ()
+printEnvRunner :: EnvRunnerOptions -> M ()
 printEnvRunner opts = do
   EnvRunner runner <- envRunner opts
   liftIO (Text.putStrLn (pathText runner))

@@ -32,6 +32,7 @@ library
       Hix.Data.GhcidTest
       Hix.Env
       Hix.Ghci
+      Hix.Monad
       Hix.Options
       Hix.Optparse
       Hix.Preproc

@@ -1,10 +1,12 @@
 module Hix where
 
-import Control.Monad.Trans.Except (ExceptT, runExceptT)
+import Control.Monad.Trans.Class (lift)
+import Path.IO (getCurrentDir)
 
-import Hix.Data.Error (Error (..), printGhcidError, printPreprocError)
+import Hix.Data.Error (Error (..), printEnvError, printGhciError, printPreprocError)
 import Hix.Env (printEnvRunner)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
+import Hix.Monad (M, runM)
 import qualified Hix.Options as Options
 import Hix.Options (
   Command (EnvRunner, GhciCmd, GhcidCmd, Preproc),
@@ -21,13 +23,14 @@ handleError ::
   m ()
 handleError GlobalOptions {verbose} = \case
   PreprocError err -> printPreprocError err
-  GhcidError err -> printGhcidError err
+  EnvError err -> printEnvError err
+  GhciError err -> printGhciError err
   NoMatch msg | fromMaybe False verbose -> printPreprocError msg
   NoMatch _ -> unit
 
-runCommand :: Command -> ExceptT Error IO ()
+runCommand :: Command -> M ()
 runCommand = \case
-  Preproc opts -> preprocess opts
+  Preproc opts -> lift (preprocess opts)
   EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts
   GhciCmd opts -> printGhciCmdline opts
@@ -35,4 +38,5 @@ runCommand = \case
 main :: IO ()
 main = do
   Options global cmd <- parseCli
-  leftA (handleError global) =<< runExceptT (runCommand cmd)
+  cwd <- getCurrentDir
+  leftA (handleError global) =<< runM cwd (runCommand cmd)

@@ -26,11 +26,20 @@ import Options.Applicative (
   switch,
   value,
   )
-import Path (Abs, File, Path, reldir)
-import Prelude hiding (Mod)
+import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir)
+import Prelude hiding (Mod, mod)
 
-import Hix.Data.GhciConfig (EnvConfig, EnvName, GhciConfig, ModuleName, PackageName, RunnerName, SourceDir (SourceDir))
-import Hix.Optparse (absFileOption, jsonOption, relDirOption)
+import Hix.Data.GhciConfig (
+  ComponentName (ComponentName),
+  EnvConfig,
+  EnvName,
+  GhciConfig,
+  ModuleName,
+  PackageName (PackageName),
+  RunnerName,
+  SourceDir (SourceDir),
+  )
+import Hix.Optparse (absFileOption, jsonOption)
 
 data PreprocOptions =
   PreprocOptions {
@@ -40,22 +49,36 @@ data PreprocOptions =
   }
   deriving stock (Eq, Show, Generic)
 
-data ModuleSpec =
-  ModuleSpec {
-    package :: PackageName,
-    sourceDir :: SourceDir,
-    mod :: ModuleName
+data PackageSpec =
+  PackageSpec {
+    name :: PackageName,
+    dir :: Maybe (SomeBase Dir)
   }
   deriving stock (Eq, Show, Generic)
 
 data ComponentSpec =
-  ComponentForFile (Path Abs File)
+  ComponentSpec {
+    name :: ComponentName,
+    dir :: Maybe SourceDir
+  }
+  deriving stock (Eq, Show, Generic)
+
+data ComponentCoords =
+  ComponentCoords {
+    package :: PackageSpec,
+    component :: ComponentSpec
+  }
+  deriving stock (Eq, Show, Generic)
+
+data TargetSpec =
+  TargetForFile (Path Abs File)
   |
-  ComponentForModule ModuleSpec
+  TargetForComponent ComponentCoords
   deriving stock (Eq, Show, Generic)
 
 data TestOptions =
   TestOptions {
+    mod :: ModuleName,
     test :: Maybe Text,
     runner :: Maybe RunnerName
   }
@@ -64,14 +87,14 @@ data TestOptions =
 data EnvRunnerOptions =
   EnvRunnerOptions {
     config :: EnvConfig,
-    component :: Maybe ComponentSpec
+    component :: Maybe TargetSpec
   }
   deriving stock (Eq, Show, Generic)
 
 data GhciOptions =
   GhciOptions {
     config :: GhciConfig,
-    component :: ComponentSpec,
+    component :: TargetSpec,
     test :: TestOptions
   }
   deriving stock (Eq, Show, Generic)
@@ -124,28 +147,36 @@ preprocParser =
   <*>
   fileParser "out" "The path to the output file"
 
--- TODO also allow package by reldir and component by name
-componentForModuleParser :: Parser ModuleSpec
-componentForModuleParser =
-  ModuleSpec
-  <$>
-  strOption (long "package" <> short 'p' <> help "The name of the test package")
-  <*>
-  (SourceDir <$> (option relDirOption (long "source-dir" <> short 'd' <> help sourceDirHelp <> value [reldir|test|])))
-  <*>
-  strOption (long "module" <> short 'm' <> help "The module containing the test function" <> value "Main")
-  where
-    sourceDirHelp = "The relative path to the component in the package"
+packageSpecParser :: Parser PackageSpec
+packageSpecParser = do
+  name <- strOption (long "package" <> short 'p' <> help "The name or directory of the test package")
+  pure PackageSpec {name = PackageName name, dir = parseSomeDir (toString name)}
 
-componentForFileParser :: Parser ComponentSpec
+componentSpecParser :: Parser ComponentSpec
+componentSpecParser = do
+  name <- strOption (long "component" <> short 'c' <> help h <> value "test")
+  pure ComponentSpec {name = ComponentName name, dir = SourceDir <$> parseRelDir (toString name)}
+  where
+    h = "The name or relative directory of the test component"
+
+-- TODO also allow package by reldir and component by name
+componentForModuleParser :: Parser ComponentCoords
+componentForModuleParser =
+  ComponentCoords
+  <$>
+  packageSpecParser
+  <*>
+  componentSpecParser
+
+componentForFileParser :: Parser TargetSpec
 componentForFileParser =
-  ComponentForFile
+  TargetForFile
   <$>
   option absFileOption (long "file" <> short 'f' <> help "The absolute file path of the test module")
 
-componentSpecParser :: Parser ComponentSpec
-componentSpecParser =
-  ComponentForModule <$> componentForModuleParser
+targetSpecParser :: Parser TargetSpec
+targetSpecParser =
+  TargetForComponent <$> componentForModuleParser
   <|>
   componentForFileParser
 
@@ -167,6 +198,10 @@ runnerParser =
     help "The name of the command defined in the Hix option 'ghci.run'"
   ))
 
+moduleParser :: Parser ModuleName
+moduleParser =
+  strOption (long "module" <> short 'm' <> help "The module containing the test function" <> value "Main")
+
 jsonConfigParser ::
   FromJSON a =>
   Parser a
@@ -177,13 +212,14 @@ testOptionsParser :: Parser TestOptions
 testOptionsParser = do
   test <- testParser
   runner <- runnerParser
+  mod <- moduleParser
   pure TestOptions {..}
 
 envParser :: Parser EnvRunnerCommandOptions
 envParser = do
   options <- do
     config <- jsonConfigParser
-    component <- optional componentSpecParser
+    component <- optional targetSpecParser
     pure EnvRunnerOptions {..}
   test <- testOptionsParser
   pure EnvRunnerCommandOptions {..}
@@ -191,7 +227,7 @@ envParser = do
 ghciParser :: Parser GhciOptions
 ghciParser = do
   config <- jsonConfigParser
-  component <- componentSpecParser
+  component <- targetSpecParser
   test <- testOptionsParser
   pure GhciOptions {..}
 

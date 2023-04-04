@@ -1,5 +1,6 @@
 module Hix.Ghci where
 
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT)
 import Data.List.Extra (nubOrd)
 import qualified Data.Map.Strict as Map
@@ -24,13 +25,15 @@ import Hix.Data.GhciConfig (
   PackageConfig,
   PackageName,
   SourceDir (SourceDir),
+  Target (Target),
   )
 import qualified Hix.Data.GhcidTest as GhcidTest
 import Hix.Data.GhcidTest (GhciRun (GhciRun), GhcidRun (GhcidRun), GhcidTest (GhcidTest))
+import Hix.Monad (M)
 import qualified Hix.Options as Options
 import Hix.Options (
-  ComponentSpec (ComponentForFile, ComponentForModule),
   GhciOptions (GhciOptions),
+  TargetSpec (TargetForComponent, TargetForFile),
   TestOptions (TestOptions),
   )
 
@@ -39,8 +42,8 @@ import Hix.Options (
 -- TODO this doesn't work for multi-segment module names
 moduleName :: GhciOptions -> ModuleName
 moduleName = \case
-  GhciOptions {component = ComponentForModule spec} -> spec.mod
-  GhciOptions {component = ComponentForFile path} -> ModuleName (withoutExt (filename path))
+  GhciOptions {component = TargetForComponent _, test} -> test.mod
+  GhciOptions {component = TargetForFile path} -> ModuleName (withoutExt (filename path))
   where
     withoutExt p = pathText (maybe p fst (splitExtension p))
 
@@ -70,22 +73,22 @@ searchPath pkgs pkg comp =
 
 testRun :: GhciConfig -> TestOptions -> Maybe Text
 testRun config = \case
-  TestOptions test (Just runner) | Just (GhciRunExpr run) <- config.run !? runner ->
+  TestOptions {test, runner = Just runner} | Just (GhciRunExpr run) <- config.run !? runner ->
     Just [exon|(#{run}) #{fold test}|]
-  TestOptions (Just test) _ ->
+  TestOptions {test = Just test} ->
     Just test
-  TestOptions Nothing _ ->
+  TestOptions {test = Nothing} ->
     Nothing
 
-assemble :: GhciOptions -> ExceptT Error IO GhcidTest
+assemble :: GhciOptions -> M GhcidTest
 assemble opt = do
   cwd <- getCurrentDir
-  (pkg, comp) <- targetComponent opt.config.packages opt.component
+  Target {..} <- targetComponent opt.config.packages opt.component
   pure GhcidTest {
     script = ghciScript opt,
     test = testRun opt.config opt.test,
     args = opt.config.args,
-    searchPath = (cwd </>) <$> searchPath opt.config.packages pkg comp
+    searchPath = (cwd </>) <$> searchPath opt.config.packages package component
     }
 
 hixTempDir ::
@@ -128,33 +131,33 @@ ghciCmdline test scriptFile runScriptFile =
 ghciCmdlineFromOptions ::
   Path Abs Dir ->
   GhciOptions ->
-  ExceptT Error IO GhciRun
+  M GhciRun
 ghciCmdlineFromOptions tmp opt = do
   conf <- assemble opt
-  shellScriptFile <- ghciScriptFile tmp conf.script
-  runScriptFile <- traverse (ghciScriptFile tmp) conf.test
+  shellScriptFile <- lift (ghciScriptFile tmp conf.script)
+  runScriptFile <- lift (traverse (ghciScriptFile tmp) conf.test)
   pure (ghciCmdline conf shellScriptFile runScriptFile)
 
 ghcidCmdlineFromOptions ::
   Path Abs Dir ->
   GhciOptions ->
-  ExceptT Error IO GhcidRun
+  M GhcidRun
 ghcidCmdlineFromOptions tmp opt = do
   ghci <- ghciCmdlineFromOptions tmp opt
   pure (GhcidRun [exon|ghcid --command="ghci #{ghci.shell}" --test='##{fromMaybe "main" ghci.test.test}'|] ghci)
 
 printGhciCmdline ::
   GhciOptions ->
-  ExceptT Error IO ()
+  M ()
 printGhciCmdline opt = do
-  tmp <- hixTempDir
+  tmp <- lift hixTempDir
   cmd <- ghciCmdlineFromOptions tmp opt
   liftIO (Text.putStrLn [exon|ghci #{cmd.shell} #{fold cmd.run}|])
 
 printGhcidCmdline ::
   GhciOptions ->
-  ExceptT Error IO ()
+  M ()
 printGhcidCmdline opt = do
-  tmp <- hixTempDir
+  tmp <- lift hixTempDir
   cmd <- ghcidCmdlineFromOptions tmp opt
   liftIO (Text.putStrLn cmd.cmdline)

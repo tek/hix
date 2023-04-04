@@ -10,7 +10,9 @@ import System.IO.Error (tryIOError)
 data Error =
   PreprocError Text
   |
-  GhcidError Text
+  EnvError Text
+  |
+  GhciError Text
   |
   NoMatch Text
   deriving stock (Eq, Show, Generic)
@@ -26,13 +28,19 @@ printPreprocError ::
 printPreprocError msg =
   liftIO (Text.hPutStrLn stderr [exon|>>> Preprocessor generator failed: #{msg}|])
 
--- TODO this message is outdated and it's used by the component env command as well
-printGhcidError ::
+printEnvError ::
   MonadIO m =>
   Text ->
   m ()
-printGhcidError msg =
-  liftIO (Text.hPutStrLn stderr [exon|>>> Invalid ghcid config: #{msg}|])
+printEnvError msg =
+  liftIO (Text.hPutStrLn stderr [exon|>>> Invalid env config: #{msg}|])
+
+printGhciError ::
+  MonadIO m =>
+  Text ->
+  m ()
+printGhciError msg =
+  liftIO (Text.hPutStrLn stderr [exon|>>> Invalid ghci config: #{msg}|])
 
 sourceError :: Text -> Path b t -> Text
 sourceError reason source =
@@ -53,4 +61,4 @@ tryPreproc =
 
 note :: Text -> Maybe a -> ExceptT Error IO a
 note err =
-  maybe (throwE (GhcidError err)) pure
+  maybe (throwE (GhciError err)) pure
