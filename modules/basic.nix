@@ -310,19 +310,21 @@ in {
       in {
 
         overrides = mkDefault (
-          {hackage, source, fast, notest, ...}: {
-            exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";
+          {hackage, source, fast, notest, unbreak, ...}: {
+            exon = unbreak;
             flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
-            incipit-base = hackage "0.5.0.0" "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
             hix = notest (fast (source.root ../packages/hix));
           }
         );
 
-        # TODO replace this with `inputs.hix` to avoid incompatibility
         ghc = {
           name = "hix";
-          compiler = "ghc925";
+          compiler = "ghc927";
           overrides = mkForce cfg.overrides;
+
+          nixpkgs = config.inputs.nixpkgs_internal;
+          nixpkgsOptions = {};
+          overlays = [];
         };
 
         package = cfg.ghc.ghc.hix;

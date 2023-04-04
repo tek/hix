@@ -1,53 +1,16 @@
-{ config, lib, util, ... }:
+{ config, lib, ... }:
 with lib;
-let
-
-  nixpkgsRepos = [
-    "nixpkgs"
-    "nixpkgs_ghc943"
-    "nixpkgs_ghc925"
-    "nixpkgs_ghc902"
-    "nixpkgs_ghc8107"
-    "nixpkgs_ghc884"
-  ];
-
-  repos = [
-    "flake-utils"
-    "thax"
-  ];
-
-  input = name: mkOption {
-    type = types.unspecified;
-    description = mdDoc "The ${name} repository.";
-  };
-
-  nixpkgsInput = name: mkOption {
-    type = util.types.nixpkgs;
-    description = mdDoc "The ${name} repository.";
-  };
-
-in {
-  options = {
+{
+  options = with types; {
     system = mkOption {
       description = mdDoc "This option is set dynamically for each configured system.";
-      type = types.str;
+      type = str;
     };
 
-    inputs = genAttrs nixpkgsRepos nixpkgsInput // genAttrs repos input;
-
-    input.ghcNixpkgs = mkOption {
-      description = mdDoc "An attrset mapping GHC versions to the nixpkgs inputs used to build them.";
-      type = types.lazyAttrsOf util.types.nixpkgs;
-    };
-  };
-
-  config = {
-    input.ghcNixpkgs = {
-      ghc884 = mkDefault config.inputs.nixpkgs_ghc884;
-      ghc8107 = mkDefault config.inputs.nixpkgs_ghc8107;
-      ghc902 = mkDefault config.inputs.nixpkgs_ghc902;
-      ghc925 = mkDefault config.inputs.nixpkgs_ghc925;
-      ghc943 = mkDefault config.inputs.nixpkgs_ghc943;
+    inputs = mkOption {
+      description = mdDoc "";
+      type = lazyAttrsOf unspecified;
+      default = {};
     };
   };
 }

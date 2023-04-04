@@ -42,7 +42,7 @@ let
     packageConf = p: {
       inherit (p) name;
       src = p.subpath;
-      components = mapAttrs (_: componentConf) p.componentsSet;
+      components = mapAttrs (_: componentConf) p.internal.componentsSet;
     };
 
     packages = mapAttrs (_: packageConf) config.packages;

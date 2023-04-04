@@ -32,7 +32,7 @@ hix.pro ({config, lib, ...}: {
   outputs = {
 
     packages = let
-      pkgs = import inputs.nixpkgs_doc { inherit (config) system; };
+      pkgs = import inputs.nixpkgs_internal { inherit (config) system; };
       docs = import ./doc/default.nix { inherit inputs pkgs; };
     in {
       docs = docs.html;
