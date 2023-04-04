@@ -55,9 +55,9 @@ in {
       extraPackages = mkOption {
         description = mdDoc ''
         Names of packages that will be added to the flake outputs, despite not being declared in
-        `options.packages`.
+        [](#opt-general-packages).
         This may be a simple Hackage package like `aeson` or a local package that is added in
-        `options.overrides` due to the way its source is obtained.
+        [](#opt-general-overrides) due to the way its source is obtained.
         '';
         type = listOf str;
         default = [];
@@ -65,7 +65,7 @@ in {
 
       final = mkOption {
         description = mdDoc ''
-        The final flake outputs computed by Hix, defaulting to {#opt-outputs}.
+        The final flake outputs computed by Hix, defaulting to the set in `outputs`.
         May be overriden for unusual customizations.
         '';
         type = unspecified;
@@ -76,28 +76,28 @@ in {
     outputs = {
 
       packages = mkOption {
-        type = util.types.nestedPackages;
         description = mdDoc "The flake output attribute `packages`.";
+        type = lazyAttrsOf unspecified;
       };
 
       checks = mkOption {
-        type = util.types.nestedPackages;
         description = mdDoc "The flake output attribute `checks`.";
+        type = lazyAttrsOf unspecified;
       };
 
       legacyPackages = mkOption {
-        type = lazyAttrsOf unspecified;
         description = mdDoc "The flake output attribute `legacyPackages`.";
+        type = lazyAttrsOf unspecified;
       };
 
       devShells = mkOption {
-        type = util.types.nestedPackages;
         description = mdDoc "The flake output attribute `devShells`.";
+        type = unspecified;
       };
 
       apps = mkOption {
-        type = util.types.nestedFlakeApps;
         description = mdDoc "The flake output attribute `apps`.";
+        type = lazyAttrsOf unspecified;
       };
 
     };
@@ -142,10 +142,6 @@ in {
         cli = app "${config.internal.hixCli.package}/bin/hix";
         cmd = commandApps config.commands;
         env = util.foldMapAttrs envApps (attrValues util.visibleEnvs);
-        # TODO expose
-        # ghcid = commands.ghcid;
-        # ghci = commands.ghci;
-        # hls = commands.hls;
       };
 
     };

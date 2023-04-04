@@ -1,7 +1,6 @@
 { pkgs }:
 with pkgs.lib;
 let
-  revision = "default";
   namePh = "<name>";
 
   excluded = loc: { type, path, except ? [] }: let
@@ -25,7 +24,8 @@ let
 
   # TODO declarations appears to be always empty, so no links are generated
   optionsDoc = exclude: options: pkgs.nixosOptionsDoc {
-    inherit options revision;
+    inherit options;
+    revision = "default";
     allowDocBook = false;
     documentType = "none";
     transformOptions = opt: opt // { declarations = map (removePrefix "${toString ../..}/") opt.declarations; } // {
@@ -39,13 +39,18 @@ let
 
   nameModule = { _module.args.name = mkOptionDefault namePh; };
 
-  moduleWithout = exclude: name: args: let
-    mod = import (moduleDir + "/${name}.nix") args;
-    result = evalModules { modules = [mod nameModule]; };
+  modulesWithout = exclude: modules: args: let
+    result = evalModules { modules = modules ++ [nameModule]; };
   in json exclude result.options;
+
+  importMod = name: import (moduleDir + "/${name}.nix");
+
+  moduleWithout = exclude: name: args: let
+    mod = importMod name args;
+  in modulesWithout exclude [mod] args;
 
   module = name: args: moduleWithout [] name args;
 
 in {
-  inherit module moduleWithout revision namePh;
+  inherit importMod module moduleWithout modulesWithout namePh;
 }

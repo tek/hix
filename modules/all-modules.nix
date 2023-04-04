@@ -27,7 +27,7 @@ let
 
   modules = projectModules ++ [
     ./input.nix
-    ./haskell.nix
+    ./basic.nix
     ./hpack.nix
     ./output.nix
     ./shell.nix

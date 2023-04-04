@@ -41,14 +41,17 @@
         "thax": "thax"
       },
       "locked": {
-        "lastModified": 1680526438,
-        "narHash": "sha256-KT5/1JrMYBYpqnhDtjldWmFlTSkwzgS2TJXBkK4yOik=",
-        "path": "/home/tek/code/tek/haskell/hix",
-        "type": "path"
+        "lastModified": 1680636275,
+        "narHash": "sha256-8h2/tN6QXGO2o++/da4OKdjX1oZ4R+xCiHW53TaUeP4=",
+        "owner": "tek",
+        "repo": "hix",
+        "rev": "199ad3b5a82b6c3b7370983235161845903c6107",
+        "type": "github"
       },
       "original": {
-        "path": "/home/tek/code/tek/haskell/hix",
-        "type": "path"
+        "owner": "tek",
+        "repo": "hix",
+        "type": "github"
       }
     },
     "nixpkgs": {

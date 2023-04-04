@@ -9,7 +9,6 @@ in {
   ## Nix development tools for Haskell projects
   '';
 
-  # TODO separate into multiple values, abstract headline into an attribute in an attrset
   about = ''
   ## About {#about}
 
@@ -286,13 +285,13 @@ in {
   Since `dependencies` is a list option, the values are merged, so that the `unit` component in `api` will have the
   dependencies `["global-dep" "api-dep" "api-test-dep"]`.
 
-  #### Cabal options {#submodule-cabal}
-
-  These are the Cabal options for packages and components that can be specified at any level.
-
   '';
 
-  packageOptions = ''
+  cabalOptionsHeader = ''
+  These are the Cabal options for packages and components that can be specified at any level.
+  '';
+
+  package = ''
   ### Package configuration {#package-conf}
 
   Packages may contain multiple components: an optional library and any number of executables, test suites or benchmarks
@@ -324,8 +323,6 @@ in {
   - The option `debug` sets `enable` to `false`, so it is omitted from the configuration.
 
   If no component was enabled, Hix defaults to enabling the default executable.
-
-  #### Package options {#submodule-package}
 
   '';
 
@@ -427,12 +424,30 @@ in {
   used above that takes a version and Nix store hash to fetch a package directly from Hackage.
   They can be specified at different levels, like dependencies: At the top level for all environments, in each
   individual environment, and on the `ghc` module in an environment (although the latter is populated by Hix with the
-  mreged global and local overrides).
+  merged global and local overrides).
+
+  #### Override combinators {#overrides-combinators}
+
+  TODO
+
+  #### Transitive overrides {#overrides-transitive}
 
   Overrides can be exported from the flake in order to reuse them in other projects.
   When a downstream flake has project `foo` as an input, setting `deps = [foo]` will cause `foo`'s overrides to be
   incorporated into the local ones.
-  Furthermore, the option `depsFull` will additionally include `foo`'s local packages in the overrides.
+  Furthermore, the option `depsFull` will additionally include `foo`'s local packages in the overrides:
+
+  ```nix
+  {
+    inputs.dep1.url = github:me/dep1;
+    inputs.dep2.url = github:me/dep2;
+
+    outputs = { hix, dep1, dep2, ... }: hix.lib.flake {
+      deps = [dep1];
+      depsFull = [dep2];
+    };
+  }
+  ```
 
   ### Commands {#commands}
 
@@ -618,12 +633,72 @@ in {
   This option has type `deferredModule`, which means that it's not evaluated at the definition site, but used in a magic
   way somewhere else to create a new combined module set consisting of all the configs described before.
 
-  ### Environment options {#submodule-env}
+  '';
+
+  compat = ''
+  ## GHC version checks {#checks}
+
+  The environments created for each entry in [](#opt-general-ghcVersions) are intended primarily as a CI tool to ensure
+  that the project builds with versions other than the main development GHC.
+  For that purpose, the `checks` output contains all packages across those environments, which can be built with:
+
+  ```
+  nix flake check
+  ```
+  '';
+
+  upload = ''
+  ## Hackage upload {#upload}
+
+  Hix provides flake apps that run the flake checks and upload package candidates, releases or docs to Hackage:
+
+  ```
+  nix run .#candidates
+  nix run .#release
+  nix run .#docs
+  ```
+
+  If `versionFile` is set, the script will substitute the `version:` line in that Cabal file after asking for
+  the next version.
+  If you use `nix run .#gen-cabal` to maintain the Cabal files, this should be a `.nix` file containing a string that's
+  also used for [](#opt-cabal-version):
+
+  ```
+  {
+    packages.parser = {
+      cabal.version = import ./parser-version.nix;
+      versionFile = ./parser-version.nix;
+    };
+  }
+  ```
+
+  The options [](#opt-hackage-hackage.versionFileExtract) and [](#opt-hackage-hackage.versionFileUpdate) can be
+  customized to allow for arbitrary other formats.
+
+  The command line option `--version`/`-v` may be used to specify the version noninteractively.
+  Furthermore, if a package name is specified as a positional argument, only that package will be uploaded.
+
+  For example, to publish `parser` at version `2.5.0.1`:
+
+  ```
+  nix run .#release -- parser -v 2.5.0.1
+  ```
+
+  The upload command will use your global Cabal config to obtain credentials, please consult the Cabal docs for more.
 
   '';
 
-  commandOptionsHeader = ''
-  ### Command options {#submodule-command}
+  tags = ''
+  ## CTags {#tags}
+
+  Hix exposes an app that runs [thax](https://github.com/tek/thax) to generate a CTags file covering all dependencies
+  and the local packages:
+
+  ```
+  nix run .#tags
+  ```
+
+  This will result in the creation of the file `.tags`.
   '';
 
 }

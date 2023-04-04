@@ -11,7 +11,10 @@ let
   manpageUrls = nixpkgsDoc + "/manpage-urls.json";
 
   # TODO make prefix more configurable, automatically prefix nested attrsets
-  renderOptions = {name, options}: ''
+  renderOptions = {name, options, header, extra}: ''
+  ## ${header} options {#options-${name}}
+
+  ${extra}
 
   ```{=include=} options
   id-prefix: opt-${name}-

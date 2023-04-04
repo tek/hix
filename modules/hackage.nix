@@ -48,17 +48,6 @@ in {
       default = null;
     };
 
-    versionFiles = mkOption {
-      description = mdDoc ''
-        Per-package version file paths.
-        If `hackage.allPackages` is `true` and the specified package is not present in
-        this set, the version will not be modified by the release app.
-        See `hackage.versionFile` for more information.
-      '';
-      type = attrsOf str;
-      default = {};
-    };
-
     versionFileExtract = mkOption {
       description = mdDoc ''
       A function that returns a shell script fragment that extracts the current version from a version file.
@@ -145,10 +134,12 @@ in {
     output = {
 
       packages = mkOption {
+        description = mdDoc "Internal option";
         type = unspecified;
       };
 
       apps = mkOption {
+        description = mdDoc "Internal option";
         type = unspecified;
       };
 

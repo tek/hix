@@ -1,8 +1,6 @@
 {
   description = "Example";
-  # TODO
-  # inputs.hix.url = "github:tek/hix";
-  inputs.hix.url = "path:/home/tek/code/tek/haskell/hix";
+  inputs.hix.url = "github:tek/hix";
   outputs = {hix, ...}: hix.lib.flake {
     packages.parser = {
       src = ./.;

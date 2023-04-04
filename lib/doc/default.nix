@@ -17,12 +17,6 @@ let
 
   mod-ghc = options.module "ghc" { inherit global util; };
 
-  # cabalOptionsExclude = [
-  #   { type = "eq"; path = ["language"]; }
-  # ];
-
-  # TODO remove if it works
-  # mod-cabal-options = options.moduleWithout cabalOptionsExclude "cabal-options" { inherit global util; };
   mod-cabal-options = options.module "cabal-options" { inherit global util; };
 
   compExcept = [["source-dirs"] ["name"]];
@@ -37,28 +31,44 @@ let
     { type = "sub"; path = ["tests"]; except = compMultiExcept; }
     { type = "sub"; path = ["benchmark"]; except = compExcept; }
     { type = "sub"; path = ["benchmarks"]; except = compMultiExcept; }
-    { type = "eq"; path = ["components"]; }
-    { type = "eq"; path = ["componentsSet"]; }
+    { type = "full"; path = ["internal"]; }
   ];
-
   mod-package = options.moduleWithout packageExclude "package" { global = config; inherit util; };
 
   envExclude = [
     { type = "sub"; path = ["ghc"]; }
-    # { type = "sub"; path = ["vm"]; }
     { type = "sub"; path = ["services"]; }
   ];
-
   mod-env = options.moduleWithout envExclude "env" { global = config; inherit util; };
 
   commandExclude = [
     { type = "sub"; path = ["env"]; }
   ];
-
   mod-command = options.moduleWithout commandExclude "command" { global = config; inherit util; };
 
+  hackageExclude = [
+    { type = "sub"; path = ["output"]; }
+  ];
+  mod-hackage = options.moduleWithout hackageExclude "hackage" { inherit config lib util; };
+
+  generalModules = [
+    (options.importMod "basic" { inherit config lib util; })
+    (options.importMod "envs" { inherit config lib util; })
+    (options.importMod "overrides" { inherit config lib util; })
+    (options.importMod "output" { inherit config lib util; })
+  ];
+  generalExclude = [
+    { type = "sub"; path = ["envs"]; }
+    { type = "sub"; path = ["devGhc"]; }
+    { type = "sub"; path = ["packages"]; }
+    { type = "sub"; path = ["cabal-config"]; }
+    { type = "full"; path = ["internal"]; }
+  ];
+  mod-general = options.modulesWithout generalExclude generalModules { inherit config lib util; };
+
   text = content: { type = "text"; inherit content; };
-  opt = name: options: { type = "options"; content = { inherit name options; }; };
+  optWith = extra: name: header: options: { type = "options"; content = { inherit name options header extra; }; };
+  opt = optWith "";
 
   chapters = with prose; [
     {
@@ -73,22 +83,31 @@ let
       heading = "Declaring Hix builds";
       fragments = [
         (text packages)
-        (opt "cabal" mod-cabal-options)
-        (text packageOptions)
-        (opt "package" mod-package)
-        (text environments)
-        (opt "env" mod-env)
-        (text commandOptionsHeader)
-        (opt "command" mod-command)
+        (optWith cabalOptionsHeader "cabal" "Cabal" mod-cabal-options)
+        (text package)
+        (opt "package" "Package" mod-package)
+        (opt "general" "General" mod-general)
       ];
     }
-    # {
-    #   tag = "devshell";
-    #   heading = "Development shells";
-    #   fragments = [
-    #     (text devshell)
-    #   ];
-    # }
+    {
+      tag = "env-cmd";
+      heading = "Environments and commands";
+      fragments = [
+        (text environments)
+        (opt "env" "Environment" mod-env)
+        (opt "command" "Command" mod-command)
+      ];
+    }
+    {
+      tag = "tools";
+      heading = "Other tools";
+      fragments = [
+        (text compat)
+        (text upload)
+        (opt "hackage" "Hackage" mod-hackage)
+        (text tags)
+      ];
+    }
   ];
 
   render = import ./render.nix { inherit pkgs util chapters; inherit (prose) header; };

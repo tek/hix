@@ -3,28 +3,26 @@ with lib;
 {
   options = with types; {
 
-    # TODO update doc
     overrides = mkOption {
-      type = util.types.cabalOverrides;
-      default = [];
       description = mdDoc ''
         Cabal package specifications and overrides injected into GHC package sets.
-        Each override spec is a list of dep functions, which are called with a set of combinators and resources like
-        nixpkgs and should return an attrset containing either derivations or a transformation built from those
-        combinators.
-        The combinators are described at
-        TODO
+        Each override spec is a function that takes a set of combinators and resources like nixpkgs and should return an
+        attrset containing either derivations or a transformation built from those combinators.
+
+        The combinators are described in [](#overrides-combinators).
       '';
+      type = util.types.cabalOverrides;
       example = literalExpression ''
       {hackage, fast, jailbreak, ...}: {
         aeson = fast (hackage "2.0.0.0" "sha54321");
         http-client = unbreak;
       };
       '';
+      default = [];
     };
 
     exportedOverrides = mkOption {
-      description = "";
+      description = mdDoc "The overrides exposed from the flake for integration in downstream projects.";
       type = unspecified;
       default = {
         local = toList config.internal.overridesLocal;

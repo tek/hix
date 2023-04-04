@@ -84,7 +84,6 @@ in {
       default = {};
     };
 
-    # TODO use readOnly for other instances of this
     cabal-config = mkOption {
       type = submoduleWith { modules = [cabalOptionsModule config.cabal config.internal.cabal-extra]; };
       readOnly = true;
@@ -166,15 +165,15 @@ in {
         type = bool;
         default = true;
         description = mdDoc ''
-          Create derivations in `outputs.checks` that build the packages with different GHC versions.
-          The set of versions is configured by [](#opt-compat-versions).
+          Create derivations in [](#opt-general-outputs.checks) that build the packages with different GHC versions.
+          The set of versions is configured by [](#opt-general-compat.versions).
         '';
       };
 
       versions = mkOption {
-        description = ''
-        The GHC versions for which to create compat checks. Defaults to [](#opt-ghcVersion).
-        There has to be an env in [](#opt-envs) with the version as its name for each of these.
+        description = mdDoc ''
+        The GHC versions for which to create compat checks. Defaults to [](#opt-general-ghcVersions).
+        There has to be an env in [](#opt-general-envs) with the version as its name for each of these.
         '';
         type = listOf str;
         default = config.ghcVersions;

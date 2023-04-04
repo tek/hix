@@ -9,14 +9,6 @@ let
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
   cabalComponentModule = import ./cabal-component.nix { inherit global util; };
 
-  # TODO remove
-  libModule = {...}: {
-
-    options = with types; {
-    };
-
-  };
-
   anyEnabled = set: any (a: a.enable) (attrValues set);
 
   exeModule = sort: default: {name ? pkgName, config, ...}: {
@@ -61,7 +53,7 @@ let
       description = "submodule of cabal-options and cabal-component";
     };
 
-  libSubmodule = component libModule "lib" "library" null true;
+  libSubmodule = component {} "lib" "library" null true;
 
   exeSubmodule = default: component (exeModule "executable" default) "app" "executable" "exeSuffix";
 
@@ -182,6 +174,15 @@ in {
       default = null;
     };
 
+    versionFile = mkOption {
+      description = mdDoc ''
+      The version file for this package, defaulting to the global [](#opt-hackage-hackage.versionFile) if `null`.
+      When bumping the version of this package with `nix run .#release`, this file is updated.
+      '';
+      type = nullOr str;
+      default = null;
+    };
+
     cabal = mkOption {
       type = unspecified;
       description = mdDoc ''
@@ -214,13 +215,8 @@ in {
       default = {};
     };
 
-    components = mkOption {
-      description = "";
-      type = listOf unspecified;
-    };
-
-    componentsSet = mkOption {
-      description = "";
+    internal.componentsSet = mkOption {
+      description = mdDoc "Internal option";
       type = attrsOf unspecified;
     };
 
@@ -242,17 +238,7 @@ in {
 
     description = mkDefault "See ${config.hackageRootLink}";
 
-    components =
-      optional config.library.enable config.library ++
-      optional config.executable.enable config.executable ++
-      attrValues config.executables ++
-      optional config.test.enable config.test ++
-      attrValues config.tests ++
-      optional config.benchmark.enable config.benchmark ++
-      attrValues config.benchmarks
-      ;
-
-    componentsSet =
+    internal.componentsSet =
       optionalAttrs config.library.enable { library = config.library; } //
       optionalAttrs config.executable.enable { ${config.executable.name} = config.executable; } //
       config.executables //
