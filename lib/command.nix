@@ -36,7 +36,7 @@ let
     ''
     else ''
     ${env.code}
-    ${exe}
+    ${exe} $@
     '';
 
 in {

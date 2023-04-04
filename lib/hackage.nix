@@ -200,7 +200,7 @@ let
 
   packageVersion = publish: pkg:
   let
-    file = cfg.packages.${pkg}.versionFile;
+    file = config.packages.${pkg}.versionFile;
     type = if publish then "release" else "candidate";
   in mkScript "cabal-upload-${pkg}" ''
   new_version=''${1:-}
