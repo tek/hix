@@ -326,8 +326,6 @@ in {
 
   '';
 
-  # TODO create example fixture for the first snippet
-  # TODO example for defining a service
   environments = ''
   ## Environments {#envs}
 
@@ -353,7 +351,7 @@ in {
 
         services.postgres = {
           enable = true;
-          config = { dbName = "test-db"; };
+          config = { name = "test-db"; };
         };
 
       };
@@ -377,7 +375,7 @@ in {
   >>> Waiting 30 seconds for VM to boot...
   $ ghc --version
   The Glorious Glasgow Haskell Compilation System, version 9.4.3
-  $ psql "host=localhost port=25432 user=test password=test dbname=test" -c 'select 1'
+  $ psql "host=localhost port=25432 user=test-db password=test-db dbname=test-db" -c 'select 1'
   ?column?
   ----------
           1
@@ -428,7 +426,65 @@ in {
 
   #### Override combinators {#overrides-combinators}
 
-  TODO
+  There are different classes of combinators.
+  The most fundamental ones are used to declare package sources:
+
+  - `hackage` takes two arguments, version and hash, to pull a dependency directly from Hackage.
+
+  - `source.root` takes a path to a source directory (like a flake input) and builds the dependency from its contents.
+
+  - `source.sub` is the same as `source.root`, but takes a second argument describing a subdirectory of the path.
+
+  - `source.package` is the same as `source.sub`, but it prepends `packages/` to the subdirectory.
+
+  The second class is the transformers, which perform some modification on a derivation.
+  They can either be applied to a source combinator or used on their own, in which case they operate on whatever the
+  previous definition of the overridden package is (for example, the default package from nixpkgs, or an override from
+  another definition of `overrides`).
+
+  Transformers also compose – when using multiple of them in succession, their effects accumulate:
+
+  ```nix
+  {
+    overrides = {hackage, ...}: {
+      # Fetch streamly from Hackage and disable tests and haddock
+      streamly = notest (nodoc (hackage "0.9.0" "1ab5n253krgccc66j7ch1lx328b1d8mhkfz4szl913chr9pmbv3q"));
+
+      # Use the default aeson package and disable tests
+      aeson = notest;
+
+      # Disable version bounds, tests, benchmarks and Haddock, and add a configure flag
+      parser = configure "-f debug" (jailbreak (notest (nobench nodoc)));
+    };
+  }
+  ```
+
+  The available transformers are:
+
+  - `unbreak` – Override nixpkgs' "broken" flag
+  - `jailbreak` – Disable Cabal version bounds for the package's dependencies
+  - `notest` – Disable tests
+  - `nodoc` – Disable Haddock
+  - `bench` – Enable benchmarks
+  - `nobench` – Disable benchmarks
+  - `minimal` – Disable Haddock, benchmarks and tests
+  - `fast` – Disable profiling and Haddock
+  - `profiling` – Enable profiling for the package (when disabling it globally)
+  - `configure` – Add a Cabal configure flag
+  - `configures` – Add multiple Cabal configure flags (in a list)
+  - `override` – Call `overrideCabal` on the derivation, allowing arbitrary Cabal manipulation
+  - `overrideAttrs` – Call `overrideAttrs` on the derivation
+  - `buildInputs` – Add Nix build inputs
+
+  Finally, there are some special values that are injected into the override function:
+
+  - `self` and `super` – The final and previous state of the package set, as is common for nixpkgs extension functions
+  - `pkgs` – The nixpkgs set
+  - `keep` – Reset the previous combinators and use the default package
+  - `noHpack` – A modifier for the `source` combinators instructing cabal2nix to not use HPack
+  - `hsLib` – The entire nixpkgs tool set `haskell.lib`
+  - `compilerName` – The `name` attribute of the GHC package
+  - `compilerVersion` – The `version` attribute of the GHC package
 
   #### Transitive overrides {#overrides-transitive}
 
@@ -639,6 +695,48 @@ in {
   provided that contains a module with option declarations.
   This option has type `deferredModule`, which means that it's not evaluated at the definition site, but used in a magic
   way somewhere else to create a new combined module set consisting of all the configs described before.
+
+  #### Defining modular services {#services-define}
+
+  A service can be defined in [](#opt-general-services) with plain NixOS config, but it is useful to allow the service
+  to be specially configurable.
+  For that purpose, the value assigned to the entry in  [](#opt-general-services) should be a full module that defines
+  options as well as their translation to service config:
+
+  ```
+  {
+    services.greet = ({config, lib, ...}: {
+
+      options.response = mkOption {
+        type = lib.types.str;
+        default = "Hello";
+      };
+
+      config = {
+        ports = [{ guest = 80; host = 10; }];
+        nixos-base.services.nginx = {
+          enable = true;
+          virtualHosts.localhost.locations."/greet".return = "200 ''${config.response}";
+        };
+      };
+
+    });
+
+    envs.bye = {
+      services.greet = {
+        enable = true;
+        config.response = "Goodbye";
+      };
+    };
+  }
+  ```
+
+  This defines a service running nginx that has a single endpoint at `/greet`, which responds with whatever is
+  configured in the service option `response`.
+  The environment `bye` uses that service and overrides the response string.
+
+  Any option defined within `services.greet.options` is configurable from within the environment, and the values in
+  `services.greet.config` correspond to the regular service options.
 
   '';
 

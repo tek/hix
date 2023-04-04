@@ -12,7 +12,11 @@ in {
   options = with types; {
 
     commands = mkOption {
-      description = "";
+      description = mdDoc ''
+      Commands are shell scripts associated with an environment that are exposed as flake apps.
+      All commands are accessible as attributes of `.#cmd.<name>`, and those that set `expose = true` are additionally
+      exposed at the top level.
+      '';
       type = attrsOf (submodule commandModule);
       default = {};
     };

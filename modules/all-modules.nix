@@ -6,12 +6,14 @@ let
     config.inputs = inputs;
   };
 
-  hixlibc = config:
+  hixlib = config:
   let util = import ../lib/with-config.nix { inherit config lib util; };
   in util;
 
   helpers = { config, ... }: {
-    _module.args = { util = hixlibc config // { modules = modules; }; };
+    _module.args = {
+      util = hixlib config // { modules = modules; };
+    };
   };
 
   modules = projectModules ++ [
@@ -19,7 +21,6 @@ let
     ./basic.nix
     ./hpack.nix
     ./output.nix
-    ./shell.nix
     ./services.nix
     ./envs.nix
     ./overrides.nix

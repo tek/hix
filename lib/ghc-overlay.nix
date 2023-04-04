@@ -8,9 +8,8 @@ final: prev:
 with prev.lib;
 let
 
-  deps = import ../deps/default.nix { inherit (prev) lib; };
+  deps = import ./deps/default.nix { inherit (prev) lib; };
 
-  # TODO use util.override or remove that
   packages = prev.haskell.packages.${compiler}.override { overrides = deps.compose overrides; };
 
 in {

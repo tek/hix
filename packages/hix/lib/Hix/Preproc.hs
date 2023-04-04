@@ -453,7 +453,6 @@ preprocessModule source info dummyExportName inLines =
     header = scanHeader customPrelude inLines
 
 -- TODO add common stanzas
--- TODO when an error occurs, output an empty file and insert an error as a warning pragma or something
 preprocess :: PreprocOptions -> ExceptT Error IO ()
 preprocess PreprocOptions {..} = do
   info <- buildInfoForFile source

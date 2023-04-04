@@ -35,6 +35,7 @@ let
     unbreak = transform_ modifiers.unbreak;
     fast = transform_ modifiers.fast;
     notest = transform_ modifiers.notest;
+    nodoc = transform_ modifiers.nodoc;
     bench = transform_ modifiers.bench;
     nobench = transform_ modifiers.nobench;
   };

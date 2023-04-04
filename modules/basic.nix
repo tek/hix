@@ -129,16 +129,6 @@ in {
       '';
     };
 
-    # TODO migrate
-    extraOverrides = mkOption {
-      type = lazyAttrsOf (listOf unspecified);
-      default = {};
-      description = mdDoc ''
-        Like `overrides`, but expected to be in normalized form. This allows for extensions of Hix to
-        add overrides from multiple locations, since the `listOf` aggregates all definitions.
-      '';
-    };
-
     localPackage = mkOption {
       type = unspecified;
       default = _: id;
@@ -278,13 +268,12 @@ in {
   config = {
     base = mkDefault baseFromPackages;
 
-    # TODO correct link
     main = mkDefault (
       if (length config.internal.packageNames == 1)
       then head config.internal.packageNames
       else throw ''
       The config option 'main' must name one of the 'packages' if more than one is defined.
-      See https://tryp.io/hix/manual/index.html#opt-main
+      See https://tryp.io/hix/manual/index.html#opt-general-main
       ''
     );
 
@@ -295,9 +284,6 @@ in {
       basicPkgs = import config.inputs."nixpkgs_${config.compiler}" { inherit (config) system; };
 
       basicGhc = config.internal.basicPkgs.haskell.packages.${config.compiler};
-
-      # TODO extraOverrides is still needed for ribosome etc.
-      # overrides = util.mergeOverrides [config.extraOverrides overrides];
 
       packageNames = attrNames config.packages;
 

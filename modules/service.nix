@@ -7,17 +7,29 @@ let
     options = with types; {
 
       guest = mkOption {
-        description = "Port used in the VM.";
+        description = mdDoc "Port used in the VM.";
         type = port;
       };
 
       host = mkOption {
-        description = "Port exposed in the system, relative to the env's [](#opt-env-basePort).";
+        description = mdDoc ''
+        Port exposed in the system, relative to the env's [](#opt-env-basePort) unless [](#opt-service-ports._.absolute)
+        is set.
+        '';
         type = port;
-        default = config.guest;
+      };
+
+      absolute = mkOption {
+        description = mdDoc ''
+        Whether the host port is an absolute number. If `false` (default), the port is added to [](#opt-env-basePort).
+        '';
+        type = bool;
+        default = false;
       };
 
     };
+
+    config.host = mkDefault config.guest;
   };
 
 in {
@@ -26,13 +38,13 @@ in {
     enable = mkEnableOption (mdDoc "this service");
 
     nixos = mkOption {
-      description = "NixOS config used for the service VM.";
+      description = mdDoc "NixOS config used for the service VM.";
       type = deferredModule;
       default = {};
     };
 
     nixos-base = mkOption {
-      description = "NixOS base config used for the service VM.";
+      description = mdDoc "NixOS base config used for the service VM.";
       type = deferredModule;
       default = {};
     };

@@ -38,6 +38,7 @@ let
   envExclude = [
     { type = "sub"; path = ["ghc"]; }
     { type = "sub"; path = ["services"]; }
+    { type = "full"; path = ["internal"]; }
   ];
   mod-env = options.moduleWithout envExclude "env" { global = config; inherit util; };
 
@@ -45,6 +46,10 @@ let
     { type = "sub"; path = ["env"]; }
   ];
   mod-command = options.moduleWithout commandExclude "command" { global = config; inherit util; };
+
+  serviceExclude = [
+  ];
+  mod-service = options.moduleWithout serviceExclude "service" { global = config; inherit lib util; };
 
   hackageExclude = [
     { type = "sub"; path = ["output"]; }
@@ -54,11 +59,15 @@ let
   generalModules = [
     (options.importMod "basic" { inherit config lib util; })
     (options.importMod "envs" { inherit config lib util; })
+    (options.importMod "services" { inherit config lib util; })
+    (options.importMod "commands" { inherit config lib util; })
     (options.importMod "overrides" { inherit config lib util; })
     (options.importMod "output" { inherit config lib util; })
   ];
   generalExclude = [
     { type = "sub"; path = ["envs"]; }
+    { type = "sub"; path = ["services"]; }
+    { type = "sub"; path = ["commands"]; }
     { type = "sub"; path = ["devGhc"]; }
     { type = "sub"; path = ["packages"]; }
     { type = "sub"; path = ["cabal-config"]; }
@@ -96,6 +105,7 @@ let
         (text environments)
         (opt "env" "Environment" mod-env)
         (opt "command" "Command" mod-command)
+        (opt "service" "Service" mod-service)
       ];
     }
     {

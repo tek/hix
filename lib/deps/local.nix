@@ -12,9 +12,9 @@ let
 
   noCabalError = name:
     throw ''
-      Can't build package '${name}' since no Cabal or HPack file is present in the source directory.
-      Set 'auto = true' to generate config on the fly.
-      If the file exists, you might have to 'git add' it or its name isn't '${name}.cabal'.
+    Can't build package '${name}' since no Cabal or HPack file is present in the source directory.
+    Set 'auto = true' to generate config on the fly.
+    If the file exists, you might have to 'git add' it or its name isn't '${name}.cabal'.
     '';
 
   wantAuto = name: pkg:

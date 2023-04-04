@@ -10,7 +10,6 @@ let
   nixpkgsDoc = pkgs.path + "/doc";
   manpageUrls = nixpkgsDoc + "/manpage-urls.json";
 
-  # TODO make prefix more configurable, automatically prefix nested attrsets
   renderOptions = {name, options, header, extra}: ''
   ## ${header} options {#options-${name}}
 

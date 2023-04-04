@@ -22,7 +22,15 @@ with lib;
     };
 
     exportedOverrides = mkOption {
-      description = mdDoc "The overrides exposed from the flake for integration in downstream projects.";
+      description = mdDoc ''
+      These overrides are exposed from the flake for integration in downstream projects via the options
+      [](#opt-general-deps) and [](#opt-general-depsFull).
+
+      This is an attrset whose keys indicate where to put the overrides in the dependent project – each version env and
+      the `dev` env has their own, while the `all` key is applied globally.
+      The special keys `local` and `localMin` contain the local packages and their minimal build variants, respectively.
+      Local packages are only propagated when [](#opt-general-depsFull) is used.
+      '';
       type = unspecified;
       default = {
         local = toList config.internal.overridesLocal;
@@ -43,7 +51,7 @@ with lib;
       overridesLocal = mkOption {
         description = "";
         type = util.types.cabalOverrides;
-        default = import ../deps/local.nix {
+        default = import ../lib/deps/local.nix {
           inherit config lib;
           inherit (config) localPackage;
         };
@@ -52,7 +60,7 @@ with lib;
       overridesLocalMin = mkOption {
         description = "";
         type = util.types.cabalOverrides;
-        default = import ../deps/local.nix {
+        default = import ../lib/deps/local.nix {
           inherit config lib;
           localPackage = api@{ fast, ... }: p: fast (config.localPackage api p);
         };

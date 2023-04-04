@@ -158,7 +158,6 @@ componentSpecParser = do
   where
     h = "The name or relative directory of the test component"
 
--- TODO also allow package by reldir and component by name
 componentForModuleParser :: Parser ComponentCoords
 componentForModuleParser =
   ComponentCoords

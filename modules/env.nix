@@ -91,16 +91,8 @@ let
    $@
   '';
 
-  setupVm = ''
-  ${vmLib.ensure config.vm}
-  '';
-
-  exitVm = ''
-  ${vmLib.kill config.vm}
-  '';
-
-  servicePort = { guest, host }:
-  { host.port = config.basePort + host; guest.port = guest; };
+  servicePort = { guest, host, absolute ? false }:
+  { host.port = if absolute then host else config.basePort + host; guest.port = guest; };
 
   servicePorts = ports: {
     virtualisation.vmVariant.virtualisation.forwardPorts = map servicePort ports;
@@ -198,11 +190,11 @@ in {
     };
 
     overrides = mkOption {
+      description = mdDoc ''
+      Like [](#opt-general-overrides), but used only when this environment is used to build packages.
+      '';
       type = util.types.cabalOverrides;
       default = [];
-      description = mdDoc ''
-      TODO
-      '';
     };
 
     buildInputs = mkOption {
@@ -276,7 +268,7 @@ in {
     };
 
     basePort = mkOption {
-      description = mdDoc "The number as a base for ports in this env's VM, like ssh getting `basePort + 22`.";
+      description = mdDoc "The number used as a base for ports in this env's VM, like ssh getting `basePort + 22`.";
       type = port;
       default = 20000;
     };
@@ -321,11 +313,9 @@ in {
     };
 
     derivations = mkOption {
-      # description = mdDoc ''
-      # The derivations for the local Cabal packages using this env's GHC, as well as the [](#opt-extraPackages).
-      # '';
       description = mdDoc ''
-      The derivations for the local Cabal packages using this env's GHC, as well as the TODO
+      The derivations for the local Cabal packages using this env's GHC, as well as the
+      [](#opt-general-output.extraPackages).
       '';
       type = lazyAttrsOf package;
       default = localPackages // extraPackages;
@@ -388,14 +378,13 @@ in {
     internal = {
 
       overridesInherited = mkOption {
-        type = util.types.cabalOverrides;
         description = mdDoc "The inherited overrides used for this env, like local packages and global overrides.";
+        type = util.types.cabalOverrides;
         default = global.internal.overridesLocal;
       };
 
-      # TODO simplify this
       resolvedServices = mkOption {
-        description = mdDoc "";
+        description = mdDoc "Magic modules that allow merging of env-specific service config with their base config.";
         type = attrsOf (submodule resolveServiceModule);
         default = mapAttrs (_: _: {}) config.services;
       };
@@ -424,8 +413,8 @@ in {
         in (lib.nixosSystem nixosArgs).config.system.build.vm
         );
 
-        setup = mkDefault setupVm;
-        exit = mkDefault exitVm;
+        setup = mkDefault "${vmLib.ensure config.vm}";
+        exit = mkDefault "${vmLib.kill config.vm}";
 
       };
 

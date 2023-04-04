@@ -23,8 +23,6 @@ let
   foldr composeExtensions (self: super: {});
 
   compose = overlays: foldExtensions (map packages overlays);
-
-  override = ghc: f: ghc.override { overrides = compose f; };
 in {
-  inherit packages compose override;
+  inherit packages compose;
 }

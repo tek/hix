@@ -25,17 +25,10 @@ let
 
     overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };
 
-    spec = import ./deps/spec.nix { inherit (self) lib; };
+    spec = import ./lib/deps/spec.nix { inherit (self) lib; };
   });
 
-  # TODO this uses a module config separate from the consumer project.
-  # therefore, the systems are statically fixed to what is defined in hix (so the default).
-  # should find a way to copy the systems. this seems impossible the way it is set up now.
-  # maybe just add aarch64 and be done with it.
-  localOutputs =
-    # inputs.flake-utils.lib.eachSystem ["x86_64-linux"] (system:
-      import ./lib/local.nix { inherit inputs; hix = api; };
-    # );
+  localOutputs = import ./lib/local.nix { inherit inputs; hix = api; };
 
 in localOutputs // {
   lib = api;

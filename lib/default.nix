@@ -128,6 +128,5 @@ in {
   empty
   ;
 
-  overrides = import ./overrides.nix { inherit lib; };
   ghcOverlay = import ./ghc-overlay.nix;
 }
