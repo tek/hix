@@ -1,6 +1,5 @@
 module Hix.Options where
 
-import Data.Aeson (FromJSON)
 import Options.Applicative (
   CommandFields,
   Mod,
@@ -39,7 +38,7 @@ import Hix.Data.GhciConfig (
   RunnerName,
   SourceDir (SourceDir),
   )
-import Hix.Optparse (absFileOption, jsonOption)
+import Hix.Optparse (JsonConfig, absFileOption, jsonOption)
 
 data PreprocOptions =
   PreprocOptions {
@@ -86,25 +85,25 @@ data TestOptions =
 
 data EnvRunnerOptions =
   EnvRunnerOptions {
-    config :: EnvConfig,
+    config :: Either EnvConfig JsonConfig,
     component :: Maybe TargetSpec
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Show, Generic)
 
 data GhciOptions =
   GhciOptions {
-    config :: GhciConfig,
+    config :: Either GhciConfig JsonConfig,
     component :: TargetSpec,
     test :: TestOptions
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Show, Generic)
 
 data EnvRunnerCommandOptions =
   EnvRunnerCommandOptions {
     options :: EnvRunnerOptions,
     test :: TestOptions
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Show, Generic)
 
 data Command =
   Preproc PreprocOptions
@@ -114,7 +113,7 @@ data Command =
   GhcidCmd GhciOptions
   |
   GhciCmd GhciOptions
-  deriving stock (Eq, Show)
+  deriving stock (Show)
 
 data GlobalOptions =
   GlobalOptions {
@@ -128,7 +127,7 @@ data Options =
     global :: GlobalOptions,
     cmd :: Command
   }
-  deriving stock (Eq, Show)
+  deriving stock (Show)
 
 fileParser ::
   String ->
@@ -203,10 +202,9 @@ moduleParser =
   strOption (long "module" <> short 'm' <> help "The module containing the test function" <> value "Main")
 
 jsonConfigParser ::
-  FromJSON a =>
-  Parser a
+  Parser JsonConfig
 jsonConfigParser =
-  option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config")
+  option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config, file or text")
 
 testOptionsParser :: Parser TestOptions
 testOptionsParser = do
@@ -218,7 +216,7 @@ testOptionsParser = do
 envParser :: Parser EnvRunnerCommandOptions
 envParser = do
   options <- do
-    config <- jsonConfigParser
+    config <- Right <$> jsonConfigParser
     component <- optional targetSpecParser
     pure EnvRunnerOptions {..}
   test <- testOptionsParser
@@ -226,7 +224,7 @@ envParser = do
 
 ghciParser :: Parser GhciOptions
 ghciParser = do
-  config <- jsonConfigParser
+  config <- Right <$> jsonConfigParser
   component <- targetSpecParser
   test <- testOptionsParser
   pure GhciOptions {..}

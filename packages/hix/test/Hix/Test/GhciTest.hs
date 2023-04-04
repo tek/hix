@@ -89,7 +89,7 @@ spec1 =
 options :: GhciOptions
 options =
   GhciOptions {
-    config = GhciConfig {
+    config = Left GhciConfig {
       packages,
       setup = [("generic", "import Test.Tasty")],
       run = [("generic", ("check . property . test"))],
@@ -138,7 +138,7 @@ runnerFor target spec = do
   res <- evalEither =<< liftIO (runM root (envRunner conf))
   target === res
   where
-    conf = EnvRunnerOptions (EnvConfig packages defaultRunner) (Just spec)
+    conf = EnvRunnerOptions (Left (EnvConfig packages defaultRunner)) (Just spec)
 
 test_componentEnv :: TestT IO ()
 test_componentEnv = do

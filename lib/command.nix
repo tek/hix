@@ -25,13 +25,14 @@ let
 
   exe = pkgs.writeScript "command-${command.name}" command.command;
 
+  json = util.json.envFile env;
+
   # TODO change config to be a file parameter in the cli
   script =
     if command.component
     then ''
-    config=$(cat ${util.json.envFile env})
     ${splitArgs}
-    env_runner=$(${cli} env -c "$config" ''${env_args[@]})
+    env_runner=$(${cli} env -c ${json} ''${env_args[@]})
     env_args="''${env_args[*]}" $env_runner "${exe} ''${cmd_args[@]}"
     ''
     else ''

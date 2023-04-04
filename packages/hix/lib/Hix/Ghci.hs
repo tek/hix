@@ -30,6 +30,7 @@ import Hix.Data.GhciConfig (
   )
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (GhcidRun))
+import Hix.Json (jsonConfig)
 import qualified Hix.Monad as Monad
 import Hix.Monad (Env (Env), M, noteGhci, tryIOM)
 import qualified Hix.Options as Options
@@ -63,17 +64,18 @@ moduleName package component = \case
     withoutExt p = pathText (maybe p fst (splitExtension p))
 
 ghciScript ::
+  GhciConfig ->
   PackageConfig ->
   Maybe SourceDir ->
   GhciOptions ->
   M Text
-ghciScript package component opt = do
+ghciScript config package component opt = do
   ModuleName module_ <- moduleName package component opt
   pure [exon|#{setup}
 :load #{module_}
 import #{module_}|]
   where
-    GhciSetupCode setup = fold (flip Map.lookup opt.config.setup =<< opt.test.runner)
+    GhciSetupCode setup = fold (flip Map.lookup config.setup =<< opt.test.runner)
 
 componentSearchPaths :: PackageConfig -> ComponentConfig -> [Path Rel Dir]
 componentSearchPaths pkg comp = do
@@ -101,14 +103,15 @@ testRun config = \case
 
 assemble :: GhciOptions -> M GhciTest
 assemble opt = do
+  config <- either pure jsonConfig opt.config
   cwd <- tryIOM getCurrentDir
-  Target {..} <- targetComponent opt.config.packages opt.component
-  script <- ghciScript package sourceDir opt
+  Target {..} <- targetComponent config.packages opt.component
+  script <- ghciScript config package sourceDir opt
   pure GhciTest {
     script,
-    test = testRun opt.config opt.test,
-    args = opt.config.args,
-    searchPath = (cwd </>) <$> searchPath opt.config.packages package component
+    test = testRun config opt.test,
+    args = config.args,
+    searchPath = (cwd </>) <$> searchPath config.packages package component
     }
 
 hixTempDir ::

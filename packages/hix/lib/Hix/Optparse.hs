@@ -1,11 +1,12 @@
 -- |Combinators for @optparse-applicative@.
 module Hix.Optparse where
 
-import Data.Aeson (FromJSON, eitherDecodeStrict')
+import Data.Aeson (Value, eitherDecodeFileStrict', eitherDecodeStrict')
 import Exon (exon)
 import Options.Applicative (ReadM, readerError)
 import Options.Applicative.Types (readerAsk)
-import Path (Abs, File, Path, Rel, parseAbsFile, parseRelFile, Dir, parseRelDir)
+import Path (Abs, Dir, File, Path, Rel, parseAbsFile, parseRelDir, parseRelFile, toFilePath)
+import qualified Text.Show as Show
 
 -- |An absolute file path option for @optparse-applicative@.
 absFileOption :: ReadM (Path Abs File)
@@ -25,10 +26,17 @@ relDirOption = do
   raw <- readerAsk
   leftA (const (readerError [exon|not a valid relative dir path: #{raw}|])) (parseRelDir raw)
 
+newtype JsonConfig =
+  JsonConfig { unJsonConfig :: IO (Either String Value) }
+  deriving stock (Generic)
+
+instance Show JsonConfig where
+  show (JsonConfig _) = "JsonConfig"
+
 jsonOption ::
-  FromJSON a =>
-  ReadM a
+  ReadM JsonConfig
 jsonOption = do
   raw <- readerAsk
-  leftA (\ e -> readerError [exon|Invalid json: #{e}
-#{raw}|]) (eitherDecodeStrict' (encodeUtf8 raw))
+  pure $ JsonConfig $ case parseAbsFile raw of
+    Just f -> eitherDecodeFileStrict' (toFilePath f)
+    Nothing -> pure (eitherDecodeStrict' (encodeUtf8 raw))

@@ -6,9 +6,10 @@ import Hix.Component (targetComponent)
 import Hix.Data.Error (pathText)
 import qualified Hix.Data.GhciConfig as GhciConfig
 import Hix.Data.GhciConfig (EnvRunner (EnvRunner), PackagesConfig, Target (Target))
+import Hix.Json (jsonConfig)
 import Hix.Monad (M)
 import qualified Hix.Options as Options
-import Hix.Options (EnvRunnerOptions (EnvRunnerOptions), TargetSpec)
+import Hix.Options (EnvRunnerOptions, TargetSpec)
 
 componentRunner :: PackagesConfig -> TargetSpec -> M (Maybe EnvRunner)
 componentRunner config spec = do
@@ -16,8 +17,9 @@ componentRunner config spec = do
   pure component.runner
 
 envRunner :: EnvRunnerOptions -> M EnvRunner
-envRunner EnvRunnerOptions {component, config} =
-  fromMaybe config.defaultEnv . join <$> traverse (componentRunner config.packages) component
+envRunner opts = do
+  config <- either pure jsonConfig opts.config
+  fromMaybe config.defaultEnv . join <$> traverse (componentRunner config.packages) opts.component
 
 printEnvRunner :: EnvRunnerOptions -> M ()
 printEnvRunner opts = do
