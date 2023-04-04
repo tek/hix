@@ -74,6 +74,8 @@ let
 
   };
 
+  visibleEnvs = filterAttrs (_: e: !e.hide) config.envs;
+
 in basic // {
   inherit
   paramApp
@@ -82,5 +84,6 @@ in basic // {
   overridesGlobal
   overridesGlobalMin
   json
+  visibleEnvs
   ;
 }

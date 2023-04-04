@@ -3,10 +3,6 @@
 with lib;
 let
 
-  inherit (global) pkgs;
-
-  envModule = import ./env.nix { inherit global util; };
-
   envCommand = import ../lib/command.nix { config = global; inherit util; };
 
 in {
@@ -33,6 +29,12 @@ in {
       description = mdDoc ''
       Whether this command should determine the env based on a target component specified by command line arguments.
       '';
+      type = bool;
+      default = false;
+    };
+
+    expose = mkOption {
+      description = mdDoc "Whether this command should be a top-level flake app.";
       type = bool;
       default = false;
     };

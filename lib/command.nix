@@ -27,7 +27,6 @@ let
 
   json = util.json.envFile env;
 
-  # TODO change config to be a file parameter in the cli
   script =
     if command.component
     then ''

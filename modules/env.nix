@@ -37,24 +37,14 @@ let
   fi
   '';
 
-  # TODO move to env config
-  vanillaGhc = global.envs.dev.ghc.vanillaGhc;
-  wantGhcid = global.shell.ghcid.enable;
-  vanillaGhcid = global.shell.ghcid.vanilla;
-
-  ghcidDep =
-  if vanillaGhcid
-  then global.pkgs.haskell.lib.dontCheck vanillaGhc.ghcid
-  else global.envs.dev.ghc.ghc.ghcid;
-
   buildInputs = let
     isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     localDeps = g: builtins.filter isNotLocal (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
   in
   config.buildInputs ++
-  [global.shell.hls.package] ++
-  optional wantGhcid ghcidDep ++
+  optional config.hls.enable config.hls.package ++
+  optional config.ghcid.enable config.ghcid.package ++
   [(config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ map (n: ghc.${n}) config.haskellPackages))]
   ;
 
@@ -264,7 +254,14 @@ in {
     };
 
     shell = mkOption {
-      description = mdDoc "";
+      description = mdDoc ''
+      The shell derivation for this environment, starting the service VM in the `shellHook`.
+
+      ::: {.note}
+      If this shell is used with `nix develop -c`, the exit hook will never be called and the VM will not be shut down.
+      Use a command instead for this purpose.
+      :::
+      '';
       type = package;
       default = global.pkgs.stdenv.mkDerivation {
         inherit (config) name buildInputs;
@@ -297,16 +294,30 @@ in {
       default = 30;
     };
 
-    ghcid = mkOption {
-      description = mdDoc "";
-      type = bool;
-      default = true;
+    ghcid = {
+      enable = mkEnableOption (mdDoc "GHCid for this env") // { default = true; };
+
+      package = mkOption {
+        description = mdDoc "The package for GHCid, defaulting to the one from the env's GHC without overrides.";
+        type = package;
+        default = config.ghc.vanillaGhc.ghcid;
+      };
     };
 
-    hls = mkOption {
-      description = mdDoc "";
+    hls = {
+      enable = mkEnableOption (mdDoc "HLS for this env") // { default = true; };
+
+      package = mkOption {
+        description = mdDoc "The package for HLS, defaulting to the one from the env's GHC without overrides.";
+        type = package;
+        default = config.ghc.vanillaGhc.haskell-language-server;
+      };
+    };
+
+    hide = mkOption {
+      description = mdDoc "Skip this env for user-facing actions, like command exposition in `apps`.";
       type = bool;
-      default = true;
+      default = false;
     };
 
     derivations = mkOption {

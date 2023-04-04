@@ -27,6 +27,7 @@ in {
       eval $ghci_cmd
       '';
       component = true;
+      expose = true;
     };
 
     ghcid = {
@@ -36,6 +37,17 @@ in {
       eval $ghcid_cmd
       '';
       component = true;
+      expose = true;
+    };
+
+    hls = {
+      env = "dev";
+      command = "${config.envs.hls.hls.package}/bin/haskell-language-server-wrapper";
+      expose = true;
+    };
+
+    run = {
+      command = "$@";
     };
 
   };

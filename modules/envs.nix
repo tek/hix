@@ -21,18 +21,15 @@ in {
   options = with types; {
 
     envs = mkOption {
-      description = "";
+      description = "All environments for this project.";
       type = attrsOf (submodule envModule);
       default = {};
     };
 
-    defaultEnv = mkOption {
-      description = "";
-      type = submodule envModule;
-    };
-
     ghcVersions = mkOption {
-      description = "The GHC versions for which to create envs, specified by their attribute names in `pkgs.haskell.packages`.";
+      description = ''
+      The GHC versions for which to create envs, specified by their attribute names in `pkgs.haskell.packages`.
+      '';
       type = listOf str;
       default = ["ghc8107" "ghc902" "ghc925" "ghc943"];
     };
@@ -49,25 +46,29 @@ in {
     envs = ghcVersionEnvs // {
 
       dev = {
-        ghc.name = "dev";
+        ghc = {
+          name = "dev";
+          compiler = mkDefault config.compiler;
+          overlays = mkDefault [];
+          nixpkgs = mkDefault config.inputs.nixpkgs;
+          nixpkgsOptions = mkDefault {};
+        };
         internal.overridesInherited = util.overridesGlobal ["dev"];
       };
 
       min = {
-        ghc = {
-          name = "min";
-          compiler = config.envs.dev.ghc.compiler;
-          nixpkgs = config.envs.dev.ghc.nixpkgs;
-          nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
-          overlays = config.envs.dev.ghc.overlays;
-        };
+        ghc.name = "min";
         internal.overridesInherited =
           util.concatOverrides [(util.overridesGlobalMin ["dev"]) config.envs.dev.overrides];
       };
 
-    };
+      hls = {
+        ghc.name = "hls";
+        hls.package = config.envs.hls.ghc.ghc.haskell-language-server;
+        hide = true;
+      };
 
-    defaultEnv = config.envs.dev;
+    };
 
     devGhc = mkDefault config.envs.dev.ghc;
   };

@@ -323,10 +323,7 @@ in {
         ghc = {
           name = "hix";
           compiler = "ghc925";
-          nixpkgs = config.envs.dev.ghc.nixpkgs;
-          nixpkgsOptions = config.envs.dev.ghc.nixpkgsOptions;
           overrides = mkForce cfg.overrides;
-          overlays = config.envs.dev.ghc.overlays;
         };
 
         package = cfg.ghc.ghc.hix;

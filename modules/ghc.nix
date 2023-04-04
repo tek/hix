@@ -1,7 +1,11 @@
 { global, util }:
 { lib, config, ... }:
 with lib;
-{
+let
+
+  unlessDev = v: mkIf (config.name != "dev") (mkDefault v);
+
+in {
   options = with types; {
     name = mkOption {
       type = str;
@@ -28,7 +32,6 @@ with lib;
     nixpkgsOptions = mkOption {
       type = attrsOf unspecified;
       description = mdDoc "Additional options to pass to nixpkgs when importing.";
-      default = {};
     };
 
     pkgs = mkOption {
@@ -46,18 +49,19 @@ with lib;
 
     overlays = mkOption {
       type = listOf util.types.overlay;
-      default = [];
       description = mdDoc "Additional nixpkgs overlays.";
     };
 
     vanillaGhc = mkOption {
       type = util.types.ghc;
       description = mdDoc "The package set without overrides.";
+      readOnly = true;
     };
 
     ghc = mkOption {
       type = util.types.ghc;
       description = mdDoc "The package set with overrides.";
+      readOnly = true;
     };
 
     version = mkOption {
@@ -69,9 +73,10 @@ with lib;
   };
 
   config = {
-    compiler = mkDefault global.compiler;
-
-    nixpkgs = mkDefault global.inputs.nixpkgs;
+    compiler = unlessDev global.envs.dev.ghc.compiler;
+    overlays = unlessDev global.envs.dev.ghc.overlays;
+    nixpkgs = unlessDev global.envs.dev.ghc.nixpkgs;
+    nixpkgsOptions = unlessDev global.envs.dev.ghc.nixpkgsOptions;
 
     pkgs = let
       go = util.ghcOverlay {

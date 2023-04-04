@@ -18,7 +18,6 @@ let
 
   app = program: { type = "app"; program = "${program}"; };
 
-  # TODO add hls
   envApps = env: {
     ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
   };
@@ -39,6 +38,8 @@ let
     default = local.${config.main};
     min = local.${config.main}.min;
   };
+
+  commandApps = mapAttrs (_: c: app "${c.path}");
 
 in {
   options = {
@@ -122,13 +123,16 @@ in {
       };
 
       devShells = let
-        shells = mapAttrs (_: e: e.shell) config.envs;
+
+        shells = mapAttrs (_: e: e.shell) util.visibleEnvs;
+
       in shells // { default = shells.dev; };
 
       apps = let
-        commands = mapAttrs (_: c: app "${c.path}") config.commands;
-      in config.hackage.output.apps // config.hpack.apps // {
-        hls = app "${config.shell.hls.app}";
+
+        exposed = filterAttrs (_: c: c.expose) config.commands;
+
+      in config.hackage.output.apps // config.hpack.apps // commandApps exposed // {
         gen-cabal = app "${config.hpack.script}";
         gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
         hpack = app "${config.hpack.script}";
@@ -136,10 +140,12 @@ in {
         tags = app tags.app;
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
-        cmd = commands;
-        env = util.foldMapAttrs envApps (attrValues config.envs);
-        ghcid = commands.ghcid;
-        ghci = commands.ghci;
+        cmd = commandApps config.commands;
+        env = util.foldMapAttrs envApps (attrValues util.visibleEnvs);
+        # TODO expose
+        # ghcid = commands.ghcid;
+        # ghci = commands.ghci;
+        # hls = commands.hls;
       };
 
     };
