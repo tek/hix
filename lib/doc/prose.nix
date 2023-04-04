@@ -561,6 +561,13 @@ in {
   ghci> (check . withTests 1 . property . test) test_server
   ```
 
+  Another built-in command is `run`, which executes an arbitrary shell command in an environment:
+
+  ```
+  $ nix run .#env.ghc925.run -- "ghc --version"
+  The Glorious Glasgow Haskell Compilation System, version 9.2.5
+  ```
+
   ### Services {#services}
 
   Services use in environments and commands can be user-defined in a flake:
