@@ -17,14 +17,17 @@ import Distribution.Types.IncludeRenaming (IncludeRenaming (..))
 import Distribution.Types.Mixin (Mixin (..))
 import qualified Exon
 import Exon (exon)
-import Hix.Cabal (buildInfoForFile)
-import Hix.Data.Error (Error (..), sourceError, tryPreproc)
-import Hix.Options (PreprocOptions (..))
-import Language.Haskell.Extension (Extension (DisableExtension, EnableExtension, UnknownExtension))
+import Language.Haskell.Extension (
+  Extension (DisableExtension, EnableExtension, UnknownExtension),
+  Language (UnknownLanguage),
+  )
 import Path (Abs, File, Path, toFilePath)
 import Prelude hiding (group)
 import System.Random (randomRIO)
-import Language.Haskell.Extension (Language(UnknownLanguage))
+
+import Hix.Cabal (buildInfoForFile)
+import Hix.Data.Error (Error (..), sourceError, tryIO)
+import Hix.Options (PreprocOptions (..))
 
 type Regex = IndexedTraversal' Int ByteString Match
 
@@ -454,8 +457,8 @@ preprocessModule source info dummyExportName inLines =
 preprocess :: PreprocOptions -> ExceptT Error IO ()
 preprocess PreprocOptions {..} = do
   info <- buildInfoForFile source
-  inLines <- tryPreproc (ByteString.readFile (toFilePath inFile))
+  inLines <- tryIO (ByteString.readFile (toFilePath inFile))
   dummyNumber :: Int <- randomRIO (10000, 10000000)
   let dummyExportName = DummyExportName [exon|Hix_Dummy_#{show dummyNumber}|]
   let result = preprocessModule source info dummyExportName inLines
-  tryPreproc (ByteStringBuilder.writeFile (toFilePath outFile) result)
+  tryIO (ByteStringBuilder.writeFile (toFilePath outFile) result)

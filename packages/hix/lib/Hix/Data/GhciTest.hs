@@ -1,11 +1,11 @@
-module Hix.Data.GhcidTest where
+module Hix.Data.GhciTest where
 
 import Path (Abs, Dir, File, Path)
 
 import Hix.Data.GhciConfig (GhciArgs)
 
-data GhcidTest =
-  GhcidTest {
+data GhciTest =
+  GhciTest {
     args :: GhciArgs,
     searchPath :: [Path Abs Dir],
     script :: Text,
@@ -15,7 +15,7 @@ data GhcidTest =
 
 data GhciRun =
   GhciRun {
-    test :: GhcidTest,
+    test :: GhciTest,
     shell :: Text,
     run :: Maybe Text,
     scriptFile :: Path Abs File

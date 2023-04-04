@@ -29,7 +29,7 @@ library
       Hix.Component
       Hix.Data.Error
       Hix.Data.GhciConfig
-      Hix.Data.GhcidTest
+      Hix.Data.GhciTest
       Hix.Env
       Hix.Ghci
       Hix.Monad
@@ -153,7 +153,7 @@ test-suite hix-test
   other-modules:
       Hix.Test.CabalFile
       Hix.Test.CabalTest
-      Hix.Test.GhcidTest
+      Hix.Test.GhciTest
       Hix.Test.PreprocTest
   hs-source-dirs:
       test

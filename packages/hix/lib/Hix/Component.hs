@@ -63,9 +63,8 @@ packageForSpec config = \case
         Rel rd -> tryPackageByDir config rd
 
 matchComponent :: ComponentConfig -> ComponentSpec -> Bool
-matchComponent candidate = \case
-  ComponentSpec name dir ->
-    candidate.name == name || any (\ d -> elem @[] d (coerce candidate.sourceDirs)) dir
+matchComponent candidate (ComponentSpec name dir) =
+  candidate.name == name || any (\ d -> elem @[] d (coerce candidate.sourceDirs)) dir
 
 componentError :: PackageName -> ComponentSpec -> Text
 componentError pname spec =
@@ -80,7 +79,7 @@ targetForComponent ::
 targetForComponent config spec = do
   package <- packageForSpec config spec.package
   component <- noteEnv (componentError package.name spec.component) (find match (Map.elems package.components))
-  pure Target {..}
+  pure Target {sourceDir = Nothing, ..}
   where
     match = flip matchComponent spec.component
 
@@ -91,15 +90,19 @@ targetForFile ::
 targetForFile config file = do
   Env {root} <- ask
   fileRel <- stripProperPrefix root file
-  (package, subpath) <- noteEnv "No package contains this file" (firstJust (matchPackage fileRel) (Map.elems config))
-  component <- noteEnv "No component source dir contains this file" (find (matchSourceDir subpath) (Map.elems package.components))
+  (package, subpath) <- pkgError (firstJust (matchPackage fileRel) (Map.elems config))
+  (component, sourceDir) <- compError (firstJust (matchSourceDir subpath) (Map.elems package.components))
   pure Target {..}
   where
     matchPackage fileRel package@PackageConfig {src} = do
       subpath <- stripProperPrefix src fileRel
       pure (package, subpath)
-    matchSourceDir subpath component =
-      any @[] (\ (SourceDir dir) -> isProperPrefixOf dir subpath) (coerce component.sourceDirs)
+    matchSourceDir subpath component = do
+      let match d@(SourceDir dir) = if isProperPrefixOf dir subpath then Just d else Nothing
+      dir <- firstJust match (coerce component.sourceDirs)
+      pure (component, Just dir)
+    pkgError = noteEnv "No package contains this file"
+    compError = noteEnv "No component source dir contains this file"
 
 targetComponent ::
   PackagesConfig ->

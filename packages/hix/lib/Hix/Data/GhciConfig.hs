@@ -70,7 +70,8 @@ data PackageConfig =
 data Target =
   Target {
     package :: PackageConfig,
-    component :: ComponentConfig
+    component :: ComponentConfig,
+    sourceDir :: Maybe SourceDir
   }
   deriving stock (Eq, Show, Generic)
 

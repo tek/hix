@@ -15,6 +15,8 @@ data Error =
   GhciError Text
   |
   NoMatch Text
+  |
+  Fatal Text
   deriving stock (Eq, Show, Generic)
 
 pathText :: Path b t -> Text
@@ -42,22 +44,24 @@ printGhciError ::
 printGhciError msg =
   liftIO (Text.hPutStrLn stderr [exon|>>> Invalid ghci config: #{msg}|])
 
+printFatalError ::
+  MonadIO m =>
+  Text ->
+  m ()
+printFatalError msg =
+  liftIO (Text.hPutStrLn stderr [exon|>>> Fatal error: #{msg}|])
+
 sourceError :: Text -> Path b t -> Text
 sourceError reason source =
   [exon|#{reason} the source file '#{pathText source}'|]
 
 tryIO ::
-  (Text -> Error) ->
   IO a ->
   ExceptT Error IO a
-tryIO f ma =
+tryIO ma =
   liftIO (tryIOError ma) >>= \case
     Right a -> pure a
-    Left err -> throwE (f (show err))
-
-tryPreproc :: IO a -> ExceptT Error IO a
-tryPreproc =
-  tryIO PreprocError
+    Left err -> throwE (Fatal (show err))
 
 note :: Text -> Maybe a -> ExceptT Error IO a
 note err =

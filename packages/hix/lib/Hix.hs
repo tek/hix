@@ -3,7 +3,7 @@ module Hix where
 import Control.Monad.Trans.Class (lift)
 import Path.IO (getCurrentDir)
 
-import Hix.Data.Error (Error (..), printEnvError, printGhciError, printPreprocError)
+import Hix.Data.Error (Error (..), printEnvError, printGhciError, printPreprocError, printFatalError)
 import Hix.Env (printEnvRunner)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
 import Hix.Monad (M, runM)
@@ -27,6 +27,7 @@ handleError GlobalOptions {verbose} = \case
   GhciError err -> printGhciError err
   NoMatch msg | fromMaybe False verbose -> printPreprocError msg
   NoMatch _ -> unit
+  Fatal err -> printFatalError err
 
 runCommand :: Command -> M ()
 runCommand = \case

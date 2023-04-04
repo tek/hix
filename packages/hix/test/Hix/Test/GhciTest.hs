@@ -1,8 +1,6 @@
-module Hix.Test.GhcidTest where
+module Hix.Test.GhciTest where
 
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (runExceptT)
-import Control.Monad.Trans.Reader (runReaderT)
 import Exon (exon)
 import Hedgehog (TestT, evalEither, (===))
 import Path (Abs, Dir, File, Path, Rel, SomeBase (Rel), absdir, absfile, reldir, relfile, (</>))
@@ -20,16 +18,16 @@ import Hix.Data.GhciConfig (
   SourceDir (SourceDir),
   SourceDirs (SourceDirs),
   )
-import qualified Hix.Data.GhcidTest as GhcidTest
+import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Env (envRunner)
-import Hix.Ghci (ghcidCmdlineFromOptions)
-import Hix.Monad (Env (Env), runM)
+import Hix.Ghci (assemble, ghcidCmdlineFromOptions)
+import Hix.Monad (runM)
 import qualified Hix.Options as Options
 import Hix.Options (
   ComponentCoords (ComponentCoords),
   ComponentSpec (ComponentSpec),
   EnvRunnerOptions (EnvRunnerOptions),
-  GhciOptions (GhciOptions),
+  GhciOptions (GhciOptions, component),
   PackageSpec (PackageSpec),
   TargetSpec (TargetForComponent, TargetForFile),
   TestOptions (TestOptions),
@@ -137,7 +135,7 @@ spec3 =
 
 runnerFor :: EnvRunner -> TargetSpec -> TestT IO ()
 runnerFor target spec = do
-  res <- evalEither =<< liftIO (runExceptT (runReaderT (envRunner conf) (Env root)))
+  res <- evalEither =<< liftIO (runM root (envRunner conf))
   target === res
   where
     conf = EnvRunnerOptions (EnvConfig packages defaultRunner) (Just spec)
@@ -147,3 +145,20 @@ test_componentEnv = do
   runnerFor runner1 spec1
   runnerFor runner2 spec2
   runnerFor runner2 spec3
+
+spec4 :: TargetSpec
+spec4 =
+  TargetForFile (root </> [relfile|packages/core/test/Core/Test/Main.hs|])
+
+target_moduleName :: Text
+target_moduleName =
+  [exon|import Test.Tasty
+:load #{m}
+import #{m}|]
+  where
+    m = "Core.Test.Main"
+
+test_moduleName :: TestT IO ()
+test_moduleName = do
+  conf <- evalEither =<< liftIO (runM root (assemble options { component = spec4 }))
+  target_moduleName === conf.script
