@@ -576,25 +576,23 @@ in {
 
   Hix provides built-in services, like the previously mentioned PostgreSQL server, that have specialized configuration
   options.
-  These are located in an identically named module under `service` (singular), e.g. the service defined at
-  `services.postgres` is configured in `service.postgres`.
-  These modules don't have a shared structure but are consumed with special logic by the definition of
-  `services.<name>.nixos-base` to compute the NixOS configuration.
-
-  Additional NixOS config can be specified by the user as described before, in `services.<name>.nixos`.
+  They can be configured in the same option as the definition of a new service, still allowing the specification of
+  additional NixOS config as described before, in `services.<name>.nixos`.
 
   Furthermore, an environment may provide Hix config overrides in `envs.<name>.services.<name>.config` that is combined
-  with the config in `service.<name>`.
+  with the config in `services.<name>`.
 
   ```nix
   {
     outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
 
-      # Add NixOS config to the default config computed by Hix
-      services.postgres.nixos = { users.users.postgres.extraGroups = ["docker"]; };
+      services.postgres = {
+        # Add NixOS config to the default config computed by Hix
+        nixos.users.users.postgres.extraGroups = ["docker"];
 
-      # Configure PostgreSQL specifically, used by `services.postgres.nixos-base` internally
-      service.postgres = { dbUser = "root"; };
+        # Configure PostgreSQL specifically, used by `services.postgres.nixos-base` internally
+        dbUser = "root";
+      };
 
       envs.example = {
 
@@ -610,6 +608,11 @@ in {
     });
   }
   ```
+
+  In order to define a service with specialized config, an entry in the option `internal.services.myservice` must be
+  provided that contains a module with option declarations.
+  This option has type `deferredModule`, which means that it's not evaluated at the definition site, but used in a magic
+  way somewhere else to create a new combined module set consisting of all the configs described before.
 
   ### Environment options {#submodule-env}
 
