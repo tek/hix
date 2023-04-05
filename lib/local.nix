@@ -29,6 +29,8 @@ hix.pro ({config, lib, ...}: {
 
   compat.enable = false;
 
+  hackage.versionFile = "ops/version.nix";
+
   outputs = {
 
     packages = let
