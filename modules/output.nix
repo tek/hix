@@ -22,9 +22,9 @@ let
     ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
   };
 
-  versionDerivations = let
+  envDerivations = envs: let
     prefixed = v: n: d: { name = "${v}-${n}"; value = d; };
-  in util.foldMapAttrs (v: mapAttrs' (prefixed v) config.envs.${v}.derivations) config.ghcVersions;
+  in util.foldMapAttrs (v: mapAttrs' (prefixed v) config.envs.${v}.derivations) envs;
 
   releaseDrv = import ../lib/release-derivation.nix {
     inherit lib;
@@ -114,9 +114,10 @@ in {
 
     outputs = {
 
-      packages = devOutputs // versionDerivations;
+      packages = devOutputs // envDerivations config.ghcVersions;
 
-      checks = config.envs.dev.derivations // optionalAttrs config.compat.enable versionDerivations;
+      checks =
+        config.envs.dev.derivations // optionalAttrs config.compat.enable (envDerivations config.compat.versions);
 
       legacyPackages = {
         inherit config;

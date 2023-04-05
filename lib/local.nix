@@ -25,7 +25,7 @@ hix.pro ({config, lib, ...}: {
 
   };
 
-  envs.dev.ghc.compiler = "ghc925";
+  compiler = "ghc92";
 
   compat.enable = false;
 

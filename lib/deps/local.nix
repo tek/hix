@@ -4,7 +4,6 @@
   localPackage ? _: lib.id,
 }:
 let
-  hixlib = import ../lib/default.nix { inherit lib; };
   gen-cabal = import ../lib/gen-cabal.nix { inherit config lib; };
 
   noCabal = name: src:

@@ -307,7 +307,6 @@ in {
           name = "hix";
           compiler = "ghc927";
           overrides = mkForce cfg.overrides;
-
           nixpkgs = config.inputs.nixpkgs_internal;
           nixpkgsOptions = {};
           overlays = [];
