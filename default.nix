@@ -9,19 +9,21 @@ let
   api = makeExtensible (self: {
     lib = import ./lib/default.nix { inherit (inputs.nixpkgs) lib; };
 
-    modules = projectModules: import ./modules/all-modules.nix {
+    modules = {projectModules ? [], extraModules ? []}: import ./modules/all-modules.nix {
       inherit inputs;
-      projectModules = map compat.check (toList projectModules);
+      projectModules = extraModules ++ map compat.check (toList projectModules);
     };
 
-    flake = projectModules:
-    import ./modules/build.nix { inherit (inputs.nixpkgs) lib; modules = self.modules projectModules; };
+    flakeWith = modules:
+    import ./modules/build.nix { inherit (inputs.nixpkgs) lib; modules = self.modules modules; };
+
+    flake = projectModules: self.flakeWith { inherit projectModules; };
 
     auto = projectModules:
     self.flake ([{ auto = true; ifd = false; }] ++ toList projectModules);
 
     pro = projectModules:
-    self.flake ([(import ./modules/pro.nix)] ++ toList projectModules);
+    self.flakeWith { extraModules = [(import ./modules/pro.nix)]; projectModules = toList projectModules; };
 
     overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };
 
