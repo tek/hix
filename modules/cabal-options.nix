@@ -172,7 +172,7 @@ in {
       Setting this option to `false` prevents this module from being generated.
       '';
       type = bool;
-      default = true;
+      default = !config.prelude.enable;
     };
 
     dependOnLibrary = mkOption {
