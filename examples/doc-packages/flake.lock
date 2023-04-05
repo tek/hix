@@ -19,37 +19,20 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "nixpkgs_ghc8107": [
-          "hix",
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc884": "nixpkgs_ghc884",
-        "nixpkgs_ghc902": [
-          "hix",
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc925": [
-          "hix",
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc943": [
-          "hix",
-          "nixpkgs"
-        ],
         "nixpkgs_internal": "nixpkgs_internal",
         "thax": "thax"
       },
       "locked": {
-        "lastModified": 1680654885,
-        "narHash": "sha256-CFXoB3rPgf2SkxE/NDangrMUJqG1CvV/4deUb6XBdSE=",
+        "lastModified": 1680707774,
+        "narHash": "sha256-9ZAB8dedTSTwVX2u4EDQysgzulYsixJPyRxsdhFt7pU=",
         "owner": "tek",
         "repo": "hix",
-        "rev": "f507d44d5ebeb1ae4aa069d0bd69d8a28ec854b2",
+        "rev": "86e84678943eafd59f03cf661c9df7564c2eede1",
         "type": "github"
       },
       "original": {
         "owner": "tek",
-        "ref": "release/0.1.0.0",
+        "ref": "release/0.2.0.0",
         "repo": "hix",
         "type": "github"
       }
@@ -67,22 +50,6 @@
         "owner": "NixOS",
         "repo": "nixpkgs",
         "rev": "b139e44d78c36c69bcbb825b20dbfa51e7738347",
-        "type": "github"
-      }
-    },
-    "nixpkgs_ghc884": {
-      "locked": {
-        "lastModified": 1616670887,
-        "narHash": "sha256-wn+l9qJfR5sj5Gq4DheJHAcBDfOs9K2p9seW2f35xzs=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c0e881852006b132236cbf0301bd1939bb50867e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c0e881852006b132236cbf0301bd1939bb50867e",
         "type": "github"
       }
     },
