@@ -129,7 +129,7 @@ in {
       '';
       type = str;
       default =
-        if all (util.minGhc "9.2") (attrValues global.envs)
+        if util.minGhcs "9.2"
         then "GHC2021"
         else "Haskell2010";
     };

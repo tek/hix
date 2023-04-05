@@ -74,6 +74,9 @@ let
 
   visibleEnvs = filterAttrs (_: e: !e.hide) config.envs;
 
+  minGhcs = version:
+  all (basic.minGhc version) (attrValues config.envs);
+
 in basic // {
   inherit
   paramApp
@@ -83,5 +86,6 @@ in basic // {
   overridesGlobalMin
   json
   visibleEnvs
+  minGhcs
   ;
 }

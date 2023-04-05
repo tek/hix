@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, util, ... }:
 with lib;
 {
   ghcVersions = ["ghc925" "ghc943"];
@@ -38,7 +38,42 @@ with lib;
       "UndecidableInstances"
       "UnicodeSyntax"
       "ViewPatterns"
-    ] ++ optionals (versionAtLeast config.envs.dev.ghc.version "9.2") ["OverloadedRecordDot" "NoFieldSelectors"];
+    ] ++
+    (
+      if util.minGhcs "9.2"
+      then ["OverloadedRecordDot" "NoFieldSelectors"]
+      else [
+        "BangPatterns"
+        "BinaryLiterals"
+        "ConstraintKinds"
+        "DeriveDataTypeable"
+        "DeriveFoldable"
+        "DeriveFunctor"
+        "DeriveGeneric"
+        "DeriveLift"
+        "DeriveTraversable"
+        "DoAndIfThenElse"
+        "EmptyCase"
+        "EmptyDataDecls"
+        "ExistentialQuantification"
+        "FlexibleContexts"
+        "FlexibleInstances"
+        "GeneralizedNewtypeDeriving"
+        "InstanceSigs"
+        "KindSignatures"
+        "MultiParamTypeClasses"
+        "NamedFieldPuns"
+        "PatternGuards"
+        "PolyKinds"
+        "RankNTypes"
+        "ScopedTypeVariables"
+        "StandaloneDeriving"
+        "TupleSections"
+        "TypeApplications"
+        "TypeOperators"
+        "TypeSynonymInstances"
+      ]
+    );
 
     ghc-options = [
       "-Wall"
