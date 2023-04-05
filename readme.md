@@ -44,6 +44,12 @@ Then configure your project with NixOS module options:
 }
 ```
 
+Now generate Cabal files with:
+
+```
+nix run .#gen-cabal
+```
+
 Build the package with `nix build`, or run the tests in `test/Main.hs` in GHCid:
 
 ```

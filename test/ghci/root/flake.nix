@@ -13,7 +13,7 @@
       test.enable = true;
       test.env = "test";
     };
-    compiler = "ghc902";
+    compiler = "ghc90";
     envs.test.services.test.enable = true;
     services.test = {
       nixos.services.nginx = {

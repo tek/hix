@@ -33,7 +33,7 @@ in {
       The GHC versions for which to create envs, specified by their attribute names in `pkgs.haskell.packages`.
       '';
       type = listOf str;
-      default = ["ghc8107" "ghc902" "ghc925" "ghc943"];
+      default = ["ghc810" "ghc90" "ghc92" "ghc94"];
     };
 
     devGhc = mkOption {

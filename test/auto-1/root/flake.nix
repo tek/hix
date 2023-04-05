@@ -30,6 +30,6 @@
 
     };
     compat.enable = false;
-    envs.dev.ghc.compiler = "ghc902";
+    envs.dev.ghc.compiler = "ghc90";
   };
 }

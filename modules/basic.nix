@@ -10,11 +10,11 @@ let
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
   compatProjects = {
-    "943" = {};
-    "925" = {};
-    "902" = {};
-    "8107" = { enable = false; };
-    "884" = { enable = false; };
+    "94" = {};
+    "92" = {};
+    "90" = {};
+    "810" = { enable = false; };
+    "88" = { enable = false; };
   };
 
   baseFromPackages = let
@@ -125,7 +125,7 @@ in {
         The GHC version used for internal tasks and as default for the default environment.
       '';
       type = str;
-      default = "ghc925";
+      default = "ghc92";
     };
 
     compat = {
@@ -297,7 +297,7 @@ in {
 
         ghc = {
           name = "hix";
-          compiler = "ghc927";
+          compiler = "ghc92";
           overrides = mkForce cfg.overrides;
           nixpkgs = config.inputs.nixpkgs_internal;
           nixpkgsOptions = {};

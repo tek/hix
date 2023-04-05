@@ -10,7 +10,7 @@
       library.enable = true;
       executable.enable = true;
     };
-    envs.dev.ghc.compiler = "ghc902";
+    envs.dev.ghc.compiler = "ghc90";
     envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
     overrides = { hsLib, self, ... }: {
       static = hsLib.justStaticExecutables self.root;

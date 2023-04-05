@@ -14,6 +14,6 @@
       test.enable = true;
     };
     cabal.dependencies = ["base" "polysemy"];
-    envs.dev.ghc.compiler = "ghc902";
+    envs.dev.ghc.compiler = "ghc90";
   };
 }

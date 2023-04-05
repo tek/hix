@@ -165,7 +165,7 @@ in {
   ```
 
   To create a derivation for the Haskell app, we select a package set for the GHC version 9.2.5 with
-  `pkgs.haskell.packages.ghc925` and call the builder exposed by that set that wraps the tool
+  `pkgs.haskell.packages.ghc92` and call the builder exposed by that set that wraps the tool
   [cabal2nix](https://github.com/NixOS/cabal2nix), which converts the Cabal file in the specified directory to a
   derivation.
   Cabal2nix reads the dependencies from the file and ensures that they are accessible during the build, in which Cabal
@@ -345,7 +345,7 @@ in {
     outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
       envs.example = {
 
-        ghc.compiler = "ghc943";
+        ghc.compiler = "ghc94";
 
         buildInputs = [config.pkgs.socat];
 
@@ -621,8 +621,8 @@ in {
   Another built-in command is `run`, which executes an arbitrary shell command in an environment:
 
   ```
-  $ nix run .#env.ghc925.run -- "ghc --version"
-  The Glorious Glasgow Haskell Compilation System, version 9.2.5
+  $ nix run .#env.ghc92.run -- "ghc --version"
+  The Glorious Glasgow Haskell Compilation System, version 9.2.4
   ```
 
   ### Services {#services}

@@ -19,7 +19,7 @@
       fail "stm-chans version override in 'root' doesn't supersede the one from 'dep1' (is $version)."
     fi
 
-    nix build .#ghc902.root
+    nix build .#ghc90-root
 
     nix run .#hls 2>/dev/null
   '';

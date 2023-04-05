@@ -1,7 +1,7 @@
 { config, lib, util, ... }:
 with lib;
 {
-  ghcVersions = ["ghc925" "ghc943"];
+  ghcVersions = ["ghc92" "ghc94"];
 
   internal.cabal-extra = {
 
