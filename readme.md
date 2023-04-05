@@ -13,3 +13,39 @@ declarative interface for a range of build related tasks:
 - Compatibility checks for multiple GHC versions
 
 To learn more, please visit the [documentation page](https://tryp.io/hix/index.html).
+
+# tldr
+
+Add Hix to your Haskell project flake by specifiying the input:
+
+```nix
+{
+  inputs.hix.url = "github:tek/hix?ref=release/0.1.0.0";
+}
+```
+
+Then configure your project with NixOS module options:
+
+```nix
+{
+  description = "Example";
+  inputs.hix.url = "github:tek/hix?ref=release/0.1.0.0";
+  outputs = {hix, ...}: hix.lib.flake {
+    packages.parser = {
+      src = ./.;
+      library = {
+        enable = true;
+        dependencies = ["aeson ^>= 2.0" "bytestring"];
+      };
+      executable.enable = true;
+      test.enable = true;
+    };
+  };
+}
+```
+
+Build the package with `nix build`, or run the tests in `test/Main.hs` in GHCid:
+
+```
+nix run .#ghcid -- -p parser
+```
