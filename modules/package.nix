@@ -178,6 +178,7 @@ in {
       description = mdDoc ''
       The version file for this package, defaulting to the global [](#opt-hackage-hackage.versionFile) if `null`.
       When bumping the version of this package with `nix run .#release`, this file is updated.
+      Should be relative to the project root.
       '';
       type = nullOr str;
       default = null;

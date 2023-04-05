@@ -52,7 +52,15 @@ in {
       The version for all packages in this option tree.
       '';
       type = str;
-      default = "0.1.0.0";
+      default = let
+        check = f: f != null && hasSuffix ".nix" f;
+        fromFile = f: import "${global.base}/${f}";
+      in
+        if config ? versionFile && check config.versionFile
+        then fromFile config.versionFile
+        else if check global.hackage.versionFile
+        then fromFile global.hackage.versionFile
+        else "0.1.0.0";
     };
 
     author = mkOption {
