@@ -17,7 +17,7 @@
     };
     packages = {
 
-      dep = {
+      dep-lib = {
         src = ./dep;
         cabal = {
           ghc-options = ["-Wall" "-Werror"];

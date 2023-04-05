@@ -8,9 +8,9 @@ let
   --
   -- see: https://github.com/sol/hpack
 
-  name:           dep
+  name:           dep-lib
   version:        13
-  description:    See https://hackage.haskell.org/package/dep/docs/Dep.html
+  description:    See https://hackage.haskell.org/package/dep-lib/docs/Dep-Lib.html
   author:         Author McCodeface
   maintainer:     Author McCodeface
   license:        GPL-3
@@ -20,7 +20,7 @@ let
     exposed-modules:
         Dep.Lib
     other-modules:
-        Paths_dep
+        Paths_dep_lib
     hs-source-dirs:
         lib
     default-extensions:
@@ -104,9 +104,9 @@ in {
     nix flake update
     nix run .#gen-cabal-quiet
 
-    if ! diff ${targetDep} dep/dep.cabal
+    if ! diff ${targetDep} dep/dep-lib.cabal
     then
-      fail "The generated Cabal file for 'dep' differs from the target."
+      fail "The generated Cabal file for 'dep-lib' differs from the target."
     fi
 
     if ! diff ${targetRoot} root.cabal

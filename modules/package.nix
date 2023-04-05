@@ -235,7 +235,7 @@ in {
 
     hackageLink = mkDefault "https://hackage.haskell.org/package/${config.name}";
 
-    hackageRootLink = mkDefault "${config.hackageLink}/docs/${config.rootModule}.html";
+    hackageRootLink = mkDefault "${config.hackageLink}/docs/${replaceStrings ["."] ["-"] config.rootModule}.html";
 
     description = mkDefault "See ${config.hackageRootLink}";
 
