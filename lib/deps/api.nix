@@ -32,6 +32,7 @@ let
     buildInputs = inputs: transform_ (drv: drv.overrideAttrs (old: { buildInputs = old.buildInputs ++ inputs; }));
     minimal = transform_ modifiers.minimalDrv;
     profiling = transform_ modifiers.profiling;
+    noprofiling = transform_ modifiers.noProfiling;
     unbreak = transform_ modifiers.unbreak;
     fast = transform_ modifiers.fast;
     notest = transform_ modifiers.notest;

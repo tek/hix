@@ -321,6 +321,46 @@ in {
       default = localPackages // extraPackages;
     };
 
+    localPackage = mkOption {
+      description = mdDoc ''
+        A function that takes dep combinators and a derivation and returns a modified version of that derivation.
+        Called for each cabal2nix derivation of the local packages before inserting it into the overrides.
+
+        The default is to disable profiling if [](#opt-env-profiling) is `false`.
+        If this option is customized, the profiling option won't be effective.
+      '';
+      example = literalExpression ''
+        { fast, nobench, ... }: pkg: nobench (fast pkg);
+      '';
+      type = unspecified;
+      default = api: if config.profiling then id else api.noprofiling;
+    };
+
+    profiling = mkOption {
+      type = bool;
+      default = true;
+      description = mdDoc ''
+        Whether to build local packages and dependency overrides with profiling enabled.
+        Ineffective if [](#opt-env-localPackage) is customized.
+      '';
+    };
+
+    ifd = mkOption {
+      type = bool;
+      default = global.ifd;
+      description = mdDoc ''
+      Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.
+      '';
+    };
+
+    auto = mkOption {
+      type = bool;
+      default = global.auto;
+      description = mdDoc ''
+      Generate the Cabal file on the fly if none is present in the source directory (or a `package.yaml`).
+      '';
+    };
+
     vm = {
 
       enable = mkEnableOption (mdDoc "the service VM for this env");
@@ -377,10 +417,20 @@ in {
 
     internal = {
 
-      overridesInherited = mkOption {
-        description = mdDoc "The inherited overrides used for this env, like local packages and global overrides.";
+      overridesLocal = mkOption {
+        description = mdDocs "The local packages, encoded as overrides.";
         type = util.types.cabalOverrides;
-        default = global.internal.overridesLocal;
+        default = import ../lib/deps/local.nix {
+          config = global;
+          inherit lib;
+          inherit (config) ifd auto localPackage;
+        };
+      };
+
+      overridesInherited = mkOption {
+        description = mdDoc "The inherited overrides used for this env.";
+        type = util.types.cabalOverrides;
+        default = [];
       };
 
       resolvedServices = mkOption {
@@ -399,7 +449,7 @@ in {
 
     services.hix-internal-env-wait.enable = config.wait > 0;
 
-    ghc.overrides = mkDefault (util.concatOverrides [config.internal.overridesInherited config.overrides]);
+    ghc.overrides = mkDefault (util.concatOverrides [config.internal.overridesLocal config.internal.overridesInherited config.overrides]);
 
     vm = {
 

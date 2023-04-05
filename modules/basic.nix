@@ -34,13 +34,12 @@ in {
   options = {
 
     base = mkOption {
-      type = path;
-      description = mdDoc "The project's base directory.";
+      description = mdDoc "The project's base directory. Will be inferred from package source directories.";
       example = literalExpression "./.";
+      type = path;
     };
 
     packages = mkOption {
-      type = attrsOf (submodule packageModule);
       description = mdDoc ''
       The project's Cabal packages, with Cabal package names as keys and package config as values.
       The config is processed with [HPack](https://github.com/sol/hpack).
@@ -52,20 +51,20 @@ in {
         spaceship-api = { src = ./api; dependencies = ["aeson"]; library.enable = true; };
       }
       '';
+      type = attrsOf (submodule packageModule);
       default = {};
     };
 
     main = mkOption {
-      type = str;
       description = mdDoc ''
         The name of a key in `packages` that is considered to be the main package.
         This package will be assigned to the `defaultPackage` flake output that is built by a plain
         `nix build`.
       '';
+      type = str;
     };
 
     cabal = mkOption {
-      type = unspecified;
       description = mdDoc ''
       Cabal options that are applied to all packages and components.
 
@@ -81,83 +80,63 @@ in {
       `mkIf` or `mkOverride`.
       You can use {option}`cabal-config` for this purpose, though.
       '';
+      type = unspecified;
       default = {};
     };
 
     cabal-config = mkOption {
-      type = submoduleWith { modules = [cabalOptionsModule config.cabal config.internal.cabal-extra]; };
-      readOnly = true;
       description = mdDoc ''
       Evaluated version of {option}`cabal`, for referencing in other config values.
       May not be set by the user.
       '';
+      type = submoduleWith { modules = [cabalOptionsModule config.cabal config.internal.cabal-extra]; };
+      readOnly = true;
       default = {};
     };
 
     auto = mkOption {
+      description = mdDoc ''
+      Generate Cabal files on the fly if none are present in source directories (or a `package.yaml`).
+      '';
       type = bool;
       default = false;
-      description = mdDoc ''
-        Generate the Cabal file on the fly if none is present in the source directory (or a
-        `package.yaml`).
-      '';
     };
 
     forceCabal2nix = mkOption {
+      description = mdDoc "Whether to use cabal2nix even if there is no Cabal file.";
       type = bool;
       default = false;
-      description = mdDoc "Whether to use cabal2nix even if there is no Cabal file.";
     };
 
     forceCabalGen = mkOption {
+      description = mdDoc "Whether to generate a Cabal file from Nix config even if there is one in the source directory.";
       type = bool;
       default = false;
-      description = mdDoc "Whether to generate a Cabal file from Nix config even if there is one in the source directory.";
     };
 
     ifd = mkOption {
+      description = mdDoc "Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.";
       type = bool;
       default = true;
-      description = mdDoc "Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.";
     };
 
     compiler = mkOption {
+      description = mdDoc ''
+        The GHC version used for internal tasks and as default for the default environment.
+      '';
       type = str;
       default = "ghc925";
-      description = mdDoc ''
-        The GHC version used for internal tasks and as default for the dev package set.
-      '';
-    };
-
-    localPackage = mkOption {
-      type = unspecified;
-      default = _: id;
-      description = mdDoc ''
-        A function that takes dep combinators and a derivation and returns a modified version of that derivation.
-        Called for each cabal2nix derivation of the local packages before inserting it into the overrides.
-      '';
-      example = literalExpression ''
-        { fast, ... }: pkg: fast pkg;
-      '';
-    };
-
-    profiling = mkOption {
-      type = bool;
-      default = true;
-      description = mdDoc ''
-        Global default for whether to build local packages and dependency overrides with profiling enabled.
-      '';
     };
 
     compat = {
 
       enable = mkOption {
-        type = bool;
-        default = true;
         description = mdDoc ''
           Create derivations in [](#opt-general-outputs.checks) that build the packages with different GHC versions.
           The set of versions is configured by [](#opt-general-compat.versions).
         '';
+        type = bool;
+        default = true;
       };
 
       versions = mkOption {
@@ -167,6 +146,14 @@ in {
         '';
         type = listOf str;
         default = config.ghcVersions;
+      };
+
+      ifd = mkOption {
+        description = mdDoc ''
+        Whether to allow IFD for compat checks.
+        '';
+        type = bool;
+        default = config.ifd;
       };
 
     };
@@ -205,6 +192,7 @@ in {
       description = mdDoc ''
         The nixpkgs attrset used by the default GHC.
       '';
+      readOnly = true;
     };
 
     internal = {
@@ -216,18 +204,22 @@ in {
 
       basicGhc = mkOption {
         type = util.types.ghc;
+        readOnly = true;
       };
 
       packageNames = mkOption {
         type = listOf str;
+        readOnly = true;
       };
 
       packagePaths = mkOption {
         type = attrsOf path;
+        readOnly = true;
       };
 
       relativePackages = mkOption {
         type = attrsOf str;
+        readOnly = true;
       };
 
       cabal-extra = mkOption {
@@ -281,7 +273,7 @@ in {
 
     internal = {
 
-      basicPkgs = import config.inputs."nixpkgs_${config.compiler}" { inherit (config) system; };
+      basicPkgs = import config.inputs.nixpkgs { inherit (config) system; };
 
       basicGhc = config.internal.basicPkgs.haskell.packages.${config.compiler};
 

@@ -10,9 +10,11 @@ let
     ghc = {
       name = compiler;
       inherit compiler;
-      nixpkgs = config.input.ghcNixpkgs.${compiler} or config.inputs.nixpkgs;
+      nixpkgs = config.inputs.nixpkgs;
     };
     internal.overridesInherited = util.overridesGlobal [compiler];
+    ifd = mkIf (!config.compat.ifd) false;
+    auto = mkIf (!config.compat.ifd) true;
   };
 
   ghcVersionEnvs = genAttrs config.ghcVersions ghcVersionEnv;
@@ -60,6 +62,7 @@ in {
         ghc.name = "min";
         internal.overridesInherited =
           util.concatOverrides [(util.overridesGlobalMin ["dev"]) config.envs.dev.overrides];
+        localPackage = api: api.fast;
       };
 
       hls = {

@@ -33,8 +33,8 @@ with lib;
       '';
       type = unspecified;
       default = {
-        local = toList config.internal.overridesLocal;
-        localMin = toList config.internal.overridesLocalMin;
+        local = toList config.envs.dev.internal.overridesLocal;
+        localMin = toList config.envs.min.internal.overridesLocal;
         all = toList config.overrides;
         dev = toList config.envs.dev.overrides;
       } // genAttrs config.ghcVersions (v: toList config.envs.${v}.overrides);
@@ -47,24 +47,6 @@ with lib;
         map (o: o.overrides) config.depsFull;
 
     in {
-
-      overridesLocal = mkOption {
-        description = "";
-        type = util.types.cabalOverrides;
-        default = import ../lib/deps/local.nix {
-          inherit config lib;
-          inherit (config) localPackage;
-        };
-      };
-
-      overridesLocalMin = mkOption {
-        description = "";
-        type = util.types.cabalOverrides;
-        default = import ../lib/deps/local.nix {
-          inherit config lib;
-          localPackage = api@{ fast, ... }: p: fast (config.localPackage api p);
-        };
-      };
 
       overridesDeps = mkOption {
         description = "";

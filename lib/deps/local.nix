@@ -1,10 +1,12 @@
 {
   config,
   lib,
+  ifd,
+  auto,
   localPackage ? _: lib.id,
 }:
 let
-  gen-cabal = import ../lib/gen-cabal.nix { inherit config lib; };
+  gen-cabal = import ../gen-cabal.nix { inherit config lib; };
 
   noCabal = name: src:
   !(builtins.pathExists "${src}/${name}.cabal" || builtins.pathExists "${src}/package.yaml");
@@ -22,7 +24,7 @@ let
   checkAuto = api: name: pkg:
   let
     autoSrc =
-      if config.auto
+      if auto
       then gen-cabal.withCabal name pkg.src
       else noCabalError name;
     fullSrc =
@@ -33,7 +35,7 @@ let
 
   checkIfd = api: name: pkg:
   localPackage api (
-    if config.ifd
+    if ifd
     then checkAuto api name pkg
     else gen-cabal.simpleCabalDrv api name pkg
   );

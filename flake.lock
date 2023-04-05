@@ -31,22 +31,6 @@
         "type": "github"
       }
     },
-    "nixpkgs_ghc884": {
-      "locked": {
-        "lastModified": 1616670887,
-        "narHash": "sha256-wn+l9qJfR5sj5Gq4DheJHAcBDfOs9K2p9seW2f35xzs=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c0e881852006b132236cbf0301bd1939bb50867e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c0e881852006b132236cbf0301bd1939bb50867e",
-        "type": "github"
-      }
-    },
     "nixpkgs_internal": {
       "locked": {
         "lastModified": 1679109242,
@@ -67,19 +51,6 @@
       "inputs": {
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
-        "nixpkgs_ghc8107": [
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc884": "nixpkgs_ghc884",
-        "nixpkgs_ghc902": [
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc925": [
-          "nixpkgs"
-        ],
-        "nixpkgs_ghc943": [
-          "nixpkgs"
-        ],
         "nixpkgs_internal": "nixpkgs_internal",
         "thax": "thax"
       }

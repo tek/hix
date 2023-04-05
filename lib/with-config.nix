@@ -19,14 +19,12 @@ let
   util.concatOverrides [
     (overridesFromDeps (["local"] ++ extra))
     config.overrides
-    config.internal.overridesLocal
   ];
 
   overridesGlobalMin = extra:
   util.concatOverrides [
     (overridesFromDeps (["localMin"] ++ extra))
     config.overrides
-    config.internal.overridesLocalMin
   ];
 
   json = let

@@ -469,6 +469,7 @@ in {
   - `nobench` – Disable benchmarks
   - `minimal` – Disable Haddock, benchmarks and tests
   - `fast` – Disable profiling and Haddock
+  - `noprofiling` – Disable profiling for the package
   - `profiling` – Enable profiling for the package (when disabling it globally)
   - `configure` – Add a Cabal configure flag
   - `configures` – Add multiple Cabal configure flags (in a list)
