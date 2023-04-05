@@ -11,7 +11,7 @@ let
   manpageUrls = nixpkgsDoc + "/manpage-urls.json";
 
   renderOptions = {name, options, header, extra}: ''
-  ## ${header} options {#options-${name}}
+  ### ${header} options {#options-${name}}
 
   ${extra}
 
@@ -62,8 +62,8 @@ let
       --stylesheet highlightjs/mono-blue.css \
       --script ./highlightjs/highlight.pack.js \
       --script ./highlightjs/loader.js \
-      --toc-depth 1 \
-      --chunk-toc-depth 1 \
+      --toc-depth 2 \
+      --chunk-toc-depth 2 \
       ${manualMd} \
       $dst/index.html
   '';

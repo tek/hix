@@ -424,7 +424,7 @@ in {
   individual environment, and on the `ghc` module in an environment (although the latter is populated by Hix with the
   merged global and local overrides).
 
-  #### Override combinators {#overrides-combinators}
+  ### Override combinators {#overrides-combinators}
 
   There are different classes of combinators.
   The most fundamental ones are used to declare package sources:
@@ -506,7 +506,7 @@ in {
   }
   ```
 
-  ### Commands {#commands}
+  ## Commands {#commands}
 
   Services in an environment are relevant when executing a command, which consists of an arbitrary shell script
   associated with an environment.
@@ -534,7 +534,7 @@ in {
   nix run .#cmd.integration-test
   ```
 
-  #### Component-dependent environments {#commands-component-env}
+  ### Component-dependent environments {#commands-component-env}
 
   When the command option `component` is set to `true`, the command will take two argument lists, separated by a `--`.
   The first batch of arguments is passed to the Hix CLI to select the environment, the second one is assigned to the
@@ -581,7 +581,7 @@ in {
   1
   ```
 
-  #### Built-in commands {#commands-builtin}
+  ### Built-in commands {#commands-builtin}
 
   Hix provides two special commands for executing a function in GHCi or GHCid.
 
@@ -625,7 +625,7 @@ in {
   The Glorious Glasgow Haskell Compilation System, version 9.2.4
   ```
 
-  ### Services {#services}
+  ## Services {#services}
 
   Services use in environments and commands can be user-defined in a flake:
 
@@ -697,7 +697,7 @@ in {
   This option has type `deferredModule`, which means that it's not evaluated at the definition site, but used in a magic
   way somewhere else to create a new combined module set consisting of all the configs described before.
 
-  #### Defining modular services {#services-define}
+  ### Defining modular services {#services-define}
 
   A service can be defined in [](#opt-general-services) with plain NixOS config, but it is useful to allow the service
   to be specially configurable.
