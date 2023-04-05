@@ -15,8 +15,6 @@ let
 
   prose = import ./prose.nix {};
 
-  mod-ghc = options.module "ghc" { inherit global util; };
-
   mod-cabal-options = options.module "cabal-options" { inherit global util; };
 
   compExcept = [["source-dirs"] ["name"]];
@@ -41,6 +39,10 @@ let
     { type = "full"; path = ["internal"]; }
   ];
   mod-env = options.moduleWithout envExclude "env" { global = config; inherit util; };
+
+  ghcExclude = [
+  ];
+  mod-ghc = options.moduleWithout ghcExclude "ghc" { global = config; inherit util; };
 
   commandExclude = [
     { type = "sub"; path = ["env"]; }
@@ -104,6 +106,7 @@ let
       fragments = [
         (text environments)
         (opt "env" "Environment" mod-env)
+        (opt "ghc" "GHC" mod-ghc)
         (opt "command" "Command" mod-command)
         (opt "service" "Service" mod-service)
       ];

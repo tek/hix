@@ -9,6 +9,8 @@ let
 
   showConfig = import ../lib/show-config.nix { inherit config lib util; };
 
+  libOutput = import ../lib/output.nix { inherit config lib util; };
+
   # TODO use the json method and print in cli
   show-config = util.paramApp {
     name = "show-config";
@@ -20,25 +22,6 @@ let
 
   envApps = env: {
     ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
-  };
-
-  envDerivations = envs: let
-    prefixed = v: n: d: { name = "${v}-${n}"; value = d; };
-  in util.foldMapAttrs (v: mapAttrs' (prefixed v) config.envs.${v}.derivations) envs;
-
-  releaseDrv = import ../lib/release-derivation.nix {
-    inherit lib;
-    hsLib = config.pkgs.haskell.lib;
-  };
-
-  devOutputs = let
-    ghc = config.envs.dev.ghc.ghc;
-    minGhc = config.envs.min.ghc.ghc;
-    extra = name: pkg: pkg // { release = releaseDrv ghc.${name}; min = minGhc.${name}; };
-    local = mapAttrs extra config.envs.dev.derivations;
-  in local // {
-    default = local.${config.main};
-    min = local.${config.main}.min;
   };
 
   commandApps = mapAttrs (_: c: app "${c.path}");
@@ -114,10 +97,11 @@ in {
 
     outputs = {
 
-      packages = devOutputs // envDerivations config.ghcVersions;
+      packages = libOutput.devOutputs // libOutput.envDerivations config.ghcVersions;
 
       checks =
-        config.envs.dev.derivations // optionalAttrs config.compat.enable (envDerivations config.compat.versions);
+        config.envs.dev.derivations //
+        optionalAttrs config.compat.enable (libOutput.envDerivations config.compat.versions);
 
       legacyPackages = {
         inherit config;

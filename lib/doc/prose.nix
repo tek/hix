@@ -807,4 +807,29 @@ in {
   This will result in the creation of the file `.tags`.
   '';
 
+  cross = ''
+  ## Cross-compilation and static linking {#cross}
+
+  All package outputs can be cross-compiled with the following syntax:
+
+  ```
+  nix build .#parser.cross.musl64
+  ```
+
+  In addition, the package may also be built statically:
+
+  ```
+  nix build .#parser.cross.musl64.static
+  ```
+
+  For more elaborate cross-compilation setups, each GHC can be configured to use a [cross pkgs set](#opt-ghc-crossPkgs):
+
+  ```
+  {
+    envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
+  }
+  ```
+
+  '';
+
 }

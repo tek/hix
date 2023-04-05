@@ -65,7 +65,7 @@ in {
     };
 
     version = mkOption {
-      description = "The GHC version.";
+      description = mdDoc "The GHC version as a canonical string, like `9.2.5`, for use in conditions.";
       type = str;
       readOnly = true;
     };
