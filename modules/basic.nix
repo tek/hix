@@ -299,7 +299,7 @@ in {
           {hackage, source, fast, notest, unbreak, ...}: {
             exon = unbreak;
             flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
-            hix = notest (fast (source.root ../packages/hix));
+            hix = notest (fast (hackage "0.1.0.0" "13id473461g4dxcib267l2fh52djiawam1v9bsk88zc3x759bqa6"));
           }
         );
 
