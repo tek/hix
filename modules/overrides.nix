@@ -33,11 +33,11 @@ with lib;
       '';
       type = unspecified;
       default = {
-        local = toList config.envs.dev.internal.overridesLocal;
-        localMin = toList config.envs.min.internal.overridesLocal;
-        all = toList config.overrides ++ util.overridesDeps "local";
-        dev = toList config.envs.dev.overrides ++ util.overridesDeps "dev";
-      } // genAttrs config.ghcVersions (v: toList config.envs.${v}.overrides ++ util.overridesDeps v);
+        local = util.overridesDeps "local" ++ toList config.envs.dev.internal.overridesLocal;
+        localMin = util.overridesDeps "localMin" ++ toList config.envs.min.internal.overridesLocal;
+        all = util.overridesDeps "all" ++ toList config.overrides;
+        dev = util.overridesDeps "dev" ++ toList config.envs.dev.overrides;
+      } // genAttrs config.ghcVersions (v: util.overridesDeps v ++ toList config.envs.${v}.overrides);
     };
 
     internal = let
