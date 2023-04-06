@@ -82,6 +82,7 @@ in basic // {
   paramApp
   types
   packageRel
+  overridesDeps
   overridesGlobal
   overridesGlobalMin
   json

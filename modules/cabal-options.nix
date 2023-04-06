@@ -245,7 +245,7 @@ in {
       description = mdDoc ''
       Verbatim Cabal configuration in [HPack](https://github.com/sol/hpack) format.
 
-      Cascades down into all packages and modules.
+      Cascades down into all packages and components.
 
       ::: {.note}
       This unconditionally overrides all option definitions with the same keys if they are not mergeable (like lists and

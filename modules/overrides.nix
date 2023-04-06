@@ -35,9 +35,9 @@ with lib;
       default = {
         local = toList config.envs.dev.internal.overridesLocal;
         localMin = toList config.envs.min.internal.overridesLocal;
-        all = toList config.overrides;
-        dev = toList config.envs.dev.overrides;
-      } // genAttrs config.ghcVersions (v: toList config.envs.${v}.overrides);
+        all = toList config.overrides ++ util.overridesDeps "local";
+        dev = toList config.envs.dev.overrides ++ util.overridesDeps "dev";
+      } // genAttrs config.ghcVersions (v: toList config.envs.${v}.overrides ++ util.overridesDeps v);
     };
 
     internal = let
