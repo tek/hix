@@ -23,16 +23,16 @@
         "thax": "thax"
       },
       "locked": {
-        "lastModified": 1680716108,
-        "narHash": "sha256-Zhiuvt9FRoN9+dKvDGCp/CWNueVivBOImtODPK4NGIQ=",
+        "lastModified": 1680817856,
+        "narHash": "sha256-aa5QzCAZoEggRk3TSi9sR7ZSe7LjFAjJFBPXhdmy2+c=",
         "owner": "tek",
         "repo": "hix",
-        "rev": "f8ed58e6eb7078eca91cfb19f97fa7eb83b617a5",
+        "rev": "1069b64a5993d133d9debfded6539f6246bebf79",
         "type": "github"
       },
       "original": {
         "owner": "tek",
-        "ref": "release/0.2.1.0",
+        "ref": "release/0.2.2.0",
         "repo": "hix",
         "type": "github"
       }
