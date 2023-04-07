@@ -18,7 +18,7 @@ with lib;
     port = mkOption {
       description = mdDoc "Port on which to listen in the host system, added to the environment's `basePort`.";
       type = port;
-      default = 5432;
+      default = 32;
     };
 
     creds = {
@@ -39,7 +39,7 @@ with lib;
   };
 
   config = {
-    ports = [{ guest = 5432; host = config.port; }];
+    ports.postgres = { guest = 5432; host = config.port; };
     nixos-base = {
       services.postgresql = {
         enable = true;

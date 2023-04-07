@@ -7,7 +7,7 @@
 
     services.test = {
       enable = true;
-      ports = [{ guest = 5000; host = 5; }];
+      ports.test = { guest = 5000; host = 5; };
       nixos = {
         systemd.services.test = {
           wantedBy = ["multi-user.target"];
@@ -26,7 +26,7 @@
     commands.test = {
       env = "test";
       command = ''
-      ${config.pkgs.socat}/bin/socat -T 1 - TCP:localhost:${toString (config.envs.test.basePort + 5)} <<< 'ping'
+      ${config.pkgs.socat}/bin/socat -T 1 - TCP:localhost:${toString (config.envs.test.hostPorts.test)} <<< 'ping'
       '';
     };
 

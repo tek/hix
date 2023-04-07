@@ -2,9 +2,7 @@
 let
   lib = inputs.nixpkgs.lib;
 
-  inputsConfig = {
-    config.inputs = inputs;
-  };
+  inputsConfig.config.inputs = inputs;
 
   hixlib = config:
   let util = import ../lib/with-config.nix { inherit config lib util; };

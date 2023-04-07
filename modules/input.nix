@@ -5,12 +5,13 @@ with lib;
     system = mkOption {
       description = mdDoc "This option is set dynamically for each configured system.";
       type = str;
+      readOnly = true;
     };
 
     inputs = mkOption {
-      description = mdDoc "";
+      description = mdDoc "The inputs of the Hix flake.";
       type = lazyAttrsOf unspecified;
-      default = {};
+      readOnly = true;
     };
   };
 }

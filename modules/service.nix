@@ -13,7 +13,7 @@ let
 
       host = mkOption {
         description = mdDoc ''
-        Port exposed in the system, relative to the env's [](#opt-env-basePort) unless [](#opt-service-ports._.absolute)
+        Port exposed in the system, relative to the env's [](#opt-env-basePort) unless [](#opt-service-ports._name_.absolute)
         is set.
         '';
         type = port;
@@ -51,8 +51,8 @@ in {
 
     ports = mkOption {
       description = mdDoc "Simple ports forwarded relative to the env's [](#opt-env-basePort).";
-      type = listOf (submodule portModule);
-      default = [];
+      type = attrsOf (submodule portModule);
+      default = {};
     };
 
   };

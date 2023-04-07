@@ -636,7 +636,7 @@ in {
         enable = true;
         virtualHosts.localhost.locations."/test".return = "200 Yay!";
       };
-      ports = [{ host = 2000; guest = 80; }];
+      ports.nginx = { host = 2000; guest = 80; };
     };
 
     envs.test = {
@@ -655,6 +655,8 @@ in {
   ```
 
   Since the environment uses `basePort = 10000`, the nginx server will listen on port 12000.
+  You can refer to the effective port from other options with `config.envs.hostPorts.nginx` (the attribute name in
+  `ports`).
 
   Hix provides built-in services, like the previously mentioned PostgreSQL server, that have specialized configuration
   options.
@@ -714,7 +716,7 @@ in {
       };
 
       config = {
-        ports = [{ guest = 80; host = 10; }];
+        ports.greet = { guest = 80; host = 10; };
         nixos-base.services.nginx = {
           enable = true;
           virtualHosts.localhost.locations."/greet".return = "200 ''${config.response}";

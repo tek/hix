@@ -31,7 +31,7 @@ in {
   config.services = {
 
     hix-internal-env-wait = {
-      ports = [{ guest = 15000; host = 1; }];
+      ports.hix-internal-env-wait = { guest = 15000; host = 1; };
       nixos.systemd.services.hix-wait = {
         wantedBy = ["multi-user.target"];
         serviceConfig.ExecStart = "${config.pkgs.socat}/bin/socat TCP-L:15000,fork SYSTEM:'echo running'";

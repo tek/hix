@@ -21,7 +21,7 @@ let
   timeout=$(( $SECONDS + ${waitSeconds} ))
   while (( $SECONDS < $timeout ))
   do
-    pong=$(${global.pkgs.socat}/bin/socat -T 1 - TCP:localhost:${toString (config.basePort + 1)} <<< 'ping' 2>&1)
+    pong=$(${global.pkgs.socat}/bin/socat -T 1 - TCP:localhost:${toString (config.hostPorts.hix-internal-env-wait)} <<< 'ping' 2>&1)
     if [[ $pong == 'running' ]]
     then
       running=1
@@ -91,11 +91,14 @@ let
    $@
   '';
 
-  servicePort = { guest, host, absolute ? false }:
-  { host.port = if absolute then host else config.basePort + host; guest.port = guest; };
+  effectiveHostPort = { host, absolute ? false, ... }:
+  if absolute then host else config.basePort + host;
+
+  servicePort = p:
+  { host.port = effectiveHostPort p; guest.port = p.guest; };
 
   servicePorts = ports: {
-    virtualisation.vmVariant.virtualisation.forwardPorts = map servicePort ports;
+    virtualisation.vmVariant.virtualisation.forwardPorts = map servicePort (attrValues ports);
   };
 
   vmConfig = {
@@ -105,13 +108,7 @@ let
     };
   };
 
-  nixosDefaults = servicePorts [{ guest = 22; host = 22; }] // {
-    services.openssh = {
-      enable = true;
-      permitRootLogin = "yes";
-    };
-    users.mutableUsers = true;
-    users.users.root.password = "";
+  nixosDefaults = {
     networking.firewall.enable = false;
     documentation.nixos.enable = false;
     system.stateVersion = "22.05";
@@ -120,10 +117,13 @@ let
   serviceConfig = service:
   [service.nixos-base service.nixos (servicePorts service.ports)];
 
+  resolved =
+  mapAttrsToList (_: s: s.resolve) config.internal.resolvedServices;
+
   combinedConfig =
     [vmConfig] ++
     optional config.defaults nixosDefaults ++
-    concatMap (s: serviceConfig s.resolve) (attrValues config.internal.resolvedServices)
+    concatMap serviceConfig resolved
     ;
 
   resolveServiceModule = {name, config, ...}: let
@@ -361,6 +361,15 @@ in {
       '';
     };
 
+    hostPorts = mkOption {
+      description = mdDoc ''
+      The effective ports of the VM services in the host system.
+      Computed from [](#opt-env-basePort) and [](#opt-service-ports).
+      '';
+      type = attrsOf port;
+      readOnly = true;
+    };
+
     vm = {
 
       enable = mkEnableOption (mdDoc "the service VM for this env");
@@ -387,6 +396,12 @@ in {
         type = str;
         description = mdDoc "The path to the image file.";
         default = "${config.vm.dir}/vm.qcow2";
+      };
+
+      system = mkOption {
+        description = mdDoc "The system architecture string used for this VM, defaulting to [](#opt-general-system).";
+        type = str;
+        default = global.system;
       };
 
       headless = mkOption {
@@ -437,6 +452,7 @@ in {
         description = mdDoc "Magic modules that allow merging of env-specific service config with their base config.";
         type = attrsOf (submodule resolveServiceModule);
         default = mapAttrs (_: _: {}) config.services;
+        readOnly = true;
       };
 
     };
@@ -449,15 +465,34 @@ in {
 
     services.hix-internal-env-wait.enable = config.wait > 0;
 
-    ghc.overrides = mkDefault (util.concatOverrides [config.internal.overridesLocal config.internal.overridesInherited config.overrides]);
+    services.ssh = {
+      enable = config.defaults;
+      ports.ssh = { guest = 22; host = 22; };
+      nixos = {
+        services.openssh = {
+          enable = true;
+          permitRootLogin = "yes";
+        };
+        users.mutableUsers = true;
+        users.users.root.password = "";
+      };
+    };
+
+    ghc.overrides = mkDefault (
+      util.concatOverrides [config.internal.overridesLocal config.internal.overridesInherited config.overrides]
+    );
+
+    hostPorts = util.foldMapAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
 
     vm = {
 
-      enable = mkDefault (length (attrNames config.services) > (if config.wait > 0 then 1 else 0));
+      enable = let
+        builtInCount = (if config.wait > 0 then 1 else 0) + (if config.defaults then 1 else 0);
+      in mkDefault (length (attrNames config.services) > builtInCount);
 
       derivation = mkDefault (
         let nixosArgs = {
-          system = "x86_64-linux";
+          inherit (config.vm) system;
           modules = combinedConfig;
         };
         in (lib.nixosSystem nixosArgs).config.system.build.vm
