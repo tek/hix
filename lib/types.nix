@@ -88,7 +88,7 @@ in {
     name = "env-ref";
     description = "Name of an environment defined in config.envs";
     descriptionClass = "noun";
-    check = a: isString a;
+    check = a: isString a && hasAttr a config.envs;
     merge = mergeOneOption;
   };
 
