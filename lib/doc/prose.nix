@@ -743,6 +743,45 @@ in {
 
   '';
 
+  hls = ''
+  ## Haskell Language Server {#hls}
+
+  Hix provides a flake app for running HLS with the proper GHC (for the `dev` env) and the project dependencies:
+
+  ```
+  nix run .#hls
+  ```
+
+  This app corresponds to the [command](#commands) named `hls`, which uses the `dev` environment but gets the HLS
+  executable from a special environment named `hls`.
+  This allows the HLS package and its dependencies to be configured separately from the project dependencies.
+  For example, to use the package exposed from the HLS flake:
+
+  ```
+  {
+    inputs.hls.url = "github:haskell/haskell-language-server?ref=1.9.0.0";
+
+    outputs = {hix, hls, ...}: ({config, ...}: {
+      envs.hls.hls.package = hls.packages.''${config.system}.haskell-language-server-925;
+    });
+  }
+  ```
+
+  Additionally, all other environments can expose HLS as well:
+
+  ```
+  {
+    envs.ghc94.hls.enable = true;
+  }
+  ```
+
+  ```
+  nix run .#env.ghc94.hls
+  ```
+
+  This is disabled by default to avoid building HLS for environments whose GHCs don't have HLS in the Nix cache.
+  '';
+
   compat = ''
   ## GHC version checks {#checks}
 

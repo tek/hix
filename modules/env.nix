@@ -297,7 +297,7 @@ in {
     };
 
     hls = {
-      enable = mkEnableOption (mdDoc "HLS for this env") // { default = true; };
+      enable = mkEnableOption (mdDoc "HLS for this env");
 
       package = mkOption {
         description = mdDoc "The package for HLS, defaulting to the one from the env's GHC without overrides.";

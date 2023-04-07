@@ -127,6 +127,7 @@ let
       tag = "tools";
       heading = "Other tools";
       fragments = [
+        (text hls)
         (text compat)
         (text upload)
         (opt "hackage" "Hackage" mod-hackage)
