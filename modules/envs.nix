@@ -56,6 +56,7 @@ in {
           nixpkgsOptions = mkDefault {};
         };
         internal.overridesInherited = util.overridesGlobal ["dev"];
+        hls.enable = true;
       };
 
       min = {
