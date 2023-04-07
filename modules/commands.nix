@@ -46,7 +46,7 @@ in {
 
     hls = {
       env = "dev";
-      command = "${config.envs.hls.hls.package}/bin/haskell-language-server-wrapper";
+      command = "${config.envs.hls.hls.package}/bin/haskell-language-server";
       expose = true;
     };
 
