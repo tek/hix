@@ -779,7 +779,8 @@ in {
   nix run .#env.ghc94.hls
   ```
 
-  This is disabled by default to avoid building HLS for environments whose GHCs don't have HLS in the Nix cache.
+  This is disabled by default to avoid building HLS for environments whose GHCs don't have its derivation in the Nix
+  cache.
   '';
 
   compat = ''

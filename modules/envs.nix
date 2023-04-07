@@ -70,6 +70,7 @@ in {
         hls.enable = true;
         hls.package = config.envs.hls.ghc.ghc.haskell-language-server;
         hide = true;
+        internal.overridesInherited = [];
       };
 
     };
