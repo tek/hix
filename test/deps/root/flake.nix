@@ -19,7 +19,7 @@
           enable = true;
           source-dirs = "src";
           dependencies = [
-            "sub"
+            config.packages.sub.dep.exact
             "dep2"
             "dep1"
             "stm-chans"

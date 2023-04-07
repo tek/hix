@@ -86,9 +86,17 @@ in {
 
   env = mkOptionType {
     name = "env-ref";
-    description = "Name of an environment defined in config.envs";
+    description = "name of an environment defined in config.envs";
     descriptionClass = "noun";
     check = a: isString a && hasAttr a config.envs;
+    merge = mergeOneOption;
+  };
+
+  hpackDep = mkOptionType {
+    name = "hpack-dep";
+    description = "package dependency in HPack format";
+    descriptionClass = "noun";
+    check = a: isString a || isAttrs a;
     merge = mergeOneOption;
   };
 

@@ -227,6 +227,45 @@ in {
       readOnly = true;
     };
 
+    dep = {
+
+      minor = mkOption {
+        description = mdDoc ''
+        Dependency string for referencing this package with its version from other Cabal package.
+        Uses the minor version dependency bound, strictly greater than the precise version.
+
+        ```
+        {config, ...}: {
+          packages = {
+            core = { version = "0.4.1.0"; };
+            api = {
+              dependencies = [config.packages.core.dep];
+            };
+          }
+        }
+        ```
+
+        This results in the dependency string `core >= 0.4.1.0 && < 0.5` in the Cabal file.
+
+        Also works when using [](#opt-package-versionFile).
+        '';
+        type = util.types.hpackDep;
+        readOnly = true;
+        default = { name = config.name; version = "^>= ${config.cabal-config.version}"; };
+      };
+
+      exact = mkOption {
+        description = mdDoc ''
+        Dependency string for referencing this package with its version from other Cabal package.
+        Like [](#opt-package-dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
+        '';
+        type = util.types.hpackDep;
+        readOnly = true;
+        default = { name = config.name; version = "== ${config.cabal-config.version}"; };
+      };
+
+    };
+
   };
 
   config = {

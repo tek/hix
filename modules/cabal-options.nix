@@ -144,7 +144,7 @@ in {
 
     dependencies = mkOption {
       description = mdDoc "Cabal dependencies used for all components in this option tree.";
-      type = listOf (either str (attrsOf unspecified));
+      type = listOf util.types.hpackDep;
       example = literalExpression ''["aeson" "containers"]'';
       default = [];
     };
