@@ -398,6 +398,12 @@ in {
         default = "${config.vm.dir}/vm.qcow2";
       };
 
+      monitor = mkOption {
+        description = mdDoc "The monitor socket for the VM.";
+        type = str;
+        default = "${config.vm.dir}/monitor";
+      };
+
       system = mkOption {
         description = mdDoc "The system architecture string used for this VM, defaulting to [](#opt-general-system).";
         type = str;

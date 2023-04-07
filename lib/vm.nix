@@ -13,7 +13,7 @@ let
       print '>>> Starting VM' >&2
       mkdir -p ${vm.dir}
       rm -f ${vm.pidfile}
-      ${vm.derivation}/bin/run-nixos-vm ${display vm} -daemonize -pidfile ${vm.pidfile}
+      ${vm.derivation}/bin/run-nixos-vm ${display vm} -daemonize -pidfile ${vm.pidfile} -monitor unix:${vm.monitor},server,nowait
     fi
   '';
 
@@ -22,8 +22,8 @@ let
     pid=$(${pkgs.procps}/bin/pgrep -F ${vm.pidfile} -L -f ${vm.pidfile})
     if [[ $? == 0 ]]
     then
-      print '>>> Killing VM' >&2
-      kill $pid
+      print '>>> Shutting down VM' >&2
+      ${pkgs.socat}/bin/socat - UNIX-CONNECT:${vm.monitor} <<< system_powerdown &>/dev/null
     else
       print '>>> VM not running' >&2
     fi
