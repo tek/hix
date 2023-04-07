@@ -77,6 +77,8 @@ let
   minGhcs = version:
   all (basic.minGhc version) (attrValues config.envs);
 
+  unlessDev = conf: v: mkIf (conf.name != "dev") (mkDefault v);
+
 in basic // {
   inherit
   paramApp
@@ -88,5 +90,7 @@ in basic // {
   json
   visibleEnvs
   minGhcs
+  conf
+  unlessDev
   ;
 }

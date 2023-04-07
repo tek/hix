@@ -1,11 +1,7 @@
 { global, util }:
 { lib, config, ... }:
 with lib;
-let
-
-  unlessDev = v: mkIf (config.name != "dev") (mkDefault v);
-
-in {
+{
   options = with types; {
     name = mkOption {
       type = str;
@@ -20,7 +16,12 @@ in {
 
     overrides = mkOption {
       type = util.types.cabalOverrides;
-      description = mdDoc "The overrides used for this package set.";
+      description = mdDoc ''
+      The overrides used for this package set – see [](#ghc) for an explanation.
+
+      This option is set by environments (see [](#envs)), but GHC modules can be used outside of environments, so this
+      might be set by the user.
+      '';
       default = [];
     };
 
@@ -73,10 +74,10 @@ in {
   };
 
   config = {
-    compiler = unlessDev global.envs.dev.ghc.compiler;
-    overlays = unlessDev global.envs.dev.ghc.overlays;
-    nixpkgs = unlessDev global.envs.dev.ghc.nixpkgs;
-    nixpkgsOptions = unlessDev global.envs.dev.ghc.nixpkgsOptions;
+    compiler = util.unlessDev config global.envs.dev.ghc.compiler;
+    overlays = util.unlessDev config global.envs.dev.ghc.overlays;
+    nixpkgs = util.unlessDev config global.envs.dev.ghc.nixpkgs;
+    nixpkgsOptions = util.unlessDev config global.envs.dev.ghc.nixpkgsOptions;
 
     pkgs = let
       go = util.ghcOverlay {

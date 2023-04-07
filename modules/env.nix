@@ -503,5 +503,7 @@ in {
 
       };
 
+    internal.overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
+
   };
 }
