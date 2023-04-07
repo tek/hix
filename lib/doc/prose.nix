@@ -699,6 +699,14 @@ in {
   This option has type `deferredModule`, which means that it's not evaluated at the definition site, but used in a magic
   way somewhere else to create a new combined module set consisting of all the configs described before.
 
+  You can log into a service VM via ssh.
+  The default configuration sets the root password to the empty string and exposes the ssh port in the host system at
+  `basePort + 22`:
+
+  ```
+  ssh -p 1022 root@localhost
+  ```
+
   ### Defining modular services {#services-define}
 
   A service can be defined in [](#opt-general-services) with plain NixOS config, but it is useful to allow the service
