@@ -15,7 +15,18 @@ let
 
   prose = import ./prose.nix {};
 
-  mod-cabal-options = options.module "cabal-options" { inherit global util; };
+  cabalOptionsModules = [
+    (options.importMod "cabal-options" { inherit global util; })
+    (options.importMod "cabal-component" { inherit global util; } {
+      pkgName = "<package>";
+      src = "<src>";
+      sort = "<component type>";
+      suffix = null;
+      single = false;
+    })
+  ];
+
+  mod-cabal-options = options.modulesWithout [] cabalOptionsModules;
 
   compExcept = [["source-dirs"] ["name"]];
   compMultiExcept = [[namePh "source-dirs"] [namePh "name"]];
@@ -75,7 +86,7 @@ let
     { type = "sub"; path = ["cabal-config"]; }
     { type = "full"; path = ["internal"]; }
   ];
-  mod-general = options.modulesWithout generalExclude generalModules { inherit config lib util; };
+  mod-general = options.modulesWithout generalExclude generalModules;
 
   text = content: { type = "text"; inherit content; };
   optWith = extra: name: header: options: { type = "options"; content = { inherit name options header extra; }; };

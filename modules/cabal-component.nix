@@ -35,13 +35,13 @@ in {
     };
 
     source-dirs = mkOption {
-      type = either str (listOf str);
       description = mdDoc "Directories with Haskell sources.";
+      type = either str (listOf str);
       default = if single then src else name;
     };
 
     env = mkOption {
-      description = "";
+      description = mdDoc "The environment used when running GHCi with a module from this component.";
       type = nullOr util.types.env;
       default = null;
     };

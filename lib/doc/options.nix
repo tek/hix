@@ -39,7 +39,7 @@ let
 
   nameModule = { _module.args.name = mkOptionDefault namePh; };
 
-  modulesWithout = exclude: modules: args: let
+  modulesWithout = exclude: modules: let
     result = evalModules { modules = modules ++ [nameModule]; };
   in json exclude result.options;
 
@@ -47,7 +47,7 @@ let
 
   moduleWithout = exclude: name: args: let
     mod = importMod name args;
-  in modulesWithout exclude [mod] args;
+  in modulesWithout exclude [mod];
 
   module = name: args: moduleWithout [] name args;
 
