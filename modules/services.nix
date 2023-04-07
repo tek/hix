@@ -38,6 +38,18 @@ in {
       };
     };
 
+    ssh = {
+      ports.ssh = { guest = 22; host = 22; };
+      nixos = {
+        services.openssh = {
+          enable = true;
+          permitRootLogin = "yes";
+        };
+        users.mutableUsers = true;
+        users.users.root.password = "";
+      };
+    };
+
   };
 
   config.internal.services = {

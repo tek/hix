@@ -465,18 +465,7 @@ in {
 
     services.hix-internal-env-wait.enable = config.wait > 0;
 
-    services.ssh = {
-      enable = config.defaults;
-      ports.ssh = { guest = 22; host = 22; };
-      nixos = {
-        services.openssh = {
-          enable = true;
-          permitRootLogin = "yes";
-        };
-        users.mutableUsers = true;
-        users.users.root.password = "";
-      };
-    };
+    services.ssh.enable = config.defaults;
 
     ghc.overrides = mkDefault (
       util.concatOverrides [config.internal.overridesLocal config.internal.overridesInherited config.overrides]
