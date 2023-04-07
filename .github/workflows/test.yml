@@ -1,0 +1,13 @@
+name: Run Tests
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.4.0
+    - uses: cachix/install-nix-action@v15
+    - run: nix -L run .#test
