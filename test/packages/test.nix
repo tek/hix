@@ -2,7 +2,7 @@
 let
 
   targetDep = builtins.toFile "cabal-target-dep" ''
-  cabal-version: 1.12
+  cabal-version: 1.22
 
   -- This file has been generated from package.yaml by hpack version 0.35.0.
   --
@@ -21,6 +21,8 @@ let
         Dep.Lib
     other-modules:
         Paths_dep_lib
+    reexported-modules:
+        Data.Set
     hs-source-dirs:
         lib
     default-extensions:
@@ -29,6 +31,7 @@ let
     ghc-options: -Wall -Werror -Wunused-imports
     build-depends:
         base >=4 && <6
+      , containers
     default-language: GHC2021
   '';
 

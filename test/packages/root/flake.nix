@@ -13,7 +13,7 @@
       default-extensions = ["DataKinds"];
       version = lib.mkDefault "13";
       meta.author = "Author McCodeface";
-      cabal.language = "GHC2021";
+      component.language = "GHC2021";
     };
     packages = {
 
@@ -26,6 +26,8 @@
         library = {
           enable = true;
           source-dirs = "lib";
+          dependencies = ["containers"];
+          component.reexported-modules = ["Data.Set"];
         };
       };
 
@@ -51,7 +53,7 @@
 
         cabal = {
           version = "23";
-          cabal.executables.run.dependencies = ["dep" "root"];
+          meta.executables.run.dependencies = ["dep" "root"];
         };
 
       };

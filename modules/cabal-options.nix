@@ -231,6 +231,7 @@ in {
     meta = mkOption {
       description = mdDoc ''
       Verbatim top-level Cabal configuration in [HPack](https://github.com/sol/hpack) format.
+      Values defined here will not be applied to components, only packages.
 
       Cascades down into all packages.
 
@@ -241,11 +242,12 @@ in {
       default = {};
     };
 
-    cabal = mkOption {
+    component = mkOption {
       description = mdDoc ''
       Verbatim Cabal configuration in [HPack](https://github.com/sol/hpack) format.
+      Values defined here will be applied to components, not packages.
 
-      Cascades down into all packages and components.
+      Cascades down into all components.
 
       ::: {.note}
       This unconditionally overrides all option definitions with the same keys if they are not mergeable (like lists and

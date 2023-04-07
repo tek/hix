@@ -50,7 +50,7 @@ let
     preludeDeps
     basic
     paths
-    conf.cabal
+    conf.component
   ];
 
   generateLib = pkg: conf:
@@ -96,7 +96,6 @@ let
     exes
     tests
     benches
-    cabal.cabal
   ];
 
   infer = mapAttrs generatePackageConf config.packages;
