@@ -81,7 +81,7 @@ with lib;
 
     pkgs = let
       go = util.ghcOverlay {
-        inherit (config) compiler name overrides;
+        inherit (config) pkgs compiler name overrides;
         inherit (config.nixpkgs) rev;
       };
       options = recursiveUpdate {

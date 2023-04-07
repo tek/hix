@@ -3,8 +3,7 @@
 hix.pro ({config, lib, ...}: {
   hackage.versionFile = "ops/version.nix";
   compiler = "ghc92";
-  # compat.enable = false;
-  ifd = false;
+  compat.enable = false;
 
   overrides = {hackage, ...}: {
     exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";

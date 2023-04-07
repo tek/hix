@@ -1,7 +1,5 @@
 {
   pkgs,
-}:
-{
   self,
   super,
 }:
@@ -30,9 +28,9 @@ let
     override = conf: transform_ (flip hl.overrideCabal conf);
     overrideAttrs = f: transform_ (drv: drv.overrideAttrs f);
     buildInputs = inputs: transform_ (drv: drv.overrideAttrs (old: { buildInputs = old.buildInputs ++ inputs; }));
-    minimal = transform_ modifiers.minimalDrv;
+    minimal = transform_ modifiers.minimal;
     profiling = transform_ modifiers.profiling;
-    noprofiling = transform_ modifiers.noProfiling;
+    noprofiling = transform_ modifiers.noprofiling;
     unbreak = transform_ modifiers.unbreak;
     fast = transform_ modifiers.fast;
     notest = transform_ modifiers.notest;
@@ -42,7 +40,7 @@ let
   };
 
   hackage = ver: sha256: spec.create ({ self, pkg, ... }: {
-    drv = modifiers.hackageDrv (self.callHackageDirect { inherit pkg ver sha256; } {});
+    drv = modifiers.unbreak (self.callHackageDirect { inherit pkg ver sha256; } {});
   });
 
   cabal2nix = src: spec.create ({ self, final, pkg, ... }: {

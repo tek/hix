@@ -1,6 +1,7 @@
 { lib, }:
 with lib;
 rec {
+
   initial = makeExtensible (_: {
     drv = null;
     transform = id;
@@ -25,7 +26,7 @@ rec {
     }));
   };
 
-  set = spec: set (_: spec);
+  set = spec: create (_: spec);
 
   transform = f: create (args@{ prev, ... }: { transform = flip pipe [prev.transform (f args)]; });
 

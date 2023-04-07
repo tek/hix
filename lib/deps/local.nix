@@ -5,6 +5,7 @@
   auto,
   localPackage ? _: lib.id,
 }:
+with lib;
 let
   gen-cabal = import ../gen-cabal.nix { inherit config lib; };
 
@@ -37,7 +38,7 @@ let
   localPackage api (
     if ifd
     then checkAuto api name pkg
-    else gen-cabal.simpleCabalDrv api name pkg
+    else api.drv (gen-cabal.simpleCabalDrv api name pkg)
   );
 
 in api: builtins.mapAttrs (checkIfd api) config.packages

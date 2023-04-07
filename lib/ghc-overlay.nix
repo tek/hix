@@ -1,4 +1,5 @@
 {
+  pkgs,
   compiler,
   rev,
   name,
@@ -8,7 +9,7 @@ final: prev:
 with prev.lib;
 let
 
-  deps = import ./deps/default.nix { inherit (prev) lib; };
+  deps = import ./deps/default.nix { inherit pkgs; };
 
   packages = prev.haskell.packages.${compiler}.override { overrides = deps.compose overrides; };
 

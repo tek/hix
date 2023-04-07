@@ -6,9 +6,9 @@ let
 
   unbreak = hl.unmarkBroken;
 
-  noProfiling = hl.disableLibraryProfiling;
+  noprofiling = hl.disableLibraryProfiling;
 
-  yesProfiling = hl.enableLibraryProfiling;
+  profiling = hl.enableLibraryProfiling;
 
   notest = hl.dontCheck;
 
@@ -16,15 +16,12 @@ let
 
   nobench = hl.dontBenchmark;
 
-  hackageDrv = p:
-  unbreak p;
+  nodoc = hl.dontHaddock;
 
-  minimalDrv = p:
-  hl.dontHaddock (hl.dontBenchmark (notest (hackageDrv p)));
+  minimal = p: nodoc (nobench (notest (unbreak p)));
+
 in {
-  inherit unbreak noProfiling minimalDrv hackageDrv notest bench nobench;
+  inherit unbreak profiling noprofiling minimal notest bench nobench nodoc;
 
-  profiling = yesProfiling;
-
-  fast = p: noProfiling (hl.dontHaddock p);
+  fast = p: noprofiling (nodoc p);
 }

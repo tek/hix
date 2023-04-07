@@ -39,7 +39,7 @@ let
 
     deps = c: concatMap depspec (c.dependencies or []);
 
-  in self.mkDerivation ({
+  in self.callPackage ({mkDerivation}: mkDerivation ({
     inherit pname;
     src = withCabal conf pname pkg.src;
     version = attr "version";
@@ -47,7 +47,7 @@ let
     libraryHaskellDepends = deps (conf.library or {});
     executableHaskellDepends = concatMap deps (attrValues (conf.executables or {}));
     testHaskellDepends = concatMap deps (attrValues (conf.tests or {}));
-  } // conf.passthru or {});
+  } // conf.passthru or {})) {};
 
   simpleCabalDrv = api: pname:
   simpleCabalDrvWith config.hpack.internal.packages.${pname} api pname;
