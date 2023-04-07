@@ -118,7 +118,7 @@ hixTempDir ::
   ExceptT Error IO (Path Abs Dir)
 hixTempDir = do
   tmp <- tryIO getTempDir
-  user <- note "Couldn't determine user name" . parseRelDir =<< tryIO getLoginName
+  user <- note "Couldn't determine user name" . parseRelDir =<< catchE (tryIO getLoginName) (const (pure "user"))
   let hixTmp = tmp </> [reldir|hix|] </> user
   tryIO (createDirIfMissing True hixTmp)
   pure hixTmp
