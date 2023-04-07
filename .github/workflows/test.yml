@@ -4,6 +4,8 @@ on:
     branches:
       - "**"
   pull_request:
+env:
+  NO_VM: true
 jobs:
   tests:
     runs-on: ubuntu-latest

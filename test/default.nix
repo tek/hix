@@ -24,6 +24,8 @@ let
 
   testsA = concatStringsSep " " (mapAttrsToList testA tests);
 
+  vmTests = "ghci service postgres";
+
 in {
   main = pkgs.writeScript "hix-tests" ''
   #!${pkgs.zsh}/bin/zsh
@@ -37,6 +39,8 @@ in {
   fi
   typeset -A tests
   set -A tests ${testsA}
+  typeset -a vm_tests
+  vm_tests=(${vmTests})
 
   die()
   {
@@ -77,6 +81,11 @@ in {
     if [[ -z $test ]]
     then
       die "Invalid test name: $current"
+    fi
+    if [[ -n $NO_VM ]] && [[ -n ''${vm_tests[(r)$current]} ]]
+    then
+      echo ">>> Skipping VM test '$current'"
+      return 0
     fi
     testdir="$tmpdir/$1"
     cp -r "$hix_dir/test/$1" "$testdir"
