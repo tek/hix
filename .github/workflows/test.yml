@@ -10,4 +10,5 @@ jobs:
     steps:
     - uses: actions/checkout@v2.4.0
     - uses: cachix/install-nix-action@v15
-    - run: nix -L run .#test
+    - run: nix run .#test
+    - run: nix flake check
