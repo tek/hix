@@ -22,12 +22,12 @@
         cabal = {
           ghc-options = ["-Wall" "-Werror"];
           default-extensions = ["OverloadedRecordDot"];
+          dependencies = ["containers"];
+          component.reexported-modules = ["Data.Set"];
         };
         library = {
           enable = true;
           source-dirs = "lib";
-          dependencies = ["containers"];
-          component.reexported-modules = ["Data.Set"];
         };
       };
 
