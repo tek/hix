@@ -18,11 +18,9 @@
     services.test = {
       nixos.services.nginx = {
         enable = true;
-        virtualHosts.localhost = {
-          locations."/test".return = "200 test-endpoint";
-        };
+        virtualHosts.localhost.locations."/test".return = "200 test-endpoint";
       };
-      ports.nginx = { host = 2000; guest = 80; };
+      ports.nginx = { host = 2; guest = 80; };
     };
     ghci.run.print = ''putStrLn "print success"'';
   });
