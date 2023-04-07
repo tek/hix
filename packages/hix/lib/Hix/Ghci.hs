@@ -1,7 +1,7 @@
 module Hix.Ghci where
 
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (ExceptT)
+import Control.Monad.Trans.Except (ExceptT, catchE)
 import Control.Monad.Trans.Reader (ask)
 import Data.List.Extra (nubOrd)
 import qualified Data.Map.Strict as Map
