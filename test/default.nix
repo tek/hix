@@ -24,7 +24,7 @@ let
 
   testsA = concatStringsSep " " (mapAttrsToList testA tests);
 
-  vmTests = "ghci service postgres";
+  ciSkipTests = "ghci service postgres hackage";
 
 in {
   main = pkgs.writeScript "hix-tests" ''
@@ -40,7 +40,7 @@ in {
   typeset -A tests
   set -A tests ${testsA}
   typeset -a vm_tests
-  vm_tests=(${vmTests})
+  ci_skip_tests=(${ciSkipTests})
 
   die()
   {
@@ -82,7 +82,7 @@ in {
     then
       die "Invalid test name: $current"
     fi
-    if [[ -n $NO_VM ]] && [[ -n ''${vm_tests[(r)$current]} ]]
+    if [[ -n $CI ]] && [[ -n ''${ci_skip_tests[(r)$current]} ]]
     then
       echo ">>> Skipping VM test '$current'"
       return 0

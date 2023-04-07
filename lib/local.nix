@@ -1,6 +1,10 @@
 { inputs, hix }:
 
 hix.pro ({config, lib, ...}: {
+  hackage.versionFile = "ops/version.nix";
+  compiler = "ghc92";
+  # compat.enable = false;
+  ifd = false;
 
   overrides = {hackage, ...}: {
     exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";
@@ -8,10 +12,7 @@ hix.pro ({config, lib, ...}: {
     incipit-base = hackage "0.5.0.0" "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
   };
 
-  packages = import ../ops/hpack.nix;
-
   cabal = {
-
     prelude = {
       enable = true;
       package = {
@@ -20,16 +21,62 @@ hix.pro ({config, lib, ...}: {
       };
       module = "IncipitBase";
     };
-
     paths = false;
-
   };
 
-  compiler = "ghc92";
+  packages.hix = {
+    src = ../packages/hix;
 
-  compat.enable = false;
+    cabal = {
 
-  hackage.versionFile = "ops/version.nix";
+      license = "BSD-2-Clause-Patent";
+      license-file = "LICENSE";
+      author = "Torsten Schmits";
+
+      meta = {
+        maintainer = "hackage@tryp.io";
+        category = "Build";
+        git = "https://git.tryp.io/tek/hix";
+        homepage = "https://git.tryp.io/tek/hix";
+        bug-reports = "https://github.com/tek/hix/issues";
+        synopsis = "Haskell/Nix development build tools";
+      };
+
+    };
+
+    library.enable = true;
+    library.dependencies = [
+      "Cabal"
+      "aeson ^>= 2.0"
+      "exon ^>= 1.4"
+      "extra ^>= 1.7"
+      "filepattern ^>= 0.1"
+      "generic-lens ^>= 2.2"
+      "lens ^>= 5.1"
+      "lens-regex-pcre ^>= 1.1"
+      "optparse-applicative ^>= 0.17"
+      "path ^>= 0.9"
+      "path-io ^>= 1.7"
+      "random ^>= 1.2"
+      "transformers"
+      "unix"
+    ];
+
+    executable.enable = true;
+
+    test.enable = true;
+    test.dependencies = [
+      "Cabal"
+      "exon ^>= 1.4"
+      "hedgehog ^>= 1.1"
+      "path ^>= 0.9"
+      "path-io ^>= 1.7"
+      "tasty ^>= 1.4"
+      "tasty-hedgehog ^>= 1.3"
+      "transformers"
+    ];
+
+  };
 
   outputs = {
 
