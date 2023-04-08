@@ -6,13 +6,19 @@ let
   hpackFile = conf:
   toFile "package.yaml" (toJSON (removeAttrs conf ["passthru"]));
 
-  withCabal = conf: name: src: config.pkgs.runCommand "${name}-gen-cabal" {} ''
+  withCabal = conf: name: src: let
+    cabal = "${name}.cabal";
+  in config.pkgs.runCommand "${name}-gen-cabal" {} ''
   cp -r ${src} $out
   chmod u+w $out
   cd $out
   cp ${hpackFile conf} package.yaml
+  if [[ -e ${cabal} ]]
+  then
+    chmod u+w ${cabal}
+  fi
   ${config.internal.basicGhc.hpack}/bin/hpack
-  rm package.yaml
+  rm -f package.yaml
   '';
 
   depPkg = n:
