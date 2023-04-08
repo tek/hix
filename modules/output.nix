@@ -29,13 +29,13 @@ let
 in {
   options = {
 
-    output = {
+    systems = mkOption {
+      type = listOf str;
+      description = mdDoc "The systems for which to create outputs.";
+      default = ["x86_64-linux"];
+    };
 
-      systems = mkOption {
-        type = listOf str;
-        description = mdDoc "The systems for which to create outputs.";
-        default = ["x86_64-linux"];
-      };
+    output = {
 
       extraPackages = mkOption {
         description = mdDoc ''
