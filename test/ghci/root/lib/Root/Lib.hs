@@ -1,5 +1,3 @@
-{-# language OverloadedStrings #-}
-
 module Root.Lib where
 
 import Control.Exception

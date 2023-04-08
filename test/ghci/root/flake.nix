@@ -9,6 +9,7 @@
       src = ./.;
       library.enable = true;
       library.dependencies = ["http-client" "bytestring"];
+      library.default-extensions = ["OverloadedStrings"];
       executables.root = { enable = true; source-dirs = "app"; };
       test.enable = true;
       test.env = "test";

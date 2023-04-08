@@ -84,7 +84,7 @@ in {
     preprocessor = mkDefault (
       config.pkgs.writeScript "ghci-preprocessor" ''
       #!${config.pkgs.bash}/bin/bash
-      ${cli} preproc --source "$1" --in "$2" --out "$3"
+      ${cli} preproc --config ${util.json.preprocFile} --source "$1" --in "$2" --out "$3"
       ''
     );
 

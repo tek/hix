@@ -1,9 +1,8 @@
 module Hix where
 
-import Control.Monad.Trans.Class (lift)
 import Path.IO (getCurrentDir)
 
-import Hix.Data.Error (Error (..), printEnvError, printGhciError, printPreprocError, printFatalError)
+import Hix.Data.Error (Error (..), printEnvError, printFatalError, printGhciError, printPreprocError)
 import Hix.Env (printEnvRunner)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
 import Hix.Monad (M, runM)
@@ -31,7 +30,7 @@ handleError GlobalOptions {verbose} = \case
 
 runCommand :: Command -> M ()
 runCommand = \case
-  Preproc opts -> lift (preprocess opts)
+  Preproc opts -> preprocess opts
   EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts
   GhciCmd opts -> printGhciCmdline opts

@@ -5,7 +5,7 @@ import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT))
 import Path (Abs, Dir, Path)
 
-import Hix.Data.Error (Error (GhciError), tryIO)
+import Hix.Data.Error (Error (EnvError, GhciError), tryIO)
 
 data Env =
   Env {
@@ -17,7 +17,7 @@ type M a = ReaderT Env (ExceptT Error IO) a
 
 noteEnv :: Text -> Maybe a -> M a
 noteEnv err =
-  maybe (lift (throwE (GhciError err))) pure
+  maybe (lift (throwE (EnvError err))) pure
 
 noteGhci :: Text -> Maybe a -> M a
 noteGhci err =

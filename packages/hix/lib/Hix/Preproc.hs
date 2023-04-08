@@ -2,6 +2,7 @@ module Hix.Preproc where
 
 import Control.Lens (IndexedTraversal', has, index, ix, preview, (%~), (.~), (^..))
 import Control.Lens.Regex.ByteString (Match, group, groups, match, regex)
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, throwE)
 import qualified Data.ByteString as ByteString
 import Data.ByteString (elemIndex)
@@ -26,8 +27,14 @@ import Prelude hiding (group)
 import System.Random (randomRIO)
 
 import Hix.Cabal (buildInfoForFile)
+import Hix.Component (targetComponent)
 import Hix.Data.Error (Error (..), sourceError, tryIO)
-import Hix.Options (PreprocOptions (..))
+import qualified Hix.Data.GhciConfig
+import Hix.Data.GhciConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec), PreprocConfig)
+import Hix.Json (jsonConfig)
+import Hix.Monad (M)
+import Hix.Options (PreprocOptions (..), TargetSpec (TargetForFile))
+import Hix.Optparse (JsonConfig)
 
 type Regex = IndexedTraversal' Int ByteString Match
 
@@ -37,6 +44,22 @@ data Prelude =
     preludeModule :: ByteString
   }
   deriving stock (Show)
+
+fromPreludeConfig :: PreludeConfig -> Prelude
+fromPreludeConfig conf =
+  Prelude (encodeUtf8 (name conf.package)) (encodeUtf8 conf.module_.unModuleName)
+  where
+    name = \case
+      PreludePackageName n -> n
+      PreludePackageSpec n -> n
+
+data CabalConfig =
+  CabalConfig {
+    extensions :: [Builder],
+    ghcOptions :: [Builder],
+    prelude :: Maybe Prelude
+  }
+  deriving stock (Show, Generic)
 
 newtype DummyExportName =
   DummyExportName { unDummyExportName :: ByteString }
@@ -86,15 +109,10 @@ languagePragma :: [Builder] -> Builder
 languagePragma exts =
   [exon|{-# language #{Exon.intercalate ", " exts} #-}|]
 
-extensionsPragma :: BuildInfo -> Maybe Builder
-extensionsPragma info
-  | null exts = Nothing
-  | otherwise = Just (languagePragma exts)
-  where
-    exts = maybeToList (dlExtension =<< info.defaultLanguage) ++ mapMaybe extension info.defaultExtensions
-    dlExtension = \case
-      UnknownLanguage _ -> Nothing
-      lang -> Just (stringUtf8 (show lang))
+extensionsPragma :: CabalConfig -> Maybe Builder
+extensionsPragma conf
+  | null conf.extensions = Nothing
+  | otherwise = Just (languagePragma conf.extensions)
 
 optionsPragma :: Builder -> Builder
 optionsPragma opts =
@@ -440,24 +458,53 @@ assemble source Header {..} exts options dummyExportName =
 
 preprocessModule ::
   Path Abs File ->
-  BuildInfo ->
+  CabalConfig ->
   DummyExportName ->
   ByteString ->
   Builder
-preprocessModule source info dummyExportName inLines =
-  assemble source header (extensionsPragma info) options dummyExportName
+preprocessModule source conf dummyExportName inLines =
+  assemble source header (extensionsPragma conf) options dummyExportName
   where
-    options = Exon.intercalate " " <$> nonEmpty (stringUtf8 <$> ghcOptions)
-    PerCompilerFlavor ghcOptions _ = info.options
-    customPrelude = findPrelude info.mixins
-    header = scanHeader customPrelude inLines
+    options = Exon.intercalate " " <$> nonEmpty conf.ghcOptions
+    header = scanHeader conf.prelude inLines
 
--- TODO add common stanzas
-preprocess :: PreprocOptions -> ExceptT Error IO ()
-preprocess PreprocOptions {..} = do
-  info <- buildInfoForFile source
-  inLines <- tryIO (ByteString.readFile (toFilePath inFile))
+preprocessWith :: PreprocOptions -> CabalConfig -> M ()
+preprocessWith opt conf = do
+  inLines <- lift (tryIO (ByteString.readFile (toFilePath opt.inFile)))
   dummyNumber :: Int <- randomRIO (10000, 10000000)
   let dummyExportName = DummyExportName [exon|Hix_Dummy_#{show dummyNumber}|]
-  let result = preprocessModule source info dummyExportName inLines
-  tryIO (ByteStringBuilder.writeFile (toFilePath outFile) result)
+  let result = preprocessModule opt.source conf dummyExportName inLines
+  lift (tryIO (ByteStringBuilder.writeFile (toFilePath opt.outFile) result))
+
+fromConfig :: Path Abs File -> Either PreprocConfig JsonConfig -> M CabalConfig
+fromConfig source pconf = do
+  conf <- either pure jsonConfig pconf
+  target <- targetComponent conf.packages (TargetForFile source)
+  pure CabalConfig {
+    extensions = stringUtf8 <$> target.component.language : target.component.extensions,
+    ghcOptions = stringUtf8 <$> target.component.ghcOptions,
+    prelude = fromPreludeConfig <$> target.component.prelude
+    }
+
+fromCabal :: BuildInfo -> CabalConfig
+fromCabal info =
+  CabalConfig {
+    extensions = maybeToList (dlExtension =<< info.defaultLanguage) <> mapMaybe extension info.defaultExtensions,
+    ghcOptions = stringUtf8 <$> ghcOptions,
+    prelude = findPrelude info.mixins
+    }
+  where
+    PerCompilerFlavor ghcOptions _ = info.options
+    dlExtension = \case
+      UnknownLanguage _ -> Nothing
+      lang -> Just (stringUtf8 (show lang))
+
+fromCabalFile :: Path Abs File -> M CabalConfig
+fromCabalFile source =
+  fromCabal <$> lift (buildInfoForFile source)
+
+-- TODO add common stanzas
+preprocess :: PreprocOptions -> M ()
+preprocess opt = do
+  conf <- maybe (fromCabalFile opt.source) (fromConfig opt.source) opt.config
+  preprocessWith opt conf

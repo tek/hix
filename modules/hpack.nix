@@ -140,12 +140,8 @@ in {
         '';
       };
 
-      internal = {
-
-        packages = mkOption {
-          type = attrsOf unspecified;
-        };
-
+      internal.packages = mkOption {
+        type = attrsOf unspecified;
       };
     };
   };
@@ -156,8 +152,6 @@ in {
 
     hpack = {
 
-      internal.packages = mapAttrs generatePackageConf config.packages;
-
       apps = mkDefault (
         util.foldAttrs (mapAttrsToList (packageApps config.envs.dev.derivations) config.hpack.internal.packages)
       );
@@ -165,6 +159,8 @@ in {
       script = script;
 
       scriptQuiet = scriptQuiet;
+
+      internal.packages = mapAttrs generatePackageConf config.packages;
 
     };
   };

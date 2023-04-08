@@ -9,14 +9,6 @@ let
   packageModule = import ./package.nix { inherit global util; };
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
-  compatProjects = {
-    "94" = {};
-    "92" = {};
-    "90" = {};
-    "810" = { enable = false; };
-    "88" = { enable = false; };
-  };
-
   baseFromPackages = let
     pkg = head (attrValues config.internal.packagePaths);
     next = p:
@@ -97,6 +89,15 @@ in {
     auto = mkOption {
       description = mdDoc ''
       Generate Cabal files on the fly if none are present in source directories (or a `package.yaml`).
+      '';
+      type = bool;
+      default = false;
+    };
+
+    # TODO cli must be able to resolve components from metadata by reading cabal.project and *.cabal
+    manualCabal = mkOption {
+      description = mdDoc ''
+      Don't use the options in [](#opt-general-packages) as Cabal configuration for the ghci preprocessor.
       '';
       type = bool;
       default = false;

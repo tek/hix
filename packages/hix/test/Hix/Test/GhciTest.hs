@@ -54,7 +54,11 @@ component name dir runner =
   ComponentConfig {
     name,
     sourceDirs = SourceDirs [SourceDir dir],
-    runner = Just runner
+    runner = Just runner,
+    extensions = [],
+    language = "GHC2021",
+    ghcOptions = [],
+    prelude = Nothing
   }
 
 packages :: PackagesConfig

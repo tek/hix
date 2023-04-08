@@ -11,7 +11,7 @@ import Exon (exon)
 import Hedgehog (TestT, evalMaybe, (===))
 import Path (absfile)
 
-import Hix.Preproc (preprocessModule)
+import Hix.Preproc (fromCabal, preprocessModule)
 import Hix.Test.CabalFile (testPackage, testPackageNoPrelude)
 
 pragmas :: Text
@@ -27,8 +27,8 @@ preprocTestNoPrelude ::
 preprocTestNoPrelude module_ target =
   withFrozenCallStack do
     pkg <- liftIO testPackageNoPrelude
-    info <- evalMaybe (pkg.condLibrary <&> \ l -> l.condTreeData.libBuildInfo)
-    let result = toLazyByteString (preprocessModule [absfile|/foo/bar/Foo.hs|] info "Hix_Dummy" module_)
+    conf <- evalMaybe (pkg.condLibrary <&> \ l -> fromCabal l.condTreeData.libBuildInfo)
+    let result = toLazyByteString (preprocessModule [absfile|/foo/bar/Foo.hs|] conf "Hix_Dummy" module_)
     Text.lines target === Text.lines (decodeUtf8 result)
 
 preprocTest ::
@@ -39,8 +39,8 @@ preprocTest ::
 preprocTest module_ target =
   withFrozenCallStack do
     pkg <- liftIO testPackage
-    info <- evalMaybe (pkg.condLibrary <&> \ l -> l.condTreeData.libBuildInfo)
-    let result = toLazyByteString (preprocessModule [absfile|/foo/bar/Foo.hs|] info "Hix_Dummy" module_)
+    conf <- evalMaybe (pkg.condLibrary <&> \ l -> fromCabal l.condTreeData.libBuildInfo)
+    let result = toLazyByteString (preprocessModule [absfile|/foo/bar/Foo.hs|] conf "Hix_Dummy" module_)
     Text.lines target === Text.lines (decodeUtf8 result)
 
 moduleInsert :: ByteString

@@ -1,6 +1,6 @@
 module Hix.Data.GhciConfig where
 
-import Data.Aeson (FromJSON (parseJSON), FromJSONKey)
+import Data.Aeson (FromJSON (parseJSON), FromJSONKey, withObject, (.:))
 import GHC.Exts (IsList)
 import Path (Abs, Dir, File, Path, Rel)
 
@@ -49,11 +49,36 @@ newtype EnvRunner =
   deriving stock (Eq, Show, Generic)
   deriving newtype (FromJSON)
 
+data PreludePackage =
+  PreludePackageName Text
+  |
+  PreludePackageSpec { name :: Text }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON)
+
+data PreludeConfig =
+  PreludeConfig {
+    package :: PreludePackage,
+    module_ :: ModuleName
+  }
+  deriving stock (Eq, Show, Generic)
+
+instance FromJSON PreludeConfig where
+  parseJSON =
+    withObject "PreludeConfig" \ o -> do
+      package <- o .: "package"
+      module_ <- o .: "module"
+      pure PreludeConfig {..}
+
 data ComponentConfig =
   ComponentConfig {
     name :: ComponentName,
     sourceDirs :: SourceDirs,
-    runner :: Maybe EnvRunner
+    runner :: Maybe EnvRunner,
+    extensions :: [String],
+    language :: String,
+    ghcOptions :: [String],
+    prelude :: Maybe PreludeConfig
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -111,6 +136,13 @@ data GhciConfig =
     setup :: Map RunnerName GhciSetupCode,
     run :: Map RunnerName GhciRunExpr,
     args :: GhciArgs
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON)
+
+data PreprocConfig =
+  PreprocConfig {
+    packages :: PackagesConfig
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

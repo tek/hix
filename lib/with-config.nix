@@ -32,7 +32,10 @@ let
     inherit (config) pkgs;
 
     componentConf = c: {
-      inherit (c) name;
+      inherit (c) name language;
+      extensions = c.default-extensions;
+      ghcOptions = c.ghc-options;
+      prelude = if c.prelude.enable then c.prelude else null;
       runner = if c.env == null then null else config.envs.${c.env}.runner;
       sourceDirs = c.source-dirs;
     };
@@ -61,14 +64,20 @@ let
       args = config.ghci.args;
     };
 
+    preproc = {
+      packages = if config.manualCabal then null else packages;
+    };
+
     jsonFile = name: value: pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
 
   in {
-    inherit packages ghci;
+    inherit packages ghci preproc;
 
     envFile = default: jsonFile "env-config" (env default);
 
     ghciFile = jsonFile "ghci-config" ghci;
+
+    preprocFile = jsonFile "preproc-config" preproc;
 
   };
 

@@ -35,6 +35,7 @@ import Hix.Data.GhciConfig (
   GhciConfig,
   ModuleName,
   PackageName (PackageName),
+  PreprocConfig,
   RunnerName,
   SourceDir (SourceDir),
   )
@@ -42,11 +43,12 @@ import Hix.Optparse (JsonConfig, absFileOption, jsonOption)
 
 data PreprocOptions =
   PreprocOptions {
+    config :: Maybe (Either PreprocConfig JsonConfig),
     source :: Path Abs File,
     inFile :: Path Abs File,
     outFile :: Path Abs File
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Show, Generic)
 
 data PackageSpec =
   PackageSpec {
@@ -136,10 +138,17 @@ fileParser ::
 fileParser longName helpText =
   option absFileOption (long longName <> completer (bashCompleter "file") <> help helpText)
 
+jsonConfigParser ::
+  Parser JsonConfig
+jsonConfigParser =
+  option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config, file or text")
+
 preprocParser :: Parser PreprocOptions
 preprocParser =
   PreprocOptions
   <$>
+  (fmap Right <$> optional jsonConfigParser)
+  <*>
   fileParser "source" "The original source file"
   <*>
   fileParser "in" "The prepared input file"
@@ -199,11 +208,6 @@ runnerParser =
 moduleParser :: Parser ModuleName
 moduleParser =
   strOption (long "module" <> short 'm' <> help "The module containing the test function" <> value "Main")
-
-jsonConfigParser ::
-  Parser JsonConfig
-jsonConfigParser =
-  option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config, file or text")
 
 testOptionsParser :: Parser TestOptions
 testOptionsParser = do
