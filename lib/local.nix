@@ -3,7 +3,6 @@
 hix.pro ({config, lib, ...}: {
   hackage.versionFile = "ops/version.nix";
   compiler = "ghc92";
-  compat.enable = false;
 
   overrides = {hackage, ...}: {
     exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";
@@ -46,12 +45,12 @@ hix.pro ({config, lib, ...}: {
     library.enable = true;
     library.dependencies = [
       "Cabal"
-      "aeson ^>= 2.0"
+      "aeson >= 2.0 && < 2.2"
       "exon ^>= 1.4"
       "extra ^>= 1.7"
       "filepattern ^>= 0.1"
       "generic-lens ^>= 2.2"
-      "lens ^>= 5.1"
+      "lens >= 5.1 && < 5.3"
       "lens-regex-pcre ^>= 1.1"
       "optparse-applicative ^>= 0.17"
       "path ^>= 0.9"
@@ -67,11 +66,11 @@ hix.pro ({config, lib, ...}: {
     test.dependencies = [
       "Cabal"
       "exon ^>= 1.4"
-      "hedgehog ^>= 1.1"
+      "hedgehog >= 1.1 && < 1.3"
       "path ^>= 0.9"
       "path-io ^>= 1.7"
       "tasty ^>= 1.4"
-      "tasty-hedgehog ^>= 1.3"
+      "tasty-hedgehog >= 1.3 && < 1.5"
       "transformers"
     ];
 

@@ -54,7 +54,13 @@ data PreludePackage =
   |
   PreludePackageSpec { name :: Text }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (FromJSON)
+
+instance FromJSON PreludePackage where
+  parseJSON v =
+    hpackStruct v <|> plainName
+    where
+      hpackStruct = withObject "PreludePackageSpec" \ o -> o .: "name"
+      plainName = PreludePackageName <$> parseJSON v
 
 data PreludeConfig =
   PreludeConfig {

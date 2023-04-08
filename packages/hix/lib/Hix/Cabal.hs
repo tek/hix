@@ -1,8 +1,14 @@
+{-# language CPP #-}
+
 module Hix.Cabal where
 
 import Control.Monad.Trans.Except (ExceptT (ExceptT), throwE)
 import Distribution.PackageDescription (BuildInfo (..), GenericPackageDescription (..))
+#if MIN_VERSION_Cabal(3,8,0)
+import Distribution.Simple.PackageDescription (readGenericPackageDescription)
+#else
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
+#endif
 import Distribution.Types.Benchmark (benchmarkBuildInfo)
 import Distribution.Types.CondTree (CondTree (..))
 import qualified Distribution.Types.Executable as Executable
