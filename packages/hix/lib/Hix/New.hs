@@ -157,8 +157,7 @@ import Hedgehog (TestT, (===))
 import #{modName} (name)
 
 test_name :: TestT IO ()
-test_name =
-  "#{conf.name.unProjectName}" === name
+test_name = "#{conf.name.unProjectName}" === name
 |]
 
 newProjectFiles :: NewProjectConfig -> M [ProjectFile]
