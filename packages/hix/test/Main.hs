@@ -3,6 +3,7 @@ module Main where
 import Hedgehog (TestT, property, test, withTests)
 import Hix.Test.CabalTest (test_cabal)
 import Hix.Test.GhciTest (test_componentEnv, test_ghcid, test_moduleName)
+import Hix.Test.NewTest (test_new)
 import Hix.Test.PreprocTest (
   test_preprocInsertPrelude,
   test_preprocNoPrelude,
@@ -36,7 +37,8 @@ tests =
       unitTest "self exporting module, separate line" test_preprocNoPrelude,
       unitTest "run ghcid" test_ghcid,
       unitTest "component env" test_componentEnv,
-      unitTest "extract module name from path" test_moduleName
+      unitTest "extract module name from path" test_moduleName,
+      unitTest "generate a project" test_new
     ]
   ]
 
