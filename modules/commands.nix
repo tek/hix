@@ -11,6 +11,16 @@ let
 in {
   options = with types; {
 
+    hls.genCabal = mkOption {
+      description = mdDoc ''
+      When running HLS with `nix run .#hls`, the command first generates Cabal files from Hix config to ensure that HLS
+      works.
+      If that is not desirable, set this option to `false`;
+      '';
+      type = bool;
+      default = true;
+    };
+
     commands = mkOption {
       description = mdDoc ''
       Commands are shell scripts associated with an environment that are exposed as flake apps.
@@ -46,7 +56,10 @@ in {
 
     hls = {
       env = "dev";
-      command = "${config.envs.hls.hls.package}/bin/haskell-language-server $@";
+      command = ''
+      ${if config.hls.genCabal then "nix run .#gen-cabal-quiet" else ""}
+      ${config.envs.hls.hls.package}/bin/haskell-language-server $@
+      '';
       expose = true;
     };
 
