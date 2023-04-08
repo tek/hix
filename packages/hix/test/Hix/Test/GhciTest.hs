@@ -6,18 +6,17 @@ import Hedgehog (TestT, evalEither, (===))
 import Path (Abs, Dir, File, Path, Rel, SomeBase (Rel), absdir, absfile, reldir, relfile, (</>))
 import Path.IO (getCurrentDir, withSystemTempDir)
 
-import Hix.Data.Error (pathText)
-import Hix.Data.GhciConfig (
+import Hix.Data.ComponentConfig (
   ComponentConfig (..),
   ComponentName,
-  EnvConfig (EnvConfig),
   EnvRunner (EnvRunner),
-  GhciConfig (..),
   PackageConfig (..),
   PackagesConfig,
   SourceDir (SourceDir),
   SourceDirs (SourceDirs),
   )
+import Hix.Data.Error (pathText)
+import Hix.Data.GhciConfig (EnvConfig (EnvConfig), GhciConfig (..))
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Env (envRunner)
 import Hix.Ghci (assemble, ghcidCmdlineFromOptions)

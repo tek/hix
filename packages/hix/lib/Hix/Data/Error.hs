@@ -14,6 +14,8 @@ data Error =
   |
   GhciError Text
   |
+  NewError Text
+  |
   NoMatch Text
   |
   Fatal Text
@@ -43,6 +45,13 @@ printGhciError ::
   m ()
 printGhciError msg =
   liftIO (Text.hPutStrLn stderr [exon|>>> Invalid ghci config: #{msg}|])
+
+printNewError ::
+  MonadIO m =>
+  Text ->
+  m ()
+printNewError msg =
+  liftIO (Text.hPutStrLn stderr [exon|>>> Can't create new project: #{msg}|])
 
 printFatalError ::
   MonadIO m =>

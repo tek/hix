@@ -28,17 +28,17 @@ import Options.Applicative (
 import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir)
 import Prelude hiding (Mod, mod)
 
-import Hix.Data.GhciConfig (
+import Hix.Data.ComponentConfig (
   ComponentName (ComponentName),
-  EnvConfig,
   EnvName,
-  GhciConfig,
   ModuleName,
   PackageName (PackageName),
-  PreprocConfig,
-  RunnerName,
   SourceDir (SourceDir),
   )
+import Hix.Data.GhciConfig (EnvConfig, GhciConfig, RunnerName)
+import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
+import qualified Hix.Data.NewProjectConfig
+import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Optparse (JsonConfig, absFileOption, jsonOption)
 
 data PreprocOptions =
@@ -100,6 +100,12 @@ data GhciOptions =
   }
   deriving stock (Show, Generic)
 
+data NewOptions =
+  NewOptions {
+    config :: NewProjectConfig
+  }
+  deriving stock (Eq, Show, Generic)
+
 data EnvRunnerCommandOptions =
   EnvRunnerCommandOptions {
     options :: EnvRunnerOptions,
@@ -115,6 +121,8 @@ data Command =
   GhcidCmd GhciOptions
   |
   GhciCmd GhciOptions
+  |
+  NewCmd NewOptions
   deriving stock (Show)
 
 data GlobalOptions =
@@ -232,6 +240,14 @@ ghciParser = do
   test <- testOptionsParser
   pure GhciOptions {..}
 
+newParser :: Parser NewOptions
+newParser = do
+  name <- strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
+  packages <- switch (long "packages" <> short 'p' <> help "Store packages in the 'packages/' subdirectory")
+  hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
+  author <- strOption (long "author" <> short 'a' <> help "Your name")
+  pure NewOptions {config = NewProjectConfig {..}}
+
 commands ::
   Mod CommandFields Command
 commands =
@@ -242,6 +258,8 @@ commands =
   command "ghci-cmd" (GhciCmd <$> info ghciParser (progDesc "Print a ghci cmdline to load a module in a Hix env"))
   <>
   command "ghcid-cmd" (GhcidCmd <$> info ghciParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
+  <>
+  command "new" (NewCmd <$> info newParser (progDesc "Create a new Hix project in the current directory"))
 
 globalParser :: Parser GlobalOptions
 globalParser = do

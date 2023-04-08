@@ -28,9 +28,11 @@ import System.Random (randomRIO)
 
 import Hix.Cabal (buildInfoForFile)
 import Hix.Component (targetComponent)
+import qualified Hix.Data.ComponentConfig
+import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec))
 import Hix.Data.Error (Error (..), sourceError, tryIO)
-import qualified Hix.Data.GhciConfig
-import Hix.Data.GhciConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec), PreprocConfig)
+import qualified Hix.Data.PreprocConfig
+import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Json (jsonConfig)
 import Hix.Monad (M)
 import Hix.Options (PreprocOptions (..), TargetSpec (TargetForFile))

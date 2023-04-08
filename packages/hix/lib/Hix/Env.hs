@@ -3,9 +3,10 @@ module Hix.Env where
 import qualified Data.Text.IO as Text
 
 import Hix.Component (targetComponent)
+import qualified Hix.Data.ComponentConfig
+import Hix.Data.ComponentConfig (EnvRunner (EnvRunner), PackagesConfig, Target (Target))
 import Hix.Data.Error (pathText)
-import qualified Hix.Data.GhciConfig as GhciConfig
-import Hix.Data.GhciConfig (EnvRunner (EnvRunner), PackagesConfig, Target (Target))
+import qualified Hix.Data.GhciConfig
 import Hix.Json (jsonConfig)
 import Hix.Monad (M)
 import qualified Hix.Options as Options

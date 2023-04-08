@@ -15,19 +15,18 @@ import System.IO (hClose)
 import System.Posix.User (getLoginName)
 
 import Hix.Component (targetComponent)
-import Hix.Data.Error (Error, note, pathText, tryIO)
-import qualified Hix.Data.GhciConfig as GhciConfig
-import Hix.Data.GhciConfig (
+import qualified Hix.Data.ComponentConfig
+import Hix.Data.ComponentConfig (
   ComponentConfig,
-  GhciConfig,
-  GhciRunExpr (GhciRunExpr),
-  GhciSetupCode (GhciSetupCode),
   ModuleName (ModuleName),
   PackageConfig,
   PackageName,
   SourceDir (SourceDir),
   Target (Target),
   )
+import Hix.Data.Error (Error, note, pathText, tryIO)
+import qualified Hix.Data.GhciConfig
+import Hix.Data.GhciConfig (GhciConfig, GhciRunExpr (GhciRunExpr), GhciSetupCode (GhciSetupCode))
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (GhcidRun))
 import Hix.Json (jsonConfig)

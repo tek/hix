@@ -8,9 +8,8 @@ import qualified Data.Text as Text
 import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel, SomeBase (Abs, Rel), isProperPrefixOf, stripProperPrefix)
 
-import Hix.Data.Error (pathText)
-import qualified Hix.Data.GhciConfig as GhciConfig
-import Hix.Data.GhciConfig (
+import qualified Hix.Data.ComponentConfig
+import Hix.Data.ComponentConfig (
   ComponentConfig,
   PackageConfig (PackageConfig),
   PackageName (PackageName),
@@ -18,6 +17,7 @@ import Hix.Data.GhciConfig (
   SourceDir (SourceDir),
   Target (Target),
   )
+import Hix.Data.Error (pathText)
 import qualified Hix.Monad as Monad
 import Hix.Monad (Env (Env), M, noteEnv)
 import qualified Hix.Options as Options

@@ -27,13 +27,17 @@ library
       Hix
       Hix.Cabal
       Hix.Component
+      Hix.Data.ComponentConfig
       Hix.Data.Error
       Hix.Data.GhciConfig
       Hix.Data.GhciTest
+      Hix.Data.NewProjectConfig
+      Hix.Data.PreprocConfig
       Hix.Env
       Hix.Ghci
       Hix.Json
       Hix.Monad
+      Hix.New
       Hix.Options
       Hix.Optparse
       Hix.Preproc
@@ -79,6 +83,7 @@ library
       Cabal
     , aeson >=2.0 && <2.2
     , base ==4.*
+    , casing >=0.1.4 && <0.2
     , exon ==1.4.*
     , extra ==1.7.*
     , filepattern ==0.1.*
@@ -155,6 +160,7 @@ test-suite hix-test
       Hix.Test.CabalFile
       Hix.Test.CabalTest
       Hix.Test.GhciTest
+      Hix.Test.NewTest
       Hix.Test.PreprocTest
   hs-source-dirs:
       test

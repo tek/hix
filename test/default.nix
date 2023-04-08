@@ -18,6 +18,7 @@ let
     service = test "service";
     postgres = test "postgres";
     env = test "env";
+    new = test "new";
   };
 
   testA = n: t: "${n} ${t}";
@@ -90,8 +91,11 @@ in {
     testdir="$tmpdir/$1"
     cp -r "$hix_dir/test/$1" "$testdir"
     cd "$testdir"
-    sed -i "s#HIX#$hix_dir#" */flake.nix
-    sed -i "s#BASE#$testdir#" */flake.nix
+    if [[ -n $(print */flake.nix(N)) ]]
+    then
+      sed -i "s#HIX#$hix_dir#" */flake.nix
+      sed -i "s#BASE#$testdir#" */flake.nix
+    fi
     echo ">>> Running test '$current'..."
     source $test
   }

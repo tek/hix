@@ -2,13 +2,14 @@ module Hix where
 
 import Path.IO (getCurrentDir)
 
-import Hix.Data.Error (Error (..), printEnvError, printFatalError, printGhciError, printPreprocError)
+import Hix.Data.Error (Error (..), printEnvError, printFatalError, printGhciError, printNewError, printPreprocError)
 import Hix.Env (printEnvRunner)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
 import Hix.Monad (M, runM)
+import Hix.New (newProject)
 import qualified Hix.Options as Options
 import Hix.Options (
-  Command (EnvRunner, GhciCmd, GhcidCmd, Preproc),
+  Command (EnvRunner, GhciCmd, GhcidCmd, NewCmd, Preproc),
   GlobalOptions (GlobalOptions),
   Options (Options),
   parseCli,
@@ -24,6 +25,7 @@ handleError GlobalOptions {verbose} = \case
   PreprocError err -> printPreprocError err
   EnvError err -> printEnvError err
   GhciError err -> printGhciError err
+  NewError err -> printNewError err
   NoMatch msg | fromMaybe False verbose -> printPreprocError msg
   NoMatch _ -> unit
   Fatal err -> printFatalError err
@@ -34,6 +36,7 @@ runCommand = \case
   EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts
   GhciCmd opts -> printGhciCmdline opts
+  NewCmd opts -> newProject opts.config
 
 main :: IO ()
 main = do

@@ -46,6 +46,7 @@ hix.pro ({config, lib, ...}: {
     library.dependencies = [
       "Cabal"
       "aeson >= 2.0 && < 2.2"
+      "casing ^>= 0.1.4"
       "exon ^>= 1.4"
       "extra ^>= 1.7"
       "filepattern ^>= 0.1"
@@ -88,10 +89,24 @@ hix.pro ({config, lib, ...}: {
     apps = let
       tests = import ../test/default.nix { inherit (config) pkgs; };
     in {
+
       test = {
         type = "app";
         program = "${tests.main}";
       };
+
+      cli = {
+        type = "app";
+        program = "${config.outputs.packages.hix}/bin/hix";
+      };
+
+      new = let
+        prog = import ./new.nix { inherit (config) pkgs; };
+      in {
+        type = "app";
+        program = "${prog}";
+      };
+
     };
 
   };
