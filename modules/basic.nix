@@ -116,9 +116,11 @@ in {
     };
 
     ifd = mkOption {
-      description = mdDoc "Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.";
+      description = mdDoc ''
+      Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.
+      '';
       type = bool;
-      default = true;
+      default = false;
     };
 
     compiler = mkOption {
