@@ -292,7 +292,7 @@ in {
           {hackage, source, fast, notest, unbreak, ...}: {
             exon = unbreak;
             flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
-            hix = notest (fast (hackage "0.1.1.0" "0plhfmjnnm3sj47m9dcwshihpcmidgiznq35n77v7a43ym09r7m4"));
+            hix = notest (fast (hackage "0.2.0.0" "1yan2vvr5kpgfiggsfar63g57cqb4dw88v8i47pp3c3nsi98ln4d"));
           }
         );
 
