@@ -3,8 +3,7 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }:
-  hix.lib.flake {
+  outputs = { hix, ... }: hix.lib.flake {
     packages.dep2 = {
       src = ./.;
       library.enable = true;

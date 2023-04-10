@@ -271,7 +271,7 @@ in {
 
       relativePackages = util.relativePackages config.base config.internal.packagePaths;
 
-      hixVersion = "0.4.1";
+      hixVersion = "0.4.2";
 
     };
   };
