@@ -23,7 +23,7 @@ import Distribution.Utils.ShortText (ShortText, fromShortText)
 import qualified Distribution.Verbosity as Cabal
 import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel, parent, parseRelFile, relfile, toFilePath, (</>))
-import System.FilePattern.Directory (getDirectoryFiles)
+import System.FilePattern.Directory (getDirectoryFilesIgnore)
 
 import Hix.Compat (readGenericPackageDescription)
 import qualified Hix.Data.BootstrapProjectConfig
@@ -388,7 +388,7 @@ flake conf pkgs =
 bootstrapFiles :: BootstrapProjectConfig -> M [ProjectFile]
 bootstrapFiles conf = do
   Env {root} <- ask
-  cabals <- paths =<< lift (tryIO (getDirectoryFiles (toFilePath root) ["**/*.cabal"]))
+  cabals <- paths =<< lift (tryIO (getDirectoryFilesIgnore (toFilePath root) ["**/*.cabal"] ["dist-newstyle/**"]))
   pkgs <- fmap convert <$> traverse (readCabal root) cabals
   pure [
     ProjectFile {path = [relfile|flake.nix|], content = renderRootExpr (flake conf pkgs)}
