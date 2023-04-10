@@ -1,6 +1,17 @@
 {config, lib, util}: let
 
-  prog = config.pkgs.writeScript "hix-release-all" ''
+  tag = ''
+  ${config.pkgs.git}/bin/git tag -m "Release $version" "$version"
+  '';
+
+  updateVersions = ''
+  sed -i 's/ref=[^"]\+/ref='"$version/" readme.md examples/*/flake.nix
+  sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
+  ${config.pkgs.git}/bin/git --no-pager diff
+  ${config.pkgs.git}/bin/git add readme.md examples modules/basic.nix
+  '';
+
+  preamble = ''
   #!${config.pkgs.bashInteractive}/bin/bash
   set -eu -o pipefail
 
@@ -10,11 +21,17 @@
     exit 1
   fi
   version="$1"
+  '';
 
-  sed -i 's/ref=[^"]\+/ref='"$version/" readme.md examples/*/flake.nix
-  sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
-  ${config.pkgs.git}/bin/git --no-pager diff
-  ${config.pkgs.git}/bin/git add readme.md examples modules/basic.nix
+  nix = config.pkgs.writeScript "hix-release-nix" ''
+  ${preamble}
+  ${updateVersions}
+  ${tag}
+  '';
+
+  all = config.pkgs.writeScript "hix-release-all" ''
+  ${preamble}
+  ${updateVersions}
 
   nix run .#release -- -v $version
   echo -n ">>> Update CLI version in overrides. Continue? [Yn] "
@@ -26,7 +43,7 @@
     exit 1
   fi
   ${config.pkgs.git}/bin/git add modules/cli.nix
-  ${config.pkgs.git}/bin/git tag -m "Release $version" "$version"
+  ${tag}
   '';
 
-in prog
+in { inherit nix all; }

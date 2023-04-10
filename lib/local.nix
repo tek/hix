@@ -120,11 +120,18 @@ hix.pro ({config, lib, ...}: {
         program = "${prog}";
       };
 
-      release-all = let
-        prog = import ./release.nix { inherit config lib util; };
+      release-nix = let
+        release = import ./release.nix { inherit config lib util; };
       in {
         type = "app";
-        program = "${prog}";
+        program = "${release.nix}";
+      };
+
+      release-all = let
+        release = import ./release.nix { inherit config lib util; };
+      in {
+        type = "app";
+        program = "${release.all}";
       };
 
     };
