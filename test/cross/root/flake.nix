@@ -5,6 +5,7 @@
 
   outputs = { hix, ... }:
   hix.lib.flake ({ config, ... }: {
+    ifd = false;
     packages.root = {
       src = ./.;
       library.enable = true;

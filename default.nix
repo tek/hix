@@ -20,7 +20,7 @@ let
     flake = projectModules: self.flakeWith { inherit projectModules; };
 
     auto = projectModules:
-    self.flakeWith { extraModules = [{ auto = true; ifd = false; }]; modules = toList projectModules; };
+    self.flakeWith { extraModules = [{ auto = true; ifd = false; }]; projectModules = toList projectModules; };
 
     pro = projectModules:
     self.flakeWith { extraModules = [(import ./modules/pro.nix)]; projectModules = toList projectModules; };
