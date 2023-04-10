@@ -25,6 +25,7 @@
 
   nix = config.pkgs.writeScript "hix-release-nix" ''
   ${preamble}
+  nix run .#test
   ${updateVersions}
   ${config.pkgs.git}/bin/git commit -m "Release $version"
   ${tag}
