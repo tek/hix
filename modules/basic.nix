@@ -234,7 +234,12 @@ in {
         description = mdDoc "The Hix version used by this project.";
         type = str;
         readOnly = true;
-        default = "default";
+      };
+
+      hixUrl = mkOption {
+        description = mdDoc "The URL to the Hix release tag used by this project.";
+        type = str;
+        default = "github:tek/hix?tag=v${config.internal.hixVersion}";
       };
 
     };

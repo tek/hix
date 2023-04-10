@@ -1,4 +1,4 @@
-{}: let
+{hixUrl}: let
 
   exampleFile = path: builtins.readFile (../../examples + "/${path}");
 
@@ -246,14 +246,14 @@ in {
   The CLI command `new` will create a project skeleton with an executable and test suite in the current directory:
 
   ```
-  nix run 'github:tek/hix?ref=release/0.3.0.0#new' -- --name 'project-name' --author 'Your Name'
+  nix run '${hixUrl}#new' -- --name 'project-name' --author 'Your Name'
   ```
 
   If you have an existing project with Cabal files in it, the `bootstrap` command will create a flake that configures
   the more basic components:
 
   ```
-  nix run 'github:tek/hix?ref=release/0.3.0.0#bootstrap'
+  nix run '${hixUrl}#bootstrap'
   ```
 
   ### Cabal configuration {#cabal-conf}

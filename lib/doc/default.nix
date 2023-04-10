@@ -1,4 +1,4 @@
-{ inputs, pkgs, }:
+{ inputs, pkgs, hixUrl, }:
 with pkgs.lib;
 let
   lib = pkgs.lib;
@@ -13,7 +13,7 @@ let
 
   util = import ../with-config.nix { inherit config lib util; };
 
-  prose = import ./prose.nix {};
+  prose = import ./prose.nix { inherit hixUrl; };
 
   cabalOptionsModules = [
     (options.importMod "cabal-options" { inherit global util; })

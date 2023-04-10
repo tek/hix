@@ -2,6 +2,8 @@
 with lib;
 let
 
+  pkgs = config.pkgs;
+
   basic = import ./default.nix { inherit lib; };
 
   paramApp = import ./param-app.nix { inherit config lib util; };
@@ -96,11 +98,11 @@ let
   }
   trap quit EXIT
   exe="$tmp/hix"
-  ${config.pkgs.curl}/bin/curl --no-progress-meter --location --output $exe ${downloadStaticCli}
+  ${config.pkgs.curl}/bin/curl --no-progress-meter --location --output $exe ${config.internal.hixCli.staticExeUrl}
   chmod +x $exe
   '';
 
-  withStaticCLI = script: pkgs.writeScript "hix-bootstrap" ''
+  withStaticCLI = name: script: pkgs.writeScript name ''
   #!${pkgs.bashInteractive}/bin/bash
   set -e
   ${downloadStaticCli}

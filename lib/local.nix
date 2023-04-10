@@ -1,6 +1,6 @@
 { inputs, hix }:
 
-hix.pro ({config, lib, util, ...}: {
+hix.pro ({config, lib, ...}: {
   hackage.versionFile = "ops/version.nix";
   compiler = "ghc92";
 
@@ -81,13 +81,14 @@ hix.pro ({config, lib, util, ...}: {
 
     packages = let
       pkgs = import inputs.nixpkgs_internal { inherit (config) system; };
-      docs = import ./doc/default.nix { inherit inputs pkgs; };
+      docs = import ./doc/default.nix { inherit inputs pkgs; inherit (config.internal) hixUrl; };
     in {
       docs = docs.html;
     };
 
     apps = let
       tests = import ../test/default.nix { inherit (config) pkgs; };
+      util = import ./with-config.nix { inherit config lib util; };
     in {
 
       test = {
@@ -101,14 +102,14 @@ hix.pro ({config, lib, util, ...}: {
       };
 
       new = let
-        prog = util.withStaticCLI "hix-new" "$exe new $@";
+        prog = util.withStaticCLI "hix-new" "$exe new --hix-url '${config.internal.hixUrl}' $@";
       in {
         type = "app";
         program = "${prog}";
       };
 
       bootstrap = let
-        prog = util.withStaticCLI "hix-bootstrap" "$exe bootstrap $@";
+        prog = util.withStaticCLI "hix-bootstrap" "$exe bootstrap --hix-url '${config.internal.hixUrl}' $@";
       in {
         type = "app";
         program = "${prog}";

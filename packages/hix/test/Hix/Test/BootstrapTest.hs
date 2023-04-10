@@ -92,7 +92,7 @@ flakeTarget :: Text
 flakeTarget =
   [exon|{
   description = "A Haskell project";
-  inputs.hix.url = "github:tek/hix?ref=release/0.3.0.0";
+  inputs.hix.url = "github:tek/hix";
   outputs = {hix, ...}: hix.lib.flake {
     packages = {
       red-panda = {

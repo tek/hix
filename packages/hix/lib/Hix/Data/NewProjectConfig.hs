@@ -11,7 +11,7 @@ newtype HixUrl =
   deriving newtype (IsString, Ord)
 
 instance Default HixUrl where
-  def = "github:tek/hix?ref=release/0.3.0.0"
+  def = "github:tek/hix"
 
 newtype Author =
   Author { unAuthor :: Text }
