@@ -11,7 +11,7 @@
   fi
   version="$1"
 
-  sed -i 's/tag=v[^"]\+/tag=v'"$version/" readme.md examples/*/flake.nix
+  sed -i 's/ref=v[^"]\+/ref=v'"$version/" readme.md examples/*/flake.nix
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
   ${config.pkgs.git}/bin/git --no-pager diff
   git add readme.md examples modules/basic.nix
