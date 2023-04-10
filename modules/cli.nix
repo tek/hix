@@ -44,7 +44,7 @@ in {
     overrides = {hackage, source, fast, notest, unbreak, ...}: {
       exon = unbreak;
       flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
-      hix = notest (fast (hackage "0.2.0.0" "1yan2vvr5kpgfiggsfar63g57cqb4dw88v8i47pp3c3nsi98ln4d"));
+      hix = notest (fast (hackage "0.4.1" "0lfabmfbh3lig4xcg1jjbqn952n1qfh7vnmns06d34n7z0x1zlsj"));
     };
 
     ghc = {
