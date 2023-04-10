@@ -20,12 +20,10 @@ let
     flake = projectModules: self.flakeWith { inherit projectModules; };
 
     auto = projectModules:
-    self.flake ([{ auto = true; ifd = false; }] ++ toList projectModules);
+    self.flakeWith { extraModules = [{ auto = true; ifd = false; }]; modules = toList projectModules; };
 
     pro = projectModules:
     self.flakeWith { extraModules = [(import ./modules/pro.nix)]; projectModules = toList projectModules; };
-
-    overrides = import ./lib/overrides.nix { inherit (inputs.nixpkgs) lib; };
 
     spec = import ./lib/deps/spec.nix { inherit (self) lib; };
   });
