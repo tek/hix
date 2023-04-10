@@ -2,6 +2,7 @@
 
 hix.pro ({config, lib, ...}: {
   hackage.versionFile = "ops/version.nix";
+  hackage.tag = false;
   compiler = "ghc92";
 
   overrides = {hackage, ...}: {
