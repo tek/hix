@@ -1,9 +1,9 @@
 {pkgs}: let
 
-  prog = config.pkgs.writeScript "hix-new" ''
+  prog = config.pkgs.writeScript "hix-bootstrap" ''
   #!${config.pkgs.bashInteractive}/bin/bash
   set -e
-  ${config.internal.hixCli.package}/bin/hix new $@
+  ${config.internal.hixCli.package}/bin/hix bootstrap $@
   if [[ ! -e .git ]]
   then
     ${pkgs.git}/bin/git init

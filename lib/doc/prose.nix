@@ -239,6 +239,23 @@ in {
   }
   ```
 
+  ### Generating flakes {#gen-flake}
+
+  Rather than writing the boilerplate yourself, the Hix CLI application can generate it for you.
+
+  The CLI command `new` will create a project skeleton with an executable and test suite in the current directory:
+
+  ```
+  nix run 'github:tek/hix?ref=release/0.3.0.0' new -- --name 'project-name' --author 'Your Name'
+  ```
+
+  If you have an existing project with Cabal files in it, the `bootstrap` command will create a flake that configures
+  the more basic components:
+
+  ```
+  nix run 'github:tek/hix?ref=release/0.3.0.0' bootstrap
+  ```
+
   ### Cabal configuration {#cabal-conf}
 
   There are three levels of generality at which Cabal options can be specified:

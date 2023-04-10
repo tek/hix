@@ -9,13 +9,8 @@ import Data.ByteString (elemIndex)
 import qualified Data.ByteString.Builder as ByteStringBuilder
 import Data.ByteString.Builder (Builder, byteString, charUtf8, stringUtf8)
 import Data.Generics.Labels ()
-import Data.List.Extra (firstJust)
-import qualified Distribution.ModuleName as ModuleName
-import Distribution.ModuleName (ModuleName)
-import Distribution.PackageDescription (BuildInfo (..), ModuleRenaming (..), unPackageName)
+import Distribution.PackageDescription (BuildInfo (..))
 import Distribution.Simple (PerCompilerFlavor (PerCompilerFlavor))
-import Distribution.Types.IncludeRenaming (IncludeRenaming (..))
-import Distribution.Types.Mixin (Mixin (..))
 import qualified Exon
 import Exon (exon)
 import Language.Haskell.Extension (
@@ -37,19 +32,14 @@ import Hix.Json (jsonConfig)
 import Hix.Monad (M)
 import Hix.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Optparse (JsonConfig)
+import qualified Hix.Prelude as Prelude
+import Hix.Prelude (Prelude (Prelude), findPrelude)
 
 type Regex = IndexedTraversal' Int ByteString Match
 
-data Prelude =
-  Prelude {
-    preludePackage :: ByteString,
-    preludeModule :: ByteString
-  }
-  deriving stock (Show)
-
 fromPreludeConfig :: PreludeConfig -> Prelude
 fromPreludeConfig conf =
-  Prelude (encodeUtf8 (name conf.package)) (encodeUtf8 conf.module_.unModuleName)
+  Prelude (toString (name conf.package)) (toString conf.module_.unModuleName)
   where
     name = \case
       PreludePackageName n -> n
@@ -221,9 +211,9 @@ replacePrelude l Prelude {..}
     Nothing
   where
     insertPrelude =
-      (ix 0 .~ [exon|"#{preludePackage}" |])
+      (ix 0 .~ [exon|"#{encodeUtf8 preludePackage}" |])
       .
-      (ix 1 .~ preludeModule)
+      (ix 1 .~ encodeUtf8 preludeModule)
 
 parenRegex :: Regex
 parenRegex =
@@ -356,31 +346,9 @@ scanHeader customPrelude =
         ..
       }
 
-preludeRenaming :: [(b, ModuleName)] -> Maybe b
-preludeRenaming =
-  firstJust \case
-    (real, "Prelude") -> Just real
-    _ -> Nothing
-
-pattern PreludeRenaming :: ModuleName -> ModuleRenaming
-pattern PreludeRenaming p <- ModuleRenaming (preludeRenaming -> Just p)
-
-pattern PreludeInclude :: ModuleName -> IncludeRenaming
-pattern PreludeInclude p <- IncludeRenaming {includeProvidesRn = PreludeRenaming p}
-
-findPrelude :: [Mixin] -> Maybe Prelude
-findPrelude =
-  firstJust \case
-    Mixin {mixinIncludeRenaming = PreludeInclude real, ..} ->
-      let
-        preludePackage = encodeUtf8 (unPackageName mixinPackageName)
-        preludeModule = Exon.intercalate "." (encodeUtf8 <$> ModuleName.components real)
-      in Just Prelude {..}
-    _ -> Nothing
-
 customPreludeImport :: Prelude -> Builder
 customPreludeImport Prelude {..} =
-  lineB [exon|import "#{byteString preludePackage}" #{byteString preludeModule} as Prelude|]
+  lineB [exon|import "#{stringUtf8 preludePackage}" #{stringUtf8 preludeModule} as Prelude|]
 
 needPreludeExtensions :: PreludeAction -> Bool
 needPreludeExtensions = \case

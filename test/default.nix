@@ -19,6 +19,7 @@ let
     postgres = test "postgres";
     env = test "env";
     new = test "new";
+    bootstrap = test "bootstrap";
   };
 
   testA = n: t: "${n} ${t}";

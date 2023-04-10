@@ -10,13 +10,13 @@ newtype HixUrl =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord)
 
+instance Default HixUrl where
+  def = "github:tek/hix?ref=release/0.3.0.0"
+
 newtype Author =
   Author { unAuthor :: Text }
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord)
-
-instance Default HixUrl where
-  def = "github:tek/hix"
 
 data NewProjectConfig =
   NewProjectConfig {

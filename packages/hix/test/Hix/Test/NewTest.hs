@@ -6,8 +6,9 @@ import Path (absdir, relfile)
 
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (HixUrl, NewProjectConfig (NewProjectConfig))
+import Hix.Data.ProjectFile (ProjectFile (ProjectFile))
 import Hix.Monad (runM)
-import Hix.New (ProjectFile (ProjectFile), newProjectFiles, license)
+import Hix.New (license, newProjectFiles)
 
 conf :: NewProjectConfig
 conf =

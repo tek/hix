@@ -28,6 +28,8 @@ import Options.Applicative (
 import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir)
 import Prelude hiding (Mod, mod)
 
+import qualified Hix.Data.BootstrapProjectConfig
+import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (BootstrapProjectConfig))
 import Hix.Data.ComponentConfig (
   ComponentName (ComponentName),
   EnvName,
@@ -36,8 +38,8 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   )
 import Hix.Data.GhciConfig (EnvConfig, GhciConfig, RunnerName)
-import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
 import qualified Hix.Data.NewProjectConfig
+import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Optparse (JsonConfig, absFileOption, jsonOption)
 
@@ -106,6 +108,12 @@ data NewOptions =
   }
   deriving stock (Eq, Show, Generic)
 
+data BootstrapOptions =
+  BootstrapOptions {
+    config :: BootstrapProjectConfig
+  }
+  deriving stock (Eq, Show, Generic)
+
 data EnvRunnerCommandOptions =
   EnvRunnerCommandOptions {
     options :: EnvRunnerOptions,
@@ -123,6 +131,8 @@ data Command =
   GhciCmd GhciOptions
   |
   NewCmd NewOptions
+  |
+  BootstrapCmd BootstrapOptions
   deriving stock (Show)
 
 data GlobalOptions =
@@ -248,6 +258,11 @@ newParser = do
   author <- strOption (long "author" <> short 'a' <> help "Your name")
   pure NewOptions {config = NewProjectConfig {..}}
 
+bootstrapParser :: Parser BootstrapOptions
+bootstrapParser = do
+  hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
+  pure BootstrapOptions {config = BootstrapProjectConfig {..}}
+
 commands ::
   Mod CommandFields Command
 commands =
@@ -260,6 +275,8 @@ commands =
   command "ghcid-cmd" (GhcidCmd <$> info ghciParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
   <>
   command "new" (NewCmd <$> info newParser (progDesc "Create a new Hix project in the current directory"))
+  <>
+  command "bootstrap" (BootstrapCmd <$> info bootstrapParser (progDesc "Bootstrap an existing Cabal project in the current directory"))
 
 globalParser :: Parser GlobalOptions
 globalParser = do

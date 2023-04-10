@@ -1,6 +1,7 @@
 module Main where
 
 import Hedgehog (TestT, property, test, withTests)
+import Hix.Test.BootstrapTest (test_bootstrap)
 import Hix.Test.CabalTest (test_cabal)
 import Hix.Test.GhciTest (test_componentEnv, test_ghcid, test_moduleName)
 import Hix.Test.NewTest (test_new)
@@ -38,7 +39,8 @@ tests =
       unitTest "run ghcid" test_ghcid,
       unitTest "component env" test_componentEnv,
       unitTest "extract module name from path" test_moduleName,
-      unitTest "generate a project" test_new
+      unitTest "generate a project" test_new,
+      unitTest "bootstrap a project" test_bootstrap
     ]
   ]
 

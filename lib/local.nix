@@ -107,6 +107,13 @@ hix.pro ({config, lib, ...}: {
         program = "${prog}";
       };
 
+      bootstrap = let
+        prog = import ./bootstrap.nix { inherit (config) pkgs; };
+      in {
+        type = "app";
+        program = "${prog}";
+      };
+
     };
 
   };

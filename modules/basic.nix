@@ -255,6 +255,12 @@ in {
           default = "${config.internal.hixCli.package}/bin/hix";
         };
 
+        staticExeUrl = mkOption {
+          description = mdDoc "The URL to the Github Actions-built static executable.";
+          type = str;
+          default = "https://github.com/tek/hix/releases/download/release-0.3.0.0/hix";
+        };
+
       };
 
     };

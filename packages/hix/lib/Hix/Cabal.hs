@@ -1,14 +1,7 @@
-{-# language CPP #-}
-
 module Hix.Cabal where
 
 import Control.Monad.Trans.Except (ExceptT (ExceptT), throwE)
 import Distribution.PackageDescription (BuildInfo (..), GenericPackageDescription (..))
-#if MIN_VERSION_Cabal(3,8,0)
-import Distribution.Simple.PackageDescription (readGenericPackageDescription)
-#else
-import Distribution.PackageDescription.Parsec (readGenericPackageDescription)
-#endif
 import Distribution.Types.Benchmark (benchmarkBuildInfo)
 import Distribution.Types.CondTree (CondTree (..))
 import qualified Distribution.Types.Executable as Executable
@@ -17,7 +10,6 @@ import Distribution.Types.TestSuite (testBuildInfo)
 import Distribution.Utils.Path (getSymbolicPath)
 import qualified Distribution.Verbosity as Cabal
 import Exon (exon)
-import Hix.Data.Error (Error (..), pathText, sourceError)
 import Path (
   Abs,
   Dir,
@@ -35,6 +27,9 @@ import Path (
   )
 import System.FilePattern.Directory (getDirectoryFiles)
 import System.IO.Error (tryIOError)
+
+import Hix.Compat (readGenericPackageDescription)
+import Hix.Data.Error (Error (..), pathText, sourceError)
 
 noMatch :: Text -> Path b File -> ExceptT Error IO a
 noMatch reason source =

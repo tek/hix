@@ -1,0 +1,29 @@
+---
+name: 'tagged-release'
+
+on:
+  push:
+    tags:
+      - 'nix-*'
+
+jobs:
+  release:
+    name: 'Release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.4.0
+      - uses: cachix/install-nix-action@v15
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            extra-substituters = https://tek.cachix.org
+            extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
+      - name: 'build'
+        run: nix build .#hix.static
+      - uses: 'marvinpinto/action-automatic-releases@latest'
+        name: 'create release'
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            result/bin/hix

@@ -1,16 +1,11 @@
-{-# language CPP #-}
-
 module Hix.Test.CabalFile where
 
-#if MIN_VERSION_Cabal(3,8,0)
-import Distribution.Simple.PackageDescription (parseString)
-#else
-import Distribution.Fields.ParseResult (parseString)
-#endif
 import Distribution.PackageDescription (GenericPackageDescription)
 import Distribution.PackageDescription.Parsec (parseGenericPackageDescription)
 import Distribution.Verbosity (silent)
 import Exon (exon)
+
+import Hix.Compat (parseString)
 
 testCabal :: ByteString
 testCabal =

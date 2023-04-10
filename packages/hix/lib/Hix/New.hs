@@ -1,14 +1,9 @@
 module Hix.New where
 
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Reader (ask)
-import qualified Data.Text.IO as Text
 import Exon (exon)
-import Path (Abs, Dir, File, Path, Rel, parent, parseRelDir, parseRelFile, reldir, relfile, toFilePath, (</>))
-import Path.IO (createDirIfMissing)
+import Path (parseRelDir, parseRelFile, reldir, relfile, (</>))
 import Text.Casing (pascal)
 
-import Hix.Data.Error (tryIO)
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   Author,
@@ -16,15 +11,9 @@ import Hix.Data.NewProjectConfig (
   NewProjectConfig (NewProjectConfig),
   ProjectName (ProjectName),
   )
-import qualified Hix.Monad
-import Hix.Monad (Env (Env), M, noteEnv)
-
-data ProjectFile =
-  ProjectFile {
-    path :: Path Rel File,
-    content :: Text
-  }
-  deriving stock (Eq, Show, Generic)
+import qualified Hix.Data.ProjectFile
+import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
+import Hix.Monad (M, noteEnv)
 
 license :: Author -> Text
 license author =
@@ -182,15 +171,6 @@ newProjectFiles conf = do
     modName = toText modNameS
     modNameS = pascal (toString conf.name.unProjectName)
 
-createFile :: Path Abs Dir -> ProjectFile -> M ()
-createFile root f = do
-  lift $ tryIO do
-    createDirIfMissing True (parent file)
-    Text.writeFile (toFilePath file) f.content
-  where
-    file = root </> f.path
-
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
-  Env {root} <- ask
-  traverse_ (createFile root) =<< newProjectFiles conf
+  traverse_ createFile =<< newProjectFiles conf

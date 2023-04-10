@@ -16,6 +16,8 @@ data Error =
   |
   NewError Text
   |
+  BootstrapError Text
+  |
   NoMatch Text
   |
   Fatal Text
@@ -52,6 +54,13 @@ printNewError ::
   m ()
 printNewError msg =
   liftIO (Text.hPutStrLn stderr [exon|>>> Can't create new project: #{msg}|])
+
+printBootstrapError ::
+  MonadIO m =>
+  Text ->
+  m ()
+printBootstrapError msg =
+  liftIO (Text.hPutStrLn stderr [exon|>>> Can't bootstrap project: #{msg}|])
 
 printFatalError ::
   MonadIO m =>

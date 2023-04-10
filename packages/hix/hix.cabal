@@ -25,14 +25,18 @@ source-repository head
 library
   exposed-modules:
       Hix
+      Hix.Bootstrap
       Hix.Cabal
+      Hix.Compat
       Hix.Component
+      Hix.Data.BootstrapProjectConfig
       Hix.Data.ComponentConfig
       Hix.Data.Error
       Hix.Data.GhciConfig
       Hix.Data.GhciTest
       Hix.Data.NewProjectConfig
       Hix.Data.PreprocConfig
+      Hix.Data.ProjectFile
       Hix.Env
       Hix.Ghci
       Hix.Json
@@ -40,6 +44,7 @@ library
       Hix.New
       Hix.Options
       Hix.Optparse
+      Hix.Prelude
       Hix.Preproc
   hs-source-dirs:
       lib
@@ -157,6 +162,7 @@ test-suite hix-test
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Hix.Test.BootstrapTest
       Hix.Test.CabalFile
       Hix.Test.CabalTest
       Hix.Test.GhciTest
