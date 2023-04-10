@@ -18,7 +18,13 @@ jobs:
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             extra-substituters = https://tek.cachix.org
             extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
-      - name: 'build'
+      - uses: cachix/cachix-action@v10
+        with:
+          name: tek
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - name: 'build dynamic'
+        run: nix build .#hix
+      - name: 'build static'
         run: nix build .#hix.static
       - uses: 'marvinpinto/action-automatic-releases@latest'
         name: 'create release'
