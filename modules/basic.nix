@@ -120,7 +120,7 @@ in {
       Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.
       '';
       type = bool;
-      default = false;
+      default = true;
     };
 
     compiler = mkOption {
