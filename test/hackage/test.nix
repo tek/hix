@@ -15,7 +15,7 @@ let
     fi
 
     output=$(git show --format=format:%s --no-patch)
-    if [[ $output != "v$pristine_version" ]]
+    if [[ $output != "Release $pristine_version" ]]
     then
       fail "Wrong version commit message for release-all-pristine-version:\n$output"
     fi
@@ -35,7 +35,7 @@ let
     fi
 
     output=$(git show --format=format:%s --no-patch)
-    if [[ $output != "v$version" ]]
+    if [[ $output != "Release $version" ]]
     then
       fail "Wrong version commit message for release-all-version:\n$output"
     fi
@@ -57,7 +57,7 @@ let
     fi
 
     output=$(git show --format=format:%s --no-patch)
-    if [[ $output != "v$manual_version" ]]
+    if [[ $output != "Release $manual_version" ]]
     then
       fail "Wrong version commit message for release-all-version-manual:\n$output"
     fi
@@ -83,7 +83,7 @@ let
     fi
 
     output=$(git show --format=format:%s --no-patch)
-    if [[ $output != "root v$version" ]]
+    if [[ $output != "Release root $version" ]]
     then
       fail "Wrong version commit message for release-one:\n$output"
     fi

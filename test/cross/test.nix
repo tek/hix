@@ -7,12 +7,12 @@
     check_musl()
     {
       nix build $1
-      output=$(result/bin/run)
+      output=$(result/bin/root)
       if [[ $output != 'string' ]]
       then
         fail "Running the main package for $1 produced the wrong output:\n$output"
       fi
-      if ! { ldd result/bin/run | grep musl &>/dev/null }
+      if ! { ldd result/bin/root | grep musl &>/dev/null }
       then
         fail "Executable isn't linked against musl for $1"
       fi

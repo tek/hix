@@ -5,8 +5,11 @@
 
   outputs = { hix, ... }:
   hix.lib.flake {
-    packages.root.src = ./.;
-    packages.root.versionFile = "root.cabal";
+    packages.root = {
+      src = ./.;
+      versionFile = "root.cabal";
+    };
+    ifd = true;
     compat.enable = false;
     hackage = {
       commit = true;

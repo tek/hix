@@ -111,7 +111,7 @@ let
   commitPackageFragment = name: ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} commit --allow-empty -m "${name} $version"
+      ${git} commit --allow-empty -m "Release ${name} $version"
     fi
   '';
 
