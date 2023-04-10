@@ -17,12 +17,12 @@
   ${config.pkgs.git}/bin/git add readme.md examples modules/basic.nix
 
   nix run .#release -- -v $version
-  print -n ">>> Update CLI version in overrides. Continue? [Yn] "
+  echo -n ">>> Update CLI version in overrides. Continue? [Yn] "
   read -q decision
-  print ""
+  echo ""
   if [[ $decision == 'n' ]]
   then
-    print ">>> Aborting."
+    echo ">>> Aborting."
     exit 1
   fi
   ${config.pkgs.git}/bin/git add modules/cli.nix
