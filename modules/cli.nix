@@ -34,7 +34,7 @@ in {
       staticExeUrl = mkOption {
         description = mdDoc "The URL to the Github Actions-built static executable.";
         type = str;
-        default = "https://github.com/tek/hix/releases/download/v${config.internal.hixVersion}/hix";
+        default = "https://github.com/tek/hix/releases/download/${config.internal.hixVersion}/hix";
       };
 
   };

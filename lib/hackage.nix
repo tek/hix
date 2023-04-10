@@ -88,28 +88,28 @@ let
   tagFragment = ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} tag -m "Release $version" "v$version"
+      ${git} tag -m "Release $version" "$version"
     fi
   '';
 
   commitFragment = ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} commit --allow-empty -m "v$version"
+      ${git} commit --allow-empty -m "Release $version"
     fi
   '';
 
   commitPackageFragment = name: ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} commit --allow-empty -m "${name} v$version"
+      ${git} commit --allow-empty -m "${name} $version"
     fi
   '';
 
   tagPackageFragment = name: ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} tag -m "Release ${name} $version" "${name}-v$version"
+      ${git} tag -m "Release ${name} $version" "${name}-$version"
     fi
   '';
 

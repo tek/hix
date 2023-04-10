@@ -239,7 +239,7 @@ in {
       hixUrl = mkOption {
         description = mdDoc "The URL to the Hix release tag used by this project.";
         type = str;
-        default = "github:tek/hix?ref=v${config.internal.hixVersion}";
+        default = "github:tek/hix?ref=${config.internal.hixVersion}";
       };
 
     };
