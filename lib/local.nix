@@ -1,9 +1,13 @@
 { inputs, hix }:
 
 hix.pro ({config, lib, ...}: {
-  hackage.versionFile = "ops/version.nix";
-  hackage.tag = false;
   compiler = "ghc92";
+
+  hackage = {
+    versionFile = "ops/version.nix";
+    tag = false;
+    formatTag = { name, version }: if name == null then version else "${name}-${version}";
+  };
 
   overrides = {hackage, ...}: {
     exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";

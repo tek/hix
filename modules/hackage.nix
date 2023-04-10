@@ -102,6 +102,14 @@ in {
       default = true;
     };
 
+    formatTag = mkOption {
+      description = mdDoc "Function that creates a tag name from a version and an optional package name.";
+      type = functionTo str;
+      default = { name, version }: let
+        vtag = "v${version}";
+      in if name == null then vtag else "${name}-${vtag}";
+    };
+
     uploadCommand = mkOption {
       description = mdDoc ''
         The command used to upload a tarball, specified as a function that takes a set as a parameter with the

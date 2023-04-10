@@ -85,10 +85,12 @@ let
   handleVersion = file:
   if file != null then checkVersion file else noVersion;
 
+  formatTag = name: config.hackage.formatTag { inherit name; version = "$version"; };
+
   tagFragment = ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} tag -m "Release $version" "$version"
+      ${git} tag -m "Release $version" "${formatTag null}"
     fi
   '';
 
@@ -99,17 +101,17 @@ let
     fi
   '';
 
+  tagPackageFragment = name: ''
+    if [[ -n ''${version:-} ]]
+    then
+      ${git} tag -m "Release ${name} $version" "${formatTag name}"
+    fi
+  '';
+
   commitPackageFragment = name: ''
     if [[ -n ''${version:-} ]]
     then
       ${git} commit --allow-empty -m "${name} $version"
-    fi
-  '';
-
-  tagPackageFragment = name: ''
-    if [[ -n ''${version:-} ]]
-    then
-      ${git} tag -m "Release ${name} $version" "${name}-$version"
     fi
   '';
 
