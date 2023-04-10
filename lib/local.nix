@@ -1,6 +1,6 @@
 { inputs, hix }:
 
-hix.pro ({config, lib, ...}: {
+hix.pro ({config, lib, util, ...}: {
   hackage.versionFile = "ops/version.nix";
   compiler = "ghc92";
 
@@ -101,14 +101,21 @@ hix.pro ({config, lib, ...}: {
       };
 
       new = let
-        prog = import ./new.nix { inherit (config) pkgs; };
+        prog = util.withStaticCLI "hix-new" "$exe new $@";
       in {
         type = "app";
         program = "${prog}";
       };
 
       bootstrap = let
-        prog = import ./bootstrap.nix { inherit (config) pkgs; };
+        prog = util.withStaticCLI "hix-bootstrap" "$exe bootstrap $@";
+      in {
+        type = "app";
+        program = "${prog}";
+      };
+
+      release-all = let
+        prog = import ./release.nix { inherit config lib util; };
       in {
         type = "app";
         program = "${prog}";

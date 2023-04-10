@@ -230,37 +230,11 @@ in {
         default = {};
       };
 
-      hixCli = {
-
-        ghc = mkOption {
-          description = mdDoc "The GHC config used for the Hix CLI, defaulting to the dev GHC without overrides.";
-          type = submodule ghcModule;
-        };
-
-        overrides = mkOption {
-          type = util.types.cabalOverrides;
-          description = mdDoc "The overrides used for the CLI client.";
-        };
-
-        package = mkOption {
-          description =
-            "The package for the Hix CLI, defaulting to the local package in the input repository using the dev GHC.";
-          type = package;
-        };
-
-        exe = mkOption {
-          description =
-            "The executable in the `bin/` directory of [](#opt-hixCli-package).";
-          type = path;
-          default = "${config.internal.hixCli.package}/bin/hix";
-        };
-
-        staticExeUrl = mkOption {
-          description = mdDoc "The URL to the Github Actions-built static executable.";
-          type = str;
-          default = "https://github.com/tek/hix/releases/download/release-0.3.0.0/hix";
-        };
-
+      hixVersion = mkOption {
+        description = mdDoc "The Hix version used by this project.";
+        type = str;
+        readOnly = true;
+        default = "default";
       };
 
     };
@@ -292,30 +266,7 @@ in {
 
       relativePackages = util.relativePackages config.base config.internal.packagePaths;
 
-      hixCli = let
-        cfg = config.internal.hixCli;
-      in {
-
-        overrides = mkDefault (
-          {hackage, source, fast, notest, unbreak, ...}: {
-            exon = unbreak;
-            flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
-            hix = notest (fast (hackage "0.2.0.0" "1yan2vvr5kpgfiggsfar63g57cqb4dw88v8i47pp3c3nsi98ln4d"));
-          }
-        );
-
-        ghc = {
-          name = "hix";
-          compiler = "ghc92";
-          overrides = mkForce cfg.overrides;
-          nixpkgs = config.inputs.nixpkgs_internal;
-          nixpkgsOptions = {};
-          overlays = [];
-        };
-
-        package = cfg.ghc.ghc.hix;
-
-      };
+      hixVersion = "0.3.0.0";
 
     };
   };

@@ -25,6 +25,7 @@ let
     ./commands.nix
     ./ghci.nix
     ./hackage.nix
+    ./cli.nix
     inputsConfig
     helpers
   ];

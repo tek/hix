@@ -88,6 +88,32 @@ let
 
   unlessDev = conf: v: mkIf (conf.name != "dev") (mkDefault v);
 
+  downloadStaticCli = ''
+  tmp=$(mktemp -d)
+  quit()
+  {
+    rm -rf $tmp
+  }
+  trap quit EXIT
+  exe="$tmp/hix"
+  ${config.pkgs.curl}/bin/curl --no-progress-meter --location --output $exe ${downloadStaticCli}
+  chmod +x $exe
+  '';
+
+  withStaticCLI = script: pkgs.writeScript "hix-bootstrap" ''
+  #!${pkgs.bashInteractive}/bin/bash
+  set -e
+  ${downloadStaticCli}
+  ${script}
+  if [[ ! -e .git ]]
+  then
+    ${pkgs.git}/bin/git init
+  fi
+  ${pkgs.git}/bin/git add .
+  ${pkgs.nix}/bin/nix flake update
+  ${pkgs.git}/bin/git add flake.lock
+  '';
+
 in basic // {
   inherit
   paramApp
@@ -101,5 +127,7 @@ in basic // {
   minGhcs
   conf
   unlessDev
+  downloadStaticCli
+  withStaticCLI
   ;
 }
