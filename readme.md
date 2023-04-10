@@ -32,7 +32,7 @@ The manual process consists of first adding Hix to your Haskell project flake by
 
 ```nix
 {
-  inputs.hix.url = "github:tek/hix?ref=0.4.0.2";
+  inputs.hix.url = "github:tek/hix?ref=0.4.1";
 }
 ```
 
@@ -41,7 +41,7 @@ Then configure your project with NixOS module options:
 ```nix
 {
   description = "Example";
-  inputs.hix.url = "github:tek/hix?ref=0.4.0.2";
+  inputs.hix.url = "github:tek/hix?ref=0.4.1";
   outputs = {hix, ...}: hix.lib.flake {
     packages.parser = {
       src = ./.;
