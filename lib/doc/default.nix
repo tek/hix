@@ -132,6 +132,7 @@ let
         (text upload)
         (opt "hackage" "Hackage" mod-hackage)
         (text tags)
+        (text cross)
       ];
     }
   ];
