@@ -6,12 +6,13 @@ let
   hpackFile = conf:
   toFile "package.yaml" (toJSON (removeAttrs conf ["passthru"]));
 
-  withCabal = conf: name: src: let
+  withCabal = pkgs: conf: name: src: let
     cabal = "${name}.cabal";
-  in config.pkgs.runCommand "${name}-gen-cabal" {} ''
+  in pkgs.runCommand "${name}-gen-cabal" {} ''
   cp -r ${src} $out
   chmod u+w $out
   cd $out
+  rm -f package.yaml
   cp ${hpackFile conf} package.yaml
   if [[ -e ${cabal} ]]
   then
@@ -47,7 +48,7 @@ let
 
   in self.callPackage ({mkDerivation}: mkDerivation ({
     inherit pname;
-    src = withCabal conf pname pkg.src;
+    src = withCabal pkgs conf pname pkg.src;
     version = attr "version";
     license = attr "license";
     libraryHaskellDepends = deps (conf.library or {});

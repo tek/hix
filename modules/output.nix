@@ -107,6 +107,7 @@ in {
         inherit config;
         inherit (config.envs.dev.ghc) pkgs ghc;
         show-config = show-config.shell;
+        overrides = config.exportedOverrides;
       };
 
       devShells = let

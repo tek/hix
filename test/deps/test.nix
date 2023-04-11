@@ -3,7 +3,6 @@
   test = builtins.toFile "modules-test" ''
     cd ./root
     nix flake update
-    nix run .#gen-cabal-quiet
 
     nix build .#root.min
     nix build

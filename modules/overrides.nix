@@ -40,16 +40,35 @@ with lib;
       } // genAttrs config.ghcVersions (v: util.overridesDeps v ++ toList config.envs.${v}.overrides);
     };
 
+    inheritSystemDependentOverrides = mkOption {
+      description = mdDoc ''
+      Overrides can be exported without a dependency on a system, such that a dependent could use them even if the
+      dependency wasn't declared for the desired system.
+      However, if [](#opt-general-ifd) is `false` in the dependency, the local packages will need the `system` option,
+      and therefore need to be imported from `legacyPackages.<system>.overrides`.
+      '';
+      type = bool;
+      default = true;
+    };
+
     internal = let
 
+      getOverrides = o:
+        if config.inheritSystemDependentOverrides
+        then o.legacyPackages.${config.system}.overrides
+        else o.overrides
+        ;
+
       overridesDeps =
-        map (o: removeAttrs o.overrides ["local" "localMin"]) config.deps ++
-        map (o: o.overrides) config.depsFull;
+        map (o: removeAttrs (getOverrides o) ["local" "localMin"]) config.deps ++
+        map getOverrides config.depsFull;
 
     in {
 
       overridesDeps = mkOption {
-        description = "";
+        description = mdDoc ''
+        The overrides inherited from dependency flakes via [](#opt-general-deps) and [](#opt-general-depsFull).
+        '';
         type = attrsOf util.types.cabalOverrides;
         default = util.mergeOverrides overridesDeps;
       };
