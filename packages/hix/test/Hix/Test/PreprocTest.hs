@@ -100,6 +100,7 @@ import Data.Char
 import "base" Prelude (sum)
 import Data.List
 import Prelude hiding (Maybe)
+import qualified Prelude as P
 import Data.Maybe
 
 f :: Int
@@ -123,10 +124,11 @@ import Data.Char
 import "incipit-base" IncipitBase (sum)
 import Data.List
 import "incipit-base" IncipitBase hiding (Maybe)
+import qualified "incipit-base" IncipitBase as P
 import Data.Maybe
 
 type Hix_Dummy = Int
-{-# line 15 "/foo/bar/Foo.hs" #-}
+{-# line 16 "/foo/bar/Foo.hs" #-}
 f :: Int
 f = 1
 |]
