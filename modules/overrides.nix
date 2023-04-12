@@ -57,7 +57,7 @@ with lib;
         sys = o.legacyPackages.${config.system};
       in
         if config.inheritSystemDependentOverrides && sys ? overrides
-        then sysoverrides
+        then sys.overrides
         else o.overrides
         ;
 
