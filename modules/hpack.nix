@@ -35,7 +35,7 @@ let
     prelude = conf.prelude;
     base = conf.base;
 
-    basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
+    basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs reexported-modules; };
 
     preludeDeps = {
       dependencies =
