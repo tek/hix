@@ -11,6 +11,21 @@ let
 
   anyEnabled = set: any (a: a.enable) (attrValues set);
 
+  libModule = {...}: {
+
+    options = with types; {
+
+      reexported-modules = mkOption {
+        description = mdDoc "Modules from dependencies that this library exposes for downstream projects to import.";
+        type = listOf str;
+        example = literalExpression ''["Control.Concurrent.STM" "Data.Text"]'';
+        default = [];
+      };
+
+    };
+
+  };
+
   exeModule = sort: default: {name ? pkgName, config, ...}: {
 
     options = with types; {
@@ -53,7 +68,7 @@ let
       description = "submodule of cabal-options and cabal-component";
     };
 
-  libSubmodule = component {} "lib" "library" null true;
+  libSubmodule = component libModule "lib" "library" null true;
 
   exeSubmodule = default: component (exeModule "executable" default) "app" "executable" "exeSuffix";
 

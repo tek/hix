@@ -9,6 +9,8 @@ let
   then { default = a; }
   else {};
 
+  optionalField = name: conf: optionalAttrs (hasAttr name conf) { ${name} = conf.${name}; };
+
   app = pkg: name: exe:
   let a = { type = "app"; program = "${pkg}/bin/${name}"; };
   in { ${name} = a; } // maybeDefaultApp name a;
@@ -35,7 +37,7 @@ let
     prelude = conf.prelude;
     base = conf.base;
 
-    basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs reexported-modules; };
+    basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 
     preludeDeps = {
       dependencies =
@@ -54,7 +56,7 @@ let
   ];
 
   generateLib = pkg: conf:
-  { library = generateComponent pkg conf; };
+  { library = optionalField "reexported-modules" conf // generateComponent pkg conf; };
 
   generateExe = pkg: conf:
   { ${conf.name} = { inherit (conf) main; } // generateComponent pkg conf; };

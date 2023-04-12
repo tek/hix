@@ -149,13 +149,6 @@ in {
       default = [];
     };
 
-    reexported-modules = mkOption {
-      description = mdDoc "Modules from dependencies that this component exposes for downstream projects to import.";
-      type = listOf str;
-      example = literalExpression ''["Control.Concurrent.STM" "Data.Text"]'';
-      default = [];
-    };
-
     base = mkOption {
       description = mdDoc "The dependency spec for the `base` package.";
       type = util.types.cabalDep;

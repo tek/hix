@@ -23,11 +23,11 @@
           ghc-options = ["-Wall" "-Werror"];
           default-extensions = ["OverloadedRecordDot"];
           dependencies = ["containers"];
-          component.reexported-modules = ["Data.Set"];
         };
         library = {
           enable = true;
           source-dirs = "lib";
+          reexported-modules = ["Data.Set"];
         };
       };
 
