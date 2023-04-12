@@ -53,9 +53,11 @@ with lib;
 
     internal = let
 
-      getOverrides = o:
-        if config.inheritSystemDependentOverrides
-        then o.legacyPackages.${config.system}.overrides
+      getOverrides = o: let
+        sys = o.legacyPackages.${config.system};
+      in
+        if config.inheritSystemDependentOverrides && sys ? overrides
+        then sysoverrides
         else o.overrides
         ;
 
