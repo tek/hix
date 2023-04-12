@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           hix
-version:        0.4.1
+version:        0.4.2
 synopsis:       Haskell/Nix development build tools
 description:    See https://hackage.haskell.org/package/hix/docs/Hix.html
 category:       Build
