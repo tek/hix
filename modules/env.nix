@@ -48,8 +48,13 @@ let
   [(config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ map (n: ghc.${n}) config.haskellPackages))]
   ;
 
-  exportShellVars = vars:
-  optionalString (!(util.empty vars)) "export ${toShellVars config.env}";
+  exportShellVars = vars: let
+    defs = toShellVars config.env;
+    exports = concatMapStringsSep "\n" (n: "export ${n}") (attrNames config.env);
+  in optionalString (!(util.empty vars)) ''
+  ${defs}
+  ${exports}
+  '';
 
   preamble = ''
     quitting=0
