@@ -33,11 +33,7 @@ import Hix.Json (jsonConfig)
 import qualified Hix.Monad as Monad
 import Hix.Monad (Env (Env), M, noteGhci, tryIOM)
 import qualified Hix.Options as Options
-import Hix.Options (
-  GhciOptions (GhciOptions),
-  TargetSpec (TargetForComponent, TargetForFile),
-  TestOptions (TestOptions),
-  )
+import Hix.Options (GhciOptions (GhciOptions), TargetSpec (TargetForFile), TestOptions (TestOptions))
 
 relativeToComponent ::
   PackageConfig ->
@@ -55,10 +51,10 @@ moduleName ::
   GhciOptions ->
   M ModuleName
 moduleName package component = \case
-  GhciOptions {component = TargetForComponent _, test} -> pure test.mod
   GhciOptions {component = TargetForFile path} -> do
     rel <- relativeToComponent package component path
     pure (ModuleName (Text.replace "/" "." (withoutExt rel)))
+  GhciOptions {test} -> pure test.mod
   where
     withoutExt p = pathText (maybe p fst (splitExtension p))
 

@@ -69,7 +69,7 @@ data ComponentSpec =
 data ComponentCoords =
   ComponentCoords {
     package :: PackageSpec,
-    component :: ComponentSpec
+    component :: Maybe ComponentSpec
   }
   deriving stock (Eq, Show, Generic)
 
@@ -77,6 +77,8 @@ data TargetSpec =
   TargetForFile (Path Abs File)
   |
   TargetForComponent ComponentCoords
+  |
+  TargetDefault (Maybe ComponentSpec)
   deriving stock (Eq, Show, Generic)
 
 data TestOptions =
@@ -178,10 +180,10 @@ packageSpecParser = do
   name <- strOption (long "package" <> short 'p' <> help "The name or directory of the test package")
   pure PackageSpec {name = PackageName name, dir = parseSomeDir (toString name)}
 
-componentSpecParser :: Parser ComponentSpec
+componentSpecParser :: Parser (Maybe ComponentSpec)
 componentSpecParser = do
-  name <- strOption (long "component" <> short 'c' <> help h <> value "test")
-  pure ComponentSpec {name = ComponentName name, dir = SourceDir <$> parseRelDir (toString name)}
+  optional (strOption (long "component" <> short 'c' <> help h)) <&> fmap \ name ->
+    ComponentSpec {name = ComponentName name, dir = SourceDir <$> parseRelDir (toString name)}
   where
     h = "The name or relative directory of the test component"
 
@@ -204,6 +206,8 @@ targetSpecParser =
   TargetForComponent <$> componentForModuleParser
   <|>
   componentForFileParser
+  <|>
+  TargetDefault <$> componentSpecParser
 
 envNameParser :: Parser EnvName
 envNameParser =

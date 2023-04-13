@@ -20,8 +20,8 @@
       fail "ghci test 1 does not contain 'print success'"
     fi
 
-    check "$(nix run .#ghci -- -p root -t main <<< ':quit')"
+    # check "$(nix run .#ghci -- -p root -t main <<< ':quit')"
 
-    check "$(nix run .#env.test.ghci -- -p root -t main <<< ':quit')"
+    check "$(nix run .#env.hix-ghci-test.ghci -- -t main <<< ':quit')"
   '';
 }

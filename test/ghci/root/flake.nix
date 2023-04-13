@@ -12,10 +12,10 @@
       library.default-extensions = ["OverloadedStrings"];
       executables.root = { enable = true; source-dirs = "app"; };
       test.enable = true;
-      test.env = "test";
+      test.env = "hix-ghci-test";
     };
     compiler = "ghc90";
-    envs.test.services.test.enable = true;
+    envs.hix-ghci-test.services.test.enable = true;
     services.test = {
       nixos.services.nginx = {
         enable = true;
@@ -24,5 +24,6 @@
       ports.nginx = { host = 2; guest = 80; };
     };
     ghci.run.print = ''putStrLn "print success"'';
+    internal.hixCli.dev = true;
   });
 }

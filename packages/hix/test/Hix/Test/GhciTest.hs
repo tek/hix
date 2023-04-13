@@ -86,7 +86,7 @@ spec1 :: TargetSpec
 spec1 =
   TargetForComponent ComponentCoords {
     package = PackageSpec "api" (Just (Rel [reldir|api|])),
-    component = ComponentSpec "test" (Just (SourceDir [reldir|test|]))
+    component = Just (ComponentSpec "test" (Just (SourceDir [reldir|test|])))
   }
 
 options :: GhciOptions
@@ -133,7 +133,7 @@ spec3 :: TargetSpec
 spec3 =
   TargetForComponent ComponentCoords {
     package = PackageSpec "packages/core" (Just (Rel [reldir|packages/core|])),
-    component = ComponentSpec "core-test" (Just (SourceDir [reldir|core-test|]))
+    component = Just (ComponentSpec "core-test" (Just (SourceDir [reldir|core-test|])))
   }
 
 runnerFor :: EnvRunner -> TargetSpec -> TestT IO ()

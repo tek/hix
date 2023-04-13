@@ -24,6 +24,15 @@ in {
         type = package;
       };
 
+      dev = mkOption {
+        description = mdDoc ''
+        Whether to build the CLI from the sources in this checkout rather than from Hackage.
+        For testing purposes.
+        '';
+        type = bool;
+        default = false;
+      };
+
       exe = mkOption {
         description =
           "The executable in the `bin/` directory of [](#opt-hixCli-package).";
@@ -41,10 +50,15 @@ in {
 
   config.internal.hixCli = {
 
-    overrides = {hackage, source, fast, notest, unbreak, ...}: {
+    overrides = {hackage, source, minimal, unbreak, ...}: {
       exon = unbreak;
       flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
-      hix = notest (fast (hackage "0.4.2" "0q9dzf42xj2zv8ppj0g6pw2fglr971vr72064mvxn14h243zmgpj"));
+      hix = let
+        src =
+          if config.internal.hixCli.dev
+          then source.package ../. "hix"
+          else hackage "0.4.2" "0q9dzf42xj2zv8ppj0g6pw2fglr971vr72064mvxn14h243zmgpj";
+      in minimal src;
     };
 
     ghc = {

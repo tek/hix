@@ -1,12 +1,14 @@
 module Hix.Component where
 
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Except (throwE)
 import Control.Monad.Trans.Reader (ask)
 import Data.List.Extra (firstJust)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
 import qualified Data.Text as Text
 import Exon (exon)
-import Path (Abs, Dir, File, Path, Rel, SomeBase (Abs, Rel), isProperPrefixOf, stripProperPrefix)
+import Path (Abs, Dir, File, Path, Rel, SomeBase (Abs, Rel), isProperPrefixOf, reldir, stripProperPrefix)
 
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (
@@ -17,7 +19,7 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   Target (Target),
   )
-import Hix.Data.Error (pathText)
+import Hix.Data.Error (Error (EnvError), pathText)
 import qualified Hix.Monad as Monad
 import Hix.Monad (Env (Env), M, noteEnv)
 import qualified Hix.Options as Options
@@ -25,7 +27,7 @@ import Hix.Options (
   ComponentCoords,
   ComponentSpec (ComponentSpec),
   PackageSpec (PackageSpec),
-  TargetSpec (TargetForComponent, TargetForFile),
+  TargetSpec (TargetDefault, TargetForComponent, TargetForFile),
   )
 
 tryPackageByDir ::
@@ -72,16 +74,39 @@ componentError pname spec =
   where
     name = spec.name
 
+undecidableComponentError :: PackageName -> Text
+undecidableComponentError pname =
+  [exon|Please specify a component name or source dir with -c for the package '##{pname}'|]
+
+testComponent :: ComponentSpec
+testComponent =
+  ComponentSpec "test" (Just (SourceDir [reldir|test|]))
+
+targetInPackage ::
+  PackageConfig ->
+  Maybe ComponentSpec ->
+  M Target
+targetInPackage package = \case
+  Just comp -> do
+    component <- noteEnv (componentError package.name comp) (find match (Map.elems package.components))
+    pure Target {sourceDir = Nothing, ..}
+    where
+      match cand = matchComponent cand comp
+  Nothing -> do
+    component <- noteEnv (undecidableComponentError package.name) (selectComponent package.components)
+    pure Target {sourceDir = Nothing, ..}
+    where
+      selectComponent [(_, comp)] = Just comp
+      selectComponent (Map.elems -> comps) = find (match testComponent) comps
+      match = flip matchComponent
+
 targetForComponent ::
   PackagesConfig ->
   ComponentCoords ->
   M Target
 targetForComponent config spec = do
   package <- packageForSpec config spec.package
-  component <- noteEnv (componentError package.name spec.component) (find match (Map.elems package.components))
-  pure Target {sourceDir = Nothing, ..}
-  where
-    match = flip matchComponent spec.component
+  targetInPackage package spec.component
 
 targetForFile ::
   PackagesConfig ->
@@ -104,6 +129,12 @@ targetForFile config file = do
     pkgError = noteEnv "No package contains this file"
     compError = noteEnv "No component source dir contains this file"
 
+targetDefault :: PackagesConfig -> Maybe ComponentSpec -> M Target
+targetDefault [(_, pkg)] comp =
+  targetInPackage pkg comp
+targetDefault _ _ =
+  lift (throwE (EnvError "Project has more than one package, specify -p or -f."))
+
 targetComponent ::
   PackagesConfig ->
   TargetSpec ->
@@ -113,3 +144,5 @@ targetComponent config = \case
     targetForComponent config spec
   TargetForFile spec ->
     targetForFile config spec
+  TargetDefault spec ->
+    targetDefault config spec

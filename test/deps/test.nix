@@ -1,6 +1,6 @@
 { pkgs }:
 {
-  test = builtins.toFile "modules-test" ''
+  test = builtins.toFile "deps-test" ''
     cd ./root
     nix flake update
 
