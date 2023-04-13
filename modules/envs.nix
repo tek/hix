@@ -63,7 +63,7 @@ in {
         ghc.name = "min";
         internal.overridesInherited =
           util.concatOverrides [(util.overridesGlobalMin ["dev"]) config.envs.dev.overrides];
-        localPackage = api: api.fast;
+        localPackage = api: api.minimal;
       };
 
       hls = {

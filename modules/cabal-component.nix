@@ -31,7 +31,7 @@ in {
       description =
         mdDoc "The name of the ${sort}, defaulting to the attribute name in the config or the package name.";
       type = str;
-      default = if single then pkgName + suff else name;
+      default = if single then "${pkgName}${suff}" else name;
     };
 
     source-dirs = mkOption {
