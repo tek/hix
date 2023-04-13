@@ -18,7 +18,7 @@ let
 
   nodoc = hl.dontHaddock;
 
-  minimal = p: nodoc (nobench (notest (unbreak p)));
+  minimal = p: noprofiling (nodoc (nobench (notest (unbreak p))));
 
 in {
   inherit unbreak profiling noprofiling minimal notest bench nobench nodoc;
