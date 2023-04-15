@@ -5,11 +5,11 @@ with lib;
 
     overrides = mkOption {
       description = mdDoc ''
-        Cabal package specifications and overrides injected into GHC package sets.
-        Each override spec is a function that takes a set of combinators and resources like nixpkgs and should return an
-        attrset containing either derivations or a transformation built from those combinators.
+      Cabal package specifications and overrides injected into GHC package sets.
+      Each override spec is a function that takes a set of combinators and resources like nixpkgs and should return an
+      attrset containing either derivations or a transformation built from those combinators.
 
-        The combinators are described in [](#overrides-combinators).
+      The combinators are described in [](#overrides-combinators).
       '';
       type = util.types.cabalOverrides;
       example = literalExpression ''

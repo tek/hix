@@ -15,17 +15,17 @@ let
   overridesDeps = name: config.internal.overridesDeps.${name} or [];
 
   overridesFromDeps = extra:
-  util.concatOverrides ([(overridesDeps "all")] ++ map overridesDeps extra);
+  util.concatOverrides (map overridesDeps extra);
 
   overridesGlobal = extra:
   util.concatOverrides [
-    (overridesFromDeps (["local"] ++ extra))
+    (overridesFromDeps (["local" "all"] ++ extra))
     config.overrides
   ];
 
   overridesGlobalMin = extra:
   util.concatOverrides [
-    (overridesFromDeps (["localMin"] ++ extra))
+    (overridesFromDeps (["localMin" "all"] ++ extra))
     config.overrides
   ];
 
