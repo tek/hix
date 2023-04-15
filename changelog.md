@@ -4,6 +4,7 @@
   to work.
 * Change directory to the package root when running GHCi.
 * Add the option `package.<name>.override` that allows transforming a derivation with override combinators.
+* Add the option `package.<name>.buildInputs` that specifies non-Haskell deps for a package.
 
 # 0.4.0.0
 

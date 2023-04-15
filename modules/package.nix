@@ -199,6 +199,12 @@ in {
       default = null;
     };
 
+    buildInputs = mkOption {
+      description = mdDoc "Additional non-Haskell dependencies required by this package.";
+      type = listOf package;
+      default = [];
+    };
+
     override = mkOption {
       description = mdDoc ''
       Manipulate the package's derivation using the combinators described in [](#overrides-combinators).

@@ -34,11 +34,14 @@ let
       else pkg.src;
   in api.source.root fullSrc;
 
-  checkIfd = api: name: pkg:
-  pkg.override api (localPackage api (
-    if ifd
-    then checkAuto api name pkg
-    else api.drv (gen-cabal.simpleCabalDrv api name pkg)
-  ));
+  override = api: pkg: drv:
+  api.buildInputs pkg.buildInputs (pkg.override api (localPackage api drv));
 
-in api: builtins.mapAttrs (checkIfd api) config.packages
+  checkIfd = api: name: pkg:
+  if ifd
+  then checkAuto api name pkg
+  else api.drv (gen-cabal.simpleCabalDrv api name pkg);
+
+  mkPackage = api: name: pkg: override api pkg (checkIfd api name pkg);
+
+in api: builtins.mapAttrs (mkPackage api) config.packages
