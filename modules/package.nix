@@ -199,6 +199,14 @@ in {
       default = null;
     };
 
+    override = mkOption {
+      description = mdDoc ''
+      Manipulate the package's derivation using the combinators described in [](#overrides-combinators).
+      '';
+      type = functionTo (functionTo unspecified);
+      default = _: id;
+    };
+
     cabal = mkOption {
       type = unspecified;
       description = mdDoc ''

@@ -35,10 +35,10 @@ let
   in api.source.root fullSrc;
 
   checkIfd = api: name: pkg:
-  localPackage api (
+  pkg.override api (localPackage api (
     if ifd
     then checkAuto api name pkg
     else api.drv (gen-cabal.simpleCabalDrv api name pkg)
-  );
+  ));
 
 in api: builtins.mapAttrs (checkIfd api) config.packages

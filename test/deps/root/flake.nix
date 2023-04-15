@@ -25,6 +25,7 @@
           ];
         };
         executables.run = { source-dirs = "app"; };
+        override = {minimal, ...}: minimal;
       };
       sub = {
         src = ./sub;

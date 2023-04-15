@@ -3,6 +3,7 @@
 * Switch off IFD (i.e. cabal2nix) by default, allowing multiple systems to be exposed while still allowing flake checks
   to work.
 * Change directory to the package root when running GHCi.
+* Add the option `package.<name>.override` that allows transforming a derivation with override combinators.
 
 # 0.4.0.0
 
