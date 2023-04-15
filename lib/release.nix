@@ -13,8 +13,8 @@
   '';
 
   preamble = ''
-  #!${config.pkgs.bashInteractive}/bin/bash
-  set -eu -o pipefail
+  #!${config.pkgs.zsh}/bin/zsh
+  setopt err_exit no_unset pipefail
 
   if [[ $# == 0 ]]
   then
