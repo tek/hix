@@ -5,6 +5,7 @@
   '';
 
   updateVersions = ''
+  nix run .#test
   sed -i 's/ref=[^"]\+/ref='"$version/" readme.md examples/*/flake.nix
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
   sed -i "s/Unreleased/$version/" changelog.md
@@ -26,7 +27,6 @@
 
   nix = config.pkgs.writeScript "hix-release-nix" ''
   ${preamble}
-  nix run .#test
   ${updateVersions}
   ${config.pkgs.git}/bin/git commit -m "Release $version"
   ${tag}
