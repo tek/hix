@@ -7,8 +7,9 @@
   updateVersions = ''
   sed -i 's/ref=[^"]\+/ref='"$version/" readme.md examples/*/flake.nix
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
+  sed -i "s/Unreleased/$version/" changelog.md
   ${config.pkgs.git}/bin/git --no-pager diff
-  ${config.pkgs.git}/bin/git add readme.md examples modules/basic.nix
+  ${config.pkgs.git}/bin/git add readme.md changelog.md examples modules/basic.nix
   '';
 
   preamble = ''
