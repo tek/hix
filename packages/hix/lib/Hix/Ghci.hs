@@ -2,7 +2,6 @@ module Hix.Ghci where
 
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, catchE)
-import Control.Monad.Trans.Reader (ask)
 import Data.List.Extra (nubOrd)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
@@ -10,7 +9,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel, parseRelDir, reldir, splitExtension, stripProperPrefix, toFilePath, (</>))
-import Path.IO (createDirIfMissing, getCurrentDir, getTempDir, openTempFile)
+import Path.IO (createDirIfMissing, getTempDir, openTempFile)
 import System.IO (hClose)
 import System.Posix.User (getLoginName)
 
@@ -30,18 +29,18 @@ import Hix.Data.GhciConfig (GhciConfig, GhciRunExpr (GhciRunExpr), GhciSetupCode
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (GhcidRun))
 import Hix.Json (jsonConfig)
-import qualified Hix.Monad as Monad
-import Hix.Monad (Env (Env), M, noteGhci, tryIOM)
+import Hix.Monad (M, noteGhci)
 import qualified Hix.Options as Options
 import Hix.Options (GhciOptions (GhciOptions), TargetSpec (TargetForFile), TestOptions (TestOptions))
+import Hix.Path (rootDir)
 
 relativeToComponent ::
+  Path Abs Dir ->
   PackageConfig ->
   Maybe SourceDir ->
   Path Abs File ->
   M (Path Rel File)
-relativeToComponent package mdir path = do
-  Env {root} <- ask
+relativeToComponent root package mdir path = do
   SourceDir dir <- noteGhci "Internal: No source dir for file target" mdir
   noteGhci "Internal: Bad file target" (stripProperPrefix (root </> package.src </> dir) path)
 
@@ -51,8 +50,9 @@ moduleName ::
   GhciOptions ->
   M ModuleName
 moduleName package component = \case
-  GhciOptions {component = TargetForFile path} -> do
-    rel <- relativeToComponent package component path
+  GhciOptions {component = TargetForFile path, root = cliRoot} -> do
+    root <- rootDir cliRoot
+    rel <- relativeToComponent root package component path
     pure (ModuleName (Text.replace "/" "." (withoutExt rel)))
   GhciOptions {test} -> pure test.mod
   where
@@ -66,10 +66,13 @@ ghciScript ::
   M Text
 ghciScript config package component opt = do
   ModuleName module_ <- moduleName package component opt
-  pure [exon|#{setup}
+  pure [exon|#{cdCode}#{setup}
 :load #{module_}
 import #{module_}|]
   where
+    cdCode | opt.test.cd.unChangeDir = [exon|:cd #{pathText package.src}
+|]
+           | otherwise = ""
     GhciSetupCode setup = fold (flip Map.lookup config.setup =<< opt.test.runner)
 
 componentSearchPaths :: PackageConfig -> ComponentConfig -> [Path Rel Dir]
@@ -99,14 +102,14 @@ testRun config = \case
 assemble :: GhciOptions -> M GhciTest
 assemble opt = do
   config <- either pure jsonConfig opt.config
-  cwd <- tryIOM getCurrentDir
-  Target {..} <- targetComponent config.packages opt.component
+  root <- rootDir opt.root
+  Target {..} <- targetComponent opt.root config.packages opt.component
   script <- ghciScript config package sourceDir opt
   pure GhciTest {
     script,
     test = testRun config opt.test,
     args = config.args,
-    searchPath = (cwd </>) <$> searchPath config.packages package component
+    searchPath = (root </>) <$> searchPath config.packages package component
     }
 
 hixTempDir ::

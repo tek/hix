@@ -9,7 +9,7 @@ import Hix.Data.Error (Error (BootstrapError, EnvError, GhciError, NewError), tr
 
 data Env =
   Env {
-    root :: Path Abs Dir
+    cwd :: Path Abs Dir
   }
   deriving stock (Eq, Show, Generic)
 
@@ -35,8 +35,6 @@ runM :: Path Abs Dir -> M a -> IO (Either Error a)
 runM root ma =
   runExceptT (runReaderT ma (Env root))
 
-tryIOM ::
-  IO a ->
-  M a
+tryIOM :: IO a -> M a
 tryIOM ma =
   lift (tryIO ma)

@@ -3,25 +3,21 @@
   test = builtins.toFile "ghci-test" ''
     cd ./root
     nix flake update
-    nix run .#hpack
+    nix run .#gen-cabal
 
-    check()
+    ghci_match()
     {
-      local output=$1
-      if [[ ! $output =~ 'two modules loaded' ]] || [[ ! $output =~ 'test-endpoint' ]]
-      then
-        fail "Failure in ghci:\n$output"
-      fi
+      check_match "nix run $1 <<< ':quit'" $2 $3
     }
 
-    output="$(nix run .#ghci -- -p root -c lib -m Root.Lib -r print <<< ':quit')"
-    if [[ ! $output =~ 'print success' ]]
-    then
-      fail "ghci test 1 does not contain 'print success'"
-    fi
+    ghci_match ".#ghci -- --root $PWD -c lib -m Root.Lib -r cwd" "$PWD/pkg/" 'ghci cwd with cd printed wrong directory'
 
-    # check "$(nix run .#ghci -- -p root -t main <<< ':quit')"
+    ghci_match '.#ghci -- -c lib -m Root.Lib -r cwd -- --no-cd' "$PWD/" 'ghci cwd with no-cd printed wrong directory'
 
-    check "$(nix run .#env.hix-ghci-test.ghci -- -t main <<< ':quit')"
+    ghci_match '.#ghci -- -p root -c lib -m Root.Lib -r print' 'print success' "ghci output for 'print' runner does not contain 'print success'"
+
+    ghci_match '.#ghci -- -p root -t main' 'test-endpoint' "ghci service output with component env does not contain 'test-endpoint'"
+
+    ghci_match '.#env.hix-ghci-test.ghci -- -t main' 'test-endpoint' "ghci service output with explicit env does not contain 'test-endpoint'"
   '';
 }

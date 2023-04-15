@@ -19,9 +19,9 @@ data ProjectFile =
 
 createFile :: ProjectFile -> M ()
 createFile f = do
-  Env {root} <- ask
+  Env {cwd} <- ask
   let
-    file = root </> f.path
+    file = cwd </> f.path
   lift $ tryIO do
     createDirIfMissing True (parent file)
     Text.writeFile (toFilePath file) f.content

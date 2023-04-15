@@ -17,7 +17,7 @@ import Language.Haskell.Extension (
   Extension (DisableExtension, EnableExtension, UnknownExtension),
   Language (UnknownLanguage),
   )
-import Path (Abs, File, Path, toFilePath)
+import Path (Abs, Dir, File, Path, toFilePath)
 import Prelude hiding (group)
 import System.Random (randomRIO)
 
@@ -446,10 +446,14 @@ preprocessWith opt conf = do
   let result = preprocessModule opt.source conf dummyExportName inLines
   lift (tryIO (ByteStringBuilder.writeFile (toFilePath opt.outFile) result))
 
-fromConfig :: Path Abs File -> Either PreprocConfig JsonConfig -> M CabalConfig
-fromConfig source pconf = do
+fromConfig ::
+  Maybe (Path Abs Dir) ->
+  Path Abs File ->
+  Either PreprocConfig JsonConfig ->
+  M CabalConfig
+fromConfig cliRoot source pconf = do
   conf <- either pure jsonConfig pconf
-  target <- targetComponent conf.packages (TargetForFile source)
+  target <- targetComponent cliRoot conf.packages (TargetForFile source)
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,
     ghcOptions = stringUtf8 <$> target.component.ghcOptions,
@@ -476,5 +480,5 @@ fromCabalFile source =
 -- TODO add common stanzas
 preprocess :: PreprocOptions -> M ()
 preprocess opt = do
-  conf <- maybe (fromCabalFile opt.source) (fromConfig opt.source) opt.config
+  conf <- maybe (fromCabalFile opt.source) (fromConfig opt.root opt.source) opt.config
   preprocessWith opt conf

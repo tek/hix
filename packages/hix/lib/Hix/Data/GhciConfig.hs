@@ -25,6 +25,10 @@ newtype GhciArgs =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsList, Ord, FromJSON)
 
+newtype ChangeDir =
+  ChangeDir { unChangeDir :: Bool }
+  deriving stock (Eq, Show, Generic)
+
 data EnvConfig =
   EnvConfig {
     packages :: PackagesConfig,

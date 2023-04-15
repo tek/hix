@@ -44,6 +44,7 @@ library
       Hix.New
       Hix.Options
       Hix.Optparse
+      Hix.Path
       Hix.Prelude
       Hix.Preproc
   hs-source-dirs:

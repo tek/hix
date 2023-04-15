@@ -26,6 +26,7 @@ import Options.Applicative (
   value,
   )
 import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir)
+import Path.IO (getCurrentDir)
 import Prelude hiding (Mod, mod)
 
 import qualified Hix.Data.BootstrapProjectConfig
@@ -37,15 +38,16 @@ import Hix.Data.ComponentConfig (
   PackageName (PackageName),
   SourceDir (SourceDir),
   )
-import Hix.Data.GhciConfig (EnvConfig, GhciConfig, RunnerName)
+import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig, GhciConfig, RunnerName)
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
 import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Optparse (JsonConfig, absFileOption, jsonOption)
+import Hix.Optparse (JsonConfig, absDirOption, absFileOption, jsonOption)
 
 data PreprocOptions =
   PreprocOptions {
     config :: Maybe (Either PreprocConfig JsonConfig),
+    root :: Maybe (Path Abs Dir),
     source :: Path Abs File,
     inFile :: Path Abs File,
     outFile :: Path Abs File
@@ -68,7 +70,7 @@ data ComponentSpec =
 
 data ComponentCoords =
   ComponentCoords {
-    package :: PackageSpec,
+    package :: Maybe PackageSpec,
     component :: Maybe ComponentSpec
   }
   deriving stock (Eq, Show, Generic)
@@ -77,21 +79,21 @@ data TargetSpec =
   TargetForFile (Path Abs File)
   |
   TargetForComponent ComponentCoords
-  |
-  TargetDefault (Maybe ComponentSpec)
   deriving stock (Eq, Show, Generic)
 
 data TestOptions =
   TestOptions {
     mod :: ModuleName,
     test :: Maybe Text,
-    runner :: Maybe RunnerName
+    runner :: Maybe RunnerName,
+    cd :: ChangeDir
   }
   deriving stock (Eq, Show, Generic)
 
 data EnvRunnerOptions =
   EnvRunnerOptions {
     config :: Either EnvConfig JsonConfig,
+    root :: Maybe (Path Abs Dir),
     component :: Maybe TargetSpec
   }
   deriving stock (Show, Generic)
@@ -99,6 +101,7 @@ data EnvRunnerOptions =
 data GhciOptions =
   GhciOptions {
     config :: Either GhciConfig JsonConfig,
+    root :: Maybe (Path Abs Dir),
     component :: TargetSpec,
     test :: TestOptions
   }
@@ -139,10 +142,10 @@ data Command =
 
 data GlobalOptions =
   GlobalOptions {
-    verbose :: Maybe Bool
+    verbose :: Maybe Bool,
+    cwd :: Path Abs Dir
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (Default)
 
 data Options =
   Options {
@@ -158,10 +161,14 @@ fileParser ::
 fileParser longName helpText =
   option absFileOption (long longName <> completer (bashCompleter "file") <> help helpText)
 
+rootParser :: Parser (Maybe (Path Abs Dir))
+rootParser =
+  optional (option absDirOption (long "root" <> help "The root directory of the project"))
+
 jsonConfigParser ::
   Parser JsonConfig
 jsonConfigParser =
-  option jsonOption (long "config" <> short 'c' <> help "The Hix-generated config, file or text")
+  option jsonOption (long "config" <> help "The Hix-generated config, file or text")
 
 preprocParser :: Parser PreprocOptions
 preprocParser =
@@ -169,16 +176,18 @@ preprocParser =
   <$>
   (fmap Right <$> optional jsonConfigParser)
   <*>
+  rootParser
+  <*>
   fileParser "source" "The original source file"
   <*>
   fileParser "in" "The prepared input file"
   <*>
   fileParser "out" "The path to the output file"
 
-packageSpecParser :: Parser PackageSpec
+packageSpecParser :: Parser (Maybe PackageSpec)
 packageSpecParser = do
-  name <- strOption (long "package" <> short 'p' <> help "The name or directory of the test package")
-  pure PackageSpec {name = PackageName name, dir = parseSomeDir (toString name)}
+  optional (strOption (long "package" <> short 'p' <> help "The name or directory of the test package")) <&> fmap \ name ->
+    PackageSpec {name = PackageName name, dir = parseSomeDir (toString name)}
 
 componentSpecParser :: Parser (Maybe ComponentSpec)
 componentSpecParser = do
@@ -187,8 +196,8 @@ componentSpecParser = do
   where
     h = "The name or relative directory of the test component"
 
-componentForModuleParser :: Parser ComponentCoords
-componentForModuleParser =
+componentCoordsParser :: Parser ComponentCoords
+componentCoordsParser =
   ComponentCoords
   <$>
   packageSpecParser
@@ -203,11 +212,9 @@ componentForFileParser =
 
 targetSpecParser :: Parser TargetSpec
 targetSpecParser =
-  TargetForComponent <$> componentForModuleParser
-  <|>
   componentForFileParser
   <|>
-  TargetDefault <$> componentSpecParser
+  TargetForComponent <$> componentCoordsParser
 
 envNameParser :: Parser EnvName
 envNameParser =
@@ -227,6 +234,10 @@ runnerParser =
     help "The name of the command defined in the Hix option 'ghci.run'"
   ))
 
+cdParser :: Parser ChangeDir
+cdParser =
+  ChangeDir . not <$> switch (long "no-cd" <> help "Don't change the working directory to the package root")
+
 moduleParser :: Parser ModuleName
 moduleParser =
   strOption (long "module" <> short 'm' <> help "The module containing the test function" <> value "Main")
@@ -236,12 +247,14 @@ testOptionsParser = do
   test <- testParser
   runner <- runnerParser
   mod <- moduleParser
+  cd <- cdParser
   pure TestOptions {..}
 
 envParser :: Parser EnvRunnerCommandOptions
 envParser = do
   options <- do
     config <- Right <$> jsonConfigParser
+    root <- rootParser
     component <- optional targetSpecParser
     pure EnvRunnerOptions {..}
   test <- testOptionsParser
@@ -250,6 +263,7 @@ envParser = do
 ghciParser :: Parser GhciOptions
 ghciParser = do
   config <- Right <$> jsonConfigParser
+  root <- rootParser
   component <- targetSpecParser
   test <- testOptionsParser
   pure GhciOptions {..}
@@ -267,8 +281,7 @@ bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
-commands ::
-  Mod CommandFields Command
+commands :: Mod CommandFields Command
 commands =
   command "preproc" (Preproc <$> info preprocParser (progDesc "Preprocess a source file for use with ghcid"))
   <>
@@ -282,20 +295,25 @@ commands =
   <>
   command "bootstrap" (BootstrapCmd <$> info bootstrapParser (progDesc "Bootstrap an existing Cabal project in the current directory"))
 
-globalParser :: Parser GlobalOptions
-globalParser = do
+globalParser ::
+  Path Abs Dir ->
+  Parser GlobalOptions
+globalParser realCwd = do
   verbose <- optional (switch (long "verbose" <> short 'v' <> help "Verbose output"))
+  cwd <- option absDirOption (long "cwd" <> help "Force a different working directory" <> value realCwd)
   pure GlobalOptions {..}
 
 appParser ::
+  Path Abs Dir ->
   Parser Options
-appParser =
-  Options <$> globalParser <*> hsubparser commands
+appParser cwd =
+  Options <$> globalParser cwd <*> hsubparser commands
 
 parseCli ::
   IO Options
 parseCli = do
-  customExecParser parserPrefs (info (appParser <**> helper) desc)
+  realCwd <- getCurrentDir
+  customExecParser parserPrefs (info (appParser realCwd <**> helper) desc)
   where
     parserPrefs =
       prefs (showHelpOnEmpty <> showHelpOnError)

@@ -2,6 +2,7 @@
 
 * Switch off IFD (i.e. cabal2nix) by default, allowing multiple systems to be exposed while still allowing flake checks
   to work.
+* Change directory to the package root when running GHCi.
 
 # 0.4.0.0
 

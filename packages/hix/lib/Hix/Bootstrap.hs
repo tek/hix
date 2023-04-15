@@ -150,8 +150,8 @@ readCabal ::
   Path Abs Dir ->
   Path Rel File ->
   M CabalInfo
-readCabal root path = do
-  info <- liftIO (readGenericPackageDescription Cabal.verbose (toFilePath (root </> path)))
+readCabal cwd path = do
+  info <- liftIO (readGenericPackageDescription Cabal.verbose (toFilePath (cwd </> path)))
   pure CabalInfo {path = dir, info}
   where
     dir = parent path
@@ -387,9 +387,9 @@ flake conf pkgs =
 
 bootstrapFiles :: BootstrapProjectConfig -> M [ProjectFile]
 bootstrapFiles conf = do
-  Env {root} <- ask
-  cabals <- paths =<< lift (tryIO (getDirectoryFilesIgnore (toFilePath root) ["**/*.cabal"] ["dist-newstyle/**"]))
-  pkgs <- fmap convert <$> traverse (readCabal root) cabals
+  Env {cwd} <- ask
+  cabals <- paths =<< lift (tryIO (getDirectoryFilesIgnore (toFilePath cwd) ["**/*.cabal"] ["dist-newstyle/**"]))
+  pkgs <- fmap convert <$> traverse (readCabal cwd) cabals
   pure [
     ProjectFile {path = [relfile|flake.nix|], content = renderRootExpr (flake conf pkgs)}
     ]

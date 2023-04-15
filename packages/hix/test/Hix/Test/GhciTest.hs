@@ -4,7 +4,7 @@ import Control.Monad.Trans.Class (lift)
 import Exon (exon)
 import Hedgehog (TestT, evalEither, (===))
 import Path (Abs, Dir, File, Path, Rel, SomeBase (Rel), absdir, absfile, reldir, relfile, (</>))
-import Path.IO (getCurrentDir, withSystemTempDir)
+import Path.IO (withSystemTempDir)
 
 import Hix.Data.ComponentConfig (
   ComponentConfig (..),
@@ -16,7 +16,7 @@ import Hix.Data.ComponentConfig (
   SourceDirs (SourceDirs),
   )
 import Hix.Data.Error (pathText)
-import Hix.Data.GhciConfig (EnvConfig (EnvConfig), GhciConfig (..))
+import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig (EnvConfig), GhciConfig (..))
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Env (envRunner)
 import Hix.Ghci (assemble, ghcidCmdlineFromOptions)
@@ -85,7 +85,7 @@ packages =
 spec1 :: TargetSpec
 spec1 =
   TargetForComponent ComponentCoords {
-    package = PackageSpec "api" (Just (Rel [reldir|api|])),
+    package = Just (PackageSpec "api" (Just (Rel [reldir|api|]))),
     component = Just (ComponentSpec "test" (Just (SourceDir [reldir|test|])))
   }
 
@@ -98,11 +98,13 @@ options =
       run = [("generic", ("check . property . test"))],
       args = ["-Werror"]
     },
+    root = Nothing,
     component = spec1,
     test = TestOptions {
       mod = "Api.ServerTest",
       test = Just "test_server",
-      runner = Just "generic"
+      runner = Just "generic",
+      cd = ChangeDir True
     }
   }
 
@@ -119,11 +121,10 @@ ghcidTarget cwd scriptFile =
 
 test_ghcid :: TestT IO ()
 test_ghcid = do
-  cwd <- getCurrentDir
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
     runM root (ghcidCmdlineFromOptions tmp options)
   cmdline <- evalEither res
-  ghcidTarget cwd cmdline.ghci.scriptFile === cmdline.cmdline
+  ghcidTarget root cmdline.ghci.scriptFile === cmdline.cmdline
 
 spec2 :: TargetSpec
 spec2 =
@@ -132,7 +133,7 @@ spec2 =
 spec3 :: TargetSpec
 spec3 =
   TargetForComponent ComponentCoords {
-    package = PackageSpec "packages/core" (Just (Rel [reldir|packages/core|])),
+    package = Just (PackageSpec "packages/core" (Just (Rel [reldir|packages/core|]))),
     component = Just (ComponentSpec "core-test" (Just (SourceDir [reldir|core-test|])))
   }
 
@@ -141,7 +142,7 @@ runnerFor target spec = do
   res <- evalEither =<< liftIO (runM root (envRunner conf))
   target === res
   where
-    conf = EnvRunnerOptions (Left (EnvConfig packages defaultRunner)) (Just spec)
+    conf = EnvRunnerOptions (Left (EnvConfig packages defaultRunner)) Nothing (Just spec)
 
 test_componentEnv :: TestT IO ()
 test_componentEnv = do
@@ -155,7 +156,8 @@ spec4 =
 
 target_moduleName :: Text
 target_moduleName =
-  [exon|import Test.Tasty
+  [exon|:cd packages/core/
+import Test.Tasty
 :load #{m}
 import #{m}|]
   where

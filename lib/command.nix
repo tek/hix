@@ -31,7 +31,7 @@ let
     if command.component
     then ''
     ${splitArgs}
-    env_runner=$(${cli} env -c ${json} ''${env_args[@]})
+    env_runner=$(${cli} env --config ${json} ''${env_args[@]})
     env_args="''${env_args[*]}" $env_runner "${exe} ''${cmd_args[@]}"
     ''
     else ''

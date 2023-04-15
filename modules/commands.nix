@@ -37,7 +37,7 @@ in {
 
     ghci = {
       command = ''
-      ghci_cmd=$(${cli} ghci-cmd -c ${json} ''${env_args[@]} ''${cmd_args[@]})
+      ghci_cmd=$(${cli} ghci-cmd --config ${json} ''${env_args[@]} ''${cmd_args[@]})
       eval $ghci_cmd
       '';
       component = true;
@@ -46,8 +46,7 @@ in {
 
     ghcid = {
       command = ''
-      config=$(cat ${util.json.ghciFile})
-      ghcid_cmd=$(${cli} ghcid-cmd -c ${json} ''${env_args[@]} ''${cmd_args[@]})
+      ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ''${env_args[@]} ''${cmd_args[@]})
       eval $ghcid_cmd
       '';
       component = true;

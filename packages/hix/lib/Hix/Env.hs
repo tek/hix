@@ -1,6 +1,7 @@
 module Hix.Env where
 
 import qualified Data.Text.IO as Text
+import Path (Abs, Dir, Path)
 
 import Hix.Component (targetComponent)
 import qualified Hix.Data.ComponentConfig
@@ -12,15 +13,19 @@ import Hix.Monad (M)
 import qualified Hix.Options as Options
 import Hix.Options (EnvRunnerOptions, TargetSpec)
 
-componentRunner :: PackagesConfig -> TargetSpec -> M (Maybe EnvRunner)
-componentRunner config spec = do
-  Target {component} <- targetComponent config spec
+componentRunner ::
+  Maybe (Path Abs Dir) ->
+  PackagesConfig ->
+  TargetSpec ->
+  M (Maybe EnvRunner)
+componentRunner cliRoot config spec = do
+  Target {component} <- targetComponent cliRoot config spec
   pure component.runner
 
 envRunner :: EnvRunnerOptions -> M EnvRunner
 envRunner opts = do
   config <- either pure jsonConfig opts.config
-  fromMaybe config.defaultEnv . join <$> traverse (componentRunner config.packages) opts.component
+  fromMaybe config.defaultEnv . join <$> traverse (componentRunner opts.root config.packages) opts.component
 
 printEnvRunner :: EnvRunnerOptions -> M ()
 printEnvRunner opts = do

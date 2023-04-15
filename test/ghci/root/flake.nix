@@ -3,14 +3,13 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }:
-  hix.lib.flake ({config, ...}: {
+  outputs = { hix, ... }: hix.lib.flake ({config, ...}: {
     packages.root = {
-      src = ./.;
+      src = ./pkg;
       library.enable = true;
-      library.dependencies = ["http-client" "bytestring"];
+      library.dependencies = ["http-client" "bytestring" "path" "path-io"];
       library.default-extensions = ["OverloadedStrings"];
-      executables.root = { enable = true; source-dirs = "app"; };
+      executable.enable = true;
       test.enable = true;
       test.env = "hix-ghci-test";
     };
@@ -24,6 +23,11 @@
       ports.nginx = { host = 2; guest = 80; };
     };
     ghci.run.print = ''putStrLn "print success"'';
+    ghci.run.cwd = ''putStrLn . toFilePath =<< getCurrentDir'';
+    ghci.setup.cwd = ''
+    import Path (toFilePath)
+    import Path.IO (getCurrentDir)
+    '';
     internal.hixCli.dev = true;
   });
 }

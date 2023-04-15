@@ -5,7 +5,7 @@ import Data.Aeson (Value, eitherDecodeFileStrict', eitherDecodeStrict')
 import Exon (exon)
 import Options.Applicative (ReadM, readerError)
 import Options.Applicative.Types (readerAsk)
-import Path (Abs, Dir, File, Path, Rel, parseAbsFile, parseRelDir, parseRelFile, toFilePath)
+import Path (Abs, Dir, File, Path, Rel, parseAbsDir, parseAbsFile, parseRelDir, parseRelFile, toFilePath)
 import qualified Text.Show as Show
 
 -- |An absolute file path option for @optparse-applicative@.
@@ -19,6 +19,12 @@ relFileOption :: ReadM (Path Rel File)
 relFileOption = do
   raw <- readerAsk
   leftA (const (readerError [exon|not a valid relative file path: #{raw}|])) (parseRelFile raw)
+
+-- |A relative dir path option for @optparse-applicative@.
+absDirOption :: ReadM (Path Abs Dir)
+absDirOption = do
+  raw <- readerAsk
+  leftA (const (readerError [exon|not a valid absolute dir path: #{raw}|])) (parseAbsDir raw)
 
 -- |A relative dir path option for @optparse-applicative@.
 relDirOption :: ReadM (Path Rel Dir)

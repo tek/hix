@@ -18,7 +18,7 @@ in {
   - Reproducible environments and dependency overrides
   - Cabal file generation
   - Hackage upload
-  - Rapid-recompilation testing with `ghcid`
+  - Rapid-recompilation testing with GHCid
   - Haskell Language Server
   - CTags generation
   - Virtual Machines for testing
@@ -590,6 +590,10 @@ in {
   $ nix run .#cmd.number -- -f /path/to/packages/api/test/NumberTest.hs
   2
   ```
+
+  This method needs to know the root directory of the project, which is determined by searching for `flake.nix` with a
+  fallback to the current working directory.
+  The root directory may also be specified explicitly using the CLI option `--root`.
 
   If no selection arguments are given, the command's default environment is used:
 

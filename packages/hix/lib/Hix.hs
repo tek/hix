@@ -1,7 +1,5 @@
 module Hix where
 
-import Path.IO (getCurrentDir)
-
 import Hix.Bootstrap (bootstrapProject)
 import Hix.Data.Error (
   Error (..),
@@ -52,5 +50,4 @@ runCommand = \case
 main :: IO ()
 main = do
   Options global cmd <- parseCli
-  cwd <- getCurrentDir
-  leftA (handleError global) =<< runM cwd (runCommand cmd)
+  leftA (handleError global) =<< runM global.cwd (runCommand cmd)
