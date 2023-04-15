@@ -1,6 +1,6 @@
 {
   description = "hix test project";
-  inputs.hix.url = "github:tek/hix?ref=0.4.4";
+  inputs.hix.url = "github:tek/hix?ref=0.5.0";
   outputs = {hix, ...}: hix.lib.auto ({config, ...}: {
     envs = {
       one.env = { number = 1; };
