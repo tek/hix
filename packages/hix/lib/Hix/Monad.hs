@@ -15,21 +15,25 @@ data Env =
 
 type M a = ReaderT Env (ExceptT Error IO) a
 
+throwM :: Error -> M a
+throwM =
+  lift . throwE
+
 noteEnv :: Text -> Maybe a -> M a
 noteEnv err =
-  maybe (lift (throwE (EnvError err))) pure
+  maybe (throwM (EnvError err)) pure
 
 noteGhci :: Text -> Maybe a -> M a
 noteGhci err =
-  maybe (lift (throwE (GhciError err))) pure
+  maybe (throwM (GhciError err)) pure
 
 noteNew :: Text -> Maybe a -> M a
 noteNew err =
-  maybe (lift (throwE (NewError err))) pure
+  maybe (throwM (NewError err)) pure
 
 noteBootstrap :: Text -> Maybe a -> M a
 noteBootstrap err =
-  maybe (lift (throwE (BootstrapError err))) pure
+  maybe (throwM (BootstrapError err)) pure
 
 runM :: Path Abs Dir -> M a -> IO (Either Error a)
 runM root ma =

@@ -3,7 +3,7 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }: hix.lib.flake ({config, ...}: {
+  outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
 
     envs = {
       one.env = { number = 1; };
@@ -22,6 +22,13 @@
       echo $number
       '';
       component = true;
+    };
+
+    commands.number-nocomp = {
+      env = "one";
+      command = ''
+      echo $number
+      '';
     };
 
   });

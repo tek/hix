@@ -28,6 +28,12 @@ in {
     component = mkOption {
       description = mdDoc ''
       Whether this command should determine the env based on a target component specified by command line arguments.
+
+      ::: {.note}
+      The component selector chooses a default component when no arguments are given.
+      If that component has an explicit environment configured, it will be used instead of the one configured in this
+      command.
+      :::
       '';
       type = bool;
       default = false;

@@ -1,7 +1,5 @@
 module Hix.Component where
 
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (throwE)
 import Data.List.Extra (firstJust)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
@@ -17,9 +15,10 @@ import Hix.Data.ComponentConfig (
   PackagesConfig,
   SourceDir (SourceDir),
   Target (Target),
+  TargetOrDefault (DefaultTarget, ExplicitTarget, NoDefaultTarget),
   )
 import Hix.Data.Error (Error (EnvError), pathText)
-import Hix.Monad (M, noteEnv)
+import Hix.Monad (M, noteEnv, throwM)
 import qualified Hix.Options as Options
 import Hix.Options (
   ComponentCoords,
@@ -28,6 +27,12 @@ import Hix.Options (
   TargetSpec (TargetForComponent, TargetForFile),
   )
 import Hix.Path (rootDir)
+
+data ResolvedPackage =
+  ResolvedPackage Bool PackageConfig
+  |
+  NoPackage Text
+  deriving stock (Eq, Show, Generic)
 
 tryPackageByDir ::
   PackagesConfig ->
@@ -45,10 +50,10 @@ packageByDir ::
 packageByDir config dir =
   noteEnv [exon|No package at this directory: #{pathText dir}|] (tryPackageByDir config dir)
 
-packageDefault :: PackagesConfig -> M PackageConfig
+packageDefault :: PackagesConfig -> ResolvedPackage
 packageDefault = \case
-  [(_, pkg)] -> pure pkg
-  _ -> lift (throwE (EnvError "Project has more than one package, specify -p or -f."))
+  [(_, pkg)] -> ResolvedPackage False pkg
+  _ -> NoPackage "Project has more than one package, specify -p or -f."
 
 packageForSpec ::
   Path Abs Dir ->
@@ -72,10 +77,10 @@ packageForSpecOrDefault ::
   Path Abs Dir ->
   PackagesConfig ->
   Maybe PackageSpec ->
-  M PackageConfig
+  M ResolvedPackage
 packageForSpecOrDefault root config = \case
-  Just pkg -> packageForSpec root config pkg
-  Nothing -> packageDefault config
+  Just pkg -> ResolvedPackage True <$> packageForSpec root config pkg
+  Nothing -> pure (packageDefault config)
 
 matchComponent :: ComponentConfig -> ComponentSpec -> Bool
 matchComponent candidate (ComponentSpec name dir) =
@@ -95,29 +100,35 @@ testComponent :: ComponentSpec
 testComponent =
   ComponentSpec "test" (Just (SourceDir [reldir|test|]))
 
+defaultComponent :: PackageConfig -> Either Text Target
+defaultComponent package = do
+  component <- maybeToRight (undecidableComponentError package.name) (selectComponent package.components)
+  pure Target {sourceDir = Nothing, ..}
+  where
+    selectComponent [(_, comp)] = Just comp
+    selectComponent (Map.elems -> comps) = find (match testComponent) comps
+    match = flip matchComponent
+
 targetInPackage ::
-  PackageConfig ->
+  ResolvedPackage ->
   Maybe ComponentSpec ->
-  M Target
-targetInPackage package = \case
-  Just comp -> do
-    component <- noteEnv (componentError package.name comp) (find match (Map.elems package.components))
-    pure Target {sourceDir = Nothing, ..}
-    where
-      match cand = matchComponent cand comp
-  Nothing -> do
-    component <- noteEnv (undecidableComponentError package.name) (selectComponent package.components)
-    pure Target {sourceDir = Nothing, ..}
-    where
-      selectComponent [(_, comp)] = Just comp
-      selectComponent (Map.elems -> comps) = find (match testComponent) comps
-      match = flip matchComponent
+  M TargetOrDefault
+targetInPackage (ResolvedPackage _ package) (Just comp) = do
+  component <- noteEnv (componentError package.name comp) (find match (Map.elems package.components))
+  pure (ExplicitTarget (Target {sourceDir = Nothing, ..}))
+  where
+    match cand = matchComponent cand comp
+targetInPackage (ResolvedPackage True package) Nothing =
+  either (throwM . EnvError) pure (ExplicitTarget <$> defaultComponent package)
+targetInPackage (ResolvedPackage False package) Nothing = do
+  either (pure . NoDefaultTarget) pure (DefaultTarget <$> defaultComponent package)
+targetInPackage (NoPackage err) _ = pure (NoDefaultTarget err)
 
 targetForComponent ::
   Path Abs Dir ->
   PackagesConfig ->
   ComponentCoords ->
-  M Target
+  M TargetOrDefault
 targetForComponent root config spec = do
   package <- packageForSpecOrDefault root config spec.package
   targetInPackage package spec.component
@@ -147,18 +158,29 @@ targetComponentIn ::
   Path Abs Dir ->
   PackagesConfig ->
   TargetSpec ->
-  M Target
+  M TargetOrDefault
 targetComponentIn root config = \case
   TargetForComponent spec ->
     targetForComponent root config spec
   TargetForFile spec ->
-    targetForFile root config spec
+    ExplicitTarget <$> targetForFile root config spec
 
 targetComponent ::
   Maybe (Path Abs Dir) ->
   PackagesConfig ->
   TargetSpec ->
-  M Target
+  M TargetOrDefault
 targetComponent cliRoot config spec = do
   root <- rootDir cliRoot
   targetComponentIn root config spec
+
+targetComponentOrError ::
+  Maybe (Path Abs Dir) ->
+  PackagesConfig ->
+  TargetSpec ->
+  M Target
+targetComponentOrError cliRoot config spec =
+  targetComponent cliRoot config spec >>= \case
+    ExplicitTarget t -> pure t
+    DefaultTarget t -> pure t
+    NoDefaultTarget err -> throwM (EnvError err)

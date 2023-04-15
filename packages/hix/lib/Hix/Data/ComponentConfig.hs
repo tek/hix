@@ -106,3 +106,11 @@ data Target =
     sourceDir :: Maybe SourceDir
   }
   deriving stock (Eq, Show, Generic)
+
+data TargetOrDefault =
+  ExplicitTarget Target
+  |
+  DefaultTarget Target
+  |
+  NoDefaultTarget Text
+  deriving stock (Eq, Show, Generic)

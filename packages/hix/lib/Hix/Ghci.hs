@@ -13,7 +13,7 @@ import Path.IO (createDirIfMissing, getTempDir, openTempFile)
 import System.IO (hClose)
 import System.Posix.User (getLoginName)
 
-import Hix.Component (targetComponent)
+import Hix.Component (targetComponentOrError)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (
   ComponentConfig,
@@ -103,7 +103,7 @@ assemble :: GhciOptions -> M GhciTest
 assemble opt = do
   config <- either pure jsonConfig opt.config
   root <- rootDir opt.root
-  Target {..} <- targetComponent opt.root config.packages opt.component
+  Target {..} <- targetComponentOrError opt.root config.packages opt.component
   script <- ghciScript config package sourceDir opt
   pure GhciTest {
     script,

@@ -22,7 +22,7 @@ import Prelude hiding (group)
 import System.Random (randomRIO)
 
 import Hix.Cabal (buildInfoForFile)
-import Hix.Component (targetComponent)
+import Hix.Component (targetComponentOrError)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec))
 import Hix.Data.Error (Error (..), sourceError, tryIO)
@@ -453,7 +453,7 @@ fromConfig ::
   M CabalConfig
 fromConfig cliRoot source pconf = do
   conf <- either pure jsonConfig pconf
-  target <- targetComponent cliRoot conf.packages (TargetForFile source)
+  target <- targetComponentOrError cliRoot conf.packages (TargetForFile source)
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,
     ghcOptions = stringUtf8 <$> target.component.ghcOptions,
