@@ -53,13 +53,11 @@ in {
     overrides = {hackage, source, minimal, unbreak, ...}: {
       exon = unbreak;
       flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
-      hix = let
-        src =
+    } // (
           if config.internal.hixCli.dev
-          then source.package ../. "hix"
-          else hackage "0.4.2" "0q9dzf42xj2zv8ppj0g6pw2fglr971vr72064mvxn14h243zmgpj";
-      in minimal src;
-    };
+          then { hix = minimal (source.package ../. "hix"); }
+          else { hix = minimal (hackage "0.5.0" "19lahn267djc07bsp1zci50b96l1b4a11pj7zyn4za78xmncjsb0"); }
+      );
 
     ghc = {
       name = "hix";
