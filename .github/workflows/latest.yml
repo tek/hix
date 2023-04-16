@@ -18,7 +18,7 @@ jobs:
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             extra-substituters = https://tek.cachix.org
             extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
-      - uses: cachix/cachix-action@v10
+      - uses: cachix/cachix-action@v12
         with:
           name: tek
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
