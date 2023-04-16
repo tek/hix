@@ -201,7 +201,7 @@ in {
 
     buildInputs = mkOption {
       description = mdDoc "Additional non-Haskell dependencies required by this package.";
-      type = listOf package;
+      type = either (functionTo (listOf package)) (listOf package);
       default = [];
     };
 

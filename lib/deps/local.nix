@@ -34,8 +34,13 @@ let
       else pkg.src;
   in api.source.root fullSrc;
 
+  buildInputs = api: pkg:
+  if isFunction pkg.buildInputs
+  then pkg.buildInputs api.pkgs
+  else pkg.buildInputs;
+
   override = api: pkg: drv:
-  api.buildInputs pkg.buildInputs (pkg.override api (localPackage api drv));
+  api.buildInputs (buildInputs api pkg) (pkg.override api (localPackage api drv));
 
   checkIfd = api: name: pkg:
   if ifd
