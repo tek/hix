@@ -37,12 +37,17 @@ let
   fi
   '';
 
+  customBuildInputs =
+    if isFunction config.buildInputs
+    then config.buildInputs config.ghc.pkgs
+    else config.buildInputs;
+
   buildInputs = let
     isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     localDeps = g: builtins.filter isNotLocal (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
   in
-  config.buildInputs ++
+  customBuildInputs ++
   optional config.hls.enable config.hls.package ++
   optional config.ghcid.enable config.ghcid.package ++
   [(config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ map (n: ghc.${n}) config.haskellPackages))]
@@ -204,7 +209,7 @@ in {
 
     buildInputs = mkOption {
       description = mdDoc "";
-      type = listOf package;
+      type = either (functionTo (listOf package)) (listOf package);
       default = [];
     };
 
@@ -261,7 +266,8 @@ in {
       '';
       type = package;
       default = global.pkgs.stdenv.mkDerivation {
-        inherit (config) name buildInputs;
+        inherit (config) name;
+        inherit buildInputs;
         shellHook = config.code;
       };
     };

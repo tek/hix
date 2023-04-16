@@ -8,6 +8,7 @@
     envs = {
       one.env = { number = 1; };
       two.env = { number = 2; };
+      two.buildInputs = pkgs: [pkgs.socat];
       three.env = { number = 3; };
     };
 
