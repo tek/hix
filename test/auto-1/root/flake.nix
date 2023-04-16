@@ -3,15 +3,12 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }:
-  hix.lib.auto {
+  outputs = { hix, ... }: hix.lib.auto {
     cabal = {
       base = { name = "base"; version = ">= 4.12 && < 5"; };
       version = "23";
       license = "GPL-3";
-      meta = {
-        author = "Author McCodeface";
-      };
+      meta.author = "Author McCodeface";
     };
     packages.root = {
       src = ./.;
@@ -27,6 +24,8 @@
         source-dirs = "app";
         dependencies = ["polysemy"];
       };
+
+      buildInputs = pkgs: [pkgs.socat];
 
     };
     compat.enable = false;
