@@ -12,6 +12,7 @@
         source-dirs = ".";
       };
     };
+    buildInputs = pkgs: [pkgs.socat];
     envs.dev.ghc.compiler = "ghc90";
   };
 }

@@ -1,3 +1,7 @@
+# Unreleased
+
+* Add the top-level option `buildInputs` that specifies non-Haskell deps for all packages.
+
 # 0.5.0
 
 * Switch off IFD (i.e. cabal2nix) by default, allowing multiple systems to be exposed while still allowing flake checks

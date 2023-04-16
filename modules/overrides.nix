@@ -21,6 +21,12 @@ with lib;
       default = [];
     };
 
+    buildInputs = mkOption {
+      description = mdDoc "Additional non-Haskell dependencies required by all packages.";
+      type = either (functionTo (listOf package)) (listOf package);
+      default = [];
+    };
+
     exportedOverrides = mkOption {
       description = mdDoc ''
       These overrides are exposed from the flake for integration in downstream projects via the options
