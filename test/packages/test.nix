@@ -76,7 +76,7 @@ let
         app
     default-extensions:
         DataKinds
-    ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wunused-imports
+    ghc-options: -Wunused-imports -threaded -rtsopts -with-rtsopts=-N
     build-depends:
         base >=4 && <6
       , dep
@@ -94,7 +94,7 @@ let
         test
     default-extensions:
         DataKinds
-    ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wunused-imports
+    ghc-options: -Wunused-imports -threaded -rtsopts -with-rtsopts=-N
     build-depends:
         base >=4 && <6
       , root

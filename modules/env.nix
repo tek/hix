@@ -265,11 +265,6 @@ in {
       :::
       '';
       type = package;
-      default = global.pkgs.stdenv.mkDerivation {
-        inherit (config) name;
-        inherit buildInputs;
-        shellHook = config.code;
-      };
     };
 
     runner = mkOption {
@@ -489,6 +484,12 @@ in {
     );
 
     hostPorts = util.foldMapAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
+
+    shell = mkDefault (global.pkgs.stdenv.mkDerivation {
+      inherit (config) name;
+      inherit buildInputs;
+      shellHook = config.code;
+    });
 
     vm = {
 

@@ -11,6 +11,11 @@ let
 
   anyEnabled = set: any (a: a.enable) (attrValues set);
 
+  hasComponents =
+    pkgConfig.library.enable || anyEnabled pkgConfig.executables ||
+    pkgConfig.test.enable || anyEnabled pkgConfig.tests ||
+    pkgConfig.benchmark.enable || anyEnabled pkgConfig.benchmarks;
+
   libModule = {...}: {
 
     options = with types; {
@@ -38,12 +43,7 @@ let
 
     };
 
-    config = let
-      hasComponents =
-        pkgConfig.library.enable || anyEnabled pkgConfig.executables ||
-        pkgConfig.test.enable || anyEnabled pkgConfig.tests ||
-        pkgConfig.benchmark.enable || anyEnabled pkgConfig.benchmarks;
-    in optionalAttrs default {
+    config = optionalAttrs default {
       enable = mkDefault (!hasComponents);
     } // {
       dependencies = optional (config.dependOnLibrary && pkgConfig.library.enable) pkgName;
@@ -214,7 +214,7 @@ in {
     };
 
     cabal = mkOption {
-      type = unspecified;
+      type = deferredModule;
       description = mdDoc ''
       Cabal options that are applied to all components.
 

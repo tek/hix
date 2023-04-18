@@ -66,13 +66,14 @@ in {
       You will need to use `mkDefault` or `mkForce`, or even
       `mkOverride` if you define an option at all three levels.
 
-      **Note**: In order to enable cascading of these options, the definitions are not evaluated in-place, but when
-      evaluating packages and components. Therefore, referring to these values with e.g.
-      `config.cabal.version` does not work as expected if the value uses an option property like
-      `mkIf` or `mkOverride`.
+      ::: {.note}
+      In order to enable cascading for these options, the definitions are not evaluated in-place, but when evaluating
+      packages and components. Therefore, referring to these values with e.g. `config.cabal.version` does not work as
+      expected if the value uses an option property like `mkIf` or `mkOverride`.
       You can use {option}`cabal-config` for this purpose, though.
+      :::
       '';
-      type = unspecified;
+      type = deferredModule;
       default = {};
     };
 
