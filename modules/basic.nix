@@ -39,8 +39,8 @@ in {
       '';
       example = literalExpression ''
       {
-        spaceship.src = ./.;
-        spaceship-api = { src = ./api; dependencies = ["aeson"]; library.enable = true; };
+        core.src = ./.;
+        api = { src = ./api; cabal.dependencies = ["aeson"]; library.enable = true; };
       }
       '';
       type = attrsOf (submodule packageModule);

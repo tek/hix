@@ -7,19 +7,17 @@
   hix.lib.flake {
     packages.root = {
       src = ./.;
+      description = "A test package for hix";
 
       cabal = {
 
         version = import ./version.nix;
         license = "BSD-2-Clause-Patent";
+        license-file = "LICENSE";
+        author = "Author McCodeface";
 
         meta = {
-          author = "Author McCodeface";
           synopsis = "root";
-          description = "A test package for hix";
-          copyright = "2022 Torsten Schmits";
-          build-type = "Simple";
-          license-file = "LICENSE";
           category = "Test";
         };
 

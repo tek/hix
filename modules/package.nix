@@ -16,7 +16,7 @@ let
     pkgConfig.test.enable || anyEnabled pkgConfig.tests ||
     pkgConfig.benchmark.enable || anyEnabled pkgConfig.benchmarks;
 
-  libModule = {...}: {
+  libModule = {
 
     options = with types; {
 
