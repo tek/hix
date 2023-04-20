@@ -1,6 +1,6 @@
 {
   description = "Example";
-  inputs.hix.url = "github:tek/hix?ref=0.5.0";
+  inputs.hix.url = "github:tek/hix?ref=0.5.1";
   outputs = {hix, ...}: hix.lib.flake {
     packages.parser = {
       src = ./.;
