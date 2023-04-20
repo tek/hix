@@ -14,7 +14,7 @@ rec {
   if isAttrs spec
   then
     if isDerivation spec
-    then _: old: old // { drv = spec; }
+    then _: old: old.extend (_: _: { drv = spec; })
     else spec.__spec
   else (spec zero).__spec;
 

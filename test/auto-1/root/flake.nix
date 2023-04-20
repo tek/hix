@@ -30,5 +30,9 @@
     };
     compat.enable = false;
     envs.dev.ghc.compiler = "ghc90";
+    overrides = {self, notest, ...}: {
+      root1 = notest self.root;
+    };
+    output.extraPackages = ["root1"];
   };
 }
