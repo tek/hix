@@ -1,6 +1,7 @@
 {config, lib, util}: let
 
-  tag = ''
+  commitAndTag = ''
+  ${config.pkgs.git}/bin/git commit --allow-empty -m "Release $version"
   ${config.pkgs.git}/bin/git tag -m "Release $version" "$version"
   '';
 
@@ -29,7 +30,7 @@
   ${preamble}
   ${updateVersions}
   ${config.pkgs.git}/bin/git commit --allow-empty -m "Release $version"
-  ${tag}
+  ${commitAndTag}
   '';
 
   all = config.pkgs.writeScript "hix-release-all" ''
@@ -46,7 +47,7 @@
     exit 1
   fi
   ${config.pkgs.git}/bin/git add modules/cli.nix
-  ${tag}
+  ${commitAndTag}
   '';
 
 in { inherit nix all; }
