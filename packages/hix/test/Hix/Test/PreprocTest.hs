@@ -9,15 +9,20 @@ import Distribution.PackageDescription (
   )
 import Exon (exon)
 import Hedgehog (TestT, evalMaybe, (===))
-import Path (absfile)
-
 import Hix.Preproc (fromCabal, preprocessModule)
 import Hix.Test.CabalFile (testPackage, testPackageNoPrelude)
+import Path (absfile)
 
 pragmas :: Text
 pragmas =
   [exon|{-# options_ghc -Wall -Wunused-imports #-}
 {-# language Haskell2010, AllowAmbiguousTypes, NoApplicativeDo #-}|]
+
+header :: Text
+header =
+  [exon|#{pragmas}
+{-# language PackageImports, NoImplicitPrelude #-}
+{-# line 1 "/foo/bar/Foo.hs" #-}|]
 
 preprocTestNoPrelude ::
   HasCallStack =>
@@ -61,9 +66,7 @@ f = 1
 
 targetInsert :: Text
 targetInsert =
-  [exon|#{pragmas}
-{-# language PackageImports, NoImplicitPrelude #-}
-{-# line 1 "/foo/bar/Foo.hs" #-}
+  [exon|#{header}
 {-# language OverloadedLabels #-}
 
 module Foo (Hix_Dummy,
@@ -109,9 +112,7 @@ f = 1
 
 targetReplace :: Text
 targetReplace =
-  [exon|#{pragmas}
-{-# language PackageImports, NoImplicitPrelude #-}
-{-# line 1 "/foo/bar/Foo.hs" #-}
+  [exon|#{header}
 {-# language OverloadedLabels #-}
 
 module Foo (Hix_Dummy,
@@ -147,9 +148,7 @@ f = 1
 
 targetSingleLineModule :: Text
 targetSingleLineModule =
-  [exon|#{pragmas}
-{-# language PackageImports, NoImplicitPrelude #-}
-{-# line 1 "/foo/bar/Foo.hs" #-}
+  [exon|#{header}
 module Foo where
 import "incipit-base" IncipitBase as Prelude
 {-# line 2 "/foo/bar/Foo.hs" #-}
@@ -174,9 +173,7 @@ f = 1
 
 targetSelfExport :: Text
 targetSelfExport =
-  [exon|#{pragmas}
-{-# language PackageImports, NoImplicitPrelude #-}
-{-# line 1 "/foo/bar/Foo.hs" #-}
+  [exon|#{header}
 module Foo (module Foo) where
 import "incipit-base" IncipitBase as Prelude
 {-# line 2 "/foo/bar/Foo.hs" #-}
@@ -205,9 +202,7 @@ f = 1
 
 targetSelfExport2 :: Text
 targetSelfExport2 =
-  [exon|#{pragmas}
-{-# language PackageImports, NoImplicitPrelude #-}
-{-# line 1 "/foo/bar/Foo.hs" #-}
+  [exon|#{header}
 module Foo (
   module Bar,
   module Foo,
@@ -243,3 +238,26 @@ import System.Exit (exitSuccess)
 test_preprocNoPrelude :: TestT IO ()
 test_preprocNoPrelude =
   preprocTestNoPrelude moduleNoPrelude targetNoPrelude
+
+modulePreludePrefix :: ByteString
+modulePreludePrefix =
+  [exon|module Main where
+import Preludes
+import Prelude.Foo
+|]
+
+targetPreludePrefix :: Text
+targetPreludePrefix =
+  [exon|#{header}
+module Main where
+import "incipit-base" IncipitBase as Prelude
+{-# line 2 "/foo/bar/Foo.hs" #-}
+import Preludes
+import Prelude.Foo
+type Hix_Dummy = Int
+{-# line 4 "/foo/bar/Foo.hs" #-}
+|]
+
+test_preprocPreludePrefix :: TestT IO ()
+test_preprocPreludePrefix =
+  preprocTest modulePreludePrefix targetPreludePrefix

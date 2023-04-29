@@ -201,7 +201,7 @@ pattern InModule <- (inModule -> True)
 
 preludeRegex :: Regex
 preludeRegex =
-  [regex|^import\s+(?:qualified\s+)?((?:"[^"]+"\s+)?)(Prelude)|]
+  [regex|^import\s+(?:qualified\s+)?((?:"[^"]+"\s+)?)(Prelude\b)(?:$|[^.])|]
 
 replacePrelude :: ByteString -> Prelude -> Maybe ByteString
 replacePrelude l Prelude {..}

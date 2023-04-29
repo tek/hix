@@ -8,6 +8,7 @@ import Hix.Test.NewTest (test_new)
 import Hix.Test.PreprocTest (
   test_preprocInsertPrelude,
   test_preprocNoPrelude,
+  test_preprocPreludePrefix,
   test_preprocReplacePrelude,
   test_preprocSelfExport,
   test_preprocSelfExport2,
@@ -36,6 +37,7 @@ tests =
       unitTest "self exporting module, inline" test_preprocSelfExport,
       unitTest "self exporting module, separate line" test_preprocSelfExport2,
       unitTest "self exporting module, separate line" test_preprocNoPrelude,
+      unitTest "modules starting with 'Prelude'" test_preprocPreludePrefix,
       unitTest "run ghcid" test_ghcid,
       unitTest "component env" test_componentEnv,
       unitTest "extract module name from path" test_moduleName,

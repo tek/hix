@@ -1,3 +1,7 @@
+# Unreleased
+
+* Custom prelude preprocessor no longer mistakes modules with the prefix `Prelude` for the real thing.
+
 # 0.5.1
 
 * Add the top-level option `buildInputs` that specifies non-Haskell deps for all packages.
