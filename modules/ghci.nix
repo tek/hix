@@ -68,15 +68,15 @@ in {
   config.ghci = {
 
     setup = {
-      hedgehog-property = "import Hedgehog (check)";
-      hedgehog-unit = "import Hedgehog (check, property, test, withTests)";
-      tasty-tree = "import Test.Tasty (defaultMain)";
+      hedgehog-property = "import qualified Hedgehog";
+      hedgehog-unit = "import qualified Hedgehog";
+      tasty-tree = "import qualified Test.Tasty";
     };
 
     run = {
-      hedgehog-property = "check";
-      hedgehog-unit = "check . withTests 1 . property . test";
-      tasty-tree = "defaultMain";
+      hedgehog-property = "Hedgehog.check";
+      hedgehog-unit = "Hedgehog.check . Hedgehog.withTests 1 . Hedgehog.property . Hedgehog.test";
+      tasty-tree = "Test.Tasty.defaultMain";
     };
 
     ghcOptions = ["-j${toString config.ghci.cores}" "+RTS -A64M -RTS"];
