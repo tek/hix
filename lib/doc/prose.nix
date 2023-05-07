@@ -484,7 +484,7 @@ in {
   - `nodoc` – Disable Haddock
   - `bench` – Enable benchmarks
   - `nobench` – Disable benchmarks
-  - `minimal` – Disable Haddock, benchmarks and tests
+  - `minimal` – Disable profiling, Haddock, benchmarks and tests
   - `fast` – Disable profiling and Haddock
   - `noprofiling` – Disable profiling for the package
   - `profiling` – Enable profiling for the package (when disabling it globally)

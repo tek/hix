@@ -42,15 +42,23 @@ let
     then config.buildInputs config.ghc.pkgs
     else config.buildInputs;
 
-  buildInputs = let
-    isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
+  extraHs = ghc:
+  if isFunction config.haskellPackages
+  then config.haskellPackages ghc
+  else map (n: ghc.${n}) config.haskellPackages;
+
+  ghcWithPackages = let
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
+    isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
     localDeps = g: builtins.filter isNotLocal (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
+  in config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ extraHs ghc);
+
+  buildInputs = let
   in
   customBuildInputs ++
   optional config.hls.enable config.hls.package ++
   optional config.ghcid.enable config.ghcid.package ++
-  [(config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ map (n: ghc.${n}) config.haskellPackages))]
+  [ghcWithPackages]
   ;
 
   exportShellVars = vars: let
@@ -173,30 +181,37 @@ let
 in {
   options = with types; {
 
-    enable = mkEnableOption (mdDoc "this env");
+    enable = mkEnableOption (mdDoc "this environment");
 
     name = mkOption {
-      description = mdDoc "Env name";
+      description = mdDoc "Name of this environment.";
       type = str;
       default = name;
     };
 
     services = mkOption {
-      description = mdDoc "Services for this env";
+      description = mdDoc "Services for this environment.";
       type = attrsOf (submodule envServiceModule);
       default = {};
     };
 
     env = mkOption {
-      description = mdDoc "Environment variables";
+      description = mdDoc "Environment variables to set when running scripts in this environment.";
       type = attrsOf (either int str);
       default = {};
     };
 
     ghc = mkOption {
-      description = mdDoc "";
+      description = mdDoc "The GHC configuration for this environment.";
       type = submodule ghcModule;
       default = {};
+    };
+
+    ghcWithPackages = mkOption {
+      description = mdDoc "The fully configured GHC package exposing this environment's dependencies.";
+      type = package;
+      readOnly = true;
+      default = ghcWithPackages;
     };
 
     overrides = mkOption {
@@ -208,19 +223,23 @@ in {
     };
 
     buildInputs = mkOption {
-      description = mdDoc "";
+      description = mdDoc "Additional system package dependencies for this environment.";
       type = either (functionTo (listOf package)) (listOf package);
       default = [];
     };
 
     haskellPackages = mkOption {
-      description = mdDoc "";
-      type = listOf str;
+      description = mdDoc ''
+      Names of Haskell packages that should be added to this environment's GHC's package db, making them available for
+      import.
+      These may include the local packages.
+      '';
+      type = either (functionTo (listOf package)) (listOf str);
       default = [];
     };
 
     localDeps = mkOption {
-      description = mdDoc "Add dependencies of local packages.";
+      description = mdDoc "Whether to add the dependencies of the project's local packages to GHC's package db.";
       type = bool;
       default = true;
     };
@@ -250,7 +269,9 @@ in {
     };
 
     code = mkOption {
-      description = mdDoc "";
+      description = mdDoc ''
+      The shell script code that starts this env's services and sets its environment variables.
+      '';
       type = str;
       default = preamble;
     };
@@ -268,7 +289,9 @@ in {
     };
 
     runner = mkOption {
-      description = mdDoc "";
+      description = mdDoc ''
+      An executable script file that sets up the environment and executes its command line arguments.
+      '';
       type = path;
       default = runner;
     };
