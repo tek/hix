@@ -1,5 +1,5 @@
 ---
-name: 'latest-release'
+name: 'Nightly'
 
 on:
   push:
