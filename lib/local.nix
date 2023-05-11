@@ -107,14 +107,20 @@ hix.pro ({config, lib, ...}: {
       };
 
       new = let
-        prog = util.withStaticCLI "hix-new" ''$exe new --hix-url '${config.internal.hixUrl}' "$@"'';
+        prog = util.withStaticCLI "hix-new" ''
+        $exe new --hix-url '${config.internal.hixUrl}' "$@"
+        nix run .#gen-cabal
+        '';
       in {
         type = "app";
         program = "${prog}";
       };
 
       bootstrap = let
-        prog = util.withStaticCLI "hix-bootstrap" ''$exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"'';
+        prog = util.withStaticCLI "hix-bootstrap" ''
+        $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
+        nix run .#gen-cabal
+        '';
       in {
         type = "app";
         program = "${prog}";
