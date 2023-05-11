@@ -20,6 +20,7 @@ let
     env = test "env";
     new = test "new";
     bootstrap = test "bootstrap";
+    new-static = test "new-static";
   };
 
   testA = n: t: "${n} ${t}";
