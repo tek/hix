@@ -273,7 +273,7 @@ newParser = do
   name <- strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
   packages <- switch (long "packages" <> short 'p' <> help "Store packages in the 'packages/' subdirectory")
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
-  author <- strOption (long "author" <> short 'a' <> help "Your name")
+  author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
   pure NewOptions {config = NewProjectConfig {..}}
 
 bootstrapParser :: Parser BootstrapOptions
