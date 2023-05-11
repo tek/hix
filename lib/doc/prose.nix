@@ -810,6 +810,9 @@ in {
 
   This is disabled by default to avoid building HLS for environments whose GHCs don't have its derivation in the Nix
   cache.
+
+  Since the dev environment exposes HLS by default, the executable (`haskell-language-server`) is in `$PATH` in the
+  default devshell, so it can also be run with `nix develop -c haskell-language-server`.
   '';
 
   compat = ''
