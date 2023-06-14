@@ -21,6 +21,7 @@ let
     new = test "new";
     bootstrap = test "bootstrap";
     new-static = test "new-static";
+    new-static-github = test "new-static-github";
   };
 
   testA = n: t: "${n} ${t}";

@@ -107,7 +107,7 @@ hix.pro ({config, lib, ...}: {
       };
 
       new = let
-        prog = util.withStaticCLI "hix-new" ''
+        prog = util.bootstrapWithStaticCli "hix-new" ''
         $exe new --hix-url '${config.internal.hixUrl}' "$@"
         nix run .#gen-cabal
         '';
@@ -117,7 +117,7 @@ hix.pro ({config, lib, ...}: {
       };
 
       bootstrap = let
-        prog = util.withStaticCLI "hix-bootstrap" ''
+        prog = util.bootstrapWithStaticCli "hix-bootstrap" ''
         $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
         nix run .#gen-cabal
         '';

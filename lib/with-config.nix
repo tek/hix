@@ -102,12 +102,12 @@ let
   chmod +x $exe
   '';
 
-  withStaticCLI = name: script: pkgs.writeScript name ''
+  bootstrapWithStaticCli = name: script: pkgs.writeScript name ''
   #!${pkgs.bashInteractive}/bin/bash
   set -e
   ${downloadStaticCli}
   ${script}
-  if [[ ! -e .git ]]
+  if ! git status &>/dev/null
   then
     ${pkgs.git}/bin/git init
   fi
@@ -130,6 +130,6 @@ in basic // {
   conf
   unlessDev
   downloadStaticCli
-  withStaticCLI
+  bootstrapWithStaticCli
   ;
 }
