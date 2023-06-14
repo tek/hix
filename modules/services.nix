@@ -43,7 +43,7 @@ in {
       nixos = {
         services.openssh = {
           enable = true;
-          permitRootLogin = "yes";
+          settings.PermitRootLogin = "yes";
         };
         users.mutableUsers = true;
         users.users.root.password = "";
