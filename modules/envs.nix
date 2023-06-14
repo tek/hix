@@ -72,6 +72,7 @@ in {
         hls.package = mkDefault config.envs.hls.ghc.ghc.haskell-language-server;
         hide = true;
         internal.overridesInherited = [];
+        localDeps = false;
       };
 
     };

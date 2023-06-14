@@ -6,6 +6,10 @@ with builtins;
 with lib;
 let
 
+  inherit (config.internal) pkgs;
+
+  mods = util.modulesRaw {} (util.modules ++ [{ system = config.system; } (import ../modules/system.nix)]);
+
   pathSegs = if path == "" then [] else splitString "." path;
 
   unlines = concatStringsSep "\n";
@@ -34,8 +38,6 @@ let
 
   sub = n:
   kv n "";
-
-  mods = util.modulesRaw {} (util.modules ++ [{ system = config.system; } (import ../modules/system.nix)]);
 
   zoom = segs: root: let
     get = p: f: config: let
@@ -73,9 +75,9 @@ let
 
   renderers = {
     bool = b: if b then "true" else "false";
-    str = s: ''\"${s}\"'';
+    str = s: ''"${s}"'';
     path = toString;
-    separatedString = s: ''\"${s}\"'';
+    separatedString = s: ''"${s}"'';
     unsignedInt16 = toString;
     package = renderPackage;
     nixpkgs = n: "nixpkgs source (${n.rev or "?"})";
@@ -148,7 +150,7 @@ let
   else indent (stringifyModule c a));
 
   stringifyValue = c: n: a:
-  if n == "_module"
+  if n == "_module" || n == "internal" || n == "code" || n == "runner" || n == "devGhc"
   then []
   else if isAttrs a
   then
@@ -159,13 +161,13 @@ let
 
   stringifyModule = c: m: concatMapAttrs (n: a: optionals (hasAttr n c) (stringifyValue c.${n} n a)) m;
 
-  stringifyRoot = unlines (stringifyModule (zoom pathSegs mods.config) mods.options);
+  stringifyRoot = pkgs.writeText "project-options" (unlines (stringifyModule (zoom pathSegs mods.config) mods.options));
 
   palette = "Colors: ${concatStringsSep " | " (mapAttrsToList (flip color) colors)}";
 
-in config.pkgs.writeScript "show-config" ''
-  #!${config.pkgs.zsh}/bin/zsh
+in pkgs.writeScript "show-config" ''
+  #!${pkgs.zsh}/bin/zsh
   print "${palette}"
   print ""
-  print "${stringifyRoot}"
+  while IFS='\n' read -r line; do echo -e $line; done <  ${stringifyRoot}
 ''
