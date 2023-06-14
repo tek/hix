@@ -10,6 +10,8 @@
     target='[ "default" "ghc810-root" "ghc90-root" "ghc92-root" "ghc94-root" "min" "root" ]'
     check 'nix eval .#packages.x86_64-linux --apply builtins.attrNames' $target 'Packages are wrong'
 
+    check 'nix develop .#ghc94 -c ghc --version' 'The Glorious Glasgow Haskell Compilation System, version 9.4.5'
+
     nix build .#ghc90-root
     check 'result/bin/root' 'string' 'Running the main package produced the wrong output'
 

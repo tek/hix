@@ -178,6 +178,8 @@ let
 
   localPackages = genAttrs global.internal.packageNames (n: ghc.${n} // { inherit ghc; });
 
+  ghcidMod = if util.minGhc "9.4" config then config.ghc.pkgs.haskell.lib.dontCheck else id;
+
 in {
   options = with types; {
 
@@ -321,7 +323,7 @@ in {
       package = mkOption {
         description = mdDoc "The package for GHCid, defaulting to the one from the env's GHC without overrides.";
         type = package;
-        default = config.ghc.vanillaGhc.ghcid;
+        default = ghcidMod config.ghc.vanillaGhc.ghcid;
       };
     };
 
