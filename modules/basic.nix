@@ -202,7 +202,7 @@ in {
 
     internal = {
 
-      basicPkgs = mkOption {
+      pkgs = mkOption {
         type = unspecified;
         readOnly = true;
       };
@@ -263,9 +263,9 @@ in {
 
     internal = {
 
-      basicPkgs = import config.inputs.nixpkgs { inherit (config) system; };
+      pkgs = import config.inputs.nixpkgs { inherit (config) system; };
 
-      basicGhc = config.internal.basicPkgs.haskell.packages.${config.compiler};
+      basicGhc = config.internal.pkgs.haskell.packages.${config.compiler};
 
       packageNames = attrNames config.packages;
 

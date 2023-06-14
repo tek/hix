@@ -82,8 +82,8 @@ in {
     ghcOptions = ["-j${toString config.ghci.cores}" "+RTS -A64M -RTS"];
 
     preprocessor = mkDefault (
-      config.pkgs.writeScript "ghci-preprocessor" ''
-      #!${config.pkgs.bash}/bin/bash
+      config.internal.pkgs.writeScript "ghci-preprocessor" ''
+      #!${config.internal.pkgs.bash}/bin/bash
       ${cli} preproc --config ${util.json.preprocFile} --source "$1" --in "$2" --out "$3"
       ''
     );

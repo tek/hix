@@ -2,7 +2,7 @@
 {command, env}:
 let
 
-  inherit (config) pkgs;
+  inherit (config.internal) pkgs;
 
   cli = config.internal.hixCli.exe;
 

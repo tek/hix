@@ -46,16 +46,15 @@ in {
   typeset -a vm_tests
   ci_skip_tests=(${ciSkipTests})
 
-  die()
+  message()
   {
     echo -e ">>> $*"
-    exit 1
   }
 
   fail()
   {
-    echo -e ">>> Test '$current' failed!"
-    die $*
+    message "Test '$current' failed!"
+    message $*
   }
   ${if keep then "" else ''trap "rm -rf $tmpdir" EXIT''}
 
@@ -84,11 +83,12 @@ in {
     test="''${tests[$current]}"
     if [[ -z $test ]]
     then
-      die "Invalid test name: $current"
+      message "Invalid test name: $current"
+      return 1
     fi
     if [[ -n $CI ]] && [[ -n ''${ci_skip_tests[(r)$current]} ]]
     then
-      echo ">>> Skipping VM test '$current'"
+      echo ">>> Skipping test '$current'"
       return 0
     fi
     testdir="$tmpdir/$1"

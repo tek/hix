@@ -2,7 +2,7 @@
 with builtins;
 let
   inherit (config.hpack.internal) packages;
-  inherit (config) pkgs;
+  inherit (config.internal) pkgs;
 
   packageCall = n: p:
   if hasAttr n packages

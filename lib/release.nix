@@ -1,8 +1,10 @@
 {config, lib, util}: let
 
+  inherit (config.internal) pkgs;
+
   commitAndTag = ''
-  ${config.pkgs.git}/bin/git commit --allow-empty -m "Release $version"
-  ${config.pkgs.git}/bin/git tag -m "Release $version" "$version"
+  ${pkgs.git}/bin/git commit --allow-empty -m "Release $version"
+  ${pkgs.git}/bin/git tag -m "Release $version" "$version"
   '';
 
   updateVersions = ''
@@ -10,12 +12,12 @@
   sed -i 's/ref=[^"]\+/ref='"$version/" readme.md examples/*/flake.nix
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
   sed -i "s/Unreleased/$version/" changelog.md
-  ${config.pkgs.git}/bin/git --no-pager diff
-  ${config.pkgs.git}/bin/git add readme.md changelog.md examples modules/basic.nix
+  ${pkgs.git}/bin/git --no-pager diff
+  ${pkgs.git}/bin/git add readme.md changelog.md examples modules/basic.nix
   '';
 
   preamble = ''
-  #!${config.pkgs.zsh}/bin/zsh
+  #!${pkgs.zsh}/bin/zsh
   setopt err_exit no_unset pipefail
 
   if [[ $# == 0 ]]
@@ -26,14 +28,14 @@
   version="$1"
   '';
 
-  nix = config.pkgs.writeScript "hix-release-nix" ''
+  nix = pkgs.writeScript "hix-release-nix" ''
   ${preamble}
   ${updateVersions}
-  ${config.pkgs.git}/bin/git commit --allow-empty -m "Release $version"
+  ${pkgs.git}/bin/git commit --allow-empty -m "Release $version"
   ${commitAndTag}
   '';
 
-  all = config.pkgs.writeScript "hix-release-all" ''
+  all = pkgs.writeScript "hix-release-all" ''
   ${preamble}
   ${updateVersions}
 
@@ -46,7 +48,7 @@
     echo ">>> Aborting."
     exit 1
   fi
-  ${config.pkgs.git}/bin/git add modules/cli.nix
+  ${pkgs.git}/bin/git add modules/cli.nix
   ${commitAndTag}
   '';
 

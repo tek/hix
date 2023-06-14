@@ -523,6 +523,35 @@ in {
   }
   ```
 
+  ### Configuring nixpkgs {#ghc-nixpkgs}
+
+  The GHC package set uses the same nixpkgs snapshot that is also used for Hix internals, which is configured as a flake
+  input of the Hix repository.
+  You can override this globally:
+
+  ```nix
+  {
+    inputs.hix.inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
+  }
+  ```
+
+  In order to avoid incompatiblities with the Hix internals, it might be advisable to only override the nixpkgs used by
+  GHC:
+
+  ```nix
+  {
+    inputs.hix.url = "github:tek/hix";
+    inputs.ghc_nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
+
+    outputs = { hix, ghc_nixpkgs, ... }: hix.lib.flake {
+      envs.dev.ghc.nixpkgs = ghc_nixpkgs;
+    };
+  }
+  ```
+
+  Since the usage of nixpkgs within the library is tightly interwoven with the GHC package set, this might have a slight
+  potential for breakage, but (like the global variant) it should be minimal.
+
   ## Commands {#commands}
 
   Services in an environment are relevant when executing a command, which consists of an arbitrary shell script
