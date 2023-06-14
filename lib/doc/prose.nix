@@ -463,7 +463,7 @@ in {
 
   ```nix
   {
-    overrides = {hackage, ...}: {
+    overrides = {hackage, notest, nodoc, configure, jailbreak, nobench, ...}: {
       # Fetch streamly from Hackage and disable tests and haddock
       streamly = notest (nodoc (hackage "0.9.0" "1ab5n253krgccc66j7ch1lx328b1d8mhkfz4szl913chr9pmbv3q"));
 

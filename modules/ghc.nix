@@ -27,7 +27,11 @@ with lib;
 
     nixpkgs = mkOption {
       type = util.types.nixpkgs;
-      description = mdDoc "The flake input pointing to a nixpkgs commit used as the basis for the package set.";
+      description = mdDoc ''
+      The path to a nixpkgs source tree, used as the basis for the package set.
+
+      This can be a flake input or a regular type of path, like the result of `fetchGit`.
+      '';
     };
 
     nixpkgsOptions = mkOption {
