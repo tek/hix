@@ -85,7 +85,7 @@ hix.pro ({config, lib, ...}: {
   outputs = {
 
     packages = let
-      pkgs = import inputs.nixpkgs_internal { inherit (config) system; };
+      pkgs = import inputs.nixpkgs { inherit (config) system; };
       docs = import ./doc/default.nix { inherit inputs pkgs; inherit (config.internal) hixUrl; };
     in {
       docs = docs.html;

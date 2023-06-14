@@ -63,7 +63,7 @@ in {
       name = "hix";
       compiler = "ghc92";
       overrides = mkForce config.internal.hixCli.overrides;
-      nixpkgs = config.inputs.nixpkgs_internal;
+      nixpkgs = config.inputs.nixpkgs;
       nixpkgsOptions = {};
       overlays = [];
     };
