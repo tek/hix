@@ -19,7 +19,7 @@
 
     check_match 'nix develop -c ghc --version' '9.0.2' 'Devshell GHC version is wrong'
 
-    check_match 'nix develop .#ghc92 -c ghc --version' '9.2.4' 'Devshell GHC version for ghc92 is wrong'
+    check_match 'nix develop .#ghc92 -c ghc --version' '9.2.8' 'Devshell GHC version for ghc92 is wrong'
 
   '';
 }

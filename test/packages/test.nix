@@ -4,7 +4,7 @@ let
   targetDep = builtins.toFile "cabal-target-dep" ''
   cabal-version: 1.22
 
-  -- This file has been generated from package.yaml by hpack version 0.35.0.
+  -- This file has been generated from package.yaml by hpack version 0.35.2.
   --
   -- see: https://github.com/sol/hpack
 
@@ -38,7 +38,7 @@ let
   targetRoot = builtins.toFile "cabal-target-root" ''
   cabal-version: 2.0
 
-  -- This file has been generated from package.yaml by hpack version 0.35.0.
+  -- This file has been generated from package.yaml by hpack version 0.35.2.
   --
   -- see: https://github.com/sol/hpack
 
