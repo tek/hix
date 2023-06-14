@@ -37,7 +37,7 @@ let
   unlines = concatStringsSep "\n";
 
   parents = modules: {
-    options.internal.parents = mkOption { type = types.unspecified; };
+    options.internal.parents = mkOption { type = types.listOf types.deferredModule; readOnly = true; };
     config.internal.parents = modules;
   };
 
