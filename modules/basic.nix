@@ -14,19 +14,25 @@ let
     next = p:
       if p == "/"
       then throw "Could not determine base dir: Invalid package path ${pkg}"
-      else if isStorePath p
+      else if isStorePath p || pathExists "${p}/flake.nix"
       then p
       else next (dirOf p);
   in
    if length (attrNames config.internal.packagePaths) == 0
-   then throw "You have to specify either the 'base' option, pointing to the project root, or an entry in 'packages'."
+   then throw "You have to specify either the 'base' option, pointing to the project root, or an entry in [](#opt-general-packages)."
    else next pkg;
 
 in {
   options = {
 
     base = mkOption {
-      description = mdDoc "The project's base directory. Will be inferred from package source directories.";
+      description = mdDoc ''
+      The project's base directory.
+
+      Will be inferred from package source directories if unset.
+      If the Hix project is a subdirectory of a git repository and `flake.nix` isn't tracked by git, this option has to
+      be set manually to `./.`.
+      '';
       example = literalExpression "./.";
       type = path;
     };
