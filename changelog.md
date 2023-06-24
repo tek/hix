@@ -1,3 +1,7 @@
+# Unreleased
+
+* Per-package `versionFile` is now used for the `version` field in Cabal files.
+
 # 0.5.2
 
 * Custom prelude preprocessor no longer mistakes modules with the prefix `Prelude` for the real thing.

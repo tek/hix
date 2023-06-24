@@ -7,7 +7,7 @@ let
   preludeModule = {
 
     options = with types; {
-      enable = mkEnableOption (mdDoc "the alternative Prelude");
+      enable = mkEnableOption (mdDoc "an alternative Prelude");
 
       package = mkOption {
         description = mdDoc "The package containing the alternative Prelude.";
@@ -53,13 +53,10 @@ in {
       '';
       type = str;
       default = let
-        check = f: f != null && hasSuffix ".nix" f;
-        fromFile = f: import "${global.base}/${f}";
+        f = global.hackage.versionFile;
       in
-        if config ? versionFile && check config.versionFile
-        then fromFile config.versionFile
-        else if check global.hackage.versionFile
-        then fromFile global.hackage.versionFile
+        if (f != null && hasSuffix ".nix" f)
+        then import "${global.base}/${f}"
         else "0.1.0.0";
     };
 

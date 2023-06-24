@@ -36,12 +36,13 @@ in {
       description = mdDoc ''
         If multiple packages use the same file for the version (like when using shared hpack files) this option may
         point to that file.
-        If `hackage.allPackages` is `true` and this option is `null`,
-        the version will not be modified by the release app.
+        If `hackage.allPackages` is `true` and this option is `null`, the version will not be modified by the release
+        app.
         If the project uses the feature for hpack config synthesis from nix expressions, the version must be defined in
-        a nix file. In that case, the simplest mechanism would be to use a separate file that only contains a string and
-        is integrated into the config with `version = import ./version.nix;`. The default version
-        handlers make this assumption; if a different method is used, the options
+        a nix file.
+        In that case, the simplest mechanism would be to use a separate file that only contains a string and is
+        integrated into the config with `version = import ./version.nix;`.
+        The default version handlers make this assumption; if a different method is used, the options
         `hackage.versionFileExtract` and `hackage.versionFileUpdate` must be adapted.
       '';
       type = nullOr str;

@@ -76,6 +76,10 @@ let
 
   benchSubmodule = component (exeModule "benchmark" false) "benchmark" "benchmark" "benchSuffix";
 
+  versionFromFile = let
+    f = config.versionFile;
+  in optionalAttrs (f != null && hasSuffix ".nix" f) { version = import "${global.base}/${f}"; };
+
 in {
 
   options = with types; {
@@ -192,7 +196,9 @@ in {
     versionFile = mkOption {
       description = mdDoc ''
       The version file for this package, defaulting to the global [](#opt-hackage-hackage.versionFile) if `null`.
-      When bumping the version of this package with `nix run .#release`, this file is updated.
+      When generating Cabal files, the version field will be set to the content of this file, unless
+      [](#opt-cabal-version) is set explicitly.
+      When bumping the version of a package with `nix run .#release`, this file is updated.
       Should be relative to the project root.
       '';
       type = nullOr str;
@@ -234,6 +240,7 @@ in {
           global.internal.cabal-extra
           global.cabal
           config.cabal
+          versionFromFile
         ];
         description = "submodule of cabal-options";
       };
