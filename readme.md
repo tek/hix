@@ -19,20 +19,20 @@ To learn more, please visit the [documentation page](https://tryp.io/hix/index.h
 You can convert an existing project with Cabal files by executing this command in the project root:
 
 ```
-nix run 'github:tek/hix?ref=0.5.4
+nix run 'github:tek/hix?ref=0.5.5
 ```
 
 You can create a new project in the current directory:
 
 ```
-nix run 'github:tek/hix?ref=0.5.4
+nix run 'github:tek/hix?ref=0.5.5
 ```
 
 The manual process consists of first adding Hix to your Haskell project flake by specifying the input:
 
 ```nix
 {
-  inputs.hix.url = "github:tek/hix?ref=0.5.4";
+  inputs.hix.url = "github:tek/hix?ref=0.5.5";
 }
 ```
 
@@ -41,7 +41,7 @@ Then configure your project with NixOS module options:
 ```nix
 {
   description = "Example";
-  inputs.hix.url = "github:tek/hix?ref=0.5.4";
+  inputs.hix.url = "github:tek/hix?ref=0.5.5";
   outputs = {hix, ...}: hix.lib.flake {
     packages.parser = {
       src = ./.;

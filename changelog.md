@@ -1,4 +1,4 @@
-# Unreleased
+# 0.5.5
 
 * Per-package `versionFile` is now used for the `version` field in Cabal files.
 
