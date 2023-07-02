@@ -8,7 +8,10 @@
   '';
 
   updateVersions = ''
-  nix run .#test
+  if [[ -z ''${hix_release_skip_test-} ]]
+  then
+    nix run .#test
+  fi
   sed -i 's/ref=[^"]\+/ref='"$version/" readme.md examples/*/flake.nix
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
   sed -i "s/Unreleased/$version/" changelog.md
