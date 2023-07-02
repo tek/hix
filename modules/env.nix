@@ -69,6 +69,8 @@ let
   ${exports}
   '';
 
+  messages = util.unlinesConcatMap (s: map (m: ''echo ">>> ${m}" >&2'') (s.messages envConfig)) resolved;
+
   preamble = ''
     quitting=0
     quit() {
@@ -97,6 +99,7 @@ let
     ${exportShellVars config.env}
     export PATH="${makeBinPath buildInputs}:$PATH"
     export env_args
+    ${messages}
     ${config.setup-pre}
     ${optionalString config.vm.enable config.vm.setup}
     ${optionalString (config.vm.enable && config.wait > 0) waitScript}

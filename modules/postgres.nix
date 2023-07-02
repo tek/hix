@@ -57,5 +57,6 @@ with lib;
         settings = if config.log then { log_statement = "all"; log_min_messages = "info"; } else {};
       };
     };
+    messages = env: ["Starting PostgreSQL on port ${toString env.hostPorts.postgres}"];
   };
 }

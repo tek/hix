@@ -55,5 +55,11 @@ in {
       default = {};
     };
 
+    messages = mkOption {
+      description = mdDoc "Informational messages that will be echoed when an environment starts this service.";
+      type = functionTo (listOf str);
+      default = _: [];
+    };
+
   };
 }

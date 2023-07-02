@@ -36,6 +36,10 @@ let
 
   unlines = concatStringsSep "\n";
 
+  unlinesMap = concatMapStringsSep "\n";
+
+  unlinesConcatMap = f: xs: concatStringsSep "\n" (concatMap f xs);
+
   parents = modules: {
     options.internal.parents = mkOption { type = types.listOf types.deferredModule; readOnly = true; };
     config.internal.parents = modules;
@@ -113,6 +117,8 @@ in {
   overridesFor
   asFunction
   unlines
+  unlinesMap
+  unlinesConcatMap
   modulesRaw
   withModules
   foldAttrs
