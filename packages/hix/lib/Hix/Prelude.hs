@@ -12,7 +12,8 @@ import qualified Exon
 data Prelude =
   Prelude {
     preludePackage :: String,
-    preludeModule :: String
+    preludeModule :: String,
+    local :: Bool
   }
   deriving stock (Eq, Show)
 
@@ -35,5 +36,5 @@ findPrelude =
       let
         preludePackage = unPackageName mixinPackageName
         preludeModule = Exon.intercalate "." (ModuleName.components real)
-      in Just Prelude {..}
+      in Just Prelude {local = False, ..}
     _ -> Nothing

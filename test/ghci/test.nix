@@ -5,11 +5,6 @@
     nix flake update
     nix run .#gen-cabal
 
-    ghci_match()
-    {
-      check_match "nix run $1 <<< ':quit'" $2 $3
-    }
-
     ghci_match ".#ghci -- --root $PWD -c lib -m Root.Lib -r cwd" "$PWD/pkg/" 'ghci cwd with cd printed wrong directory'
 
     ghci_match '.#ghci -- -c lib -m Root.Lib -r cwd -- --no-cd' "$PWD/" 'ghci cwd with no-cd printed wrong directory'

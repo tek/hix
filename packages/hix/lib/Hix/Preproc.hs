@@ -34,14 +34,17 @@ import Hix.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Optparse (JsonConfig)
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
+import qualified Data.Map.Strict as Map
 
 type Regex = IndexedTraversal' Int ByteString Match
 
-fromPreludeConfig :: PreludeConfig -> Prelude
-fromPreludeConfig conf =
-  Prelude (toString (name conf.package)) (toString conf.module_.unModuleName)
+-- TODO do we need to parse the spec here?
+fromPreludeConfig :: PreprocConfig -> PreludeConfig -> Prelude
+fromPreludeConfig ppconf conf =
+  Prelude (toString name) (toString conf.module_.unModuleName) local
   where
-    name = \case
+    local = Map.member (coerce name) ppconf.packages
+    name = case conf.package of
       PreludePackageName n -> n
       PreludePackageSpec n -> n
 
@@ -211,9 +214,11 @@ replacePrelude l Prelude {..}
     Nothing
   where
     insertPrelude =
-      (ix 0 .~ [exon|"#{encodeUtf8 preludePackage}" |])
+      addPackage
       .
       (ix 1 .~ encodeUtf8 preludeModule)
+    addPackage | local = id
+               | otherwise = ix 0 .~ [exon|"#{encodeUtf8 preludePackage}" |]
 
 parenRegex :: Regex
 parenRegex =
@@ -348,7 +353,10 @@ scanHeader customPrelude =
 
 customPreludeImport :: Prelude -> Builder
 customPreludeImport Prelude {..} =
-  lineB [exon|import "#{stringUtf8 preludePackage}" #{stringUtf8 preludeModule} as Prelude|]
+  lineB [exon|import#{package} #{stringUtf8 preludeModule} as Prelude|]
+  where
+    package | local = ""
+            | otherwise = [exon| "#{stringUtf8 preludePackage}"|]
 
 needPreludeExtensions :: PreludeAction -> Bool
 needPreludeExtensions = \case
@@ -457,7 +465,7 @@ fromConfig cliRoot source pconf = do
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,
     ghcOptions = stringUtf8 <$> target.component.ghcOptions,
-    prelude = fromPreludeConfig <$> target.component.prelude
+    prelude = fromPreludeConfig conf <$> target.component.prelude
     }
 
 fromCabal :: BuildInfo -> CabalConfig

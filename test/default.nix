@@ -23,6 +23,7 @@ let
     new-static = test "new-static";
     new-static-github = test "new-static-github";
     subdir = test "subdir";
+    local-prelude = test "local-prelude";
   };
 
   testA = n: t: "${n} ${t}";
@@ -57,7 +58,12 @@ in {
     message "Test '$current' failed!"
     message $*
   }
-  ${if keep then "" else ''trap "rm -rf $tmpdir" EXIT''}
+  ${if keep then "" else ''
+  if [[ -z ''${hix_test_keep-} ]]
+  then
+    trap "rm -rf $tmpdir" EXIT
+  fi
+  ''}
 
   check()
   {
@@ -75,6 +81,11 @@ in {
     then
       fail "$3:\n$output"
     fi
+  }
+
+  ghci_match()
+  {
+    check_match "nix run $1 <<< ':quit'" $2 $3
   }
 
   runtest()
