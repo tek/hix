@@ -57,7 +57,9 @@ in {
   {
     message "Test '$current' failed!"
     message $*
+    return 1
   }
+
   ${if keep then "" else ''
   if [[ -z ''${hix_test_keep-} ]]
   then
