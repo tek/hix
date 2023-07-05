@@ -14,5 +14,7 @@
     ghci_match '.#ghci -- -p root -t main' 'test-endpoint' "ghci service output with component env does not contain 'test-endpoint'"
 
     ghci_match '.#env.hix-ghci-test.ghci -- -t main' 'test-endpoint' "ghci service output with explicit env does not contain 'test-endpoint'"
+
+    ghci_match '.#ghci-app' 'print success' "ghci-app did not output 'print success'"
   '';
 }

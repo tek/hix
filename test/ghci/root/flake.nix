@@ -28,6 +28,13 @@
     import Path (toFilePath)
     import Path.IO (getCurrentDir)
     '';
+    commands.ghci-app = {
+      ghci = {
+        enable = true;
+        runner = "print";
+      };
+      expose = true;
+    };
     internal.hixCli.dev = true;
   });
 }

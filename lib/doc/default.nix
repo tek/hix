@@ -60,6 +60,10 @@ let
   ];
   mod-command = options.moduleWithout commandExclude "command" { global = config; inherit util; };
 
+  ghciExclude = [
+  ];
+  mod-ghci = options.moduleWithout ghciExclude "ghci" { inherit config lib util; };
+
   serviceExclude = [
   ];
   mod-service = options.moduleWithout serviceExclude "service" { global = config; inherit lib util; };
@@ -120,6 +124,7 @@ let
         (opt "env" "Environment" mod-env)
         (opt "ghc" "GHC" mod-ghc)
         (opt "command" "Command" mod-command)
+        (opt "ghci" "GHCi(d)" mod-ghci)
         (opt "service" "Service" mod-service)
       ];
     }

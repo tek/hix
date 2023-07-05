@@ -7,12 +7,6 @@
 with lib;
 let
 
-  # TODO remove
-  cwdScript = cwd:
-  optionalString (cwd != null) ''
-    :cd ${cwd}
-  '';
-
   cli = config.internal.hixCli.exe;
 
 in {
@@ -20,12 +14,18 @@ in {
   options.ghci = with types; {
 
     setup = mkOption {
-      description = "";
+      description = mdDoc ''
+      Scripts that should be executed when starting a GHCi command, like imports.
+      The attribute name is matched against the command line option `-r` when running apps like `nix run .#ghci`.
+      '';
       type = attrsOf str;
     };
 
     run = mkOption {
-      description = "";
+      description = mdDoc ''
+      Test functions for GHCi commands.
+      The attribute name is matched against the command line option `-r` when running apps like `nix run .#ghci`.
+      '';
       type = attrsOf str;
     };
 
@@ -58,7 +58,7 @@ in {
     };
 
     cores = mkOption {
-      description = "Cores";
+      description = mdDoc "The value for the GHC option `-j`, specifying the number of system threads to use.";
       type = either int str;
       default = ''''${NIX_BUILD_CORES-}'';
     };

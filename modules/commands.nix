@@ -15,7 +15,7 @@ in {
       description = mdDoc ''
       When running HLS with `nix run .#hls`, the command first generates Cabal files from Hix config to ensure that HLS
       works.
-      If that is not desirable, set this option to `false`;
+      If that is not desirable, set this option to `false`.
       '';
       type = bool;
       default = true;

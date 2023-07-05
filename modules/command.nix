@@ -5,6 +5,22 @@ let
 
   envCommand = import ../lib/command.nix { config = global; inherit util; };
 
+  cli = global.internal.hixCli.exe;
+
+  json = util.json.ghciFile;
+
+  ghciCommand = let
+    staticRunner = if config.ghci.runner != null then "-r ${config.ghci.runner}" else "";
+  in ''
+  ghci_cmd=$(${cli} ghci-cmd --config ${json} ''${env_args[@]} ${staticRunner} ''${cmd_args[@]})
+  eval $ghci_cmd
+  '';
+
+  ghcidCommand = ''
+  ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ''${env_args[@]} ''${cmd_args[@]})
+  eval $ghcid_cmd
+  '';
+
 in {
   options = with types; {
 
@@ -51,11 +67,37 @@ in {
       readOnly = true;
     };
 
+    ghci = {
+      enable = mkOption {
+        description = mdDoc ''
+        Create a command that runs GHCi (like the built-in command) with some static options.
+        For example, you can specify a [runner](#opt-ghci-ghci.run), and the app will be equivalent to running
+        `nix run .#ghci -r <runner>`.
+        '';
+        type = bool;
+        default = false;
+      };
+
+      ghcid = mkOption {
+        description = mdDoc "Whether to run this command with GHCid instead of plain GHCi.";
+        type = bool;
+        default = false;
+      };
+
+      runner = mkOption {
+        description = mdDoc "The name of a runner in [](#opt-ghci-ghci.run) and [](#opt-ghci-ghci.run).";
+        type = nullOr string;
+        default = null;
+      };
+    };
+
   };
 
   config = {
 
     path = (envCommand { command = config; env = global.envs.${config.env}; }).path;
+
+    command = mkIf config.ghci.enable (if config.ghci.ghcid then ghcidCommand else ghciCommand);
 
   };
 }
