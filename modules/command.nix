@@ -9,15 +9,17 @@ let
 
   json = util.json.ghciFile;
 
-  ghciCommand = let
-    staticRunner = if config.ghci.runner != null then "-r ${config.ghci.runner}" else "";
-  in ''
-  ghci_cmd=$(${cli} ghci-cmd --config ${json} ''${env_args[@]} ${staticRunner} ''${cmd_args[@]})
+  ghciOpts = let
+    opt = switch: o: optionalString (config.ghci.${o} != null) " ${switch} ${config.ghci.${o}}";
+  in "${opt "-r" "runner"}${opt "-p" "package"}${opt "-m" "module"}${opt "-c" "component"}";
+
+  ghciCommand = ''
+  ghci_cmd=$(${cli} ghci-cmd --config ${json} ''${env_args[@]} ${ghciOpts} ''${cmd_args[@]})
   eval $ghci_cmd
   '';
 
   ghcidCommand = ''
-  ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ''${env_args[@]} ''${cmd_args[@]})
+  ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ''${env_args[@]} ${ghciOpts} ''${cmd_args[@]})
   eval $ghcid_cmd
   '';
 
@@ -86,9 +88,28 @@ in {
 
       runner = mkOption {
         description = mdDoc "The name of a runner in [](#opt-ghci-ghci.run) and [](#opt-ghci-ghci.run).";
-        type = nullOr string;
+        type = nullOr str;
         default = null;
       };
+
+      package = mkOption {
+        description = mdDoc "The name of the package passed to the GHCi runner with `-p`.";
+        type = nullOr str;
+        default = null;
+      };
+
+      module = mkOption {
+        description = mdDoc "The name of the module passed to the GHCi runner with `-m`.";
+        type = nullOr str;
+        default = null;
+      };
+
+      component = mkOption {
+        description = mdDoc "The name of the component passed to the GHCi runner with `-c`.";
+        type = nullOr str;
+        default = null;
+      };
+
     };
 
   };
