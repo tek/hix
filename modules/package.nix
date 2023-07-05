@@ -284,6 +284,10 @@ in {
         This results in the dependency string `core >= 0.4.1.0 && < 0.5` in the Cabal file.
 
         Also works when using [](#opt-package-versionFile).
+
+        ::: {.note}
+        Don't use this to depend on the library in another component – it will cause infinite recursion.
+        :::
         '';
         type = util.types.hpackDep;
         readOnly = true;
