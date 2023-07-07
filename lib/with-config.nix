@@ -116,6 +116,20 @@ let
   ${pkgs.git}/bin/git add flake.lock
   '';
 
+  bootstrapWithDynamicCli = name: script: pkgs.writeScript name ''
+  #!${pkgs.bashInteractive}/bin/bash
+  set -e
+  exe="${config.outputs.packages.hix}/bin/hix"
+  ${script}
+  if ! git status &>/dev/null
+  then
+    ${pkgs.git}/bin/git init
+  fi
+  ${pkgs.git}/bin/git add .
+  ${pkgs.nix}/bin/nix flake update
+  ${pkgs.git}/bin/git add flake.lock
+  '';
+
 in basic // {
   inherit
   paramApp
@@ -131,5 +145,6 @@ in basic // {
   unlessDev
   downloadStaticCli
   bootstrapWithStaticCli
+  bootstrapWithDynamicCli
   ;
 }
