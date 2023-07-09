@@ -810,6 +810,10 @@ in {
   nix run .#hls
   ```
 
+  In order to use it with your IDE, you need to specify the command in the editor configuration as: `nix run .#hls --`,
+  since `nix` consumes all options until a `--` is encountered, and only passes what comes afterwards to the program
+  (which in this case would be `--lsp`).
+
   This app corresponds to the [command](#commands) named `hls`, which uses the `dev` environment but gets the HLS
   executable from a special environment named `hls`.
   This allows the HLS package and its dependencies to be configured separately from the project dependencies.
