@@ -51,7 +51,7 @@ let
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
     localDeps = g: builtins.filter isNotLocal (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
-  in config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ extraHs ghc);
+  in config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ extraHs ghc ++ [ghc.cabal-install]);
 
   buildInputs = let
   in
