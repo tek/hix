@@ -92,7 +92,10 @@ let
         exit 1
       fi
     }
-    trap "quit INT" INT
+    if [[ -z ''${_hix_is_shell-} ]]
+    then
+      trap "quit INT" INT
+    fi
     trap "quit TERM" TERM
     trap "quit KILL" KILL
     trap quit EXIT
@@ -516,7 +519,10 @@ in {
     shell = mkDefault (global.pkgs.stdenv.mkDerivation {
       inherit (config) name;
       inherit buildInputs;
-      shellHook = config.code;
+      shellHook = ''
+      _hix_is_shell=1
+      ${config.code}
+      '';
     });
 
     vm = {
