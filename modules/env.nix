@@ -47,11 +47,13 @@ let
   then config.haskellPackages ghc
   else map (n: ghc.${n}) config.haskellPackages;
 
-  ghcWithPackages = let
+  ghcPackages = ghc: let
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
-    localDeps = g: builtins.filter isNotLocal (concatMap bInputs (map (p: g.${p}) global.internal.packageNames));
-  in config.ghc.ghc.ghcWithPackages (ghc: optionals config.localDeps (localDeps ghc) ++ extraHs ghc ++ [ghc.cabal-install]);
+    localDeps = builtins.filter isNotLocal (concatMap bInputs (map (p: ghc.${p}) global.internal.packageNames));
+  in optionals config.localDeps localDeps ++ extraHs ghc ++ [ghc.cabal-install];
+
+  ghcWithPackages = config.ghc.ghc.ghcWithPackages ghcPackages;
 
   buildInputs = let
   in
@@ -63,7 +65,7 @@ let
 
   exportShellVars = vars: let
     defs = toShellVars config.env;
-    exports = concatMapStringsSep "\n" (n: "export ${n}") (attrNames config.env);
+    exports = util.unlinesMap (n: "export ${n}") (attrNames config.env);
   in optionalString (!(util.empty vars)) ''
   ${defs}
   ${exports}
