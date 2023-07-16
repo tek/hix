@@ -2,6 +2,11 @@
 with lib;
 let
 
+  flake-utils = import (builtins.fetchTarball {
+    url = "https://github.com/numtide/flake-utils/archive/refs/tags/v1.0.0.tar.gz";
+    sha256 = "0hynd4rbkbplxzl2a8wb3r8z0h17z2alhhdsam78g3vgzpzg0d43";
+  });
+
   packageSubpath = base: pp:
   let
     new = strings.removePrefix (toString base + "/") (toString pp);
@@ -39,20 +44,6 @@ let
   unlinesMap = concatMapStringsSep "\n";
 
   unlinesConcatMap = f: xs: concatStringsSep "\n" (concatMap f xs);
-
-  parents = modules: {
-    options.internal.parents = mkOption { type = types.listOf types.deferredModule; readOnly = true; };
-    config.internal.parents = modules;
-  };
-
-  modulesRaw = config: extra:
-  let
-    current = attrByPath ["internal" "parents"] [] config ++ extra;
-    newModules = lib.evalModules { modules = current ++ [(parents current)]; };
-  in newModules;
-
-  withModules = config: extra: f:
-  f (modulesRaw config extra).config;
 
   foldAttrs =
   foldl' lib.mergeAttrs {};
@@ -107,8 +98,11 @@ let
 
   empty = v: if isAttrs v then empty (attrNames v) else v == [];
 
+  evalModules = modules: (lib.evalModules { inherit modules; }).config;
+
 in {
   inherit
+  flake-utils
   packageSubpath
   relativePackages
   mergeOverrides
@@ -120,7 +114,6 @@ in {
   unlinesMap
   unlinesConcatMap
   modulesRaw
-  withModules
   foldAttrs
   foldMapAttrs
   over
@@ -132,6 +125,7 @@ in {
   toTitle
   minGhc
   empty
+  evalModules
   ;
 
   ghcOverlay = import ./ghc-overlay.nix;

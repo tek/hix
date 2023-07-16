@@ -4,20 +4,19 @@ with inputs.nixpkgs.lib;
 let
   inherit (inputs.nixpkgs) lib;
 
-  compat = import ./lib/compat.nix { inherit lib; };
-
   api = makeExtensible (self: {
     lib = import ./lib/default.nix { inherit (inputs.nixpkgs) lib; };
 
-    modules = {projectModules ? [], extraModules ? []}: import ./modules/all-modules.nix {
-      inherit inputs;
-      projectModules = extraModules ++ map compat.check (toList projectModules);
+    hixModules = import ./modules/all-modules.nix { inherit inputs; };
+
+    flakeWith = {projectModules ? [], extraModules ? []}:
+    import ./lib/build.nix {
+      inherit (inputs.nixpkgs) lib;
+      inherit (self) hixModules;
+      inherit projectModules extraModules;
     };
 
-    flakeWith = modules:
-    import ./modules/build.nix { inherit (inputs.nixpkgs) lib; modules = self.modules modules; };
-
-    flake = projectModules: self.flakeWith { inherit projectModules; };
+    flake = projectModules: self.flakeWith { projectModules = toList projectModules; };
 
     auto = projectModules:
     self.flakeWith { extraModules = [{ auto = true; ifd = false; }]; projectModules = toList projectModules; };

@@ -66,7 +66,7 @@ let
 
   checkDeprecated' = mod:
   if isFunction mod
-  then args: checkDeprecated (mod args)
+  then args@{config, lib, util, ...}: checkDeprecated (mod args)
   else checkDeprecated mod;
 
 in {

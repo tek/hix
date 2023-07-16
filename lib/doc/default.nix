@@ -74,6 +74,8 @@ let
   mod-hackage = options.moduleWithout hackageExclude "hackage" { inherit config lib util; };
 
   generalModules = [
+    (options.importMod "systems" { inherit config lib; })
+    (options.importMod "system" { inherit config lib; })
     (options.importMod "input" { inherit config lib; })
     (options.importMod "basic" { inherit config lib util; })
     (options.importMod "envs" { inherit config lib util; })

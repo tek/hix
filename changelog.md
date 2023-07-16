@@ -1,3 +1,7 @@
+# Unreleased
+
+* Support multiple Cabal libraries in a single package.
+
 # 0.5.5
 
 * Per-package `versionFile` is now used for the `version` field in Cabal files.

@@ -38,7 +38,7 @@ let
         minor = mkOption {
           description = mdDoc ''
           Dependency string for referencing this library with its version from other Cabal package.
-          Like [](#opt-package-dep), but for sublibraries.
+          Like [](#opt-package-dep.minor), but for sublibraries.
           '';
           type = util.types.hpackDep;
           readOnly = true;
@@ -48,7 +48,7 @@ let
         exact = mkOption {
           description = mdDoc ''
           Dependency string for referencing this library with its version from other Cabal package.
-          Like [](#opt-package-dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
+          Like [](#opt-package-libraries._name_.dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
           '';
           type = util.types.hpackDep;
           readOnly = true;

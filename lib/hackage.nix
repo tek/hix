@@ -117,7 +117,7 @@ let
 
   command = doc: tarball: publish: target:
   let
-    pkg = config.systemOutputs.packages.${target};
+    pkg = config.output.final.packages.${target};
   in
     cfg.uploadCommand { inherit publish doc; path = tarball pkg; };
 

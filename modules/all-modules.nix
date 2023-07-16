@@ -1,4 +1,4 @@
-{ inputs, projectModules, }:
+{inputs}:
 let
   lib = inputs.nixpkgs.lib;
 
@@ -14,7 +14,9 @@ let
     };
   };
 
-  modules = projectModules ++ [
+  modules = [
+    ./systems.nix
+    ./system.nix
     ./input.nix
     ./basic.nix
     ./hpack.nix
