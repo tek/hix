@@ -108,15 +108,18 @@ in {
       default = false;
     };
 
+    # TODO is this effective and desired?
     forceCabalGen = mkOption {
-      description = mdDoc "Whether to generate a Cabal file from Nix config even if there is one in the source directory.";
+      description = mdDoc ''
+      Whether to generate a Cabal file from Nix config even if there is one in the source directory.
+      '';
       type = bool;
       default = false;
     };
 
     ifd = mkOption {
       description = mdDoc ''
-      Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations, for local
+      Whether to use `cabal2nix`, which uses Import From Derivation, or to generate simple derivations, for local
       packages.
       '';
       type = bool;
@@ -125,7 +128,7 @@ in {
 
     compiler = mkOption {
       description = mdDoc ''
-        The GHC version used for internal tasks and as default for the default environment.
+        The GHC version used for internal tasks and for the default environment.
       '';
       type = str;
       default = "ghc92";

@@ -47,8 +47,16 @@ let
 
   nestedFlakeApps = lazyAttrsOf (either flakeApp nestedFlakeApps);
 
+  cabalOverridesVia = desc: mkOptionType {
+    name = "cabal-overrides";
+    description = "A Haskell package override function specified in the Hix DSL";
+    descriptionClass = "noun";
+    check = a: isFunction a || (isList a && all isFunction a);
+    merge = _: defs: util.overridesVia desc (concatLists (map (a: toList a.value) defs));
+  };
+
 in {
-  inherit nestedPackages flakeApp nestedFlakeApps;
+  inherit nestedPackages flakeApp nestedFlakeApps cabalOverridesVia;
 
   nixpkgs = mkOptionType {
     name = "nixpkgs";
@@ -68,13 +76,7 @@ in {
     merge = mergeOneOption;
   };
 
-  cabalOverrides = mkOptionType {
-    name = "cabal-overrides";
-    description = "A Haskell package override function specified in the Hix DSL";
-    descriptionClass = "noun";
-    check = a: isFunction a || (isList a && all isFunction a);
-    merge = _: defs: concatLists (map (a: toList a.value) defs);
-  };
+  cabalOverrides = cabalOverridesVia null;
 
   ghc = mkOptionType {
     name = "ghc";

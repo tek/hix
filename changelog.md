@@ -2,6 +2,7 @@
 
 * Support multiple Cabal libraries in a single package.
 * Add GHCi(d) CLI options `--ghci-options` and  `--ghcid-options`.
+* Allow cabal2nix derivations in overrides to be pre-generated and stored in a file to avoid IFD.
 
 # 0.5.5
 

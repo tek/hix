@@ -228,7 +228,7 @@ in {
       description = mdDoc ''
       Like [](#opt-general-overrides), but used only when this environment is used to build packages.
       '';
-      type = util.types.cabalOverrides;
+      type = util.types.cabalOverridesVia "env ${config.name}";
       default = [];
     };
 
@@ -471,7 +471,7 @@ in {
 
       overridesLocal = mkOption {
         description = mdDocs "The local packages, encoded as overrides.";
-        type = util.types.cabalOverrides;
+        type = util.types.cabalOverridesVia "project";
         default = import ../lib/deps/local.nix {
           config = global;
           inherit lib;
@@ -486,7 +486,7 @@ in {
       };
 
       resolvedServices = mkOption {
-        description = mdDoc "Magic modules that allow merging of env-specific service config with their base config.";
+        description = mdDoc "Magic modules that allow merging env-specific service config with their base config.";
         type = attrsOf (submodule resolveServiceModule);
         default = mapAttrs (_: _: {}) config.services;
         readOnly = true;
@@ -504,9 +504,19 @@ in {
 
     services.ssh.enable = config.defaults;
 
-    ghc.overrides = mkDefault (
-      util.concatOverrides [config.internal.overridesLocal config.internal.overridesInherited config.overrides]
-    );
+    ghc = {
+      name = mkDefault config.name;
+
+      overrides = mkDefault (
+        util.concatOverrides [
+          config.internal.overridesInherited
+          config.internal.overridesLocal
+          config.overrides
+        ]
+        );
+
+      gen-overrides = mkDefault true;
+    };
 
     hostPorts = util.foldMapAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
 

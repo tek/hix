@@ -116,6 +116,7 @@ let
         (text package)
         (opt "package" "Package" mod-package)
         (opt "general" "General" mod-general)
+        (text ifd)
       ];
     }
     {

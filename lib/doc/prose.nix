@@ -364,6 +364,68 @@ in {
 
   '';
 
+  ifd = ''
+  ## Multiple systems and IFD {#ifd}
+
+  A set of flake outputs is defined for a specific architecture/system combination like `x86_64-linux`, which is the
+  second level key in the `outputs` set.
+  When a flake command like `nix build` is executed, Nix determines the system identifier matching the current machine
+  and looks up the target in that set, like `packages.x86_64-linux.parser`.
+  This means that you have to define a (not necessarily) identical output set for each architecture and system you would
+  like to support for your project.
+
+  While Hix takes care of structuring outputs for all supported [systems](#opt-general-systems) (via
+  [flake-utils](https://github.com/numtide/flake-utils)), this feature comes with a significant caveat:
+  When any part of an output set cannot be purely evaluated because it imports a file that was created by a derivation
+  in the same evaluation (which is called Import From Derivation, IFD), evaluating this output will cause that
+  derivation to be built.
+
+  This becomes a critical problem when running the command `nix flake check`, which is a sort of test suite runner for
+  flakes, because it evaluates *all* outputs before running the checks.
+  Hix defines checks for all packages and GHC versions, so it is generally desirable to be able to run this command in
+  CI.
+  Unfortunately, `cabal2nix` (which generates all Haskell derivations) uses IFD.
+
+  ### On-the-fly derivations {#no-ifd}
+
+  To mitigate this problem, Hix can generate derivations in a similar manner to `cabal2nix`, controlled by the option
+  [](#opt-general-ifd) (on by default).
+  For local packages, this is rather straightforward – Hix can use the package config to determine the derivations
+  dependencies and synthesize a simple derivation.
+
+  It gets more difficult when [overrides](#ghc) are used, since these are usually generated from Hackage or flake
+  inputs, where the only information available is a Cabal file.
+  In order to extract the dependencies, we would either have to run a subprocess (via IFD) or implement a Cabal config
+  parser in Nix (which has [also been done](https://github.com/cdepillabout/cabal2nixWithoutIFD)).
+
+  As a pragmatic compromise, Hix instead splits the override derivation synthesis into two separate passes:
+
+  - The flake app `gen-overrides` collects all `cabal2nix` overrides and stores their derivations in a file in the
+    repository.
+  - Whenever a build is performed afterwards, it loads the derivations from that file, avoiding the need for IFD!
+
+  In order to use this feature, the option [](#opt-general-gen-overrides.enable) must be set to `true`.
+
+  The derivations can be written to the file configured by [](#opt-general-gen-overrides.file) with:
+
+  ```
+  $ nix run .#gen-overrides
+  ```
+
+  Of course this means that `gen-overrides` will have to be executed every time an override is changed, but don't worry
+  – Hix will complain when the metadata doesn't match!
+
+  ::: {.note}
+  This feature is experimental.
+  :::
+
+  ::: {.note}
+  If your configuration evaluates overridden packages unconditionally, the command will not work on the first execution,
+  since it will try to read the file and terminate with an error.
+  In that (unlikely) case, you'll have to set `gen-overrides.enable = false` before running it for the first time.
+  :::
+  '';
+
   environments = ''
   ## Environments {#envs}
 
@@ -520,7 +582,7 @@ in {
   - `self` and `super` – The final and previous state of the package set, as is common for nixpkgs extension functions
   - `pkgs` – The nixpkgs set
   - `keep` – Reset the previous combinators and use the default package
-  - `noHpack` – A modifier for the `source` combinators instructing cabal2nix to not use HPack
+  - `noHpack` – A modifier for the `source` combinators instructing cabal2nix not to use HPack
   - `hsLib` – The entire nixpkgs tool set `haskell.lib`
   - `compilerName` – The `name` attribute of the GHC package
   - `compilerVersion` – The `version` attribute of the GHC package

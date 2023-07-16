@@ -11,7 +11,7 @@ with lib;
 
       The combinators are described in [](#overrides-combinators).
       '';
-      type = util.types.cabalOverrides;
+      type = util.types.cabalOverridesVia "global";
       example = literalExpression ''
       {hackage, fast, jailbreak, ...}: {
         aeson = fast (hackage "2.0.0.0" "sha54321");
@@ -37,7 +37,7 @@ with lib;
       The special keys `local` and `localMin` contain the local packages and their minimal build variants, respectively.
       Local packages are only propagated when [](#opt-general-depsFull) is used.
       '';
-      type = unspecified;
+      type = lazyAttrsOf (util.types.cabalOverridesVia config.main);
       default = {
         local = util.overridesDeps "local" ++ toList config.envs.dev.internal.overridesLocal;
         localMin = util.overridesDeps "localMin" ++ toList config.envs.min.internal.overridesLocal;
@@ -55,6 +55,28 @@ with lib;
       '';
       type = bool;
       default = true;
+    };
+
+    gen-overrides = {
+
+      enable = mkOption {
+        description = mdDoc ''
+        The flake app `.#gen-overrides` collects all cabal2nix-based derivations from the [overrides](#ghc) that would
+        require IFD when computed on the fly.
+
+        Setting this flag instructs Hix to read the generated derivations when building, and to abort the build when
+        they are missing or outdated.
+        '';
+        type = bool;
+        default = false;
+      };
+
+      file = mkOption {
+        description = mdDoc "The relative path of the file in which the overrides are stored.";
+        type = str;
+        default = "ops/overrides.nix";
+      };
+
     };
 
     internal = let
@@ -84,4 +106,5 @@ with lib;
     };
 
   };
+
 }

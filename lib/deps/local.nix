@@ -7,6 +7,7 @@
 with lib;
 let
   gen-cabal = import ../gen-cabal.nix { inherit config lib; };
+  c2n = import ./cabal2nix.nix { inherit (config) pkgs; };
 
   buildInputs = api: opt:
   if isFunction opt

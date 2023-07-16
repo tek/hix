@@ -28,4 +28,6 @@ let
 
 in localOutputs // {
   lib = api;
+
+  __functor = self: self.lib.flake;
 }

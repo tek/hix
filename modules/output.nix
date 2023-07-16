@@ -11,6 +11,10 @@ let
 
   libOutput = import ../lib/output.nix { inherit config lib util; };
 
+  genOverrides = import ../lib/gen-overrides.nix { inherit config lib util; };
+
+  showOverrides = import ../lib/show-overrides.nix { inherit config lib util; };
+
   # TODO use the json method and print in cli
   show-config = util.paramApp {
     name = "show-config";
@@ -25,6 +29,11 @@ let
   };
 
   commandApps = mapAttrs (_: c: app "${c.path}");
+
+  genAll = pkgs.writeScript "hix-gen-all" ''
+  ${config.hpack.script}
+  ${if config.gen-overrides.enable then genOverrides else ""}
+  '';
 
 in {
   options = {
@@ -124,6 +133,9 @@ in {
         cli = app "${config.internal.hixCli.package}/bin/hix";
         cmd = commandApps config.commands;
         env = util.foldMapAttrs envApps (attrValues util.visibleEnvs);
+        gen-overrides = app "${genOverrides}";
+        gen = app "${genAll}";
+        show-overrides = app "${showOverrides}";
       };
 
     };

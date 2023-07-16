@@ -5,8 +5,7 @@ with lib;
   options = with types; {
     name = mkOption {
       type = str;
-      description = mdDoc "An identifier used for describing the package set.";
-      default = "unnamed";
+      description = mdDoc "A unique identifier of the package set.";
     };
 
     compiler = mkOption {
@@ -75,6 +74,17 @@ with lib;
       readOnly = true;
     };
 
+    gen-overrides = mkOption {
+      description = mdDoc ''
+      Allow this GHC to use pregenerated overrides.
+      Has no effect when [](#opt-general-gen-overrides) is disabled.
+
+      Disabled by default, but enabled for GHCs that are defined in an environment.
+      '';
+      type = bool;
+      default = false;
+    };
+
   };
 
   config = {
@@ -84,10 +94,7 @@ with lib;
     nixpkgsOptions = util.unlessDev config global.envs.dev.ghc.nixpkgsOptions;
 
     pkgs = let
-      go = util.ghcOverlay {
-        inherit (config) pkgs compiler name overrides;
-        inherit (config.nixpkgs) rev;
-      };
+      go = util.ghcOverlay { inherit global; ghc = config; };
       options = recursiveUpdate {
         inherit (global) system;
         overlays = [go] ++ config.overlays;
@@ -97,7 +104,7 @@ with lib;
 
     crossPkgs = mkDefault config.pkgs;
 
-    vanillaGhc = mkDefault ((import config.nixpkgs { inherit (global) system; }).haskell.packages.${config.compiler});
+    vanillaGhc = mkDefault (config.pkgs.haskell.packages.${config.compiler});
 
     ghc = config.crossPkgs.hixPackages;
 

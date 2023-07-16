@@ -8,63 +8,40 @@ with pkgs.lib;
 let
   modifiers = import ./modifiers.nix { inherit pkgs; };
   spec = import ./spec.nix { inherit (pkgs) lib; };
+  c2n = import ./cabal2nix.nix { inherit pkgs; };
 
-  inherit (spec) transform transform_ set;
+  inherit (spec) transform transform_ decl drv;
   hl = pkgs.haskell.lib;
 
-  option = name: value: spec:
-  let
-    old = spec.options or {};
-  in spec // { options = old // { ${name} = value; }; };
-
-  options = name: default: spec:
-  (spec.options or {}).${name} or default;
-
-
   transformers = {
-    jailbreak = transform_ hl.doJailbreak;
-    configure = flag: transform_ (flip hl.appendConfigureFlag flag);
-    configures = flags: transform_ (flip hl.appendConfigureFlags flags);
-    override = conf: transform_ (flip hl.overrideCabal conf);
-    overrideAttrs = f: transform_ (drv: drv.overrideAttrs f);
-    buildInputs = inputs: transform_ (drv: drv.overrideAttrs (old: { buildInputs = old.buildInputs ++ inputs; }));
-    minimal = transform_ modifiers.minimal;
-    profiling = transform_ modifiers.profiling;
-    noprofiling = transform_ modifiers.noprofiling;
-    unbreak = transform_ modifiers.unbreak;
-    fast = transform_ modifiers.fast;
-    notest = transform_ modifiers.notest;
-    nodoc = transform_ modifiers.nodoc;
-    bench = transform_ modifiers.bench;
-    nobench = transform_ modifiers.nobench;
+    jailbreak = transform_ "jailbreak" modifiers.jailbreak;
+    configure = flag: transform_ "configure" (flip hl.appendConfigureFlag flag);
+    configures = flags: transform_ "configures" (flip hl.appendConfigureFlags flags);
+    override = conf: transform_ "override" (flip hl.overrideCabal conf);
+    overrideAttrs = f: transform_ "overrideAttrs" (drv: drv.overrideAttrs f);
+    buildInputs = inputs: transform_ "buildInputs" (drv: drv.overrideAttrs (old: { buildInputs = old.buildInputs ++ inputs; }));
+    minimal = transform_ "minimal" modifiers.minimal;
+    profiling = transform_ "profiling" modifiers.profiling;
+    noprofiling = transform_ "noprofiling" modifiers.noprofiling;
+    unbreak = transform_ "unbreak" modifiers.unbreak;
+    fast = transform_ "fast" modifiers.fast;
+    notest = transform_ "notest" modifiers.notest;
+    nodoc = transform_ "nodoc" modifiers.nodoc;
+    bench = transform_ "bench" modifiers.bench;
+    nobench = transform_ "nobench" modifiers.nobench;
   };
 
-  hackage = ver: sha256: spec.create ({ self, pkg, ... }: {
-    drv = modifiers.unbreak (self.callHackageDirect { inherit pkg ver sha256; } {});
-  });
+  reset = drv null;
 
-  cabal2nix = src: spec.create ({ self, final, pkg, ... }: {
-    drv = self.callCabal2nixWithOptions pkg src (options "cabal2nix" "" final) (options "cabal2nix-overrides" {} final);
-  });
+  noHpack = option "cabal2nix" "Cabal2nix option --no-hpack" "--no-hpack";
 
-  source = rec {
-    root = cabal2nix;
-    sub = src: path: cabal2nix "${src}/${path}";
-    package = src: path: sub src "packages/${path}";
-  };
-
-  drv = d: set { drv = d; };
-
-  keep = drv null;
-
-  noHpack = option "cabal2nix" "--no-hpack";
-
-  cabalOverrides = option "cabal2nix-overrides";
+  cabalOverrides = option "cabal2nix-overrides" "Cabal2nix overrides";
 
 in transformers // {
-  inherit hackage source self super pkgs keep transform transform_ option noHpack cabalOverrides drv;
+  inherit (c2n) hackage source;
+  inherit self super pkgs reset transform transform_ option noHpack cabalOverrides drv;
   hsLib = hl;
   inherit (pkgs) system lib;
-  compilerName = self.ghc.name;
-  compilerVersion = self.ghc.version;
+  ghcName = self.ghc.name;
+  ghcVersion = self.ghc.version;
 }

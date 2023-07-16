@@ -6,6 +6,8 @@ let
 
   unbreak = hl.unmarkBroken;
 
+  jailbreak = hl.doJailbreak;
+
   noprofiling = hl.disableLibraryProfiling;
 
   profiling = hl.enableLibraryProfiling;
@@ -21,7 +23,7 @@ let
   minimal = p: noprofiling (nodoc (nobench (notest (unbreak p))));
 
 in {
-  inherit unbreak profiling noprofiling minimal notest bench nobench nodoc;
+  inherit unbreak jailbreak profiling noprofiling minimal notest bench nobench nodoc;
 
   fast = p: noprofiling (nodoc p);
 }

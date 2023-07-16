@@ -7,20 +7,15 @@ with lib;
 let
 
   inherit (config.internal) pkgs;
+  console = import ./console.nix { inherit lib; };
+  inherit (console) color indent indentLine;
 
   mods = util.modulesRaw {} (util.modules ++ [{ system = config.system; } (import ../modules/system.nix)]);
 
   pathSegs = if path == "" then [] else splitString "." path;
 
-  unlines = concatStringsSep "\n";
-
-  indentLine = l: "  " + l;
-
-  indent = map indentLine;
-
+  # TODO remove
   concatMapAttrs = f: a: concatLists (mapAttrsToList f a);
-
-  color = n: t: "\\e[" + toString n + "m" + t + "\\e[0m";
 
   colors = {
     attrset = "33";
@@ -161,7 +156,7 @@ let
 
   stringifyModule = c: m: concatMapAttrs (n: a: optionals (hasAttr n c) (stringifyValue c.${n} n a)) m;
 
-  stringifyRoot = pkgs.writeText "project-options" (unlines (stringifyModule (zoom pathSegs mods.config) mods.options));
+  stringifyRoot = pkgs.writeText "project-options" (utils.unlines (stringifyModule (zoom pathSegs mods.config) mods.options));
 
   palette = "Colors: ${concatStringsSep " | " (mapAttrsToList (flip color) colors)}";
 
@@ -169,5 +164,5 @@ in pkgs.writeScript "show-config" ''
   #!${pkgs.zsh}/bin/zsh
   print "${palette}"
   print ""
-  while IFS='\n' read -r line; do echo -e $line; done <  ${stringifyRoot}
+  while IFS='\n' read -r line; do echo -e $line; done < ${stringifyRoot}
 ''

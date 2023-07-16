@@ -39,6 +39,8 @@ let
   asFunction = f:
   if isFunction f then f else _: f;
 
+  unwords = concatStringsSep " ";
+
   unlines = concatStringsSep "\n";
 
   unlinesMap = concatMapStringsSep "\n";
@@ -100,6 +102,20 @@ let
 
   evalModules = modules: (lib.evalModules { inherit modules; }).config;
 
+  overridesVia = desc: o:
+  if desc == null
+  then o
+  else if isAttrs o && o ? __source && o ? __functor
+  then { __source = [desc] ++ o.__source; inherit (o) __functor; }
+  else if isFunction o
+  then { __source = [desc]; __functor = _: o; }
+  else if isList o
+  then map (overridesVia desc) o
+  else if isAttrs o
+  then mapAttrs (_: overridesVia) o
+  else o
+  ;
+
 in {
   inherit
   flake-utils
@@ -110,6 +126,7 @@ in {
   normalizeOverrides
   overridesFor
   asFunction
+  unwords
   unlines
   unlinesMap
   unlinesConcatMap
@@ -123,9 +140,11 @@ in {
   mergeAll'
   mergeAll
   toTitle
+  versionAtLeast
   minGhc
   empty
   evalModules
+  overridesVia
   ;
 
   ghcOverlay = import ./ghc-overlay.nix;

@@ -22,6 +22,7 @@ let
     bootstrap = test "bootstrap";
     new-static = test "new-static";
     new-static-github = test "new-static-github";
+    overrides = test "overrides";
     subdir = test "subdir";
     local-prelude = test "local-prelude";
   };
@@ -67,22 +68,44 @@ in {
   fi
   ''}
 
+  check_eq()
+  {
+    if [[ $1 != $2 ]]
+    then
+      fail "$3:\n$1"
+      return 1
+    fi
+  }
+
+  check_re()
+  {
+    if [[ ! $1 =~ $2 ]]
+    then
+      fail "$3:\n$1"
+      return 1
+    fi
+  }
+
   check()
   {
-    output=$(eval $1)
-    if [[ $output != $2 ]]
-    then
-      fail "$3:\n$output"
-    fi
+    check_eq "$(eval $1)" $2 $3
   }
 
   check_match()
   {
-    output=$(eval $1)
-    if [[ ! $output =~ $2 ]]
-    then
-      fail "$3:\n$output"
-    fi
+    check_re "$(eval $1)" $2 $3
+  }
+
+  check_err()
+  {
+    setopt local_options no_err_return
+    check_eq "$(eval $1 2>&1)" $2 $3
+  }
+
+  check_match_err()
+  {
+    setopt local_options no_err_return
+    check_re "$(eval $1 2>&1)" $2 $3
   }
 
   ghci_match()

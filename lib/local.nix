@@ -2,7 +2,6 @@
 
 hix.pro ({config, lib, ...}: {
   compiler = "ghc92";
-  systems = ["x86_64-linux"];
 
   hackage = {
     versionFile = "ops/version.nix";
@@ -14,6 +13,7 @@ hix.pro ({config, lib, ...}: {
     exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";
     flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
   };
+  gen-overrides.enable = true;
 
   cabal = {
     prelude = {
