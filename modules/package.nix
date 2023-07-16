@@ -16,7 +16,7 @@ let
     pkgConfig.test.enable || anyEnabled pkgConfig.tests ||
     pkgConfig.benchmark.enable || anyEnabled pkgConfig.benchmarks;
 
-  libModule = {
+  libModule = {name ? pkgName, config, ...}: {
 
     options = with types; {
 
@@ -25,6 +25,36 @@ let
         type = listOf str;
         example = literalExpression ''["Control.Concurrent.STM" "Data.Text"]'';
         default = [];
+      };
+
+      public = mkOption {
+        description = mdDoc "Whether to expose an internal library.";
+        type = bool;
+        default = true;
+      };
+
+      dep = {
+
+        minor = mkOption {
+          description = mdDoc ''
+          Dependency string for referencing this library with its version from other Cabal package.
+          Like [](#opt-package-dep), but for sublibraries.
+          '';
+          type = util.types.hpackDep;
+          readOnly = true;
+          default = { name = "${pkgConfig.name}:${config.name}"; version = "^>= ${pkgConfig.cabal-config.version}"; };
+        };
+
+        exact = mkOption {
+          description = mdDoc ''
+          Dependency string for referencing this library with its version from other Cabal package.
+          Like [](#opt-package-dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
+          '';
+          type = util.types.hpackDep;
+          readOnly = true;
+          default = { name = "${pkgConfig.name}:${config.name}"; version = "== ${pkgConfig.cabal-config.version}"; };
+        };
+
       };
 
     };
@@ -68,7 +98,7 @@ let
       description = "submodule of cabal-options and cabal-component";
     };
 
-  libSubmodule = component libModule "lib" "library" null true;
+  libSubmodule = component libModule "lib" "library" null;
 
   exeSubmodule = default: component (exeModule "executable" default) "app" "executable" "exeSuffix";
 
@@ -100,7 +130,13 @@ in {
       description = mdDoc ''
       The library for this package.
       '';
-      type = libSubmodule;
+      type = libSubmodule true;
+      default = {};
+    };
+
+    libraries = mkOption {
+      description = mdDoc "";
+      type = attrsOf (libSubmodule false);
       default = {};
     };
 
@@ -284,10 +320,6 @@ in {
         This results in the dependency string `core >= 0.4.1.0 && < 0.5` in the Cabal file.
 
         Also works when using [](#opt-package-versionFile).
-
-        ::: {.note}
-        Don't use this to depend on the library in another component – it will cause infinite recursion.
-        :::
         '';
         type = util.types.hpackDep;
         readOnly = true;

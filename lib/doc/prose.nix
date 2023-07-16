@@ -311,8 +311,8 @@ in {
   package = ''
   ### Package configuration {#package-conf}
 
-  Packages may contain multiple components: an optional library and any number of executables, test suites or benchmarks
-  (Cabal does support multiple libraries now, but Hix doesn't yet).
+  Packages may contain multiple components: an optional library and any number of sublibraries, executables, test suites
+  or benchmarks.
 
   Each of those can be specified as the single component of its type using the singular-name option, like `executable`,
   or as a value in the plural-name submodule, or both:
@@ -340,6 +340,10 @@ in {
   - The option `debug` sets `enable` to `false`, so it is omitted from the configuration.
 
   If no component was enabled, Hix defaults to enabling the default executable.
+
+  Multiple libraries are supported with the same syntax as other components.
+  You can depend on them with the dependency string `<pkg>:<lib>`; when depending from another package, the library must
+  have `public = true;` set.
 
   '';
 

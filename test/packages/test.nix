@@ -36,7 +36,7 @@ let
   '';
 
   targetRoot = builtins.toFile "cabal-target-root" ''
-  cabal-version: 2.0
+  cabal-version: 3.0
 
   -- This file has been generated from package.yaml by hpack version 0.35.2.
   --
@@ -47,7 +47,7 @@ let
   description:    See https://hackage.haskell.org/package/root/docs/Root.html
   author:         Author McCodeface
   maintainer:     Author McCodeface
-  license:        GPL-3
+  license:        GPL-3.0-only
   build-type:     Simple
 
   library
@@ -60,10 +60,42 @@ let
     ghc-options: -Wunused-imports
     build-depends:
         aeson
+      , array ==0.5.4.0
       , base >=4 && <6
-      , incipit ==5
     mixins:
-        incipit hiding (Prelude)
+        array hiding (Data.Array)
+    default-language: GHC2021
+
+  library lib1
+    visibility: public
+    exposed-modules:
+        Root.Lib1
+    hs-source-dirs:
+        src-1
+    default-extensions:
+        DataKinds
+    ghc-options: -Wunused-imports
+    build-depends:
+        base >=4 && <6
+    default-language: GHC2021
+
+  library lib2
+    visibility: public
+    exposed-modules:
+        Root.Lib2
+    other-modules:
+        Paths_root
+    autogen-modules:
+        Paths_root
+    hs-source-dirs:
+        lib2
+    default-extensions:
+        DataKinds
+    ghc-options: -Wunused-imports
+    build-depends:
+        base >=4 && <6
+      , root:lib1 ==23
+      , transformers
     default-language: GHC2021
 
   executable run
@@ -79,8 +111,8 @@ let
     ghc-options: -Wunused-imports -threaded -rtsopts -with-rtsopts=-N
     build-depends:
         base >=4 && <6
-      , dep
-      , root
+      , root >=23 && <23.1
+      , root:{lib1,lib2}
     default-language: GHC2021
 
   test-suite root-unit
@@ -116,5 +148,7 @@ in {
     then
       fail "The generated Cabal file for 'root' differs from the target."
     fi
+
+    check 'nix run .#run' 'string/lib2/lib1' 'Output is wrong'
   '';
 }

@@ -20,8 +20,6 @@ let
   deprecatedPathRename = fatal: path: new: args:
   deprecatedPath fatal path (renameAdvice new) args;
 
-  notAttrs = a: !(isAttrs a);
-
   actIf = cond: path: f: args: let
     target = attrByPath path null args;
   in if target != null && cond target then f args else args;
@@ -59,9 +57,9 @@ let
       "Extensions are now read from cabal files for ghci and can be set in 'packages.cabal.extensions'")
     (deprecatedPath true ["ghci" "preludePackage"] preludeError)
     (deprecatedPath true ["ghci" "preludeModule"] preludeError)
-    (actIf notAttrs ["compat"] (deprecatedRename false "compat" "compat.enable"))
+    (actIf isBool ["compat"] (deprecatedRename false "compat" "compat.enable"))
     (actIf isFunction ["ghcid" "commands"] (throw "The option 'ghcid.commands' must be a module."))
-    (actIfAny notAttrs ["packages"] (throw packagesError))
+    (actIfAny isPath ["packages"] (throw packagesError))
     (deprecatedPath true ["hpack" "packages"] "Cabal config has been moved to the top-level option 'packages'")
     normalizeCompat
   ];

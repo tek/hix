@@ -39,6 +39,7 @@ let
 
     basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 
+    # TODO omit base dep if it's already in conf.dependencies
     preludeDeps = {
       dependencies =
         if prelude.enable
@@ -55,8 +56,20 @@ let
     conf.component
   ];
 
-  generateLib = pkg: conf:
-  { library = optionalField "reexported-modules" conf // generateComponent pkg conf; };
+  generateLib = pkg: visibility: conf:
+  {
+    ${conf.name} =
+      optionalAttrs (visibility && conf.public) { visibility = "public"; } //
+      optionalField "reexported-modules" conf //
+      generateComponent pkg conf;
+  };
+
+  generateLibs = conf: let
+    lib = generateLib conf;
+    libs = attrValues conf.libraries;
+  in
+  optionalAttrs conf.library.enable (lib false (conf.library // { name = "library"; })) //
+  { internal-libraries = util.foldMapAttrs (lib true) libs; };
 
   generateExe = pkg: conf:
   { ${conf.name} = { inherit (conf) main; } // generateComponent pkg conf; };
@@ -84,7 +97,7 @@ let
 
     desc = optionalAttrs (conf.description != null) { inherit (conf) description; };
 
-    library = optionalAttrs conf.library.enable (generateLib conf conf.library);
+    libraries = generateLibs conf;
     exes = generateExes "executable" conf;
     tests = generateExes "test" conf;
     benches = generateExes "benchmark" conf;
@@ -94,7 +107,7 @@ let
     basic
     opt
     desc
-    library
+    libraries
     exes
     tests
     benches

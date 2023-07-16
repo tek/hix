@@ -4,9 +4,11 @@
   inputs.hix.url = path:HIX;
 
   outputs = { hix, ... }:
-  hix.lib.flake ({lib, ...}: {
+  hix.lib.flake ({config, lib, ...}: let
+    global = config;
+  in {
     main = "root";
-    ghcVersions = ["ghc925"];
+    compiler = "ghc94";
     cabal = {
       dependencies = ["base >= 4 && < 6"];
       ghc-options = ["-Wunused-imports"];
@@ -31,19 +33,39 @@
         };
       };
 
-      root = {
+      root = {config, ...}: {
         src = ./.;
 
         executables.run = {
+          dependOnLibrary = false;
           main = "Run.hs";
           source-dirs = ["app"];
+          dependencies = [global.packages.root.dep.minor];
         };
 
         library = {
           enable = true;
           source-dirs = "src";
-          dependencies = ["aeson" { name = "incipit"; version = 5; mixin = "hiding (Prelude)"; }];
+          dependencies = [
+            "aeson"
+            {
+              name = "array";
+              version = "0.5.4.0";
+              mixin = ["hiding (Data.Array)"];
+            }
+          ];
           paths = false;
+        };
+
+        libraries = {
+          lib1 = {
+            source-dirs = "src-1";
+            paths = false;
+          };
+          lib2 = {
+            public = true;
+            dependencies = ["transformers" config.libraries.lib1.dep.exact];
+          };
         };
 
         test = {
@@ -53,7 +75,7 @@
 
         cabal = {
           version = "23";
-          meta.executables.run.dependencies = ["dep" "root"];
+          meta.executables.run.dependencies = ["root:{lib1,lib2}" "root"];
         };
 
       };

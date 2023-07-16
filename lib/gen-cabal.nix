@@ -22,10 +22,12 @@ let
   rm -f package.yaml
   '';
 
-  depPkg = n:
-  if isAttrs n
-  then n.name
-  else head (splitString " " n);
+  depPkg = spec: let
+    name = 
+    if isAttrs spec
+    then spec.name
+    else spec;
+    in head (splitString ":" (head (splitString " " name)));
 
   simpleCabalDrvWith = conf: { pkgs, self, hsLib, ... }: pname: pkg:
   let
@@ -39,10 +41,12 @@ let
     then self.${n}
     else throw "The Cabal config for '${pname}' has a dependency on the nonexistent package '${n}'.";
 
-    depspec = n:
-    if n == pname
+    depspec = spec: let
+      name = depPkg spec;
+    in
+    if name == pname
     then []
-    else [(dep (depPkg n))];
+    else [(dep name)];
 
     deps = c: concatMap depspec (c.dependencies or []);
 
