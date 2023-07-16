@@ -302,6 +302,23 @@ in {
   Since `dependencies` is a list option, the values are merged, so that the `unit` component in `api` will have the
   dependencies `["global-dep" "api-dep" "api-test-dep"]`.
 
+  Verbatim configuration for individual components that have no specific option may be specified in the `component`
+  module:
+
+  ```nix
+  {
+    packages = {
+      core = {
+        library = {
+          component = {
+            other-modules = ["Prelude"];
+          };
+        };
+      };
+    };
+  }
+  ```
+
   '';
 
   cabalOptionsHeader = ''
