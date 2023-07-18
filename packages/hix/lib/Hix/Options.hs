@@ -140,7 +140,9 @@ data BootstrapOptions =
 data EnvRunnerCommandOptions =
   EnvRunnerCommandOptions {
     options :: EnvRunnerOptions,
-    test :: TestOptions
+    test :: TestOptions,
+    extraGhci :: Maybe ExtraGhciOptions,
+    extraGhcid :: Maybe ExtraGhcidOptions
   }
   deriving stock (Show, Generic)
 
@@ -284,6 +286,8 @@ envParser = do
     component <- optional targetSpecParser
     pure EnvRunnerOptions {..}
   test <- testOptionsParser
+  extraGhci <- extraGhciParser
+  extraGhcid <- extraGhcidParser
   pure EnvRunnerCommandOptions {..}
 
 ghciParser :: Parser GhciOptions
