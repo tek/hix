@@ -3,7 +3,7 @@ with pkgs.lib;
 let
   lib = pkgs.lib;
 
-  modules = [{ inherit (pkgs) system; }] ++ import ../../modules/all-modules.nix { inherit inputs; projectModules = []; };
+  modules = [{ inherit (pkgs) system; }] ++ import ../../modules/all-modules.nix { inherit inputs; };
   config = (evalModules { inherit modules; }).config;
 
   global = config;
