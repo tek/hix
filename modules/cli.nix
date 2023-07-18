@@ -55,7 +55,7 @@ in {
     } // (
           if config.internal.hixCli.dev
           then { hix = minimal (source.package ../. "hix"); }
-          else { hix = minimal (hackage "0.5.7" "1bm4q32k95nc389fypp2v6f9ljg20nyqknipqj5v8fym8mvf137m"); }
+          else { hix = minimal (hackage "0.5.8" "1k6q65vwvi250vlfvhk736s4scp46gmr95jva4ksz2rmradz3sxg"); }
       );
 
     ghc = {
