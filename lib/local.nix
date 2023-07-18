@@ -4,6 +4,11 @@ hix.pro ({config, lib, ...}: {
   compiler = "ghc92";
   systems = ["x86_64-linux"];
 
+  envs.dev.ghc.nixpkgs = builtins.fetchTarball {
+    url = "https://github.com/nixos/nixpkgs/tarball/7e63eed145566cca98158613f3700515b4009ce3.tar.gz";
+    sha256 = "sha256-vtflsfKkHtF8IduxDNtbme4cojiqvlvjp5QNYhvoHXc=";
+  };
+
   hackage = {
     versionFile = "ops/version.nix";
     tag = false;
