@@ -2,6 +2,7 @@
 
 hix.pro ({config, lib, ...}: {
   compiler = "ghc92";
+  systems = ["x86_64-linux"];
 
   hackage = {
     versionFile = "ops/version.nix";
