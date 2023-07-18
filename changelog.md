@@ -1,6 +1,7 @@
 # Unreleased
 
 * Support multiple Cabal libraries in a single package.
+* Add GHCi(d) CLI options `--ghci-options` and  `--ghcid-options`.
 
 # 0.5.5
 

@@ -27,6 +27,7 @@ import Hix.Options (
   ComponentSpec (ComponentSpec),
   EnvRunnerOptions (EnvRunnerOptions),
   GhciOptions (GhciOptions, component),
+  GhcidOptions (GhcidOptions),
   PackageSpec (PackageSpec),
   TargetSpec (TargetForComponent, TargetForFile),
   TestOptions (TestOptions),
@@ -89,8 +90,8 @@ spec1 =
     component = Just (ComponentSpec "test" (Just (SourceDir [reldir|test|])))
   }
 
-options :: GhciOptions
-options =
+ghciOptions :: GhciOptions
+ghciOptions =
   GhciOptions {
     config = Left GhciConfig {
       packages,
@@ -105,8 +106,13 @@ options =
       test = Just "test_server",
       runner = Just "generic",
       cd = ChangeDir True
-    }
+    },
+    extra = Nothing
   }
+
+options :: GhcidOptions
+options =
+  GhcidOptions {ghci = ghciOptions, extra = Nothing}
 
 ghcidTarget ::
   Path Abs Dir ->
@@ -165,5 +171,5 @@ import #{m}|]
 
 test_moduleName :: TestT IO ()
 test_moduleName = do
-  conf <- evalEither =<< liftIO (runM root (assemble options { component = spec4 }))
+  conf <- evalEither =<< liftIO (runM root (assemble options.ghci { component = spec4 }))
   target_moduleName === conf.script

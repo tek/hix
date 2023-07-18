@@ -689,6 +689,9 @@ in {
   ghci> (check . withTests 1 . property . test) test_server
   ```
 
+  You can specify arbitrary additional command line arguments for GHCi and GHCid with `--ghci-options` and
+  `--ghcid-options`.
+
   Another built-in command is `run`, which executes an arbitrary shell command in an environment:
 
   ```

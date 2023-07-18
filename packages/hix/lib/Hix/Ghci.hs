@@ -31,7 +31,14 @@ import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (Ghci
 import Hix.Json (jsonConfig)
 import Hix.Monad (M, noteGhci)
 import qualified Hix.Options as Options
-import Hix.Options (GhciOptions (GhciOptions), TargetSpec (TargetForFile), TestOptions (TestOptions))
+import Hix.Options (
+  ExtraGhciOptions,
+  ExtraGhcidOptions (ExtraGhcidOptions),
+  GhciOptions (GhciOptions),
+  GhcidOptions,
+  TargetSpec (TargetForFile),
+  TestOptions (TestOptions),
+  )
 import Hix.Path (rootDir)
 
 relativeToComponent ::
@@ -134,21 +141,24 @@ ghciScriptFile tmp text =
 
 searchPathArg :: NonEmpty (Path Abs Dir) -> Text
 searchPathArg paths =
-  [exon|-i#{colonSeparated}|]
+  [exon| -i#{colonSeparated}|]
   where
     colonSeparated = Text.intercalate ":" (pathText <$> toList paths)
 
 ghciCmdline ::
   GhciTest ->
+  Maybe ExtraGhciOptions ->
   Path Abs File ->
   Maybe (Path Abs File) ->
   GhciRun
-ghciCmdline test scriptFile runScriptFile =
+ghciCmdline test extra scriptFile runScriptFile =
   GhciRun {..}
   where
-    shell = [exon|##{Text.unwords (coerce test.args)} #{sp} -ghci-script=##{toFilePath scriptFile}|]
+    shell = [exon|##{Text.unwords (coerce test.args)}#{sp} -ghci-script=##{toFilePath scriptFile}#{extraOpts}|]
     run = runScriptFile <&> \ f -> [exon|-ghci-script=##{toFilePath f}|]
     sp = foldMap searchPathArg (nonEmpty test.searchPath)
+    extraOpts | Just o <- extra = [exon| ##{o}|]
+              | otherwise = ""
 
 ghciCmdlineFromOptions ::
   Path Abs Dir ->
@@ -158,15 +168,19 @@ ghciCmdlineFromOptions tmp opt = do
   conf <- assemble opt
   shellScriptFile <- lift (ghciScriptFile tmp conf.script)
   runScriptFile <- lift (traverse (ghciScriptFile tmp) conf.test)
-  pure (ghciCmdline conf shellScriptFile runScriptFile)
+  pure (ghciCmdline conf opt.extra shellScriptFile runScriptFile)
 
 ghcidCmdlineFromOptions ::
   Path Abs Dir ->
-  GhciOptions ->
+  GhcidOptions ->
   M GhcidRun
 ghcidCmdlineFromOptions tmp opt = do
-  ghci <- ghciCmdlineFromOptions tmp opt
-  pure (GhcidRun [exon|ghcid --command="ghci #{ghci.shell}" --test='##{fromMaybe "main" ghci.test.test}'|] ghci)
+  ghci <- ghciCmdlineFromOptions tmp opt.ghci
+  let
+    test = fromMaybe "main" ghci.test.test
+  pure (GhcidRun [exon|ghcid --command="ghci #{ghci.shell}" --test='##{test}'#{foldMap extra opt.extra}|] ghci)
+  where
+    extra (ExtraGhcidOptions o) = [exon| ##{o}|]
 
 printGhciCmdline ::
   GhciOptions ->
@@ -177,7 +191,7 @@ printGhciCmdline opt = do
   liftIO (Text.putStrLn [exon|ghci #{cmd.shell} #{fold cmd.run}|])
 
 printGhcidCmdline ::
-  GhciOptions ->
+  GhcidOptions ->
   M ()
 printGhcidCmdline opt = do
   tmp <- lift hixTempDir

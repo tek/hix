@@ -98,12 +98,30 @@ data EnvRunnerOptions =
   }
   deriving stock (Show, Generic)
 
+newtype ExtraGhciOptions =
+  ExtraGhciOptions Text
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString)
+
+newtype ExtraGhcidOptions =
+  ExtraGhcidOptions Text
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString)
+
 data GhciOptions =
   GhciOptions {
     config :: Either GhciConfig JsonConfig,
     root :: Maybe (Path Abs Dir),
     component :: TargetSpec,
-    test :: TestOptions
+    test :: TestOptions,
+    extra :: Maybe ExtraGhciOptions
+  }
+  deriving stock (Show, Generic)
+
+data GhcidOptions =
+  GhcidOptions {
+    ghci :: GhciOptions,
+    extra :: Maybe ExtraGhcidOptions
   }
   deriving stock (Show, Generic)
 
@@ -131,7 +149,7 @@ data Command =
   |
   EnvRunner EnvRunnerCommandOptions
   |
-  GhcidCmd GhciOptions
+  GhcidCmd GhcidOptions
   |
   GhciCmd GhciOptions
   |
@@ -250,6 +268,14 @@ testOptionsParser = do
   cd <- cdParser
   pure TestOptions {..}
 
+extraGhciParser :: Parser (Maybe ExtraGhciOptions)
+extraGhciParser =
+  optional (strOption (long "ghci-options" <> help "Additional command line options to pass to ghci"))
+
+extraGhcidParser :: Parser (Maybe ExtraGhcidOptions)
+extraGhcidParser =
+  optional (strOption (long "ghcid-options" <> help "Additional command line options to pass to ghcid"))
+
 envParser :: Parser EnvRunnerCommandOptions
 envParser = do
   options <- do
@@ -266,7 +292,14 @@ ghciParser = do
   root <- rootParser
   component <- targetSpecParser
   test <- testOptionsParser
+  extra <- extraGhciParser
   pure GhciOptions {..}
+
+ghcidParser :: Parser GhcidOptions
+ghcidParser = do
+  ghci <- ghciParser
+  extra <- extraGhcidParser
+  pure GhcidOptions {..}
 
 newParser :: Parser NewOptions
 newParser = do
@@ -289,7 +322,7 @@ commands =
   <>
   command "ghci-cmd" (GhciCmd <$> info ghciParser (progDesc "Print a ghci cmdline to load a module in a Hix env"))
   <>
-  command "ghcid-cmd" (GhcidCmd <$> info ghciParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
+  command "ghcid-cmd" (GhcidCmd <$> info ghcidParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
   <>
   command "new" (NewCmd <$> info newParser (progDesc "Create a new Hix project in the current directory"))
   <>

@@ -34,8 +34,7 @@ in {
       };
 
       exe = mkOption {
-        description =
-          "The executable in the `bin/` directory of [](#opt-hixCli-package).";
+        description = "The executable in the `bin/` directory of [](#opt-hixCli-package).";
         type = path;
         default = "${config.internal.hixCli.package}/bin/hix";
       };
