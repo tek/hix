@@ -36,19 +36,14 @@ in {
   config.commands = {
 
     ghci = {
-      command = ''
-      ghci_cmd=$(${cli} ghci-cmd --config ${json} ''${env_args[@]} ''${cmd_args[@]})
-      eval $ghci_cmd
-      '';
+      ghci.enable = true;
       component = true;
       expose = true;
     };
 
     ghcid = {
-      command = ''
-      ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ''${env_args[@]} ''${cmd_args[@]})
-      eval $ghcid_cmd
-      '';
+      ghci.enable = true;
+      ghci.ghcid = true;
       component = true;
       expose = true;
     };

@@ -14,12 +14,12 @@ let
   in "${opt "-r" "runner"}${opt "-p" "package"}${opt "-m" "module"}${opt "-c" "component"}";
 
   ghciCommand = ''
-  ghci_cmd=$(${cli} ghci-cmd --config ${json} ''${env_args[@]} ${ghciOpts} ''${cmd_args[@]})
+  ghci_cmd=$(${cli} ghci-cmd --config ${json} ${ghciOpts} ''${env_args[@]} ''$@)
   eval $ghci_cmd
   '';
 
   ghcidCommand = ''
-  ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ''${env_args[@]} ${ghciOpts} ''${cmd_args[@]})
+  ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ${ghciOpts} ''${env_args[@]} ''$@)
   eval $ghcid_cmd
   '';
 
