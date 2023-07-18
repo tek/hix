@@ -23,7 +23,7 @@ let
   '';
 
   depPkg = spec: let
-    name = 
+    name =
     if isAttrs spec
     then spec.name
     else spec;
@@ -58,6 +58,7 @@ let
     libraryHaskellDepends = deps (conf.library or {});
     executableHaskellDepends = concatMap deps (attrValues (conf.executables or {}));
     testHaskellDepends = concatMap deps (attrValues (conf.tests or {}));
+    benchmarkHaskellDepends = concatMap deps (attrValues (conf.benchmarks or {}));
   } // conf.passthru or {})) {};
 
   simpleCabalDrv = api: pname:
