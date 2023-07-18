@@ -6,7 +6,7 @@
 }:
 with lib;
 let
-  gen-cabal = import ../gen-cabal.nix { inherit config lib; };
+  cabalDrv = import ../cabal-drv.nix { inherit config lib; };
   c2n = import ./cabal2nix.nix { inherit (config) pkgs; };
 
   buildInputs = api: opt:
@@ -21,7 +21,7 @@ let
   checkIfd = api: name: pkg:
   if ifd
   then api.source.root pkg.src
-  else api.drv (gen-cabal.simpleCabalDrv api name pkg);
+  else api.drv (cabalDrv.drv api name pkg);
 
   mkPackage = api: name: pkg: override api pkg (checkIfd api name pkg);
 

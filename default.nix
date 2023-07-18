@@ -24,7 +24,7 @@ let
     spec = import ./lib/deps/spec.nix { inherit (self) lib; };
   });
 
-  localOutputs = import ./lib/local.nix { inherit inputs; hix = api; };
+  localOutputs = import ./local.nix { inherit inputs; hix = api; };
 
 in localOutputs // {
   lib = api;

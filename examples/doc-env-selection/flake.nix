@@ -1,7 +1,7 @@
 {
   description = "hix test project";
   inputs.hix.url = "github:tek/hix?ref=0.5.6";
-  outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
+  outputs = {hix, ...}: hix ({config, ...}: {
     envs = {
       one.env = { number = 1; };
       two.env = { number = 2; };

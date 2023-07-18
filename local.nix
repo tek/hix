@@ -28,7 +28,7 @@ hix.pro ({config, lib, ...}: {
   };
 
   packages.hix = {
-    src = ../packages/hix;
+    src = ./packages/hix;
 
     cabal = {
 
@@ -86,14 +86,14 @@ hix.pro ({config, lib, ...}: {
 
     packages = let
       pkgs = import inputs.nixpkgs { inherit (config) system; };
-      docs = import ./doc/default.nix { inherit inputs pkgs; inherit (config.internal) hixUrl; };
+      docs = import ./lib/doc/default.nix { inherit inputs pkgs; inherit (config.internal) hixUrl; };
     in {
       docs = docs.html;
     };
 
     apps = let
-      tests = import ../test/default.nix { inherit (config) pkgs; };
-      util = import ./with-config.nix { inherit config lib util; };
+      tests = import ./test/default.nix { inherit (config) pkgs; };
+      util = import ./lib/with-config.nix { inherit config lib util; };
     in {
 
       test = {
@@ -127,14 +127,14 @@ hix.pro ({config, lib, ...}: {
       };
 
       release-nix = let
-        release = import ./release.nix { inherit config lib util; };
+        release = import ./lib/release.nix { inherit config lib util; };
       in {
         type = "app";
         program = "${release.nix}";
       };
 
       release-all = let
-        release = import ./release.nix { inherit config lib util; };
+        release = import ./lib/release.nix { inherit config lib util; };
       in {
         type = "app";
         program = "${release.all}";

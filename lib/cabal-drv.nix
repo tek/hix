@@ -6,9 +6,9 @@ let
   hpackFile = conf:
   toFile "package.yaml" (toJSON (removeAttrs conf ["passthru"]));
 
-  withCabal = pkgs: conf: name: src: let
+  srcWithCabal = pkgs: conf: name: src: let
     cabal = "${name}.cabal";
-  in pkgs.runCommand "${name}-gen-cabal" {} ''
+  in pkgs.runCommand "${name}-cabal-drv" {} ''
   cp -r ${src} $out
   chmod u+w $out
   cd $out
@@ -29,7 +29,7 @@ let
     else spec;
     in head (splitString ":" (head (splitString " " name)));
 
-  simpleCabalDrvWith = conf: { pkgs, self, hsLib, ... }: pname: pkg:
+  drvWith = conf: { pkgs, self, hsLib, ... }: pname: pkg:
   let
     attr = n:
     if hasAttr n conf
@@ -52,7 +52,7 @@ let
 
   in self.callPackage ({mkDerivation}: mkDerivation ({
     inherit pname;
-    src = withCabal pkgs conf pname pkg.src;
+    src = srcWithCabal pkgs conf pname pkg.src;
     version = attr "version";
     license = attr "license";
     libraryHaskellDepends = deps (conf.library or {});
@@ -61,9 +61,9 @@ let
     benchmarkHaskellDepends = concatMap deps (attrValues (conf.benchmarks or {}));
   } // conf.passthru or {})) {};
 
-  simpleCabalDrv = api: pname:
-  simpleCabalDrvWith config.hpack.internal.packages.${pname} api pname;
+  drv = api: pname:
+  drvWith config.hpack.internal.packages.${pname} api pname;
 
 in {
-  inherit withCabal simpleCabalDrv;
+  inherit drv;
 }

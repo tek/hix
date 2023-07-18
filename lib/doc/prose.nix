@@ -442,7 +442,7 @@ in {
 
   ```nix
   {
-    outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
+    outputs = {hix, ...}: hix ({config, ...}: {
       envs.example = {
 
         ghc.compiler = "ghc94";
@@ -599,7 +599,7 @@ in {
     inputs.dep1.url = github:me/dep1;
     inputs.dep2.url = github:me/dep2;
 
-    outputs = { hix, dep1, dep2, ... }: hix.lib.flake {
+    outputs = { hix, dep1, dep2, ... }: hix {
       deps = [dep1];
       depsFull = [dep2];
     };
@@ -626,7 +626,7 @@ in {
     inputs.hix.url = "github:tek/hix";
     inputs.ghc_nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
 
-    outputs = { hix, ghc_nixpkgs, ... }: hix.lib.flake {
+    outputs = { hix, ghc_nixpkgs, ... }: hix {
       envs.dev.ghc.nixpkgs = ghc_nixpkgs;
     };
   }
@@ -804,7 +804,7 @@ in {
 
   ```nix
   {
-    outputs = {hix, ...}: hix.lib.flake ({config, ...}: {
+    outputs = {hix, ...}: hix ({config, ...}: {
 
       services.postgres = {
         # Add NixOS config to the default config computed by Hix
