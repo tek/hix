@@ -93,14 +93,6 @@ in {
       default = {};
     };
 
-    auto = mkOption {
-      description = mdDoc ''
-      Generate Cabal files on the fly if none are present in source directories (or a `package.yaml`).
-      '';
-      type = bool;
-      default = false;
-    };
-
     # TODO cli must be able to resolve components from metadata by reading cabal.project and *.cabal
     manualCabal = mkOption {
       description = mdDoc ''

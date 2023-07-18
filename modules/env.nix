@@ -392,14 +392,6 @@ in {
       '';
     };
 
-    auto = mkOption {
-      type = bool;
-      default = global.auto;
-      description = mdDoc ''
-      Generate the Cabal file on the fly if none is present in the source directory (or a `package.yaml`).
-      '';
-    };
-
     hostPorts = mkOption {
       description = mdDoc ''
       The effective ports of the VM services in the host system.
@@ -483,7 +475,7 @@ in {
         default = import ../lib/deps/local.nix {
           config = global;
           inherit lib;
-          inherit (config) ifd auto localPackage;
+          inherit (config) ifd localPackage;
         };
       };
 

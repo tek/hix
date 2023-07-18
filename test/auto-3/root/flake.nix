@@ -4,7 +4,7 @@
   inputs.hix.url = path:HIX;
 
   outputs = { hix, ... }:
-  hix.lib.auto {
+  hix.lib.flake {
     packages.root = {
       src = ./.;
       executable = {

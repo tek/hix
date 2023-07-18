@@ -3,7 +3,7 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }: hix.lib.auto {
+  outputs = { hix, ... }: hix.lib.flake {
     cabal = {
       base = { name = "base"; version = ">= 4.12 && < 5"; };
       version = "23";

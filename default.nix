@@ -18,9 +18,6 @@ let
 
     flake = projectModules: self.flakeWith { projectModules = toList projectModules; };
 
-    auto = projectModules:
-    self.flakeWith { extraModules = [{ auto = true; ifd = false; }]; projectModules = toList projectModules; };
-
     pro = projectModules:
     self.flakeWith { extraModules = [(import ./modules/pro.nix)]; projectModules = toList projectModules; };
 

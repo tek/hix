@@ -3,7 +3,7 @@
 
   inputs.hix.url = path:HIX;
 
-  outputs = { hix, ... }: hix.lib.auto ({config, ...}: {
+  outputs = { hix, ... }: hix.lib.flake ({config, ...}: {
     packages.root = {
       src = ./.;
       library = { enable = true; source-dirs = "src"; };

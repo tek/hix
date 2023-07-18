@@ -14,7 +14,6 @@ let
     };
     internal.overridesInherited = util.overridesGlobal [compiler];
     ifd = mkIf (!config.compat.ifd) false;
-    auto = mkIf (!config.compat.ifd) true;
   };
 
   ghcVersionEnvs = genAttrs config.ghcVersions ghcVersionEnv;

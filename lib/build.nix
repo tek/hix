@@ -11,10 +11,10 @@ let
 
   onlySystemsConfig = m:
   if isFunction m
-  then a@{lib, util, ...}: onlySystemsConfig (m a)
+  then a@{util, ...}: onlySystemsConfig (m a)
   else
   optionalAttrs (m ? systems) { inherit (m) systems; } //
-  optionalAttrs (m ? config && m.config ? systems) { config = { inherit (m.config) systems;  }; }
+  optionalAttrs (m ? config && m.config ? systems) { config = { inherit (m.config) systems; }; }
   ;
 
   bootConfig = util.evalModules ([(import ../modules/systems.nix)] ++ map onlySystemsConfig projectModules);
