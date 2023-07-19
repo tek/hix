@@ -30,7 +30,7 @@ let
 
   commandApps = mapAttrs (_: c: app "${c.path}");
 
-  genAll = pkgs.writeScript "hix-gen-all" ''
+  genAll = config.pkgs.writeScript "hix-gen-all" ''
   ${config.hpack.script}
   ${if config.gen-overrides.enable then genOverrides else ""}
   '';
