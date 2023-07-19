@@ -401,6 +401,20 @@ in {
       readOnly = true;
     };
 
+    systems = mkOption {
+      description = mdDoc ''
+      The architecture/system identifiers like `x86_64-linux` for which this environment works.
+      This is used to exclude environments from being exposed as shells when they are system-specific, for example when
+      using a VM that only works with Linux.
+      If those shells were exposed, the command `nix flake check` would fail while evaluating the `devShells` outputs,
+      since that doesn't only select the current system.
+
+      If set to `null` (the default), all systems are accepted.
+      '';
+      type = nullOr (listOf str);
+      default = null;
+    };
+
     vm = {
 
       enable = mkEnableOption (mdDoc "the service VM for this env");

@@ -424,6 +424,11 @@ in {
   since it will try to read the file and terminate with an error.
   In that (unlikely) case, you'll have to set `gen-overrides.enable = false` before running it for the first time.
   :::
+
+  Another potential source for `nix flake check` to fail is when an environment with a virtual machine is exposed as a
+  shell.
+  For that purpose, the option [](#opt-env-systems) can be used to define for which systems the environment should be
+  exposed.
   '';
 
   environments = ''

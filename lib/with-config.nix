@@ -130,6 +130,9 @@ let
   ${pkgs.git}/bin/git add flake.lock
   '';
 
+  envSystemAllowed = env:
+  env.systems == null || (elem config.system env.systems);
+
 in basic // {
   inherit
   paramApp
@@ -146,5 +149,6 @@ in basic // {
   downloadStaticCli
   bootstrapWithStaticCli
   bootstrapWithDynamicCli
+  envSystemAllowed
   ;
 }

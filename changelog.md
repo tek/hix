@@ -1,3 +1,7 @@
+# Unreleased
+
+* Allow envs to be excluded from being exposed as `devShells` for specific systems.
+
 # 0.6.0
 
 * Support multiple Cabal libraries in a single package.

@@ -115,7 +115,7 @@ in {
 
       devShells = let
 
-        shells = mapAttrs (_: e: e.shell) util.visibleEnvs;
+        shells = mapAttrs (_: e: e.shell) (filterAttrs (_: util.envSystemAllowed) util.visibleEnvs);
 
       in shells // { default = shells.dev; };
 
