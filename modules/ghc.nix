@@ -77,7 +77,7 @@ with lib;
     gen-overrides = mkOption {
       description = mdDoc ''
       Allow this GHC to use pregenerated overrides.
-      Has no effect when [](#opt-general-gen-overrides) is disabled.
+      Has no effect when [](#opt-general-gen-overrides.enable) is `false`.
 
       Disabled by default, but enabled for GHCs that are defined in an environment.
       '';

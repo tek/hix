@@ -8,6 +8,7 @@
   '';
 
   updateVersions = ''
+  nix build .#docs
   if [[ -z ''${hix_release_skip_test-} ]]
   then
     nix run .#test
