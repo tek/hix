@@ -38,12 +38,7 @@ with lib;
       Local packages are only propagated when [](#opt-general-depsFull) is used.
       '';
       type = lazyAttrsOf (util.types.cabalOverridesVia config.main);
-      default = {
-        local = util.overridesDeps "local" ++ toList config.envs.dev.internal.overridesLocal;
-        localMin = util.overridesDeps "localMin" ++ toList config.envs.min.internal.overridesLocal;
-        all = util.overridesDeps "all" ++ toList config.overrides;
-        dev = util.overridesDeps "dev" ++ toList config.envs.dev.overrides;
-      } // genAttrs config.ghcVersions (v: util.overridesDeps v ++ toList config.envs.${v}.overrides);
+      default = {};
     };
 
     inheritSystemDependentOverrides = mkOption {
@@ -106,5 +101,16 @@ with lib;
     };
 
   };
+
+  config.exportedOverrides = mkDefault (
+    {
+      local = util.overridesDeps "local" ++ toList config.envs.dev.internal.overridesLocal;
+      localMin = util.overridesDeps "localMin" ++ toList config.envs.min.internal.overridesLocal;
+      all = util.overridesDeps "all" ++ toList config.overrides;
+      dev = util.overridesDeps "dev" ++ toList config.envs.dev.overrides;
+    }
+    //
+    genAttrs config.ghcVersions (v: util.overridesDeps v ++ toList config.envs.${v}.overrides)
+  );
 
 }
