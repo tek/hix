@@ -11,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.4.0
-    - uses: cachix/install-nix-action@v20
+    - uses: DeterminateSystems/nix-installer-action@main
+      with:
+        extra-conf: |
+          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+          extra-substituters = https://tek.cachix.org
+          extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
+    - uses: DeterminateSystems/magic-nix-cache-action@main
     - run: nix run .#test
     - run: nix flake check
