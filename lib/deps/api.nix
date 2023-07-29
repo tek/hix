@@ -14,6 +14,7 @@ let
   hl = pkgs.haskell.lib;
 
   transformers = {
+    transformDrv = transform_ "transform-drv";
     jailbreak = transform_ "jailbreak" modifiers.jailbreak;
     configure = flag: transform_ "configure" (flip hl.appendConfigureFlag flag);
     configures = flags: transform_ "configures" (flip hl.appendConfigureFlags flags);
@@ -39,7 +40,7 @@ let
 
 in transformers // {
   inherit (c2n) hackage source;
-  inherit self super pkgs reset transform transform_ option noHpack cabalOverrides drv;
+  inherit self super pkgs reset transform transform_ transformDrv option noHpack cabalOverrides drv;
   hsLib = hl;
   inherit (pkgs) system lib;
   ghcName = self.ghc.name;
