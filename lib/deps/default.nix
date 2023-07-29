@@ -36,7 +36,7 @@ let
 
     impl = meta: {self, ...}: replaceSrc properSrc (self.callPackage meta.drv {});
 
-    d = spec.decl "pregen" "Pregen derivation" { drv = stored.drv; } impl;
+    d = spec.decl "pregen" "Pregen derivation for '${pkg}'" { drv = stored.drv; } impl;
 
     checkMeta =
       if stored.meta != decl.meta
