@@ -233,7 +233,12 @@ in {
     };
 
     buildInputs = mkOption {
-      description = mdDoc "Additional system package dependencies for this environment.";
+      description = mdDoc ''
+      Additional system package dependencies for this environment.
+      ::: {.note}
+      These are only made available to shells and commands, not added to packages, like when they are set in overrides.
+      :::
+      '';
       type = either (functionTo (listOf package)) (listOf package);
       default = [];
     };
@@ -525,6 +530,7 @@ in {
         util.concatOverrides [
           config.internal.overridesInherited
           config.internal.overridesLocal
+          global.overrides
           config.overrides
         ]
         );

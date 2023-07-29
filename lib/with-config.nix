@@ -17,17 +17,9 @@ let
   overridesFromDeps = extra:
   util.concatOverrides (map overridesDeps extra);
 
-  overridesGlobal = extra:
-  util.concatOverrides [
-    (overridesFromDeps (["local" "all"] ++ extra))
-    config.overrides
-  ];
+  overridesGlobal = extra: overridesFromDeps (["local" "all"] ++ extra);
 
-  overridesGlobalMin = extra:
-  util.concatOverrides [
-    (overridesFromDeps (["localMin" "all"] ++ extra))
-    config.overrides
-  ];
+  overridesGlobalMin = extra: overridesFromDeps (["localMin" "all"] ++ extra);
 
   json = let
 
