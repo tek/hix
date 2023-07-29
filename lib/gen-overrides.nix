@@ -7,14 +7,24 @@ let
   spec = import ./deps/spec.nix { inherit (pkgs) lib; };
   deps = import ./deps/default.nix { inherit pkgs; };
 
-  # TODO does it matter that self and super are the same?
-  decl = ghc: pkg: specs: let
-    data = spec.reifyPregen { inherit pkgs pkg; self = ghc; super = ghc; } specs;
-  in optionalAttrs (data != null) { ${pkg} = data; };
+  decl = self: super: pkg: specs: let
+    data = spec.reifyPregen { inherit pkgs pkg self super; } specs;
+  in { ${pkg} = data; };
 
   decls = env: let
+
     ghc = env.ghc.vanillaGhc;
-  in optionals (env.enable && env.ghc.gen-overrides) (concatMapAttrs (decl ghc) (deps.normalize env.ghc.overrides ghc ghc));
+
+    result = ghc.override {
+      overrides = self: super: let
+        os = deps.normalize env.ghc.overrides self super;
+        decs = concatMapAttrs (decl self super) os;
+      in decs // { __hix_pkgs = attrNames os; };
+    };
+
+    properPackage = _: a: a != null && !(spec.isOC a);
+
+  in optionals (env.enable && env.ghc.gen-overrides) (filterAttrs properPackage (getAttrs result.__hix_pkgs result));
 
   drvAttr = pkg: dump: "  ${pkg} = ${toString dump};";
 

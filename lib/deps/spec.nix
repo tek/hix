@@ -2,6 +2,8 @@
 with lib;
 let
 
+  isOC = oc: isAttrs oc && oc ? __hix_oc;
+
   listOC = oc:
   if isDerivation oc
   then [(drv oc).single]
@@ -15,6 +17,7 @@ let
 
   composeOC = cur: prev: {
     multi = listOC cur ++ listOC prev;
+    __hix_oc = true;
   };
 
   defaults = {
@@ -28,6 +31,7 @@ let
   mkOC = conf: {
     single = defaults // conf;
     __functor = composeOC;
+    __hix_oc = true;
   };
 
   showSpec = spec: { inherit (spec) name desc meta; };
@@ -56,6 +60,8 @@ let
     then spin (acc // { trans = acc.trans ++ [spec]; }) specs
     else if spec.type == "option"
     then spin (acc // { options = acc.options // { ${spec.name} = acc.options.${spec.name} or [] ++ [spec.meta]; }; }) specs
+    else if spec.type == "no-pregen"
+    then spin acc
     else throw "invalid spec type '${spec.type}'";
 
     spin = acc: specs:
@@ -120,11 +126,20 @@ let
     };
   in if spec.pregen.enable then data else null;
 
+  noPregen = mkOC {
+    name = "no-pregen";
+    desc = "Placeholder for recursively used decls";
+    meta = {};
+    type = "no-pregen";
+    impl = {};
+  };
+
   reifyPregen = args: specs: let
     norm = listOC specs;
     spec = finalDecl norm;
     options = collectOptions norm;
-  in if spec == null then null else runPregen args options spec;
+    pregen = if spec == null then null else runPregen args options spec;
+  in if pregen == null then noPregen else pregen;
 
   transform = name: desc: meta: f: mkOC {
     inherit name desc meta;
@@ -149,6 +164,6 @@ let
   drv = d: decl "drv" "Explicit derivation" { drv = d; } (meta: _: meta.drv);
 
 in {
-  inherit transform decl option pregen drv listOC show compile reifyComp reify reifyPregen;
+  inherit transform decl option pregen drv isOC listOC show compile reifyComp reify reifyPregen;
   transform_ = name: f: transform name name {} (_: _: f);
 }
