@@ -7,7 +7,9 @@ let
     hsLib = config.pkgs.haskell.lib;
   };
 
-  withStatic = pkg: pkg // { static = config.pkgs.haskell.lib.justStaticExecutables pkg; };
+  staticDrv = config.pkgs.haskell.lib.justStaticExecutables;
+
+  withStatic = pkg: pkg // { static = staticDrv pkg; };
 
   cross = ghc: name: let
     mkCross = cname: cpkgs: withStatic cpkgs.hixPackages.${name};
@@ -35,6 +37,7 @@ let
   in local // {
     default = local.${config.main};
     min = local.${config.main}.min;
+    static = staticDrv local.${config.main};
   };
 
 in {
