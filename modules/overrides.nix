@@ -22,7 +22,7 @@ with lib;
     };
 
     buildInputs = mkOption {
-      description = mdDoc "Additional non-Haskell dependencies required by all packages.";
+      description = mdDoc "Additional non-Haskell dependencies provided to all packages and environments.";
       type = either (functionTo (listOf package)) (listOf package);
       default = [];
     };

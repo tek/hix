@@ -37,10 +37,10 @@ let
   fi
   '';
 
-  customBuildInputs =
-    if isFunction config.buildInputs
-    then config.buildInputs config.ghc.pkgs
-    else config.buildInputs;
+  mkBuildInputs = def:
+    if isFunction def
+    then def config.ghc.pkgs
+    else def;
 
   extraHs = ghc:
   if isFunction config.haskellPackages
@@ -57,7 +57,8 @@ let
 
   buildInputs = let
   in
-  customBuildInputs ++
+  mkBuildInputs config.buildInputs ++
+  mkBuildInputs global.buildInputs ++
   optional config.hls.enable config.hls.package ++
   optional config.ghcid.enable config.ghcid.package ++
   [ghcWithPackages]
