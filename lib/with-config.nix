@@ -130,6 +130,12 @@ let
   ${pkgs.git}/bin/git add flake.lock
   '';
 
+  cacheWrapper = self: name: app: pkgs.writeScript name ''
+    ${config.pkgs.nix}/bin/nix --option extra-substituters 'https://tek.cachix.org' \
+    --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=' \
+    run ${self}:${app} -- $@
+  '';
+
   envSystemAllowed = env:
   env.systems == null || (elem config.system env.systems);
 
@@ -149,6 +155,7 @@ in basic // {
   downloadStaticCli
   bootstrapWithStaticCli
   bootstrapWithDynamicCli
+  cacheWrapper
   envSystemAllowed
   ;
 }

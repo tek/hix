@@ -106,8 +106,8 @@ hix.pro ({config, lib, ...}: {
         program = "${config.outputs.packages.hix}/bin/hix";
       };
 
-      new = let
-        prog = util.bootstrapWithDynamicCli "hix-new" ''
+      new-nocache = let
+        prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
         $exe new --hix-url '${config.internal.hixUrl}' "$@"
         nix run .#gen-cabal
         '';
@@ -116,11 +116,25 @@ hix.pro ({config, lib, ...}: {
         program = "${prog}";
       };
 
-      bootstrap = let
-        prog = util.bootstrapWithDynamicCli "hix-bootstrap" ''
+      new = let
+        prog = util.cacheWrapper inputs.self "hix-new" "new-nocache";
+      in {
+        type = "app";
+        program = "${prog}";
+      };
+
+      bootstrap-nocache = let
+        prog = util.bootstrapWithDynamicCli "hix-bootstrap-nocache" ''
         $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
         nix run .#gen-cabal
         '';
+      in {
+        type = "app";
+        program = "${prog}";
+      };
+
+      bootstrap = let
+        prog = util.cacheWrapper inputs.self "hix-bootstrap" "bootstrap-nocache";
       in {
         type = "app";
         program = "${prog}";
