@@ -67,6 +67,7 @@ in {
         hls.enable = true;
         hls.package = mkDefault config.envs.hls.ghc.ghc.haskell-language-server;
         hide = true;
+        ghc.overrides = config.envs.hls.overrides;
         internal.overridesInherited = [];
         localDeps = false;
       };
