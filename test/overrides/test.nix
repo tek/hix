@@ -59,6 +59,7 @@ in {
 
     check 'nix eval .#legacyPackages.${pkgs.system}.ghc.aeson.version' '"2.1.2.1"' 'aeson version wrong after gen-overrides'
 
+    nix build .#root1
     nix flake check
 
     sed -i 's/2\.1/5.8/' flake.nix

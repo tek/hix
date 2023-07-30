@@ -10,10 +10,9 @@
       cabal.dependencies = ["aeson"];
       library.enable = true;
       library.dependencies = ["messagepack"];
-      executables.root = { enable = true; source-dirs = "app"; };
+      executables.root = { enable = true; source-dirs = "."; };
       test.enable = true;
     };
-    cabal.dependencies = ["base" "polysemy"];
-    envs.dev.ghc.compiler = "ghc90";
+    cabal.dependencies = ["base" "some"];
   };
 }

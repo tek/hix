@@ -5,15 +5,11 @@ let
   test = name: (import (./. + "/${name}/test.nix") { inherit pkgs; }).test;
 
   tests = {
+    basic = test "basic";
     deps = test "deps";
     ghci = test "ghci";
     packages = test "packages";
     hackage = test "hackage";
-    auto-1 = test "auto-1";
-    auto-2 = test "auto-2";
-    auto-3 = test "auto-3";
-    auto-4 = test "auto-4";
-    auto-5 = test "auto-5";
     cross = test "cross";
     service = test "service";
     postgres = test "postgres";

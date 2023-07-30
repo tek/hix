@@ -20,8 +20,6 @@
       fail "Running the main package produced the wrong output:\n$output"
     fi
 
-    nix build .#ghc90-root
-
     nix run .#hls 2>/dev/null
   '';
 }

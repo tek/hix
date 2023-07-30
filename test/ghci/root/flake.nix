@@ -13,7 +13,6 @@
       test.enable = true;
       test.env = "hix-ghci-test";
     };
-    compiler = "ghc90";
     envs.hix-ghci-test.services.test.enable = true;
     services.test = {
       nixos.services.nginx = {

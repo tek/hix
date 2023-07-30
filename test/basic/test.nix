@@ -1,6 +1,6 @@
 { pkgs }:
 {
-  test = builtins.toFile "auto-5-test" ''
+  test = builtins.toFile "basic-test" ''
     cd ./root
     nix flake update
 
@@ -12,8 +12,7 @@
 
     check 'nix develop .#ghc94 -c ghc --version' 'The Glorious Glasgow Haskell Compilation System, version 9.4.5'
 
-    nix build .#ghc90-root
+    nix build .#ghc92-root
     check 'result/bin/root' 'string' 'Running the main package produced the wrong output'
-
   '';
 }
