@@ -1,10 +1,9 @@
 {pkgs}: let
 
-  modifiers = import ./modifiers.nix { inherit pkgs; };
   spec = import ./spec.nix { inherit (pkgs) lib; };
   util = import ../default.nix { inherit (pkgs) lib; };
 
-  inherit (spec) transform transform_ decl;
+  inherit (spec) decl;
 
   hackageDrv = meta: {self, pkg, options, ...}:
   self.callHackageDirect { inherit (meta) ver sha256; inherit pkg; } (util.foldAttrs options.cabal2nix-overrides or []);

@@ -22,7 +22,7 @@ let
 
   mergeOverrides = zipAttrsWith (_: concatLists);
 
-  concatOverrides = foldl' (a: b: toList a ++ toList b) [];
+  concatOverrides = foldl (a: b: toList a ++ toList b) [];
 
   normalizeOverrides = project: deps: depsFull:
   let
@@ -48,7 +48,7 @@ let
   unlinesConcatMap = f: xs: concatStringsSep "\n" (concatMap f xs);
 
   foldAttrs =
-  foldl' lib.mergeAttrs {};
+  foldl lib.mergeAttrs {};
 
   foldMapAttrs = f: xs:
   foldAttrs (map f xs);
@@ -83,7 +83,7 @@ let
   else b;
 
   mergeAll' = z: items:
-  foldl' mergeAuto z items;
+  foldl mergeAuto z items;
 
   mergeAll = items:
   if length items == 0
