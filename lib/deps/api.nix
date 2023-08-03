@@ -3,14 +3,14 @@
   self,
   super,
 }:
-with builtins;
-with pkgs.lib;
 let
+  inherit (pkgs.lib) flip;
+
   modifiers = import ./modifiers.nix { inherit pkgs; };
   spec = import ./spec.nix { inherit (pkgs) lib; };
   c2n = import ./cabal2nix.nix { inherit pkgs; };
 
-  inherit (spec) transform transform_ decl drv;
+  inherit (spec) transform transform_ transformDrv drv;
   hl = pkgs.haskell.lib;
 
   transformers = {
@@ -34,13 +34,14 @@ let
 
   reset = drv null;
 
-  noHpack = option "cabal2nix" "Cabal2nix option --no-hpack" "--no-hpack";
+  noHpack = spec.option "cabal2nix" "Cabal2nix option --no-hpack" "--no-hpack";
 
-  cabalOverrides = option "cabal2nix-overrides" "Cabal2nix overrides";
+  cabalOverrides = spec.option "cabal2nix-overrides" "Cabal2nix overrides";
 
 in transformers // {
   inherit (c2n) hackage source;
-  inherit self super pkgs reset transform transform_ transformDrv option noHpack cabalOverrides drv;
+  inherit self super pkgs reset transform transform_ transformDrv noHpack cabalOverrides drv;
+  inherit (spec) option;
   hsLib = hl;
   inherit (pkgs) system lib;
   ghcName = self.ghc.name;
