@@ -5,7 +5,6 @@ let
 
   global = config;
 
-  ghcModule = import ./ghc.nix { inherit global util; };
   packageModule = import ./package.nix { inherit global util; };
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
