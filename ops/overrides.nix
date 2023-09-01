@@ -59,28 +59,6 @@ mkDerivation {
 ;
 }
 ;
-  incipit-base = {
-  meta = {
-    sha256 = "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
-    ver = "0.5.0.0";
-  };
-  drv = { mkDerivation, base, bytestring, containers, data-default, lib
-, stm, text
-}:
-mkDerivation {
-  pname = "incipit-base";
-  version = "0.5.0.0";
-  src = /nix/store/yldscjmkq00j24nprzf6h950v7n33hp1-source;
-  libraryHaskellDepends = [
-    base bytestring containers data-default stm text
-  ];
-  homepage = "https://github.com/tek/incipit-core#readme";
-  description = "A Prelude for Polysemy – Base Reexports";
-  license = "BSD-2-Clause-Patent";
-}
-;
-}
-;
 };
 ghc92 = {
   exon = {
@@ -138,28 +116,6 @@ mkDerivation {
   homepage = "https://github.com/AndrasKovacs/flatparse#readme";
   description = "High-performance parsing from strict bytestrings";
   license = lib.licenses.mit;
-}
-;
-}
-;
-  incipit-base = {
-  meta = {
-    sha256 = "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
-    ver = "0.5.0.0";
-  };
-  drv = { mkDerivation, base, bytestring, containers, data-default, lib
-, stm, text
-}:
-mkDerivation {
-  pname = "incipit-base";
-  version = "0.5.0.0";
-  src = /nix/store/yldscjmkq00j24nprzf6h950v7n33hp1-source;
-  libraryHaskellDepends = [
-    base bytestring containers data-default stm text
-  ];
-  homepage = "https://github.com/tek/incipit-core#readme";
-  description = "A Prelude for Polysemy – Base Reexports";
-  license = "BSD-2-Clause-Patent";
 }
 ;
 }
@@ -225,28 +181,6 @@ mkDerivation {
 ;
 }
 ;
-  incipit-base = {
-  meta = {
-    sha256 = "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
-    ver = "0.5.0.0";
-  };
-  drv = { mkDerivation, base, bytestring, containers, data-default, lib
-, stm, text
-}:
-mkDerivation {
-  pname = "incipit-base";
-  version = "0.5.0.0";
-  src = /nix/store/yldscjmkq00j24nprzf6h950v7n33hp1-source;
-  libraryHaskellDepends = [
-    base bytestring containers data-default stm text
-  ];
-  homepage = "https://github.com/tek/incipit-core#readme";
-  description = "A Prelude for Polysemy – Base Reexports";
-  license = "BSD-2-Clause-Patent";
-}
-;
-}
-;
 };
 hls = {
 };
@@ -306,28 +240,6 @@ mkDerivation {
   homepage = "https://github.com/AndrasKovacs/flatparse#readme";
   description = "High-performance parsing from strict bytestrings";
   license = lib.licenses.mit;
-}
-;
-}
-;
-  incipit-base = {
-  meta = {
-    sha256 = "02fdppamn00m94xqi4zhm6sl1ndg6lhn24m74w24pq84h44mynl6";
-    ver = "0.5.0.0";
-  };
-  drv = { mkDerivation, base, bytestring, containers, data-default, lib
-, stm, text
-}:
-mkDerivation {
-  pname = "incipit-base";
-  version = "0.5.0.0";
-  src = /nix/store/yldscjmkq00j24nprzf6h950v7n33hp1-source;
-  libraryHaskellDepends = [
-    base bytestring containers data-default stm text
-  ];
-  homepage = "https://github.com/tek/incipit-core#readme";
-  description = "A Prelude for Polysemy – Base Reexports";
-  license = "BSD-2-Clause-Patent";
 }
 ;
 }

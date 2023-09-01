@@ -1,4 +1,4 @@
-{lib, ...}: let
+{...}: let
 
   indentLine = l: "  " + l;
 
