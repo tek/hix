@@ -39,7 +39,7 @@ let
 
   packageDeps = name: conf: let
     head = colors.blue name;
-  in [head] ++ indent (util.concatMapAttrsToList componentDeps conf.internal.componentsSet);
+  in ["" head] ++ indent (util.concatMapAttrsToList componentDeps conf.internal.componentsSet);
 
   packagesDeps =
     pkgs.writeText "dep-versions" (util.unlines (util.concatMapAttrsToList packageDeps config.packages));
