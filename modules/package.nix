@@ -311,7 +311,7 @@ in {
           packages = {
             core = { version = "0.4.1.0"; };
             api = {
-              dependencies = [config.packages.core.dep];
+              dependencies = [config.packages.core.dep.minor];
             };
           }
         }
