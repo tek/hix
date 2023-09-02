@@ -61,7 +61,7 @@ let
     fi
   '';
 
-  needsHpack = file: match ".*\.(yaml|nix)" file != null;
+  needsGenCabal = file: match ".*\.(yaml|nix)" file != null;
 
   addFiles = file: ''
     ${git} add ${if file == null then "" else file} ${allCabals}
@@ -72,6 +72,7 @@ let
     if [[ -n $changelogs ]]
     then
       sed -i "s/Unreleased/$new_version/" $=changelogs
+      ${optionalString cfg.commit "${git} add $=changelogs"}
     fi
   '';
 
@@ -83,7 +84,7 @@ let
     if [[ -n $new_version ]]
     then
       ${cfg.versionFileUpdate file}
-      ${if needsHpack file then "nix run '.#gen-cabal-quiet'" else ""}
+      ${if needsGenCabal file then "nix run '.#gen-cabal-quiet'" else ""}
       ${if cfg.commit && file != null then addFiles file else ""}
       ${if cfg.setChangelogVersion then bumpChangelogs else ""}
     fi
