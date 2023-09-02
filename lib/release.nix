@@ -48,7 +48,7 @@
 
   nix run .#release -- -v $version
   echo -n ">>> Update CLI version in overrides. Continue? [Yn] "
-  read -q decision
+  read -q decision || true
   echo ""
   if [[ $decision == 'n' ]]
   then
