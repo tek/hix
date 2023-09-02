@@ -1,7 +1,7 @@
-{ inputs, hix }:
+{inputs, hix}:
 
 hix.pro ({config, lib, ...}: {
-  compiler = "ghc92";
+  compiler = "ghc94";
 
   hackage = {
     versionFile = "ops/version.nix";
@@ -9,9 +9,8 @@ hix.pro ({config, lib, ...}: {
     formatTag = { name, version }: if name == null then version else "${name}-${version}";
   };
 
-  overrides = {hackage, ...}: {
-    exon = hackage "1.4.0.0" "1m4i3a14wip985ncblfy2ikcy7gw5rryj9z497ah218d1nmwj7rl";
-    flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
+  overrides = {unbreak, ...}: {
+    exon = unbreak;
   };
   gen-overrides.enable = true;
 
@@ -52,7 +51,7 @@ hix.pro ({config, lib, ...}: {
       "Cabal"
       "aeson >= 2.0 && < 2.2"
       "casing ^>= 0.1.4"
-      "exon ^>= 1.4"
+      "exon >= 1.4 && < 1.6"
       "extra ^>= 1.7"
       "filepattern ^>= 0.1"
       "generic-lens ^>= 2.2"

@@ -90,7 +90,7 @@ library
     , aeson >=2.0 && <2.2
     , base ==4.*
     , casing >=0.1.4 && <0.2
-    , exon ==1.4.*
+    , exon >=1.4 && <1.6
     , extra ==1.7.*
     , filepattern ==0.1.*
     , generic-lens ==2.2.*

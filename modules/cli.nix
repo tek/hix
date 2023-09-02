@@ -51,7 +51,6 @@ in {
 
     overrides = {hackage, source, minimal, unbreak, jailbreak, ...}: {
       exon = unbreak;
-      flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
     } // (
           if config.internal.hixCli.dev
           then { hix = minimal (source.package ../. "hix"); }
