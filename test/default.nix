@@ -21,6 +21,7 @@ let
     overrides = test "overrides";
     subdir = test "subdir";
     local-prelude = test "local-prelude";
+    dep-versions = test "dep-versions";
   };
 
   testA = n: t: "${n} ${t}";

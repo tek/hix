@@ -1030,4 +1030,34 @@ in {
 
   '';
 
+  misc = ''
+  ## Miscellaneous tools {#misc}
+
+  ### Show overrides {#show-overrides}
+
+  ```
+  nix run .#show-overrides
+  ```
+
+  Prints all environments' overrides.
+
+  ### Show config {#show-config}
+
+  ```
+  nix run .#show-config
+  ```
+
+  Prints the project's entire configuration.
+
+  ### Show dependency versions {#dep-versions}
+
+  ```
+  nix run .#dep-versions
+  nix run .#env.ghc96.dep-versions
+  ```
+
+  Prints all components' dependencies and their actual versions in the dev environment, or the named environment in the
+  second variant.
+  '';
+
 }

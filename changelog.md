@@ -1,6 +1,8 @@
 # Unreleased
 
 * Allow envs to be excluded from being exposed as `devShells` for specific systems.
+* Add an app, `dep-versions`, that prints all components' direct dependencies and their actual version in an
+  environment.
 
 # 0.6.0
 

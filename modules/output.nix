@@ -15,6 +15,8 @@ let
 
   showOverrides = import ../lib/show-overrides.nix { inherit config lib util; };
 
+  depVersions = env: import ../lib/dep-versions.nix { inherit config lib util env; };
+
   # TODO use the json method and print in cli
   show-config = util.paramApp {
     name = "show-config";
@@ -25,7 +27,9 @@ let
   app = program: { type = "app"; program = "${program}"; };
 
   envApps = env: {
-    ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
+    ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands // {
+      dep-versions = app "${depVersions env.name}";
+    };
   };
 
   commandApps = mapAttrs (_: c: app "${c.path}");
@@ -136,6 +140,7 @@ in {
         gen-overrides = app "${genOverrides}";
         gen = app "${genAll}";
         show-overrides = app "${showOverrides}";
+        dep-versions = app "${depVersions "dev"}";
       };
 
     };

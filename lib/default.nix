@@ -39,6 +39,8 @@ let
   asFunction = f:
   if isFunction f then f else _: f;
 
+  concatMapAttrsToList = f: a: concatLists (mapAttrsToList f a);
+
   unwords = concatStringsSep " ";
 
   unlines = concatStringsSep "\n";
@@ -126,6 +128,7 @@ in {
   normalizeOverrides
   overridesFor
   asFunction
+  concatMapAttrsToList
   unwords
   unlines
   unlinesMap
