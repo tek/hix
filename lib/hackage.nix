@@ -14,11 +14,9 @@ let
 
   allCabals = concatMapStringsSep " " (n: "${config.internal.relativePackages.${n}}/${n}.cabal") allTargets;
 
-  mapLines = concatMapStringsSep "\n";
-
   confirm = type: ''
     print -n ">>> Upload ${type} now? [yN] "
-    read -q decision
+    read -q decision || true
     print ""
     if [[ $decision != 'y' ]]
     then

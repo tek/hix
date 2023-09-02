@@ -2,24 +2,6 @@
 
   inherit (config.internal) pkgs;
 
-  commitAndTag = ''
-  ${pkgs.git}/bin/git commit --allow-empty -m "Release $version"
-  ${pkgs.git}/bin/git tag -m "Release $version" "$version"
-  '';
-
-  updateVersions = ''
-  nix build .#docs
-  if [[ -z ''${hix_release_skip_test-} ]]
-  then
-    nix run .#test
-  fi
-  sed -i 's/ref=[^"#]\+/ref='"$version/" readme.md examples/*/flake.nix
-  sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
-  sed -i "s/Unreleased/$version/" changelog.md
-  ${pkgs.git}/bin/git --no-pager diff
-  ${pkgs.git}/bin/git add readme.md changelog.md examples modules/basic.nix
-  '';
-
   preamble = ''
   #!${pkgs.zsh}/bin/zsh
   setopt err_exit no_unset pipefail
@@ -30,6 +12,27 @@
     exit 1
   fi
   version="$1"
+  '';
+
+  updateVersions = ''
+  echo -n ">>> Run tests? [Yn] "
+  read -q decision || true
+  echo ""
+  if [[ $decision != 'n' ]]
+  then
+    nix build .#docs
+    nix run .#test
+  fi
+  sed -i 's/ref=[^"#]\+/ref='"$version/" readme.md examples/*/flake.nix
+  sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
+  sed -i "s/Unreleased/$version/" changelog.md
+  ${pkgs.git}/bin/git --no-pager diff
+  ${pkgs.git}/bin/git add readme.md changelog.md examples modules/basic.nix
+  '';
+
+  commitAndTag = ''
+  ${pkgs.git}/bin/git commit --allow-empty -m "Release $version"
+  ${pkgs.git}/bin/git tag -m "Release $version" "$version"
   '';
 
   nix = pkgs.writeScript "hix-release-nix" ''
