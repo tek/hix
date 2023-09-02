@@ -3,8 +3,7 @@
 
   inputs.hix.url = "path:HIX";
 
-  outputs = { hix, ... }:
-  hix.lib.flake {
+  outputs = { hix, ... }: hix.lib.flake {
     main = "root";
     packages = {
 
@@ -21,6 +20,15 @@
 
       root = {
         src = ./.;
+
+        cabal.prelude = {
+          enable = true;
+          package = {
+            name = "incipit-core";
+            version = ">= 0.4 && < 0.6";
+          };
+          module = "IncipitCore";
+        };
 
         library = {
           enable = true;

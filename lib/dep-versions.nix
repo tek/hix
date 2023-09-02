@@ -34,7 +34,8 @@ let
 
   componentDeps = name: conf: let
     head = colors.yellow name;
-  in [head] ++ indent (concatMap dep conf.dependencies);
+    prelude = optionals conf.prelude.enable (dep conf.prelude.package);
+  in [head] ++ indent (prelude ++ concatMap dep conf.dependencies);
 
   packageDeps = name: conf: let
     head = colors.blue name;
