@@ -19,8 +19,7 @@ let
 
   decl = name: specs: ["" "${chevronY} Package ${color blue name}"] ++ indent (map renderSpec (spec.listOC specs));
 
-  declsVia = desc: specs: let
-  in ["" "${chevronM} ${desc}"] ++ indent (concatLists (mapAttrsToList decl specs));
+  declsVia = desc: specs: ["" "${chevronM} ${desc}"] ++ indent (concatLists (mapAttrsToList decl specs));
 
   declSet = ghc: specs: let
     api = import ./deps/api.nix { inherit pkgs; self = ghc; super = ghc; };

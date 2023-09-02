@@ -8,7 +8,7 @@ let
 
   inherit (config.internal) pkgs;
   console = import ./console.nix { inherit lib; };
-  inherit (console) color indent indentLine;
+  inherit (console) color indent;
 
   mods = util.modulesRaw {} (util.modules ++ [{ system = config.system; } (import ../modules/system.nix)]);
 
@@ -97,9 +97,6 @@ let
 
   stringifyListOf = cs: n: a:
   listOrEmpty (stringifyElem a.nestedTypes.elemType.name) cs n;
-
-  stringifyAttrOf = tpe: n: c:
-  kv n (stringifyOptionValue c tpe);
 
   stringifyAttrsOf = cs: n: a: let
     tpe = a.nestedTypes.elemType;
