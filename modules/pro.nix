@@ -1,5 +1,4 @@
-{ config, lib, util, ... }:
-with lib;
+{util, ...}:
 {
   ghcVersions = ["ghc92" "ghc94"];
 

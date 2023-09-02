@@ -55,8 +55,7 @@ let
 
   ghcWithPackages = config.ghc.ghc.ghcWithPackages ghcPackages;
 
-  buildInputs = let
-  in
+  buildInputs =
   mkBuildInputs config.buildInputs ++
   mkBuildInputs global.buildInputs ++
   optional config.hls.enable config.hls.package ++
