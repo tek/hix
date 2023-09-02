@@ -130,7 +130,7 @@ in {
         The GHC version used for internal tasks and for the default environment.
       '';
       type = str;
-      default = "ghc92";
+      default = "ghc94";
     };
 
     compat = {
