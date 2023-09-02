@@ -22,7 +22,7 @@
 
     check_musl ".#root.cross.musl64.static"
 
-    check_musl ".#ghc92-root.cross.musl64.static"
+    check_musl ".#ghc94-root.cross.musl64.static"
 
     check_musl ".#static"
   '';

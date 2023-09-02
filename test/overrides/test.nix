@@ -64,6 +64,6 @@ in {
 
     sed -i 's/2\.1/5.8/' flake.nix
     error_target="Please run 'nix run .#gen-overrides' again."
-    check_match_err 'nix eval .#legacyPackages.${pkgs.system}.ghc.aeson.version' $error_target 'Wrong error before gen-overrides'
+    check_match_err 'nix eval .#legacyPackages.${pkgs.system}.ghc.aeson.version' $error_target 'Wrong error after changing overrides'
   '';
 }

@@ -140,6 +140,7 @@ in {
   mkdir -p $tmpdir
 
   failure=0
+  failed=()
   for target in $=targets
   do
     runtest $target
@@ -147,6 +148,7 @@ in {
     then
       echo ">>> Test failed: $target"
       failure=$(( failure + 1 ))
+      failed+=($target)
     fi
   done
 
@@ -154,7 +156,11 @@ in {
   then
     echo '>>> All tests succeeded.'
   else
-    echo ">>> $failure tests failed."
+    echo ">>> $failure tests failed:"
+    for t in $failed
+    do
+      echo " - $t"
+    done
     exit 1
   fi
   '';

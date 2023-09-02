@@ -4,10 +4,10 @@
     cd ./root
     nix flake update
 
-    target='[ "ghc810-root" "ghc90-root" "ghc92-root" "ghc94-root" "root" ]'
+    target='[ "ghc90-root" "ghc92-root" "ghc94-root" "ghc96-root" "root" ]'
     check 'nix eval .#checks.x86_64-linux --apply builtins.attrNames' $target 'Checks are wrong'
 
-    target='[ "default" "ghc810-root" "ghc90-root" "ghc92-root" "ghc94-root" "min" "root" "static" ]'
+    target='[ "default" "ghc90-root" "ghc92-root" "ghc94-root" "ghc96-root" "min" "root" "static" ]'
     check 'nix eval .#packages.x86_64-linux --apply builtins.attrNames' $target 'Packages are wrong'
 
     check 'nix develop .#ghc94 -c ghc --version' 'The Glorious Glasgow Haskell Compilation System, version 9.4.5'
