@@ -1,10 +1,9 @@
 {
   description = "hix test project";
 
-  inputs.hix.url = path:HIX;
+  inputs.hix.url = "path:HIX";
 
-  outputs = { hix, ... }:
-  hix.lib.flake {
+  outputs = {hix, ...}: hix.lib.flake {
     packages.root = {
       src = ./.;
       versionFile = "root.cabal";
@@ -19,6 +18,7 @@
       confirm = false;
       check = false;
       versionFile = "root.cabal";
+      setChangelogVersion = true;
     };
   };
 }

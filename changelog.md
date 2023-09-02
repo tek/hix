@@ -1,3 +1,8 @@
+# Unreleased
+
+* When releasing, the word `Unreleased` can be automatically replaced by the new version in changelogs when
+  `hackage.setChangelogVersion` is `true` (default off).
+
 # 0.6.1
 
 * Allow envs to be excluded from being exposed as `devShells` for specific systems.

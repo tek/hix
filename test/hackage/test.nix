@@ -34,6 +34,9 @@ let
       fail "Wrong output for release-all-version commands:\n$output"
     fi
 
+    check 'cat changelog' "$version: feature 1" 'Version not substituted in changelog'
+    check 'cat ChangeLog.md' "# $version" 'Version not substituted in ChangeLog.md'
+
     output=$(git show --format=format:%s --no-patch)
     if [[ $output != "Release $version" ]]
     then

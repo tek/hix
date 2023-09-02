@@ -88,4 +88,6 @@
 
   ghci.ghcOptions = ["-Werror"];
 
+  hackage.setChangelogVersion = true;
+
 }

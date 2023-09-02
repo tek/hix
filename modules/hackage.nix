@@ -5,8 +5,6 @@ let
 
   logic = import ../lib/hackage.nix { inherit lib config util; };
 
-  isYaml = file: match ".*\.yaml" file != null;
-
   isNix = file: match ".*\.nix" file != null;
 
 in {
@@ -75,6 +73,12 @@ in {
       if isNix file
       then ''sed -i "s/\".*\"/\"$new_version\"/" ${file}''
       else ''sed -i "s/^version:\(\s*\).*/version:\1$new_version/" ${file}'';
+    };
+
+    setChangelogVersion = mkOption {
+      description = mdDoc "Whether to substitute the word 'Unreleased' with the new version in changelogs.";
+      type = bool;
+      default = false;
     };
 
     check = mkOption {

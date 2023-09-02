@@ -67,6 +67,14 @@ let
     ${git} add ${if file == null then "" else file} ${allCabals}
   '';
 
+  bumpChangelogs = ''
+    changelogs=$(${pkgs.fd}/bin/fd -i 'changelog(\..*)?')
+    if [[ -n $changelogs ]]
+    then
+      sed -i "s/Unreleased/$new_version/" $=changelogs
+    fi
+  '';
+
   checkVersion = file: type: ''
     : ''${new_version:=}
     version="$new_version"
@@ -75,8 +83,9 @@ let
     if [[ -n $new_version ]]
     then
       ${cfg.versionFileUpdate file}
-      ${if needsHpack file then "nix run '.#hpack-quiet'" else ""}
+      ${if needsHpack file then "nix run '.#gen-cabal-quiet'" else ""}
       ${if cfg.commit && file != null then addFiles file else ""}
+      ${if cfg.setChangelogVersion then bumpChangelogs else ""}
     fi
   '';
 
