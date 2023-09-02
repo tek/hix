@@ -113,8 +113,8 @@ in {
   runtest()
   {
     setopt local_options err_return
-    current="$1"
-    test="''${tests[$current]}"
+    local current="$1"
+    local test="''${tests[$current]}"
     if [[ -z $test ]]
     then
       message "Invalid test name: $current"
@@ -142,14 +142,15 @@ in {
 
   failure=0
   failed=()
-  for target in $=targets
+  local current
+  for current in $=targets
   do
-    runtest $target
+    runtest $current
     if [[ $? != 0 ]]
     then
-      echo ">>> Test failed: $target"
-      failure=$(( failure + 1 ))
-      failed+=($target)
+      echo ">>> Test failed: $current"
+      (( failure = failure + 1 ))
+      failed+=($current)
     fi
   done
 
