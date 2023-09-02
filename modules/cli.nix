@@ -49,18 +49,18 @@ in {
 
   config.internal.hixCli = {
 
-    overrides = {hackage, source, minimal, unbreak, ...}: {
+    overrides = {hackage, source, minimal, unbreak, jailbreak, ...}: {
       exon = unbreak;
       flatparse = hackage "0.4.0.2" "0saxwgwbzijgm9v5w9nx3npl28szpkyz97m4shn8yanxq7gsjnvg";
     } // (
           if config.internal.hixCli.dev
           then { hix = minimal (source.package ../. "hix"); }
-          else { hix = minimal (hackage "0.5.8" "1k6q65vwvi250vlfvhk736s4scp46gmr95jva4ksz2rmradz3sxg"); }
+          else { hix = jailbreak (minimal (hackage "0.5.8" "1k6q65vwvi250vlfvhk736s4scp46gmr95jva4ksz2rmradz3sxg")); }
       );
 
     ghc = {
       name = "hix";
-      compiler = "ghc92";
+      compiler = "ghc94";
       overrides = mkForce config.internal.hixCli.overrides;
       nixpkgs = config.inputs.nixpkgs;
       nixpkgsOptions = {};
