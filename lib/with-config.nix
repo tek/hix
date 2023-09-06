@@ -131,6 +131,8 @@ let
   envSystemAllowed = env:
   env.systems == null || (elem config.system env.systems);
 
+  hsLib = config.pkgs.haskell.lib;
+
 in basic // {
   inherit
   paramApp
@@ -149,5 +151,6 @@ in basic // {
   bootstrapWithDynamicCli
   cacheWrapper
   envSystemAllowed
+  hsLib
   ;
 }

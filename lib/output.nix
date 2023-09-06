@@ -4,10 +4,10 @@ let
 
   releaseDrv = import ../lib/release-derivation.nix {
     inherit lib;
-    hsLib = config.pkgs.haskell.lib;
+    inherit (util) hsLib;
   };
 
-  staticDrv = config.pkgs.haskell.lib.justStaticExecutables;
+  staticDrv = util.hsLib.justStaticExecutables;
 
   withStatic = pkg: pkg // { static = staticDrv pkg; };
 

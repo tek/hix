@@ -1,4 +1,4 @@
-{ pkgs }: {
+{...}: {
   test = builtins.toFile "dep-versions-test" ''
     cd ./root
     nix flake update
