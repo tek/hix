@@ -1,6 +1,6 @@
-# Unreleased
+# 0.6.2
 
-* When releasing, the word `Unreleased` can be automatically replaced by the new version in changelogs when
+* When releasing, the word `0.6.2` can be automatically replaced by the new version in changelogs when
   `hackage.setChangelogVersion` is `true` (default off).
 
 # 0.6.1
