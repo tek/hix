@@ -1,9 +1,9 @@
 {
   description = "hix test project";
 
-  inputs.hix.url = path:HIX;
-  inputs.dep1.url = path:BASE/dep1;
-  inputs.dep2.url = path:BASE/dep2;
+  inputs.hix.url = "path:HIX";
+  inputs.dep1.url = "path:BASE/dep1";
+  inputs.dep2.url = "path:BASE/dep2";
 
   outputs = { hix, dep1, dep2, ... }: hix.lib.flake ({ config, lib, ... }: {
     main = "root";

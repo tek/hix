@@ -48,6 +48,7 @@ in {
         description = mdDoc ''
         Names of packages that will be added to the flake outputs, despite not being declared in
         [](#opt-general-packages).
+
         This may be a simple Hackage package like `aeson` or a local package that is added in
         [](#opt-general-overrides) due to the way its source is obtained.
         '';
@@ -61,6 +62,27 @@ in {
         May be overriden for unusual customizations.
         '';
         type = unspecified;
+      };
+
+      commandApps = mkOption {
+        description = mdDoc ''
+        Whether to expose all commands in the attrset `apps.cmd.*`.
+
+        This means that you can run `nix run .#cmd.do-stuff` to access the command defined as `commands.do-stuff`, but
+        it does not strictly conform to the convention for `apps`, potentially breaking other tooling.
+        '';
+        type = bool;
+        default = true;
+      };
+
+      envApps = mkOption {
+        description = mdDoc ''
+        Whether to expose all commands in the attrset `apps.env.<env>.*`.
+
+        Like [](#opt-general-output.commandApps), but commands are executed in the selected environment.
+        '';
+        type = bool;
+        default = true;
       };
 
     };
@@ -135,12 +157,14 @@ in {
         tags = app tags.app;
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
-        cmd = commandApps config.commands;
-        env = util.foldMapAttrs envApps (attrValues util.visibleEnvs);
         gen-overrides = app "${genOverrides}";
         gen = app "${genAll}";
         show-overrides = app "${showOverrides}";
         dep-versions = app "${depVersions "dev"}";
+      } // optionalAttrs config.output.commandApps {
+        cmd = commandApps config.commands;
+      } // optionalAttrs config.output.envApps {
+        env = util.foldMapAttrs envApps (attrValues util.visibleEnvs);
       };
 
     };

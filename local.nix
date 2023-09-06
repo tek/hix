@@ -157,4 +157,9 @@ hix.pro ({config, lib, ...}: {
 
   };
 
+  output = {
+    commandApps = false;
+    envApps = false;
+  };
+
 })
