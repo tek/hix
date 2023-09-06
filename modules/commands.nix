@@ -52,7 +52,7 @@ in {
       env = "dev";
       command = ''
       ${if config.hls.genCabal then "nix run .#gen-cabal-quiet" else ""}
-      ${config.envs.hls.hls.package}/bin/haskell-language-server $@
+      ${config.envs.hls.hls.package}/bin/haskell-language-server "$@"
       '';
       expose = true;
     };
