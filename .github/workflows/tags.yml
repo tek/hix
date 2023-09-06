@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: 'write'
-      contents: 'read'
+      contents: 'write'
     steps:
       - uses: 'actions/checkout@v3'
       - uses: 'DeterminateSystems/nix-installer-action@main'
