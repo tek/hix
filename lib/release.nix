@@ -38,7 +38,6 @@
   nix = pkgs.writeScript "hix-release-nix" ''
   ${preamble}
   ${updateVersions}
-  ${pkgs.git}/bin/git commit --allow-empty -m "Release $version"
   ${commitAndTag}
   '';
 
