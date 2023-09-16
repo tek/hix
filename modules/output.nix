@@ -132,7 +132,7 @@ in {
         config.envs.dev.derivations //
         optionalAttrs config.compat.enable (libOutput.prefixedEnvDerivations config.compat.versions);
 
-      legacyPackages = libOutput.scopedEnvDerivations config.ghcVersions // {
+      legacyPackages = libOutput.scopedEnvDerivations config.ghcVersions // libOutput.envsApi config.envs // {
         inherit config;
         inherit (config.envs.dev.ghc) pkgs ghc;
         show-config = show-config.shell;

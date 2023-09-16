@@ -44,6 +44,8 @@ let
 
   scopedEnvDerivations = envs: genAttrs envs envDerivations;
 
+  envsApi = envs: { env = mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; } // envDerivations n) envs; };
+
 in {
-  inherit prefixedEnvDerivations scopedEnvDerivations devOutputs;
+  inherit prefixedEnvDerivations scopedEnvDerivations devOutputs envsApi;
 }
