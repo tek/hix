@@ -1,3 +1,8 @@
+# Unreleased
+
+* Expose environment packages as `legacyPackages.<system>.<env>.<package>` for each entry in `ghcVersions`.
+* Expose local packages, `ghc` and `pkgs` for each env as `legacyPackages.<system>.env.<env>.{<package>,ghc,pkgs}`.
+
 # 0.6.2
 
 * When releasing, the word `0.6.2` can be automatically replaced by the new version in changelogs when
