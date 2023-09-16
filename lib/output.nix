@@ -19,10 +19,12 @@ let
     ghc = env.ghc;
   in withStatic ghc.ghc.${name} // { cross = cross ghc name; };
 
-  envDerivations = envs: let
-    envPkgs = v: let
-      env = config.envs.${v};
-    in mapAttrs' (n: d: { name = "${v}-${n}"; value = withCross env n; }) env.derivations;
+  envDerivations = v: let
+    env = config.envs.${v};
+  in mapAttrs (n: d: (withCross env n)) env.derivations;
+
+  prefixedEnvDerivations = envs: let
+    envPkgs = v: mapAttrs' (n: d: { name = "${v}-${n}"; value = d; }) (envDerivations v);
   in util.foldMapAttrs envPkgs envs;
 
   devOutputs = let
@@ -40,6 +42,8 @@ let
     static = staticDrv local.${config.main};
   };
 
+  scopedEnvDerivations = envs: genAttrs envs envDerivations;
+
 in {
-  inherit envDerivations devOutputs;
+  inherit prefixedEnvDerivations scopedEnvDerivations devOutputs;
 }
