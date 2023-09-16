@@ -2,7 +2,7 @@
   description = "Haskell/Nix development build tools";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/8b5b7def915305c7d4f5cf236c095bf898bc7995";
+    nixpkgs.url = "github:nixos/nixpkgs/46688f8eb5cd6f1298d873d4d2b9cf245e09e88e";
     thax.url = "github:tek/thax";
   };
 
