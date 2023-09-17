@@ -29,7 +29,7 @@ let
     exists = pathExists path;
     pregen = optionalAttrs exists (import path);
     stored = optionalAttrs exists (pregen.${ghc.name} or {});
-    error = if exists then if hasAttr ghc.name pregen then noOverridesGhc else null else noOverridesFile gen.file;
+    error = if exists then if hasAttr ghc.name pregen then null else noOverridesGhc else noOverridesFile gen.file;
   in deps.replace error stored ghc.overrides self super;
 
   computeOverrides =
