@@ -9,8 +9,9 @@ hix.pro ({config, lib, ...}: {
     formatTag = { name, version }: if name == null then version else "${name}-${version}";
   };
 
-  overrides = {unbreak, ...}: {
-    exon = unbreak;
+  overrides = {hackage, ...}: {
+    exon = hackage "1.5.0.0" "07jawnnmpdqfnvmayv64xc4n0j9mbcgdyyqsg3dn3a3z1f4fxnfm";
+    flatparse = hackage "0.5.0.1" "0y6axksh2hqp8v58676a7zmwf0in7v6hmyfv8sfdx4x0acq2vjhr";
   };
   gen-overrides.enable = true;
 
@@ -70,7 +71,7 @@ hix.pro ({config, lib, ...}: {
     test.enable = true;
     test.dependencies = [
       "Cabal"
-      "exon ^>= 1.4"
+      "exon >= 1.4 && < 1.6"
       "hedgehog >= 1.1 && < 1.3"
       "path ^>= 0.9"
       "path-io >= 1.7 && < 1.9"
