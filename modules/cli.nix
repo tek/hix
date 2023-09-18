@@ -50,11 +50,12 @@ in {
   config.internal.hixCli = {
 
     overrides = {hackage, source, minimal, unbreak, jailbreak, ...}: {
-      exon = unbreak;
+      exon = hackage "1.5.0.0" "07jawnnmpdqfnvmayv64xc4n0j9mbcgdyyqsg3dn3a3z1f4fxnfm";
+      flatparse = hackage "0.5.0.1" "0y6axksh2hqp8v58676a7zmwf0in7v6hmyfv8sfdx4x0acq2vjhr";
     } // (
           if config.internal.hixCli.dev
           then { hix = minimal (source.package ../. "hix"); }
-          else { hix = jailbreak (minimal (hackage "0.6.1" "0vm0mvzq0ngin83vvicbn5wcl3zibikxs0mydrls56zdm1ns75wp")); }
+          else { hix = jailbreak (minimal (hackage "0.6.2" "1f1qszzriap9m8sf4v3ycj4zvv54v3rkd480vfnw35ajswqjzjhw")); }
       );
 
     ghc = {
