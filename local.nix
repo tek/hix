@@ -1,6 +1,8 @@
 {inputs, hix}:
 
-hix.pro [({config, lib, ...}: {
+hix.pro [({config, lib, ...}: let
+  pkgs = config.pkgs;
+in {
   compiler = "ghc94";
 
   hackage = {
@@ -86,8 +88,7 @@ hix.pro [({config, lib, ...}: {
   outputs = {
 
     packages = let
-      pkgs = import inputs.nixpkgs { inherit (config) system; };
-      docs = import ./lib/doc/default.nix { inherit inputs pkgs; inherit (config.internal) hixUrl; };
+      docs = import ./lib/doc/default.nix { inherit inputs; inherit (config) pkgs; inherit (config.internal) hixUrl; };
     in {
       docs = docs.html;
     };
@@ -111,7 +112,7 @@ hix.pro [({config, lib, ...}: {
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
         $exe new --hix-url '${config.internal.hixUrl}' "$@"
         '' ''
-        nix run .#gen-cabal
+        ${util.nixC} run .#gen-cabal
         '';
       in {
         type = "app";
@@ -119,7 +120,7 @@ hix.pro [({config, lib, ...}: {
       };
 
       new = let
-        prog = util.cacheWrapper inputs.self "hix-new" "new-nocache";
+        prog = pkgs.writeScript "hix-new" ''${util.nixC} run ${inputs.self}#new-nocache -- "$@"'';
       in {
         type = "app";
         program = "${prog}";
@@ -129,7 +130,7 @@ hix.pro [({config, lib, ...}: {
         prog = util.bootstrapWithDynamicCli "hix-bootstrap-nocache" ''
         $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
         '' ''
-        nix run .#gen-cabal
+        ${util.nixC} run .#gen-cabal
         '';
       in {
         type = "app";
@@ -137,7 +138,7 @@ hix.pro [({config, lib, ...}: {
       };
 
       bootstrap = let
-        prog = util.cacheWrapper inputs.self "hix-bootstrap" "bootstrap-nocache";
+        prog = pkgs.writeScript "hix-bootstrap" ''${util.nixC} run ${inputs.self}#bootstrap-nocache -- "$@"'';
       in {
         type = "app";
         program = "${prog}";

@@ -94,6 +94,8 @@ let
   chmod +x $exe
   '';
 
+  nixC = "${config.pkgs.nix}/bin/nix --option extra-substituters 'https://tek.cachix.org' --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk='";
+
   bootstrapWithStaticCli = name: pre: post: pkgs.writeScript name ''
   #!${pkgs.bashInteractive}/bin/bash
   set -e
@@ -104,7 +106,7 @@ let
     ${pkgs.git}/bin/git init
   fi
   ${pkgs.git}/bin/git add .
-  ${pkgs.nix}/bin/nix flake update
+  ${nixC} flake update
   ${pkgs.git}/bin/git add flake.lock
   ${post}
   '';
@@ -119,15 +121,13 @@ let
     ${pkgs.git}/bin/git init
   fi
   ${pkgs.git}/bin/git add .
-  ${pkgs.nix}/bin/nix flake update
+  ${nixC} flake update
   ${pkgs.git}/bin/git add flake.lock
   ${post}
   '';
 
   cacheWrapper = self: name: app: pkgs.writeScript name ''
-    ${config.pkgs.nix}/bin/nix --option extra-substituters 'https://tek.cachix.org' \
-    --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=' \
-    run ${self}#${app} -- "$@"
+  ${nixC} run ${self}#${app} -- "$@"
   '';
 
   envSystemAllowed = env:
@@ -154,5 +154,6 @@ in basic // {
   cacheWrapper
   envSystemAllowed
   hsLib
+  nixC
   ;
 }
