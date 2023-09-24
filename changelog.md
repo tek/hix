@@ -1,4 +1,4 @@
-# 0.6.2
+# Unreleased
 
 * Expose environment packages as `legacyPackages.<system>.<env>.<package>` for each entry in `ghcVersions`.
 * Expose local packages, `ghc` and `pkgs` for each env as `legacyPackages.<system>.env.<env>.{<package>,ghc,pkgs}`.
