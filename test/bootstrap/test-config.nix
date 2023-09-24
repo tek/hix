@@ -1,0 +1,3 @@
+{...}: {
+  config.internal.hixUrl = "HIX";
+}
