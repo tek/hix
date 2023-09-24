@@ -9,6 +9,7 @@ let
 
   allModules = hixModules ++ userModules;
 
+  # TODO maybe this could include gen-overrides so the default systems may depend on it
   onlySystemsConfig = m:
   if isFunction m
   then a@{util, ...}: onlySystemsConfig (m a)

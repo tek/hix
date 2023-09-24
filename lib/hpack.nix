@@ -25,13 +25,12 @@ in pkgs.writeScript "hpack.zsh" ''
 
   run()
   {
-    ${config.internal.basicGhc.hpack}/bin/hpack ${if verbose then "" else "1>/dev/null"}
+    ${config.internal.basicGhc.hpack}/bin/hpack --force ${if verbose then "" else "1>/dev/null"}
   }
 
   regular()
   {
-    local name=$1 rel=$2
-    dir="$base/$rel"
+    local name=$1 rel=$2 dir="$base/$rel"
     pushd $dir
     info "$dir"
     if [[ -f package.yaml ]]
@@ -46,10 +45,10 @@ in pkgs.writeScript "hpack.zsh" ''
   synthetic()
   {
     local name=$1 rel=$2 file=$3
-    dir="$base/$rel"
+    local dir="$base/$rel"
     pushd $dir
     info "$dir"
-    remove="$dir/package.yaml"
+    local remove="$dir/package.yaml"
     cp $file package.yaml
     error() {
       cat $file
