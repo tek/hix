@@ -19,7 +19,7 @@ cabal =
 
 name:           red-panda
 version:        0.1.0.0
-synopsis:       A Haskell project
+synopsis:       A Haskell "project"
 description:    See https://hackage.haskell.org/package/red-panda/docs/RedPanda.html
 author:         Panda
 maintainer:     Panda
@@ -105,7 +105,7 @@ flakeTarget =
           license-file = "LICENSE";
           meta = {
             maintainer = "Panda";
-            synopsis = "A Haskell project";
+            synopsis = "A Haskell \"project\"";
           };
         };
         library = {

@@ -133,7 +133,7 @@ renderAttrs ind attrs =
 
 renderExpr :: Int -> Expr -> NonEmpty Text
 renderExpr ind = \case
-  ExprString s -> indent ind [[exon|"#{s}"|]]
+  ExprString s -> indent ind [[exon|"#{Text.replace "\"" "\\\"" s}"|]]
   ExprLit e -> [e]
   ExprList l -> "[" :| (indent (ind + 2) (toList . renderExpr ind =<< l)) ++ ["]"]
   ExprAttrs a -> case renderAttrs ind a of
