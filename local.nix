@@ -1,6 +1,6 @@
 {inputs, hix}:
 
-hix.pro ({config, lib, ...}: {
+hix.pro [({config, lib, ...}: {
   compiler = "ghc94";
 
   hackage = {
@@ -163,4 +163,4 @@ hix.pro ({config, lib, ...}: {
     envApps = false;
   };
 
-})
+}) (import ./ops/test-config.nix)]

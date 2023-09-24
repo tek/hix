@@ -2,8 +2,6 @@ inputs:
 with builtins;
 with inputs.nixpkgs.lib;
 let
-  inherit (inputs.nixpkgs) lib;
-
   api = makeExtensible (self: {
     lib = import ./lib/default.nix { inherit (inputs.nixpkgs) lib; };
 

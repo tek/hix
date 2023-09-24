@@ -33,7 +33,7 @@ let
 in {
   main = pkgs.writeScript "hix-tests" ''
   #!${pkgs.zsh}/bin/zsh
-  hix_dir=$PWD
+  hix_src_dir=$PWD
   tmpdir=/tmp/hix-test-temp
   if (( $# == 0 ))
   then
@@ -115,24 +115,50 @@ in {
     setopt local_options err_return
     local current="$1"
     local test="''${tests[$current]}"
+    local test_src="$hix_src_dir/test/$current"
+    local test_base="$tmpdir/$current"
+    local testdir="$test_base/work"
+    local hix_dir
+    local test_config="$test_src/test-config.nix"
+
     if [[ -z $test ]]
     then
       message "Invalid test name: $current"
       return 1
     fi
+
     if [[ -n $CI ]] && [[ -n ''${ci_skip_tests[(r)$current]} ]]
     then
       echo ">>> Skipping test '$current'"
       return 0
     fi
-    testdir="$tmpdir/$1"
-    cp -r "$hix_dir/test/$1" "$testdir"
-    cd "$testdir"
-    if [[ -n $(print **/flake.nix(N)) ]]
+
+    mkdir -p $test_base
+
+    local sub() {
+      if (( $# > 0 ))
+      then
+        sed -i "s#HIX#$hix_dir#" "$@"
+        sed -i "s#BASE#$testdir#" "$@"
+      fi
+    }
+
+    if [[ -f $test_config ]]
     then
-      sed -i "s#HIX#$hix_dir#" **/flake.nix
-      sed -i "s#BASE#$testdir#" **/flake.nix
+      hix_dir="$test_base/hix"
+      cp -r $hix_src_dir $hix_dir
+      local test_config_target="$hix_dir/ops/test-config.nix"
+      cp $test_config $test_config_target
+      sub $test_config_target
+    else
+      hix_dir=$hix_src_dir
     fi
+
+    cp -r "$test_src" "$testdir"
+    cd "$testdir"
+
+    sub $(print **/flake.nix(N))
+
     echo ">>> Running test '$current'..."
     source $test
   }
@@ -142,15 +168,15 @@ in {
 
   failure=0
   failed=()
-  local current
-  for current in $=targets
+  local t
+  for t in $=targets
   do
-    runtest $current
+    runtest $t
     if [[ $? != 0 ]]
     then
-      echo ">>> Test failed: $current"
+      echo ">>> Test failed: $t"
       (( failure = failure + 1 ))
-      failed+=($current)
+      failed+=($t)
     fi
   done
 
