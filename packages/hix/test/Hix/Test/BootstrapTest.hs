@@ -31,6 +31,7 @@ library
   exposed-modules:
       RedPanda
   other-modules:
+      NormalPanda
       Paths_red_panda
   autogen-modules:
       Paths_red_panda
@@ -49,13 +50,12 @@ library
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
     , incipit-base hiding (IncipitBase)
+  reexported-modules:
+      Control.Monad
+    , Data.Maybe
 
 executable red-panda
   main-is: Main.hs
-  other-modules:
-      Paths_red_panda
-  autogen-modules:
-      Paths_red_panda
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
@@ -69,9 +69,6 @@ test-suite red-panda-test
   main-is: Main.hs
   other-modules:
       RedPanda.Test.NameTest
-      Paths_red_panda
-  autogen-modules:
-      Paths_red_panda
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
@@ -131,6 +128,16 @@ flakeTarget =
           ghc-options = [
             "-Wall"
           ];
+          component = {
+            other-modules = [
+              "NormalPanda"
+              "Paths_red_panda"
+            ];
+          };
+          reexported-modules = [
+            "Control.Monad"
+            "Data.Maybe"
+          ];
         };
         executables.red-panda = {
           dependencies = [
@@ -154,6 +161,11 @@ flakeTarget =
           ghc-options = [
             "-Wall"
           ];
+          component = {
+            other-modules = [
+              "RedPanda.Test.NameTest"
+            ];
+          };
         };
       };
     };

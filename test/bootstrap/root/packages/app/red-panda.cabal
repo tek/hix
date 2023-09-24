@@ -15,9 +15,10 @@ library
   exposed-modules:
       RedPanda
   other-modules:
-      Paths_red_panda
-  autogen-modules:
-      Paths_red_panda
+      NormalPanda
+  reexported-modules:
+      Control.Monad
+    , Data.Maybe
   hs-source-dirs:
       lib
   ghc-options: -Wall
@@ -28,10 +29,6 @@ library
 
 executable red-panda
   main-is: Main.hs
-  other-modules:
-      Paths_red_panda
-  autogen-modules:
-      Paths_red_panda
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall

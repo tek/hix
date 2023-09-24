@@ -137,7 +137,7 @@ renderExpr ind = \case
   ExprLit e -> [e]
   ExprList l -> "[" :| (indent (ind + 2) (toList . renderExpr ind =<< l)) ++ ["]"]
   ExprAttrs a -> case renderAttrs ind a of
-    [] -> ["{};"]
+    [] -> ["{}"]
     as -> "{" :| indent (ind + 2) as ++ ["}"]
   ExprPrefix p (renderExpr ind -> h :| t) ->
     [exon|#{p} #{h}|] :| t
@@ -235,6 +235,17 @@ mkAttrs :: [e -> ExprAttr] -> e -> [ExprAttr]
 mkAttrs a e =
   (fmap ($ e) a)
 
+notNil :: ExprAttr -> Bool
+notNil = \case
+  ExprAttrNil -> False
+  _ -> True
+
+nonEmptyAttrs :: Text -> [ExprAttr] -> ExprAttr
+nonEmptyAttrs key =
+  filter notNil >>> \case
+    [] -> ExprAttrNil
+    as -> ExprAttr key (ExprAttrs as)
+
 -- TODO extract version and put it in a file
 knownPackageKeys :: PackageDescription -> [ExprAttr]
 knownPackageKeys =
@@ -275,14 +286,22 @@ knownComponentKeys prelude info =
         multi "default-extensions" (.defaultExtensions),
         multiOrSingle "source-dirs" (.hsSourceDirs),
         singleOpt "language" (.defaultLanguage),
-        multi "ghc-options" (filter notDefaultGhcOption . ghcFlavour . (.options))
+        multi "ghc-options" (filter notDefaultGhcOption . ghcFlavour . (.options)),
+        misc
       ] info
+
+    misc e =
+      nonEmptyAttrs "component" (mkAttrs [
+        multi "other-modules" (.otherModules)
+      ] e)
+
     (preludeWithVersion, deps)
       | Just p <- prelude =
         let (v, res) = foldl (amendPrelude p) (Nothing, []) info.targetBuildDepends
         in (Just (PreludeWithVersion p v), res)
       | otherwise =
-        (Nothing, filter notBase (info.targetBuildDepends))
+        (Nothing, filter notBase info.targetBuildDepends)
+
     amendPrelude p (Nothing, ds) dep@(Dependency (Cabal.unPackageName -> dname) _ _) | dname == p.preludePackage =
       (Just dep, ds)
     amendPrelude _ (v, ds) d = (v, d : ds)
@@ -292,28 +311,32 @@ notBase = \case
   Cabal.Dependency "base" _ _ -> False
   _ -> True
 
-convertComponent :: ComponentType -> BuildInfo -> HixComponent
-convertComponent special info =
-  HixComponent {..}
+convertComponent :: ComponentType -> BuildInfo -> [ExprAttr] -> HixComponent
+convertComponent special info extra =
+  HixComponent {known = knownCommon <> extra, ..}
   where
-    (prelude, known) = knownComponentKeys preludeBasic info
+    (prelude, knownCommon) = knownComponentKeys preludeBasic info
     preludeBasic = findPrelude info.mixins
 
 convertLibrary :: Cabal.Library -> HixComponent
 convertLibrary lib =
-  convertComponent Library lib.libBuildInfo
+  convertComponent Library lib.libBuildInfo extra
+  where
+    extra = mkAttrs [
+      multi "reexported-modules" (.reexportedModules)
+      ] lib
 
 convertExecutable :: UnqualComponentName -> Cabal.Executable -> HixComponent
 convertExecutable name exe =
-  convertComponent (Executable (toText (unUnqualComponentName name))) exe.buildInfo
+  convertComponent (Executable (toText (unUnqualComponentName name))) exe.buildInfo []
 
 convertTestsuite :: UnqualComponentName -> Cabal.TestSuite -> HixComponent
 convertTestsuite name test =
-  convertComponent (Test (toText (unUnqualComponentName name))) test.testBuildInfo
+  convertComponent (Test (toText (unUnqualComponentName name))) test.testBuildInfo []
 
 convertBenchmark :: UnqualComponentName -> Cabal.Benchmark -> HixComponent
 convertBenchmark name bench =
-  convertComponent (Benchmark (toText (unUnqualComponentName name))) bench.benchmarkBuildInfo
+  convertComponent (Benchmark (toText (unUnqualComponentName name))) bench.benchmarkBuildInfo []
 
 convert :: CabalInfo -> HixPackage
 convert cinfo =
