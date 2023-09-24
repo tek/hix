@@ -109,6 +109,7 @@ hix.pro [({config, lib, ...}: {
       new-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
         $exe new --hix-url '${config.internal.hixUrl}' "$@"
+        '' ''
         nix run .#gen-cabal
         '';
       in {
@@ -126,6 +127,7 @@ hix.pro [({config, lib, ...}: {
       bootstrap-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-bootstrap-nocache" ''
         $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
+        '' ''
         nix run .#gen-cabal
         '';
       in {

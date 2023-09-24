@@ -94,11 +94,11 @@ let
   chmod +x $exe
   '';
 
-  bootstrapWithStaticCli = name: script: pkgs.writeScript name ''
+  bootstrapWithStaticCli = name: pre: post: pkgs.writeScript name ''
   #!${pkgs.bashInteractive}/bin/bash
   set -e
   ${downloadStaticCli}
-  ${script}
+  ${pre}
   if ! git status &>/dev/null
   then
     ${pkgs.git}/bin/git init
@@ -106,13 +106,14 @@ let
   ${pkgs.git}/bin/git add .
   ${pkgs.nix}/bin/nix flake update
   ${pkgs.git}/bin/git add flake.lock
+  ${post}
   '';
 
-  bootstrapWithDynamicCli = name: script: pkgs.writeScript name ''
+  bootstrapWithDynamicCli = name: pre: post: pkgs.writeScript name ''
   #!${pkgs.bashInteractive}/bin/bash
   set -e
   exe="${config.outputs.packages.hix}/bin/hix"
-  ${script}
+  ${pre}
   if ! git status &>/dev/null
   then
     ${pkgs.git}/bin/git init
@@ -120,6 +121,7 @@ let
   ${pkgs.git}/bin/git add .
   ${pkgs.nix}/bin/nix flake update
   ${pkgs.git}/bin/git add flake.lock
+  ${post}
   '';
 
   cacheWrapper = self: name: app: pkgs.writeScript name ''
