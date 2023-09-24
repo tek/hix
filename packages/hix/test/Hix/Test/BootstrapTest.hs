@@ -103,6 +103,7 @@ flakeTarget =
           build-type = "Simple";
           license = "BSD-2-Clause-Patent";
           license-file = "LICENSE";
+          version = "0.1.0.0";
           meta = {
             maintainer = "Panda";
             synopsis = "A Haskell \"project\"";

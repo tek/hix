@@ -243,7 +243,8 @@ knownPackageKeys =
     single "build-type" buildType,
     single "copyright" (.copyright),
     single "license" license,
-    singleOpt "license-file" (head . licenseFiles)
+    singleOpt "license-file" (head . licenseFiles),
+    single "version" (.package.pkgVersion)
   ]
 
 metaPackageKeys :: PackageDescription -> [ExprAttr]
