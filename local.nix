@@ -7,6 +7,7 @@ hix.pro [({config, lib, ...}: {
     versionFile = "ops/version.nix";
     tag = false;
     formatTag = { name, version }: if name == null then version else "${name}-${version}";
+    setChangelogVersion = false;
   };
 
   overrides = {hackage, ...}: {
