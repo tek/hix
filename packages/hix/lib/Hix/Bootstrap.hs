@@ -340,7 +340,7 @@ renderComponent :: HixComponent -> ExprAttr
 renderComponent HixComponent {..} =
   ExprAttr key cabalConfig
   where
-    cabalConfig = ExprAttrs (known <> foldMap preludeAttrs prelude)
+    cabalConfig = ExprAttrs (enable <> foldMap preludeAttrs prelude <> known)
     preludeAttrs p =
       [ExprAttr "prelude" (ExprAttrs [
         ExprAttr "package" (preludePackageAttrs p),
@@ -358,6 +358,9 @@ renderComponent HixComponent {..} =
       Executable name -> [exon|executables.#{name}|]
       Test name -> [exon|tests.#{name}|]
       Benchmark name -> [exon|benchmarks.#{name}|]
+    enable = case special of
+      Library -> [ExprAttr "enable" (ExprLit "true")]
+      _ -> []
 
 flakePackage :: HixPackage -> ExprAttr
 flakePackage pkg =

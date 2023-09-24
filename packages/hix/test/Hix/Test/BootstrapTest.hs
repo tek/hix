@@ -109,6 +109,14 @@ flakeTarget =
           };
         };
         library = {
+          enable = true;
+          prelude = {
+            package = {
+              name = "incipit-base";
+              version = ">=0.4 && <0.6";
+            };
+            module = "IncipitBase";
+          };
           dependencies = [
             "containers"
             "base >=4 && <5"
@@ -122,13 +130,6 @@ flakeTarget =
           ghc-options = [
             "-Wall"
           ];
-          prelude = {
-            package = {
-              name = "incipit-base";
-              version = ">=0.4 && <0.6";
-            };
-            module = "IncipitBase";
-          };
         };
         executables.red-panda = {
           dependencies = [
