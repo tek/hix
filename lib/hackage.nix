@@ -7,6 +7,7 @@ let
   git = "${pkgs.git}/bin/git";
 
   cfg = config.hackage;
+  gitAdd = cfg.commit || cfg.add;
 
   app = program: { type = "app"; inherit program; };
 
@@ -72,7 +73,7 @@ let
     if [[ -n $changelogs ]]
     then
       sed -i "s/Unreleased/$new_version/" $=changelogs
-      ${optionalString cfg.commit "${git} add $=changelogs"}
+      ${optionalString gitAdd "${git} add $=changelogs"}
     fi
   '';
 
@@ -85,7 +86,7 @@ let
     then
       ${cfg.versionFileUpdate file}
       ${if needsGenCabal file then "nix run '.#gen-cabal-quiet'" else ""}
-      ${if cfg.commit && file != null then addFiles file else ""}
+      ${if gitAdd && file != null then addFiles file else ""}
       ${if cfg.setChangelogVersion then bumpChangelogs else ""}
     fi
   '';

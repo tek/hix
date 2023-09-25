@@ -91,11 +91,19 @@ in {
 
     commit = mkOption {
       description = mdDoc ''
-        After successfully uploading a new release, the changes to the version file will be committed unless this is set
-        to `false`.
+        After successfully uploading a new release, the changes to the version file, cabal files and changelog will be
+        committed unless this is set to `false`.
       '';
       type = bool;
       default = true;
+    };
+
+    add = mkOption {
+      description = mdDoc ''
+      When [](#opt-hackage-add) is set to `false`, this option can be enabled to git-add the files but not commit them.
+      '';
+      type = bool;
+      default = false;
     };
 
     tag = mkOption {

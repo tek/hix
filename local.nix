@@ -10,6 +10,8 @@ in {
     tag = false;
     formatTag = { name, version }: if name == null then version else "${name}-${version}";
     setChangelogVersion = false;
+    commit = false;
+    add = true;
   };
 
   overrides = {hackage, ...}: {
