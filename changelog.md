@@ -1,5 +1,7 @@
 # Unreleased
 
+* The option `hackage.add` allows changed files to be git-added, but not committed, during release when `hackage.commit`
+  is `false`.
 * Default to `main` package when none was specified for `ghci(d)` commands in multi-package projects.
 
 # 0.6.6

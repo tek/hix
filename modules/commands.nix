@@ -4,10 +4,6 @@ let
 
   commandModule = import ./command.nix { global = config; inherit util; };
 
-  cli = config.internal.hixCli.exe;
-
-  json = util.json.ghciFile;
-
 in {
   options = with types; {
 
