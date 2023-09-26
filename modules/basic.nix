@@ -255,7 +255,7 @@ in {
       then head config.internal.packageNames
       else throw ''
       The config option 'main' must name one of the 'packages' if more than one is defined.
-      See https://tryp.io/hix/manual/index.html#opt-general-main
+      See https://tryp.io/hix/index.html#opt-general-main
       ''
     );
 
