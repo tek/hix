@@ -18,7 +18,8 @@ data GhciRun =
     test :: GhciTest,
     shell :: Text,
     run :: Maybe Text,
-    scriptFile :: Path Abs File
+    scriptFile :: Path Abs File,
+    cmdline :: Text
   }
   deriving stock (Eq, Show, Generic)
 

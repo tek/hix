@@ -1,3 +1,7 @@
+# Unreleased
+
+* Default to `main` package when none was specified for `ghci(d)` commands in multi-package projects.
+
 # 0.6.6
 
 * Expose environment packages as `legacyPackages.<system>.<env>.<package>` for each entry in `ghcVersions`.

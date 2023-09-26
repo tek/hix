@@ -43,6 +43,7 @@ let
     packages = mapAttrs (_: packageConf) config.packages;
 
     env = default: {
+      mainPackage = config.main;
       inherit packages;
       defaultEnv = default.runner;
     };

@@ -9,6 +9,7 @@ import Data.ByteString (elemIndex)
 import qualified Data.ByteString.Builder as ByteStringBuilder
 import Data.ByteString.Builder (Builder, byteString, charUtf8, stringUtf8)
 import Data.Generics.Labels ()
+import qualified Data.Map.Strict as Map
 import Distribution.PackageDescription (BuildInfo (..))
 import Distribution.Simple (PerCompilerFlavor (PerCompilerFlavor))
 import qualified Exon
@@ -34,7 +35,6 @@ import Hix.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Optparse (JsonConfig)
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
-import qualified Data.Map.Strict as Map
 
 type Regex = IndexedTraversal' Int ByteString Match
 
@@ -461,7 +461,7 @@ fromConfig ::
   M CabalConfig
 fromConfig cliRoot source pconf = do
   conf <- either pure jsonConfig pconf
-  target <- targetComponentOrError cliRoot conf.packages (TargetForFile source)
+  target <- targetComponentOrError cliRoot Nothing conf.packages (TargetForFile source)
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,
     ghcOptions = stringUtf8 <$> target.component.ghcOptions,

@@ -3,7 +3,7 @@ module Hix.Data.GhciConfig where
 import Data.Aeson (FromJSON, FromJSONKey)
 import GHC.Exts (IsList)
 
-import Hix.Data.ComponentConfig (EnvRunner, PackagesConfig)
+import Hix.Data.ComponentConfig (EnvRunner, PackageName, PackagesConfig)
 
 newtype RunnerName =
   RunnerName { unRunnerName :: Text }
@@ -32,7 +32,8 @@ newtype ChangeDir =
 data EnvConfig =
   EnvConfig {
     packages :: PackagesConfig,
-    defaultEnv :: EnvRunner
+    defaultEnv :: EnvRunner,
+    mainPackage :: Maybe PackageName
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -40,6 +41,7 @@ data EnvConfig =
 data GhciConfig =
   GhciConfig {
     packages :: PackagesConfig,
+    mainPackage :: Maybe PackageName,
     setup :: Map RunnerName GhciSetupCode,
     run :: Map RunnerName GhciRunExpr,
     args :: GhciArgs

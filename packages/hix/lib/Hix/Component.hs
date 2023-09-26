@@ -50,9 +50,19 @@ packageByDir ::
 packageByDir config dir =
   noteEnv [exon|No package at this directory: #{pathText dir}|] (tryPackageByDir config dir)
 
-packageDefault :: PackagesConfig -> ResolvedPackage
-packageDefault = \case
+packageDefault :: Maybe PackageName -> PackagesConfig -> ResolvedPackage
+packageDefault mainPkg = \case
+  [] -> NoPackage "Project has no packages."
   [(_, pkg)] -> ResolvedPackage False pkg
+  pkgs | Just name <- mainPkg ->
+    case Map.lookup name pkgs of
+      Just pkg ->
+        ResolvedPackage False pkg
+      Nothing ->
+        NoPackage (
+          [exon|Project has multiple packages and the main package '##{name}' is not among them. |] <>
+          "Specify -p or -f to choose one explicitly."
+        )
   _ -> NoPackage "Project has more than one package, specify -p or -f."
 
 packageForSpec ::
@@ -75,12 +85,13 @@ packageForSpec root config = \case
 
 packageForSpecOrDefault ::
   Path Abs Dir ->
+  Maybe PackageName ->
   PackagesConfig ->
   Maybe PackageSpec ->
   M ResolvedPackage
-packageForSpecOrDefault root config = \case
+packageForSpecOrDefault root mainPkg config = \case
   Just pkg -> ResolvedPackage True <$> packageForSpec root config pkg
-  Nothing -> pure (packageDefault config)
+  Nothing -> pure (packageDefault mainPkg config)
 
 matchComponent :: ComponentConfig -> ComponentSpec -> Bool
 matchComponent candidate (ComponentSpec name dir) =
@@ -126,11 +137,12 @@ targetInPackage (NoPackage err) _ = pure (NoDefaultTarget err)
 
 targetForComponent ::
   Path Abs Dir ->
+  Maybe PackageName ->
   PackagesConfig ->
   ComponentCoords ->
   M TargetOrDefault
-targetForComponent root config spec = do
-  package <- packageForSpecOrDefault root config spec.package
+targetForComponent root mainPkg config spec = do
+  package <- packageForSpecOrDefault root mainPkg config spec.package
   targetInPackage package spec.component
 
 targetForFile ::
@@ -156,31 +168,34 @@ targetForFile root config file = do
 
 targetComponentIn ::
   Path Abs Dir ->
+  Maybe PackageName ->
   PackagesConfig ->
   TargetSpec ->
   M TargetOrDefault
-targetComponentIn root config = \case
+targetComponentIn root mainPkg config = \case
   TargetForComponent spec ->
-    targetForComponent root config spec
+    targetForComponent root mainPkg config spec
   TargetForFile spec ->
     ExplicitTarget <$> targetForFile root config spec
 
 targetComponent ::
   Maybe (Path Abs Dir) ->
+  Maybe PackageName ->
   PackagesConfig ->
   TargetSpec ->
   M TargetOrDefault
-targetComponent cliRoot config spec = do
+targetComponent cliRoot mainPkg config spec = do
   root <- rootDir cliRoot
-  targetComponentIn root config spec
+  targetComponentIn root mainPkg config spec
 
 targetComponentOrError ::
   Maybe (Path Abs Dir) ->
+  Maybe PackageName ->
   PackagesConfig ->
   TargetSpec ->
   M Target
-targetComponentOrError cliRoot config spec =
-  targetComponent cliRoot config spec >>= \case
+targetComponentOrError cliRoot mainPkg config spec =
+  targetComponent cliRoot mainPkg config spec >>= \case
     ExplicitTarget t -> pure t
     DefaultTarget t -> pure t
     NoDefaultTarget err -> throwM (EnvError err)

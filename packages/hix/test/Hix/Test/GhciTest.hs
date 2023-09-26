@@ -19,7 +19,7 @@ import Hix.Data.Error (pathText)
 import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig (EnvConfig), GhciConfig (..))
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Env (envRunner)
-import Hix.Ghci (assemble, ghcidCmdlineFromOptions)
+import Hix.Ghci (assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
 import Hix.Monad (runM)
 import qualified Hix.Options as Options
 import Hix.Options (
@@ -95,8 +95,9 @@ ghciOptions =
   GhciOptions {
     config = Left GhciConfig {
       packages,
+      mainPackage = Nothing,
       setup = [("generic", "import Test.Tasty")],
-      run = [("generic", ("check . property . test"))],
+      run = [("generic", "check . property . test")],
       args = ["-Werror"]
     },
     root = Nothing,
@@ -132,6 +133,44 @@ test_ghcid = do
   cmdline <- evalEither res
   ghcidTarget root cmdline.ghci.scriptFile === cmdline.cmdline
 
+mainOptions :: GhciOptions
+mainOptions =
+  GhciOptions {
+    config = Left GhciConfig {
+      packages,
+      mainPackage = Just "core",
+      setup = [("generic", "import Test.Tasty")],
+      run = [("generic", "")],
+      args = []
+    },
+    root = Nothing,
+    component = TargetForComponent (ComponentCoords Nothing Nothing),
+    test = TestOptions {
+      mod = "Main",
+      test = Nothing,
+      runner = Nothing,
+      cd = ChangeDir True
+    },
+    extra = Nothing
+  }
+
+mainPackageTarget ::
+  Path Abs Dir ->
+  Path Abs File ->
+  Text
+mainPackageTarget cwd scriptFile =
+  [exon|ghci -i#{path} -ghci-script=#{pathText scriptFile}|]
+  where
+    path = [exon|#{dir}packages/core/test/:#{dir}packages/api/lib/:#{dir}packages/core/lib/|]
+    dir = pathText cwd
+
+test_mainPackage :: TestT IO ()
+test_mainPackage = do
+  res <- lift $ withSystemTempDir "hix-test" \ tmp ->
+    runM root (ghciCmdlineFromOptions tmp mainOptions)
+  cmdline <- evalEither res
+  mainPackageTarget root cmdline.scriptFile === cmdline.cmdline
+
 spec2 :: TargetSpec
 spec2 =
   TargetForFile (root </> [relfile|packages/core/test/Main.hs|])
@@ -148,7 +187,7 @@ runnerFor target spec = do
   res <- evalEither =<< liftIO (runM root (envRunner conf))
   target === res
   where
-    conf = EnvRunnerOptions (Left (EnvConfig packages defaultRunner)) Nothing (Just spec)
+    conf = EnvRunnerOptions (Left (EnvConfig packages defaultRunner Nothing)) Nothing (Just spec)
 
 test_componentEnv :: TestT IO ()
 test_componentEnv = do

@@ -32,7 +32,7 @@ import Hix.Json (jsonConfig)
 import Hix.Monad (M, noteGhci)
 import qualified Hix.Options as Options
 import Hix.Options (
-  ExtraGhciOptions,
+  ExtraGhciOptions (ExtraGhciOptions),
   ExtraGhcidOptions (ExtraGhcidOptions),
   GhciOptions (GhciOptions),
   GhcidOptions,
@@ -110,7 +110,7 @@ assemble :: GhciOptions -> M GhciTest
 assemble opt = do
   config <- either pure jsonConfig opt.config
   root <- rootDir opt.root
-  Target {..} <- targetComponentOrError opt.root config.packages opt.component
+  Target {..} <- targetComponentOrError opt.root config.mainPackage config.packages opt.component
   script <- ghciScript config package sourceDir opt
   pure GhciTest {
     script,
@@ -139,9 +139,16 @@ ghciScriptFile tmp text =
     hClose handle
     pure path
 
+argFrag :: Text -> Text
+argFrag "" = ""
+argFrag s = [exon| #{s}|]
+
+optArg :: Maybe Text -> Text
+optArg = foldMap argFrag
+
 searchPathArg :: NonEmpty (Path Abs Dir) -> Text
 searchPathArg paths =
-  [exon| -i#{colonSeparated}|]
+  [exon|-i#{colonSeparated}|]
   where
     colonSeparated = Text.intercalate ":" (pathText <$> toList paths)
 
@@ -154,10 +161,12 @@ ghciCmdline ::
 ghciCmdline test extra scriptFile runScriptFile =
   GhciRun {..}
   where
-    shell = [exon|##{Text.unwords (coerce test.args)}#{sp} -ghci-script=##{toFilePath scriptFile}#{extraOpts}|]
+    cmdline = [exon|ghci#{shell}#{optArg run}|]
+    shell = [exon|#{argFrag args}#{argFrag sp} -ghci-script=##{toFilePath scriptFile}#{argFrag extraOpts}|]
+    args = Text.unwords (coerce test.args)
     run = runScriptFile <&> \ f -> [exon|-ghci-script=##{toFilePath f}|]
     sp = foldMap searchPathArg (nonEmpty test.searchPath)
-    extraOpts | Just o <- extra = [exon| ##{o}|]
+    extraOpts | Just (ExtraGhciOptions o) <- extra = o
               | otherwise = ""
 
 ghciCmdlineFromOptions ::
@@ -178,7 +187,7 @@ ghcidCmdlineFromOptions tmp opt = do
   ghci <- ghciCmdlineFromOptions tmp opt.ghci
   let
     test = fromMaybe "main" ghci.test.test
-  pure (GhcidRun [exon|ghcid --command="ghci #{ghci.shell}" --test='##{test}'#{foldMap extra opt.extra}|] ghci)
+  pure (GhcidRun [exon|ghcid --command="ghci#{ghci.shell}" --test='##{test}'#{foldMap extra opt.extra}|] ghci)
   where
     extra (ExtraGhcidOptions o) = [exon| ##{o}|]
 
