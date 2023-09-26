@@ -2,23 +2,35 @@
 
   inherit (config.internal) pkgs;
 
+  git = "${pkgs.git}/bin/git";
+
   preamble = ''
   #!${pkgs.zsh}/bin/zsh
   setopt err_exit no_unset pipefail
 
   if [[ $# == 0 ]]
   then
-    echo 'Please specify version'
+    echo 'Error: Please specify version'
     exit 1
   fi
   version="$1"
+
+  if ! ${git} diff --quiet
+  then
+    echo 'Error: Worktree is dirty'
+    exit 1
+  fi
+
+  ask() {
+    echo -n ">>> $1 [Yn] "
+    read -q decision || true
+    echo ""
+    [[ $decision != 'n' ]]
+  }
   '';
 
   updateVersions = ''
-  echo -n ">>> Run tests? [Yn] "
-  read -q decision || true
-  echo ""
-  if [[ $decision != 'n' ]]
+  if ask 'Run tests?'
   then
     nix build .#docs
     nix run .#test
@@ -27,13 +39,19 @@
   sed -Ei 's/~[[:digit:]]+\.[[:digit:]]+\.tar/~'"''${version%.*}.tar/" readme.md
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
   sed -i "s/Unreleased/$version/" changelog.md
-  ${pkgs.git}/bin/git --no-pager diff
-  ${pkgs.git}/bin/git add readme.md changelog.md examples modules/basic.nix
+  ${git} --no-pager diff
+  if ! ask 'Versions updated. Continue?'
+  then
+    ${git} reset --hard
+    echo ">>> Aborting."
+    exit 1
+  fi
+  ${git} add .
   '';
 
   commitAndTag = ''
-  ${pkgs.git}/bin/git commit --allow-empty -m "Release $version"
-  ${pkgs.git}/bin/git tag -m "Release $version" "$version"
+  ${git} commit --allow-empty -m "Release $version"
+  ${git} tag -m "Release $version" "$version"
   '';
 
   nix = pkgs.writeScript "hix-release-nix" ''
@@ -47,15 +65,12 @@
   ${updateVersions}
 
   nix run .#release -- -v $version
-  echo -n ">>> Update CLI version in overrides. Continue? [Yn] "
-  read -q decision || true
-  echo ""
-  if [[ $decision == 'n' ]]
+  if ! ask 'Update CLI version in overrides. Continue?'
   then
     echo ">>> Aborting."
     exit 1
   fi
-  ${pkgs.git}/bin/git add modules/cli.nix
+  ${git} add modules/cli.nix
   ${commitAndTag}
   '';
 
