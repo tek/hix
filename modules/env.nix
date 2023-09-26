@@ -563,7 +563,7 @@ in {
         in (lib.nixosSystem nixosArgs).config.system.build.vm
         );
 
-        setup = mkDefault "${vmLib.ensure config.vm}";
+        setup = mkDefault "${vmLib.ensure config.basePort config.vm}";
         exit = mkDefault "${vmLib.kill config.vm}";
 
       };

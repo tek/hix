@@ -4,13 +4,13 @@ let
   display = vm:
   if vm.headless then "-display none" else "";
 
-  ensure = vm: pkgs.writeScript "ensure-vm" ''
+  ensure = basePort: vm: pkgs.writeScript "ensure-vm" ''
     #!${pkgs.zsh}/bin/zsh
     if ${pkgs.procps}/bin/pgrep -F ${vm.pidfile} -L -f ${vm.pidfile} &>/dev/null
     then
       print '>>> VM already running' >&2
     else
-      print '>>> Starting VM' >&2
+      print '>>> Starting VM with base port ${toString basePort}' >&2
       mkdir -p ${vm.dir}
       rm -f ${vm.pidfile}
       ${vm.derivation}/bin/run-nixos-vm ${display vm} -daemonize -pidfile ${vm.pidfile} -monitor unix:${vm.monitor},server,nowait
@@ -30,5 +30,5 @@ let
   '';
 
 in {
-  inherit create postgres ensure kill;
+  inherit create ensure kill;
 }

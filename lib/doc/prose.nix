@@ -476,7 +476,7 @@ in {
 
   ```
   $ nix develop .#example
-  >>> Starting VM
+  >>> Starting VM with base port 20000
   >>> Waiting 30 seconds for VM to boot...
   $ ghc --version
   The Glorious Glasgow Haskell Compilation System, version 9.4.3
