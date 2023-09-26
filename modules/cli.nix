@@ -55,7 +55,7 @@ in {
     } // (
           if config.internal.hixCli.dev
           then { hix = minimal (source.package ../. "hix"); }
-          else { hix = jailbreak (minimal (hackage "0.6.2" "1f1qszzriap9m8sf4v3ycj4zvv54v3rkd480vfnw35ajswqjzjhw")); }
+          else { hix = jailbreak (minimal (hackage "0.6.7" "1kcab39rwangb4m1viw58ppvf1ps4i75i2dgapzyqklq87f1bmpi")); }
       );
 
     ghc = {

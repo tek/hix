@@ -1,4 +1,4 @@
-# Unreleased
+# 0.6.7
 
 * The option `hackage.add` allows changed files to be git-added, but not committed, during release when `hackage.commit`
   is `false`.
