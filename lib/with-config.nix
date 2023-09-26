@@ -53,6 +53,7 @@ let
     # - restarts
     # - cwd
     ghci = {
+      mainPackage = config.main;
       inherit packages;
       setup = config.ghci.setup;
       run = config.ghci.run;

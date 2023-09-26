@@ -11,8 +11,10 @@ let
 
   anyEnabled = set: any (a: a.enable) (attrValues set);
 
+  # excludes `pkgConfig.executable` because it's used to determine whether the default executable should be enabled.
   hasComponents =
-    pkgConfig.library.enable || anyEnabled pkgConfig.executables ||
+    pkgConfig.library.enable || anyEnabled pkgConfig.libraries ||
+    anyEnabled pkgConfig.executables ||
     pkgConfig.test.enable || anyEnabled pkgConfig.tests ||
     pkgConfig.benchmark.enable || anyEnabled pkgConfig.benchmarks;
 
@@ -73,13 +75,13 @@ let
 
     };
 
-    config = optionalAttrs default {
-      enable = mkDefault (!hasComponents);
-    } // {
-      dependencies = optional (config.dependOnLibrary && pkgConfig.library.enable) pkgName;
-
-      ghc-options = mkIf (sort != "benchmark") config.ghc-options-exe;
-    };
+    config =
+      optionalAttrs default { enable = mkDefault (!hasComponents); }
+      //
+      {
+        dependencies = optional (config.dependOnLibrary && pkgConfig.library.enable) pkgName;
+        ghc-options = mkIf (sort != "benchmark") config.ghc-options-exe;
+      };
 
   };
 
@@ -115,9 +117,10 @@ in {
   options = with types; {
 
     name = mkOption {
-      description = mdDoc "The name of the package, defaulting to the attribute name in the config.";
+      description = mdDoc "The name of the package, determined by the attribute name in the config.";
       type = str;
       default = name;
+      readOnly = true;
     };
 
     src = mkOption {
@@ -135,7 +138,13 @@ in {
     };
 
     libraries = mkOption {
-      description = mdDoc "";
+      description = mdDoc ''
+      The sublibraries of this package.
+      Unlike [](#opt-package-library), these are treated specially by cabal.
+      To depend on them, use `<pkg>:<lib>`.
+      If [](#opt-package-libraries._name_.public) is set to `false`, you can only depend on them from other components
+      in the same package (this is then called an internal library – default is `true`).
+      '';
       type = attrsOf (libSubmodule false);
       default = {};
     };
@@ -352,6 +361,7 @@ in {
 
     internal.componentsSet =
       optionalAttrs config.library.enable { library = config.library; } //
+      config.libraries //
       optionalAttrs config.executable.enable { ${config.executable.name} = config.executable; } //
       config.executables //
       optionalAttrs config.test.enable { ${config.test.name} = config.test; } //

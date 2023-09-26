@@ -8,6 +8,7 @@ let
     basic = test "basic";
     deps = test "deps";
     ghci = test "ghci";
+    ghci-vm = test "ghci-vm";
     packages = test "packages";
     hackage = test "hackage";
     cross = test "cross";
@@ -28,7 +29,7 @@ let
 
   testsA = concatStringsSep " " (mapAttrsToList testA tests);
 
-  ciSkipTests = "ghci service postgres hackage";
+  ciSkipTests = "ghci-vm service postgres hackage";
 
 in {
   main = pkgs.writeScript "hix-tests" ''

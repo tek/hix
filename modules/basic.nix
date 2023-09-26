@@ -9,17 +9,35 @@ let
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
   baseFromPackages = let
-    pkg = head (attrValues config.internal.packagePaths);
+    paths = attrValues config.internal.packagePaths;
+    pkg = head paths;
     next = p:
       if p == "/"
-      then throw "Could not determine base dir: Invalid package path ${pkg}"
+      then throw "Could not determine project root dir: Invalid package path ${pkg}"
       else if isStorePath p || pathExists "${p}/flake.nix"
       then p
       else next (dirOf p);
   in
-   if length (attrNames config.internal.packagePaths) == 0
-   then throw "You have to specify either the 'base' option, pointing to the project root, or an entry in [](#opt-general-packages)."
+   if length paths == 0
+   then throw ''
+   Could not determine project root dir.
+   Either specify `base = ./.;` or add entries to `packages`.
+   See https://tryp.io/hix/index.html#packages for more.
+   ''
    else next pkg;
+
+   autoMain = let
+     ps = attrValues config.packages;
+
+    inDeps = target: thing: any (dep: util.cabalDepPackage dep == target) thing.dependencies;
+
+    hasDepOn = dep: pkg:
+    pkg.name != dep &&
+    any (inDeps dep) (attrValues pkg.internal.componentsSet);
+
+     isNoDep = pkg: ! (any (hasDepOn pkg.name) ps);
+
+    in findFirst isNoDep null (attrValues config.packages);
 
 in {
   options = {
@@ -40,7 +58,6 @@ in {
       description = mdDoc ''
       The project's Cabal packages, with Cabal package names as keys and package config as values.
       The config is processed with [HPack](https://github.com/sol/hpack).
-      Consult the docs for the package options to learn how this is translated.
       '';
       example = literalExpression ''
       {
@@ -57,6 +74,8 @@ in {
         The name of a key in `packages` that is considered to be the main package.
         This package will be assigned to the `defaultPackage` flake output that is built by a plain
         `nix build`.
+        If this option is undefined, Hix will choose one of the packages that are not in the dependencies of any other
+        package.
       '';
       type = str;
     };
@@ -250,12 +269,29 @@ in {
   config = {
     base = mkDefault baseFromPackages;
 
-    main = mkDefault (
-      if (length config.internal.packageNames == 1)
-      then head config.internal.packageNames
+    main = mkDefault (let
+      names = config.internal.packageNames;
+      count = length names;
+    in
+      if count == 1
+      then head names
+      else if count == 0
+      then ''
+      This action requires at least one package to be defined, as in:
+      {
+        packages.my-project = { src = ./.; };
+      }
+      ''
+      else if autoMain != null
+      then autoMain.name
       else throw ''
-      The config option 'main' must name one of the 'packages' if more than one is defined.
-      See https://tryp.io/hix/index.html#opt-general-main
+      Could not determine the main package.
+      This should only happen if all packages depend on each other cyclically.
+      If that is not the case, please report a bug at: https://github.com/tek/hix/issues
+      You can specify the main package explicitly:
+      {
+        main = "my-package";
+      }
       ''
     );
 

@@ -1,4 +1,4 @@
 module Root.Lib where
 
 test :: IO ()
-test = putStrLn "lib-test"
+test = putStrLn "core-lib-test"

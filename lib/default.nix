@@ -118,6 +118,11 @@ let
   else o
   ;
 
+  cabalDepPackage = dep:
+  if isAttrs dep
+  then dep.name
+  else dep;
+
 in {
   inherit
   flake-utils
@@ -148,6 +153,7 @@ in {
   empty
   evalModules
   overridesVia
+  cabalDepPackage
   ;
 
   ghcOverlay = import ./ghc-overlay.nix;
