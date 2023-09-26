@@ -100,7 +100,8 @@ in {
 
     add = mkOption {
       description = mdDoc ''
-      When [](#opt-hackage-add) is set to `false`, this option can be enabled to git-add the files but not commit them.
+      When [](#opt-hackage-hackage.add) is set to `false`, this option can be enabled to git-add the files but not
+      commit them.
       '';
       type = bool;
       default = false;
