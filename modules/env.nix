@@ -58,6 +58,8 @@ let
   buildInputs =
   mkBuildInputs config.buildInputs ++
   mkBuildInputs global.buildInputs ++
+  config.haskellTools config.ghc.vanillaGhc ++
+  global.haskellTools config.ghc.vanillaGhc ++
   optional config.hls.enable config.hls.package ++
   optional config.ghcid.enable config.ghcid.package ++
   [ghcWithPackages]
@@ -251,6 +253,18 @@ in {
       '';
       type = either (functionTo (listOf package)) (listOf str);
       default = [];
+    };
+
+    haskellTools = mkOption {
+      description = mdDoc ''
+      Function returning a list of names of Haskell packages that should be included in the environment's `$PATH`.
+      This is a convenience variant of [](#opt-env-buildInputs) that provides the environment's GHC package set (without
+      overrides) as a function argument.
+      This is intended for tooling like `fourmolu`.
+      '';
+      type = functionTo (listOf package);
+      default = _: [];
+      example = literalExpression ''ghc: [ghc.fourmolu]'';
     };
 
     localDeps = mkOption {

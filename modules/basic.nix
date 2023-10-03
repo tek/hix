@@ -211,6 +211,18 @@ in {
       '';
     };
 
+    haskellTools = mkOption {
+      description = mdDoc ''
+      Function returning a list of names of Haskell packages that should be included in every environment's `$PATH`.
+      This is a convenience variant of [](#opt-env-buildInputs) that provides the environment's GHC package set (without
+      overrides) as a function argument.
+      This is intended for tooling like `fourmolu`.
+      '';
+      type = functionTo (listOf package);
+      default = _: [];
+      example = literalExpression ''ghc: [ghc.fourmolu]'';
+    };
+
     pkgs = mkOption {
       type = util.types.pkgs;
       description = mdDoc ''

@@ -1,3 +1,8 @@
+# Unreleased
+
+* Add the option `haskellTools` globally and per-env, which allows specifying shell tools that should be made available
+  from the env's GHC without overrides.
+
 # 0.6.7
 
 * The option `hackage.add` allows changed files to be git-added, but not committed, during release when `hackage.commit`

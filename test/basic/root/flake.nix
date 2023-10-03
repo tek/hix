@@ -14,5 +14,9 @@
       test.enable = true;
     };
     cabal.dependencies = ["base" "some"];
+    envs.dev.haskellTools = g: [g.fourmolu];
+    envs.dev.overrides = {hackage, ...}: {
+      fourmolu = hackage "0.14.0.0" "1bhfx6j79hc32q22c7dagirby5j5dhydm0cm9av7dhhjd71rr2xk";
+    };
   };
 }
