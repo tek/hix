@@ -31,6 +31,17 @@ let
 
   ciSkipTests = "ghci-vm service postgres hackage";
 
+  rsyncFilter = pkgs.writeText "hix-test-rsync-filter" ''
+  + /*.nix
+  + /flake.lock
+  + /cabal.project
+  + /modules/***
+  + /lib/***
+  + /packages/***
+  + /ops/***
+  - *
+  '';
+
 in {
   main = pkgs.writeScript "hix-tests" ''
   #!${pkgs.zsh}/bin/zsh
@@ -119,7 +130,7 @@ in {
     local test_src="$hix_src_dir/test/$current"
     local test_base="$tmpdir/$current"
     local testdir="$test_base/work"
-    local hix_dir
+    local hix_dir="$test_base/hix"
     local test_config="$test_src/test-config.nix"
 
     if [[ -z $test ]]
@@ -144,15 +155,14 @@ in {
       fi
     }
 
+    mkdir -p $hix_dir
+    ${pkgs.rsync}/bin/rsync -rlt --filter='merge ${rsyncFilter}' $hix_src_dir/ $hix_dir/
+
     if [[ -f $test_config ]]
     then
-      hix_dir="$test_base/hix"
-      cp -r $hix_src_dir $hix_dir
       local test_config_target="$hix_dir/ops/test-config.nix"
       cp $test_config $test_config_target
       sub $test_config_target
-    else
-      hix_dir=$hix_src_dir
     fi
 
     cp -r "$test_src" "$testdir"
