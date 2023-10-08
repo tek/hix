@@ -2,6 +2,7 @@
 
 * Add the option `haskellTools` globally and per-env, which allows specifying shell tools that should be made available
   from the env's GHC without overrides.
+* Separate the effect of the option `profiling` from `env.<name>.localPackage`.
 
 # 0.6.7
 

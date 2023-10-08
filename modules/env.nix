@@ -381,17 +381,15 @@ in {
 
     localPackage = mkOption {
       description = mdDoc ''
-        A function that takes dep combinators and a derivation and returns a modified version of that derivation.
+        A function that takes override combinators and a derivation and returns a modified version of that derivation.
         Called for each cabal2nix derivation of the local packages before inserting it into the overrides.
-
-        The default is to disable profiling if [](#opt-env-profiling) is `false`.
-        If this option is customized, the profiling option won't be effective.
+        Like [](#opt-general-overrides), but applies too all packages when building with this env.
       '';
       example = literalExpression ''
         { fast, nobench, ... }: pkg: nobench (fast pkg);
       '';
       type = unspecified;
-      default = api: if config.profiling then id else api.noprofiling;
+      default = api: id;
     };
 
     profiling = mkOption {
@@ -399,7 +397,6 @@ in {
       default = true;
       description = mdDoc ''
         Whether to build local packages and dependency overrides with profiling enabled.
-        Ineffective if [](#opt-env-localPackage) is customized.
       '';
     };
 
@@ -508,7 +505,7 @@ in {
         default = import ../lib/deps/local.nix {
           config = global;
           inherit lib;
-          inherit (config) ifd localPackage;
+          inherit (config) ifd localPackage profiling;
         };
       };
 

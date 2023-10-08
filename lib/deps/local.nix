@@ -2,12 +2,14 @@
   config,
   lib,
   ifd,
-  localPackage ? _: lib.id,
+  profiling,
+  localPackage,
 }:
 with lib;
 let
   cabalDrv = import ../cabal-drv.nix { inherit config lib; };
-  c2n = import ./cabal2nix.nix { inherit (config) pkgs; };
+
+  localProfiling = api: if profiling then id else api.noprofiling;
 
   buildInputs = api: opt:
   if isFunction opt
@@ -16,7 +18,7 @@ let
 
   override = api: pkg: drv:
   api.buildInputs (buildInputs api config.buildInputs)
-  (api.buildInputs (buildInputs api pkg.buildInputs) (pkg.override api (localPackage api drv)));
+  (api.buildInputs (buildInputs api pkg.buildInputs) (pkg.override api (localPackage api (localProfiling api drv))));
 
   checkIfd = api: name: pkg:
   if ifd
