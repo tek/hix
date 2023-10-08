@@ -2,7 +2,7 @@
 {
   test = builtins.toFile "deps-test" ''
     cd ./root
-    nix flake update
+    flake_update
 
     check_match 'nix run .#show-overrides -- dev' 'Hackage: 1.0.0' 'show-overrides does not contain "Hackage: 1.0.0"'
 

@@ -1,7 +1,7 @@
 {...}: {
   test = builtins.toFile "dep-versions-test" ''
     cd ./root
-    nix flake update
+    flake_update
 
     target='
 [34mdep[0m

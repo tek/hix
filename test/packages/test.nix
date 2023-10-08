@@ -136,7 +136,7 @@ let
 in {
   test = builtins.toFile "packages-test" ''
     cd ./root
-    nix flake update
+    flake_update
     nix run .#gen-cabal-quiet
 
     if ! diff ${targetDep} dep/dep-lib.cabal

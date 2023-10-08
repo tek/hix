@@ -2,7 +2,7 @@
 {
   test = builtins.toFile "basic-test" ''
     cd ./root
-    nix flake update
+    flake_update
 
     target='[ "ghc90-root" "ghc92-root" "ghc94-root" "ghc96-root" "root" ]'
     check 'nix eval .#checks.x86_64-linux --apply builtins.attrNames' $target 'Checks are wrong'

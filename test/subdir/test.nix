@@ -5,8 +5,8 @@
     git init --quiet
     git add .
     cd sub
-    nix flake update
+    flake_update
 
-    nix run .#gen-cabal
+    nix run .#gen-cabal-quiet
   '';
 }

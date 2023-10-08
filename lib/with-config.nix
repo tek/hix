@@ -108,7 +108,7 @@ let
     ${pkgs.git}/bin/git init
   fi
   ${pkgs.git}/bin/git add .
-  ${nixC} flake update
+  ${nixC} flake update --quiet --quiet
   ${pkgs.git}/bin/git add flake.lock
   ${post}
   '';
@@ -123,7 +123,7 @@ let
     ${pkgs.git}/bin/git init
   fi
   ${pkgs.git}/bin/git add .
-  ${nixC} flake update
+  ${nixC} flake update --quiet --quiet
   ${pkgs.git}/bin/git add flake.lock
   ${post}
   '';

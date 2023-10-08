@@ -3,7 +3,7 @@ let
 
   regular = ''
     cd ./root
-    nix flake update
+    flake_update
     git init --quiet
     git add .
     git commit -m "init" --quiet
@@ -114,7 +114,7 @@ let
 
   synthetic = ''
     cd ./nix-hpack
-    nix flake update
+    flake_update
     nix run .#hpack-quiet
     git init --quiet
     git add .

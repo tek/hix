@@ -2,7 +2,7 @@
 {
   test = builtins.toFile "service-test" ''
     cd ./root
-    nix flake update
+    flake_update
     check_match 'nix run .#cmd.test' 'received' 'invalid output of service command'
   '';
 }

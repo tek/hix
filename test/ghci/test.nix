@@ -2,8 +2,8 @@
 {
   test = builtins.toFile "ghci-test" ''
     cd ./root
-    nix flake update
-    nix run .#gen-cabal
+    flake_update
+    nix run .#gen-cabal-quiet
 
     ghci_match ".#ghci -- --root $PWD -c lib -m Root.Lib -r cwd" "$PWD/pkg/" 'ghci cwd with cd printed wrong directory'
 

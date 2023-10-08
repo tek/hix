@@ -2,7 +2,7 @@
 {
   test = builtins.toFile "env-test" ''
     cd ./root
-    nix flake update --quiet --quiet
+    flake_update
 
     # TODO this can be 1 when a solution for component env fallback is implemented
     check 'nix run .#cmd.number' 2 'Wrong output for plain command with component'

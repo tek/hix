@@ -2,7 +2,7 @@
 {
   test = builtins.toFile "cross-test" ''
     cd ./root
-    nix flake update --quiet --quiet
+    flake_update
 
     check_musl()
     {

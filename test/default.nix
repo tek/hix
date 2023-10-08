@@ -127,6 +127,11 @@ in {
     check_match "nix run $1 <<< ':quit'" $2 $3
   }
 
+  flake_update()
+  {
+    nix flake update --quiet --quiet
+  }
+
   runtest()
   {
     setopt local_options err_return

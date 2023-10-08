@@ -43,7 +43,7 @@ in {
     cd ./dep
     nix run .#gen-overrides
     cd ../root
-    nix flake update
+    flake_update
 
     check_eq '${finalSingle.version}' '2.1.2.1' 'Wrong version for aeson (single)'
     check_eq '${finalMulti.version}' '2.1.2.1' 'Wrong version for aeson (multi)'
