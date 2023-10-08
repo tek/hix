@@ -25,12 +25,12 @@
 
   color = n: t: "\\e[" + toString n + "m" + t + "\\e[0m";
 
+  bold = color "1";
+
 in {
-  inherit indentLine color colors colorsBg colorsBright colorsBgBright;
+  inherit indentLine color colors colorsBg colorsBright colorsBgBright bold;
 
   indent = map indentLine;
-
-  bold = color "1";
 
   s.colors = builtins.mapAttrs (_: color) colors;
   s.colorsBg = builtins.mapAttrs (_: color) colorsBg;
@@ -38,4 +38,6 @@ in {
   rgb = r: g: b: color "48;2;${r};${g};${b}";
 
   colorExt = n: color "48;5;${n}";
+
+  chevrons = bold (color colors.magenta ">>>");
 }

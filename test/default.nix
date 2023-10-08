@@ -117,6 +117,11 @@ in {
     check_re "$(eval $1 2>&1)" $2 $3
   }
 
+  check_run()
+  {
+    check "$(eval $1)" $2 $3
+  }
+
   ghci_match()
   {
     check_match "nix run $1 <<< ':quit'" $2 $3
@@ -141,7 +146,7 @@ in {
 
     if [[ -n $CI ]] && [[ -n ''${ci_skip_tests[(r)$current]} ]]
     then
-      echo ">>> Skipping test '$current'"
+      message "Skipping test '$current'"
       return 0
     fi
 
@@ -170,7 +175,7 @@ in {
 
     sub $(print **/flake.nix(N))
 
-    echo ">>> Running test '$current'..."
+    message "Running test '$current'..."
     source $test
   }
 
@@ -185,7 +190,7 @@ in {
     runtest $t
     if [[ $? != 0 ]]
     then
-      echo ">>> Test failed: $t"
+      message "Test failed: $t"
       (( failure = failure + 1 ))
       failed+=($t)
     fi
@@ -193,9 +198,9 @@ in {
 
   if [[ $failure == 0 ]]
   then
-    echo '>>> All tests succeeded.'
+    message 'All tests succeeded.'
   else
-    echo ">>> $failure tests failed:"
+    message "$failure tests failed:"
     for t in $failed
     do
       echo " - $t"

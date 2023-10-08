@@ -2,14 +2,15 @@
 with builtins;
 with lib;
 let
+  inherit (util) app;
+
   pkgs = config.internal.pkgs;
 
   git = "${pkgs.git}/bin/git";
 
   cfg = config.hackage;
-  gitAdd = cfg.commit || cfg.add;
 
-  app = program: { type = "app"; inherit program; };
+  gitAdd = cfg.commit || cfg.add;
 
   allTargets = if cfg.packages == null then config.internal.packageNames else cfg.packages;
 
@@ -94,7 +95,7 @@ let
   handleVersion = file:
   if file != null then checkVersion file else noVersion;
 
-  formatTag = name: config.hackage.formatTag { inherit name; version = "$version"; };
+  formatTag = name: cfg.formatTag { inherit name; version = "$version"; };
 
   tagFragment = ''
     if [[ -n ''${version:-} ]]

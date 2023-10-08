@@ -4,6 +4,8 @@ with lib;
 with types;
 let
 
+  libOutput = import ../lib/output.nix { inherit config lib util; };
+
   maybeDefaultApp = name: a:
   if name == config.defaultApp
   then { default = a; }
@@ -11,12 +13,20 @@ let
 
   optionalField = name: conf: optionalAttrs (hasAttr name conf) { ${name} = conf.${name}; };
 
-  app = pkg: name: exe:
-  let a = { type = "app"; program = "${pkg}/bin/${name}"; };
+  appWithAppimage = pkg: name:
+  util.app "${pkg}/bin/${name}" // libOutput.appimageApp "dev" name;
+
+  appField = pkg: name: exe:
+  let a = appWithAppimage pkg name;
   in { ${name} = a; } // maybeDefaultApp name a;
 
-  packageApps = outputs: pname: conf:
-  util.foldAttrs (mapAttrsToList (app (outputs.${pname})) (conf.executables or {}));
+  packageApps = outputs: pname: conf: let
+    main = libOutput.pkgMainExe config.packages.${pname};
+    pkg = outputs.${pname};
+  in
+  { ${pname} = appWithAppimage pkg main.name; } //
+  util.foldAttrs (mapAttrsToList (appField pkg) (conf.executables or {}))
+  ;
 
   mkPrelude = prelude: base: let
     mod = prelude.module;
@@ -113,8 +123,6 @@ let
     benches
   ];
 
-  infer = mapAttrs generatePackageConf config.packages;
-
   script = import ../lib/hpack.nix { inherit config; verbose = true; };
 
   scriptQuiet = import ../lib/hpack.nix { inherit config; };
@@ -125,8 +133,7 @@ in {
     defaultApp = mkOption {
       type = str;
       description = mdDoc ''
-      The name of an executable in {option}`packages` that should be assigned to
-      `packages.default`.
+      The name of an executable in [](#opt-general-packages) that should be assigned to `packages.default`.
       '';
     };
 

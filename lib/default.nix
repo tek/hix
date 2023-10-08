@@ -123,6 +123,8 @@ let
   then dep.name
   else dep;
 
+  app = program: { type = "app"; program = "${program}"; };
+
 in {
   inherit
   flake-utils
@@ -154,6 +156,7 @@ in {
   evalModules
   overridesVia
   cabalDepPackage
+  app
   ;
 
   ghcOverlay = import ./ghc-overlay.nix;

@@ -6,12 +6,11 @@ let
   spec = import ./deps/spec.nix { inherit lib; };
   deps = import ./deps/default.nix { inherit pkgs; };
   console = import ./console.nix { inherit lib; };
-  inherit (console) color bold indent;
+  inherit (console) color bold indent chevrons;
   inherit (console.colors) magenta blue yellow green;
 
   chevronY = bold (color yellow ">");
   chevronM = bold (color magenta ">");
-  chevrons = bold (color magenta ">>>");
 
   renderSource = concatStringsSep (bold (color green " -> "));
 

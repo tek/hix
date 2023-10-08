@@ -3,6 +3,8 @@
 * Add the option `haskellTools` globally and per-env, which allows specifying shell tools that should be made available
   from the env's GHC without overrides.
 * Separate the effect of the option `profiling` from `env.<name>.localPackage`.
+* Add flake apps that build AppImage distributions using [nix-appimage](https://github.com/ralismark/nix-appimage) as
+  `.#appimage`, `.#<exename>.appimage`, `.#env.<envname>.<exename>.appimage`.
 
 # 0.6.7
 

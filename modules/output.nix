@@ -1,9 +1,7 @@
 { lib, config, util, ... }:
-with lib;
-with types;
 let
-
-  envCommand = import ../lib/command.nix { inherit config util; };
+  inherit (lib) optionalAttrs mkOption;
+  inherit (util) app;
 
   tags = import ../lib/tags.nix { inherit config; };
 
@@ -24,23 +22,13 @@ let
     params = ["path"];
   };
 
-  app = program: { type = "app"; program = "${program}"; };
-
-  envApps = env: {
-    ${env.name} = mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands // {
-      dep-versions = app "${depVersions env.name}";
-    };
-  };
-
-  commandApps = mapAttrs (_: c: app "${c.path}");
-
   genAll = config.pkgs.writeScript "hix-gen-all" ''
   ${config.hpack.script}
   ${if config.gen-overrides.enable then genOverrides else ""}
   '';
 
 in {
-  options = {
+  options = with lib.types; {
 
     output = {
 
@@ -121,7 +109,7 @@ in {
   config = {
 
     output = {
-      final = mkDefault config.outputs;
+      final = lib.mkDefault config.outputs;
     };
 
     outputs = {
@@ -141,15 +129,15 @@ in {
 
       devShells = let
 
-        shells = mapAttrs (_: e: e.shell) (filterAttrs (_: util.envSystemAllowed) util.visibleEnvs);
+        shells = lib.mapAttrs (_: e: e.shell) (lib.filterAttrs (_: util.envSystemAllowed) util.visibleEnvs);
 
       in shells // { default = shells.dev; };
 
       apps = let
 
-        exposed = filterAttrs (_: c: c.expose) config.commands;
+        exposed = lib.filterAttrs (_: c: c.expose) config.commands;
 
-      in config.hackage.output.apps // config.hpack.apps // commandApps exposed // {
+      in config.hackage.output.apps // config.hpack.apps // libOutput.commandApps exposed // {
         gen-cabal = app "${config.hpack.script}";
         gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
         hpack = app "${config.hpack.script}";
@@ -161,10 +149,10 @@ in {
         gen = app "${genAll}";
         show-overrides = app "${showOverrides}";
         dep-versions = app "${depVersions "dev"}";
-      } // optionalAttrs config.output.commandApps {
-        cmd = commandApps config.commands;
+      } // libOutput.mainAppimageApp // optionalAttrs config.output.commandApps {
+        cmd = libOutput.commandApps config.commands;
       } // optionalAttrs config.output.envApps {
-        env = util.foldMapAttrs envApps (attrValues util.visibleEnvs);
+        env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleEnvs);
       };
 
     };

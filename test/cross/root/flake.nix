@@ -8,12 +8,19 @@
     packages.root = {
       src = ./.;
       library.enable = true;
-      executable.enable = true;
+      executables.exe = {
+        enable = true;
+        source-dirs = "app";
+      };
+      executables.alias = {
+        enable = true;
+        source-dirs = "app";
+      };
     };
-    envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
+    envs.cross.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
     overrides = { hsLib, self, ... }: {
-      static = hsLib.justStaticExecutables self.root;
+      static-override = hsLib.justStaticExecutables self.root;
     };
-    output.extraPackages = ["static"];
+    output.extraPackages = ["static-override"];
   });
 }

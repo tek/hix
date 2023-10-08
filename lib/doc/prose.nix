@@ -1028,6 +1028,25 @@ in {
   }
   ```
 
+  ### AppImage bundles
+
+  Hix can create more portable distributable bundles by using [nix-appimage](https://github.com/ralismark/nix-appimage)
+  to generate AppImage executables, exposed in the following flake apps:
+
+  ```
+  nix run '.#appimage' # The default executable from the default package
+  nix run '.#<pkgname>.appimage' # The default executable from the specified package
+  nix run '.#<exename>.appimage' # The specified executable from whatever package defines it
+  nix run '.#env.<envname>.[<pkg/exe>.]appimage' # The same as above, but from the specified env
+  ```
+
+  This will print a store path:
+
+  ```
+  >>> AppImage bundle for <exename> created at:
+  /nix/store/bxbcp9mk9rf0sjg88hxsjqzpql5is280-<exename>-0.1.0.0-x86_64.AppImage
+  ```
+
   '';
 
   misc = ''
