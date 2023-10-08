@@ -816,17 +816,17 @@ in {
         nixos.users.users.postgres.extraGroups = ["docker"];
 
         # Configure PostgreSQL specifically, used by `services.postgres.nixos-base` internally
-        dbUser = "root";
+        creds.user = "root";
       };
 
       envs.example = {
 
         services.postgres = {
-          # Declare that this environment uses `services.postgres`
+          # Declare that this environment uses `config.services.postgres` above
           enable = true;
 
-          # Add overrides for the configuration in `service.postgres`
-          config = { dbName = "test-db"; };
+          # Add overrides for the configuration in `config.services.postgres`
+          config = { name = "test-db"; };
         };
 
       };
