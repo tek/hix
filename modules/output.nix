@@ -1,6 +1,6 @@
 { lib, config, util, ... }:
 let
-  inherit (lib) optionalAttrs mkOption;
+  inherit (lib) optionalAttrs mkOption mdDoc;
   inherit (util) app;
 
   tags = import ../lib/tags.nix { inherit config; };
