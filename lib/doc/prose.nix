@@ -766,6 +766,11 @@ in {
   The Glorious Glasgow Haskell Compilation System, version 9.2.4
   ```
 
+  ::: {.note}
+  If you depend on the GHC library package `ghc`, you'll have to set `ghci.args = ["-package ghc"];`.
+  Otherwise it won't be visible, due to a bug.
+  :::
+
   ## Services {#services}
 
   Services use in environments and commands can be user-defined in a flake:

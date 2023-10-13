@@ -14,16 +14,18 @@
         library.enable = true;
         executable.enable = true;
         test.enable = true;
-        library.dependencies = ["path" "path-io" "core"];
-        # library.default-extensions = ["OverloadedStrings"];
+        library.dependencies = ["path" "path-io" "core" "ghc"];
       };
     };
-    ghci.run.print = ''putStrLn "print success"'';
-    ghci.run.cwd = ''putStrLn . toFilePath =<< getCurrentDir'';
-    ghci.setup.cwd = ''
-    import Path (toFilePath)
-    import Path.IO (getCurrentDir)
-    '';
+    ghci = {
+      run.print = ''putStrLn "print success"'';
+      run.cwd = ''putStrLn . toFilePath =<< getCurrentDir'';
+      setup.cwd = ''
+      import Path (toFilePath)
+      import Path.IO (getCurrentDir)
+      '';
+      args = ["-package ghc"];
+    };
     commands.ghci-app = {
       ghci = {
         enable = true;
