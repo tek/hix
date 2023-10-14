@@ -5,6 +5,7 @@
 * Separate the effect of the option `profiling` from `env.<name>.localPackage`.
 * Add flake apps that build AppImage distributions using [nix-appimage](https://github.com/ralismark/nix-appimage) as
   `.#appimage`, `.#<exename>.appimage`, `.#env.<envname>.<exename>.appimage`.
+* Add hooks to release process.
 
 # 0.6.7
 

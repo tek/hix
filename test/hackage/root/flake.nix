@@ -19,6 +19,14 @@
       check = false;
       versionFile = "root.cabal";
       setChangelogVersion = true;
+      hooks = {
+        postUploadAll = {...}: ''
+        print $version > new-version
+        '';
+        preCommitAll = ''
+        print 1 > source
+        '';
+      };
     };
   };
 }

@@ -153,6 +153,37 @@ in {
       default = true;
     };
 
+    hooks = {
+
+      postUploadAll = mkOption {
+        description = mdDoc ''
+        Shell script lines (zsh) to run after uploading all packages.
+
+        Value is a function that gets the set `{source, publish}`, two booleans that indicate whether the sources (or
+        only docs) were uploaded, and whether the artifacts were published (or just candidates).
+        '';
+        type = functionTo lines;
+        default = _: "";
+      };
+
+      preCommitAll = mkOption {
+        description = mdDoc ''
+        Shell script lines (zsh) to run before commiting the version change after publishing all packages.
+        '';
+        type = lines;
+        default = "";
+      };
+
+      postCommitAll = mkOption {
+        description = mdDoc ''
+        Shell script lines (zsh) to run after commiting the version change after publishing all packages.
+        '';
+        type = lines;
+        default = "";
+      };
+
+    };
+
     output = {
 
       packages = mkOption {

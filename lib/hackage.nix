@@ -107,7 +107,9 @@ let
   commitFragment = ''
     if [[ -n ''${version:-} ]]
     then
+      ${cfg.hooks.preCommitAll}
       ${git} commit --allow-empty -m "Release $version"
+      ${cfg.hooks.postCommitAll}
     fi
   '';
 
@@ -201,11 +203,13 @@ let
     fi
     '';
 
-  uploadAll = source: publish:
-  mkScript "cabal-upload-all" (util.unlines (
+  uploadAll = source: publish: let
+    hookArgs = { inherit source publish; };
+  in mkScript "cabal-upload-all" (util.unlines (
     ["version=\${1:-}"] ++
     optionals source (sourceCommands publish) ++
     docCommands publish ++
+    [(cfg.hooks.postUploadAll hookArgs)] ++
     optional (source && publish && cfg.commit) commitFragment ++
     optional (source && publish && cfg.tag) tagFragment
   ));

@@ -995,6 +995,7 @@ in {
 
   The upload command will use your global Cabal config to obtain credentials, please consult the Cabal docs for more.
 
+  The options module `hackage.hooks` provides a way to execute scripts at certain points in the release process.
   '';
 
   tags = ''

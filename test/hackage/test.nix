@@ -26,6 +26,10 @@ let
       fail "No tag with name "v$pristine_version" points at HEAD for release-all-pristine-version:\n$output"
     fi
 
+    check 'cat new-version' '0.1.0.0' 'postUploadAll hook'
+
+    check 'cat source' '1' 'preCommitAll hook'
+
     git reset --quiet --hard @^
 
     output=$(run .#release -- -v $version | head -n2)
