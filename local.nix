@@ -15,8 +15,7 @@ in {
   };
 
   overrides = {hackage, ...}: {
-    exon = hackage "1.5.0.0" "07jawnnmpdqfnvmayv64xc4n0j9mbcgdyyqsg3dn3a3z1f4fxnfm";
-    flatparse = hackage "0.5.0.1" "0y6axksh2hqp8v58676a7zmwf0in7v6hmyfv8sfdx4x0acq2vjhr";
+    exon = hackage "1.6.0.1" "0wnjywsxsmfqhyymzxlk8zzc5k4jr15y8rgl3lcdw48jl80i6ix9";
   };
   gen-overrides.enable = true;
 
@@ -57,7 +56,7 @@ in {
       "Cabal"
       "aeson >= 2.0 && < 2.2"
       "casing ^>= 0.1.4"
-      "exon >= 1.4 && < 1.6"
+      "exon >= 1.4 && < 1.7"
       "extra ^>= 1.7"
       "filepattern ^>= 0.1"
       "generic-lens ^>= 2.2"
@@ -76,7 +75,7 @@ in {
     test.enable = true;
     test.dependencies = [
       "Cabal"
-      "exon >= 1.4 && < 1.6"
+      "exon >= 1.4 && < 1.7"
       "hedgehog >= 1.1 && < 1.3"
       "path ^>= 0.9"
       "path-io >= 1.7 && < 1.9"
