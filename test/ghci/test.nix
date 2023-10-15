@@ -1,4 +1,4 @@
-{ pkgs }:
+{...}:
 {
   test = builtins.toFile "ghci-test" ''
     cd ./root

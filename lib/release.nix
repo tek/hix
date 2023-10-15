@@ -1,4 +1,4 @@
-{config, lib, util}: let
+{config, util}: let
 
   inherit (config.internal) pkgs;
 
@@ -7,22 +7,21 @@
   preamble = ''
   #!${pkgs.zsh}/bin/zsh
   setopt err_exit no_unset pipefail
+  ${util.loadConsole}
 
   if [[ $# == 0 ]]
   then
-    echo 'Error: Please specify version'
-    exit 1
+    die 'Please specify version'
   fi
   version="$1"
 
   if ! ${git} diff --quiet
   then
-    echo 'Error: Worktree is dirty'
-    exit 1
+    die 'Worktree is dirty'
   fi
 
   ask() {
-    echo -n ">>> $1 [Yn] "
+    echo -n "$chevrons $1 [Yn] "
     read -q decision || true
     echo ""
     [[ $decision != 'n' ]]
@@ -43,8 +42,7 @@
   if ! ask 'Versions updated. Continue?'
   then
     ${git} reset --hard
-    echo ">>> Aborting."
-    exit 1
+    die "Aborting."
   fi
   ${git} add .
   '';
@@ -67,8 +65,7 @@
   nix run .#release -- -v $version
   if ! ask 'Update CLI version in overrides. Continue?'
   then
-    echo ">>> Aborting."
-    exit 1
+    die "Aborting."
   fi
   ${git} add modules/cli.nix
   ${commitAndTag}

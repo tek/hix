@@ -1,4 +1,4 @@
-{ pkgs }:
+{...}:
 {
   test = builtins.toFile "local-prelude-test" ''
     cd ./root

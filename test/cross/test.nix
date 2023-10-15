@@ -1,4 +1,4 @@
-{ pkgs }:
+{...}:
 {
   test = builtins.toFile "cross-test" ''
     cd ./root

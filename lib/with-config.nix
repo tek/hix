@@ -139,6 +139,7 @@ let
 
 in basic // {
   inherit
+  config
   paramApp
   types
   packageRel

@@ -1,4 +1,4 @@
-{pkgs}:
+{pkgs, ...}:
 {
   test = pkgs.writeText "bootstrap-test" ''
     cd ./root

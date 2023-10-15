@@ -1,4 +1,4 @@
-{ pkgs }:
+{...}:
 {
   test = builtins.toFile "new-static-github-test" ''
     mkdir root

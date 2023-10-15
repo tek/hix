@@ -1,4 +1,4 @@
-{ pkgs }:
+{pkgs, ...}:
 {
   test = builtins.toFile "deps-test" ''
     cd ./root

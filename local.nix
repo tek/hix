@@ -2,6 +2,8 @@
 
 hix.pro [({config, lib, ...}: let
   pkgs = config.pkgs;
+  util = import ./lib/with-config.nix { inherit config lib util; };
+  release = import ./lib/release.nix { inherit config util; };
 in {
   compiler = "ghc94";
 
@@ -95,8 +97,7 @@ in {
     };
 
     apps = let
-      tests = import ./test/default.nix { inherit (config) pkgs; };
-      util = import ./lib/with-config.nix { inherit config lib util; };
+      tests = import ./test/default.nix { inherit util; };
     in {
 
       test = {
@@ -145,16 +146,12 @@ in {
         program = "${prog}";
       };
 
-      release-nix = let
-        release = import ./lib/release.nix { inherit config lib util; };
-      in {
+      release-nix = {
         type = "app";
         program = "${release.nix}";
       };
 
-      release-all = let
-        release = import ./lib/release.nix { inherit config lib util; };
-      in {
+      release-all = {
         type = "app";
         program = "${release.all}";
       };

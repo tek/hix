@@ -40,4 +40,7 @@ in {
   colorExt = n: color "48;5;${n}";
 
   chevrons = bold (color colors.magenta ">>>");
+
+  chevronY = bold (color colors.yellow ">");
+  chevronM = bold (color colors.magenta ">");
 }

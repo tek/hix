@@ -1,4 +1,4 @@
-{ pkgs }:
+{...}:
 let
 
   targetDep = builtins.toFile "cabal-target-dep" ''

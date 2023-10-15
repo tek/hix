@@ -1,8 +1,9 @@
-{ pkgs, keep ? false, ... }:
-with builtins;
-with pkgs.lib;
+{ util, keep ? false, ... }:
 let
-  test = name: (import (./. + "/${name}/test.nix") { inherit pkgs; }).test;
+  inherit (util) config lib;
+  inherit (config) pkgs;
+
+  test = name: (import (./. + "/${name}/test.nix") { inherit config util pkgs; }).test;
 
   tests = {
     basic = test "basic";
@@ -27,7 +28,7 @@ let
 
   testA = n: t: "${n} ${t}";
 
-  testsA = concatStringsSep " " (mapAttrsToList testA tests);
+  testsA = lib.concatStringsSep " " (lib.mapAttrsToList testA tests);
 
   ciSkipTests = "ghci-vm service postgres hackage";
 
@@ -49,7 +50,7 @@ in {
   tmpdir=/tmp/hix-test-temp
   if (( $# == 0 ))
   then
-    targets="${toString (attrNames tests)}"
+    targets="${toString (lib.attrNames tests)}"
   else
     targets="$@"
   fi
@@ -57,11 +58,7 @@ in {
   set -A tests ${testsA}
   typeset -a vm_tests
   ci_skip_tests=(${ciSkipTests})
-
-  message()
-  {
-    echo -e ">>> $*"
-  }
+  ${util.loadConsole}
 
   fail()
   {

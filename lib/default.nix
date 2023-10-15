@@ -1,4 +1,4 @@
-{ lib }:
+{lib}:
 with lib;
 let
 
@@ -125,8 +125,42 @@ let
 
   app = program: { type = "app"; program = "${program}"; };
 
+  loadConsole = let
+    console = import ./console.nix { inherit lib; };
+    inherit (console) colors color bold chevrons chevronY chevronM;
+    colorFun = name: ''
+    ${name}()
+    {
+      echo -e "${color colors.${name} "\${1}"}"
+    }
+    '';
+  in ''
+  message()
+  {
+    echo -e "${chevrons} $*"
+  }
+  error_message()
+  {
+    echo -e "${chevrons} ${color colors.red "\${*}"}"
+  }
+  ${unlines (map colorFun (attrNames colors))}
+  bold()
+  {
+      echo -e "${bold "$1"}"
+  }
+  chevrons='${chevrons}'
+  chevronY='${chevronY}'
+  chevronM='${chevronM}'
+  die()
+  {
+    error_message $*
+    exit 1
+  }
+  '';
+
 in {
   inherit
+  lib
   flake-utils
   packageSubpath
   relativePackages
@@ -157,6 +191,7 @@ in {
   overridesVia
   cabalDepPackage
   app
+  loadConsole
   ;
 
   ghcOverlay = import ./ghc-overlay.nix;
