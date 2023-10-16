@@ -77,8 +77,8 @@
   fi
   cat > ${cliDep} <<EOF
   {
-    "version": "$version",
-    "sha256": "$response"
+    version = "$version";
+    sha256 = "$response";
   }
   EOF
   git add ${cliDep}
