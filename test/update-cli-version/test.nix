@@ -4,6 +4,8 @@
 in {
   test = pkgs.writeText "update-cli-version-test" ''
     version='0.6.7'
+    git init -q
+    mkdir ops
     ${release.updateCliVersion}
     target='{
       "version": "0.6.7",

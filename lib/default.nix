@@ -165,7 +165,10 @@ let
     local decision=""
     message_part "$1 [Yn] "
     read -k decision
-    echo ""
+    if [[ $decision != '\n' ]]
+    then
+      echo ""
+    fi
     [[ $decision != 'n' ]]
   }
   '';

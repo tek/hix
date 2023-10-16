@@ -1,7 +1,7 @@
 {
   description = "hix test project";
 
-  inputs.hix.url = path:HIX;
+  inputs.hix.url = "path:HIX";
 
   outputs = { hix, ... }: hix.lib.flake ({config, ...}: {
 
@@ -15,7 +15,7 @@
       env = "db";
       command = ''
       sleep 5
-      psql "host=localhost port=16032 user=test password=test dbname=test" -c 'select 1'
+      ${config.pkgs.postgresql}/bin/psql "host=localhost port=16032 user=test password=test dbname=test" -c 'select 1'
       '';
     };
 
