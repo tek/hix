@@ -49,14 +49,14 @@ in {
 
   config.internal.hixCli = {
 
-    overrides = {hackage, source, minimal, unbreak, jailbreak, ...}: {
-      exon = hackage "1.5.0.0" "07jawnnmpdqfnvmayv64xc4n0j9mbcgdyyqsg3dn3a3z1f4fxnfm";
-      flatparse = hackage "0.5.0.1" "0y6axksh2hqp8v58676a7zmwf0in7v6hmyfv8sfdx4x0acq2vjhr";
-    } // (
-          if config.internal.hixCli.dev
-          then { hix = minimal (source.package ../. "hix"); }
-          else { hix = jailbreak (minimal (hackage "0.6.7" "1kcab39rwangb4m1viw58ppvf1ps4i75i2dgapzyqklq87f1bmpi")); }
-      );
+    overrides = {hackage, source, minimal, unbreak, jailbreak, ...}: let
+      meta = import ../ops/cli-dep.nix;
+      inherit (meta) version sha256;
+    in
+      if config.internal.hixCli.dev
+      then { hix = minimal (source.package ../. "hix"); }
+      else { hix = jailbreak (minimal (hackage version sha256)); }
+      ;
 
     ghc = {
       name = "hix";

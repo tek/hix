@@ -24,6 +24,7 @@ let
     subdir = test "subdir";
     local-prelude = test "local-prelude";
     dep-versions = test "dep-versions";
+    update-cli-version = test "update-cli-version";
   };
 
   testA = n: t: "${n} ${t}";

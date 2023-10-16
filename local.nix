@@ -2,6 +2,7 @@
 
 hix.pro [({config, lib, ...}: let
   pkgs = config.pkgs;
+
   util = import ./lib/with-config.nix { inherit config lib util; };
   release = import ./lib/release.nix { inherit config util; };
 in {
@@ -10,10 +11,14 @@ in {
   hackage = {
     versionFile = "ops/version.nix";
     tag = false;
-    formatTag = { name, version }: if name == null then version else "${name}-${version}";
+    formatTag = {name, version}: if name == null then version else "${name}-${version}";
     setChangelogVersion = lib.mkForce false;
     commit = false;
     add = true;
+    hooks.postUploadAll = {source, publish}:
+    if source && publish
+    then release.updateCliVersion
+    else "";
   };
 
   overrides = {hackage, ...}: {

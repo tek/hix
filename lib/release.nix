@@ -71,4 +71,24 @@
   ${commitAndTag}
   '';
 
-in { inherit nix all; }
+  cliDep = "ops/cli-dep.nix";
+
+  updateCliVersion = let
+    url = ''https://hackage.haskell.org/package/hix-''${version}/hix-''${version}.tar.gz'';
+  in ''
+  response=$({ nix-prefetch-url --unpack ${url} 2>&1 || print 'failed' } | tail -n1)
+  if [[ $response == 'failed' ]]
+  then
+    error_message "Fetching hackage hash for ops/cli-dep.nix failed: $response"
+    false
+  fi
+  cat > ${cliDep} <<EOF
+  {
+    "version": "$version",
+    "sha256": "$response"
+  }
+  EOF
+  git add ${cliDep}
+  '';
+
+in { inherit nix all updateCliVersion; }
