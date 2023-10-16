@@ -1,4 +1,4 @@
-# Unreleased
+# 0.6.9
 
 * Add the option `haskellTools` globally and per-env, which allows specifying shell tools that should be made available
   from the env's GHC without overrides.
