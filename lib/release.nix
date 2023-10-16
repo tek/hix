@@ -19,13 +19,6 @@
   then
     die 'Worktree is dirty'
   fi
-
-  ask() {
-    echo -n "$chevrons $1 [Yn] "
-    read -q decision || true
-    echo ""
-    [[ $decision != 'n' ]]
-  }
   '';
 
   updateVersions = ''

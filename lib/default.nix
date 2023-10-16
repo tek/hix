@@ -139,6 +139,10 @@ let
   {
     echo -e "${chevrons} $*"
   }
+  message_part()
+  {
+    echo -n -e "${chevrons} $*"
+  }
   error_message()
   {
     echo -e "${chevrons} ${color colors.red "\${*}"}"
@@ -155,6 +159,14 @@ let
   {
     error_message $*
     exit 1
+  }
+  ask() {
+    setopt local_options no_err_exit no_err_return
+    local decision=""
+    message_part "$1 [Yn] "
+    read -k decision
+    echo ""
+    [[ $decision != 'n' ]]
   }
   '';
 
