@@ -1034,7 +1034,7 @@ in {
   }
   ```
 
-  ### AppImage bundles
+  ### AppImage bundles {#appimage}
 
   Hix can create more portable distributable bundles by using [nix-appimage](https://github.com/ralismark/nix-appimage)
   to generate AppImage executables, exposed in the following flake apps:
