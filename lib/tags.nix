@@ -1,9 +1,12 @@
-{ config }:
+{config}:
 let
-  inherit (config.inputs) thax;
+
   inherit (config.envs.dev.ghc) compiler pkgs ghc;
 
-  tags = thax.tags { inherit pkgs compiler; };
+  thax = import (builtins.fetchTarball {
+    url = "https://github.com/tek/thax/archive/10fa7482d171739414fc0d829005b4055799e4c6.tar.gz";
+    sha256 = "1s1pyblys4mba8cws2fbzmby2k6paxdxls2gcyrhh8dcgbymqmwb";
+  }) { inherit pkgs compiler; };
 
   withPrefix =
     name: dir:
@@ -15,7 +18,7 @@ let
       else p // { tagsPrefix = dir; };
 
   projectTags =
-    tags.combined.all {
+    thax.combined.all {
       targets = pkgs.lib.attrsets.mapAttrsToList withPrefix config.internal.relativePackages;
     };
 

@@ -1,3 +1,7 @@
+# Unreleased
+
+* Fetch `thax` from a static URL, removing the flake input.
+
 # 0.6.9
 
 * Add the option `haskellTools` globally and per-env, which allows specifying shell tools that should be made available

@@ -18,23 +18,7 @@
     },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs",
-        "thax": "thax"
-      }
-    },
-    "thax": {
-      "locked": {
-        "lastModified": 1691091387,
-        "narHash": "sha256-i1dc/XqsIQizZ09o2ltX10zhV/3LCc0ZUqsS7enyN+g=",
-        "owner": "tek",
-        "repo": "thax",
-        "rev": "10fa7482d171739414fc0d829005b4055799e4c6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "tek",
-        "repo": "thax",
-        "type": "github"
+        "nixpkgs": "nixpkgs"
       }
     }
   },
