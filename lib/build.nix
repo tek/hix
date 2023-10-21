@@ -1,26 +1,45 @@
-{ lib, hixModules, projectModules, extraModules, }:
-with lib;
+{
+  lib,
+  hixModules,
+  projectModules,
+  extraModules,
+}:
 let
   util = import ./default.nix { inherit lib; };
 
   compat = import ./compat.nix { inherit lib; };
 
-  userModules = extraModules ++ map compat.check (toList projectModules);
+  userModules = extraModules ++ map compat.check (lib.toList projectModules);
 
   allModules = hixModules ++ userModules;
 
+  hixlib = config:
+  let util = import ../lib/with-config.nix { inherit config lib; };
+  in util;
+
+  moduleArgs = evaledModules: {config, ...}: {
+    _module.args = {
+      util = hixlib config // { inherit allModules evaledModules; };
+    };
+  };
+
+  finalModules = system: evaled: allModules ++ [(moduleArgs evaled) { inherit system; }];
+
   # TODO maybe this could include gen-overrides so the default systems may depend on it
   onlySystemsConfig = m:
-  if isFunction m
+  if lib.isFunction m
   then a@{util, ...}: onlySystemsConfig (m a)
   else
-  optionalAttrs (m ? systems) { inherit (m) systems; } //
-  optionalAttrs (m ? config && m.config ? systems) { config = { inherit (m.config) systems; }; }
+  lib.optionalAttrs (m ? systems) { inherit (m) systems; } //
+  lib.optionalAttrs (m ? config && m.config ? systems) { config = { inherit (m.config) systems; }; }
   ;
 
-  bootConfig = util.evalModules ([(import ../modules/systems.nix)] ++ map onlySystemsConfig projectModules);
+  # TODO should this include extraModules?
+  bootConfig = util.evalConfig ([(import ../modules/systems.nix)] ++ map onlySystemsConfig projectModules);
 
-  evalSystem = system: util.evalModules (allModules ++ [{ inherit system; }]);
+  evalSystem = system: let
+    evaled = util.evalModules (finalModules system evaled);
+  in evaled.config;
 
   oneSystem = system: (evalSystem system).output.final;
 

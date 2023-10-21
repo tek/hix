@@ -102,7 +102,9 @@ let
 
   empty = v: if isAttrs v then empty (attrNames v) else v == [];
 
-  evalModules = modules: (lib.evalModules { inherit modules; }).config;
+  evalModules = modules: lib.evalModules { inherit modules; };
+
+  evalConfig = modules: (evalModules modules).config;
 
   overridesVia = desc: o:
   if desc == null
@@ -189,7 +191,6 @@ in {
   unlines
   unlinesMap
   unlinesConcatMap
-  modulesRaw
   foldAttrs
   foldMapAttrs
   over
@@ -203,6 +204,7 @@ in {
   minGhc
   empty
   evalModules
+  evalConfig
   overridesVia
   cabalDepPackage
   app

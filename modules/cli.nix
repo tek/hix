@@ -14,13 +14,14 @@ in {
       };
 
       overrides = mkOption {
-        type = util.types.cabalOverrides;
         description = mdDoc "The overrides used for the CLI client.";
+        type = util.types.cabalOverrides;
       };
 
       package = mkOption {
-        description =
-          "The package for the Hix CLI, defaulting to the local package in the input repository using the dev GHC.";
+        description = mdDoc ''
+        The package for the Hix CLI, defaulting to the local package in the input repository using the dev GHC.
+        '';
         type = package;
       };
 
@@ -34,7 +35,7 @@ in {
       };
 
       exe = mkOption {
-        description = "The executable in the `bin/` directory of [](#opt-hixCli-package).";
+        description = mdDoc "The executable in the `bin/` directory of [](#opt-hixCli-package).";
         type = path;
         default = "${config.internal.hixCli.package}/bin/hix";
       };

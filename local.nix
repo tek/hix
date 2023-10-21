@@ -1,9 +1,8 @@
 {inputs, hix}:
 
-hix.pro [({config, lib, ...}: let
+hix.pro [({config, lib, util, ...}: let
   pkgs = config.pkgs;
 
-  util = import ./lib/with-config.nix { inherit config lib util; };
   release = import ./lib/release.nix { inherit config util; };
 in {
   compiler = "ghc94";

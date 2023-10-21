@@ -1,4 +1,4 @@
-{ config, lib, util, ... }:
+{config, lib, util, ...}:
 {
   path ? ""
 }:
@@ -10,7 +10,7 @@ let
   console = import ./console.nix { inherit lib; };
   inherit (console) color indent;
 
-  mods = util.modulesRaw {} (util.modules ++ [{ system = config.system; } (import ../modules/system.nix)]);
+  mods = util.evaledModules;
 
   pathSegs = if path == "" then [] else splitString "." path;
 
@@ -153,7 +153,7 @@ let
 
   stringifyModule = c: m: concatMapAttrs (n: a: optionals (hasAttr n c) (stringifyValue c.${n} n a)) m;
 
-  stringifyRoot = pkgs.writeText "project-options" (utils.unlines (stringifyModule (zoom pathSegs mods.config) mods.options));
+  stringifyRoot = pkgs.writeText "project-options" (util.unlines (stringifyModule (zoom pathSegs mods.config) mods.options));
 
   palette = "Colors: ${concatStringsSep " | " (mapAttrsToList (flip color) colors)}";
 

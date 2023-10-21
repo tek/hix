@@ -1,4 +1,4 @@
-{ pkgs }:
+{pkgs}:
 with pkgs.lib;
 let
   namePh = "<name>";

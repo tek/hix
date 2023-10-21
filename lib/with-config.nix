@@ -1,4 +1,4 @@
-{ config, lib, util, ... }:
+{config, lib, ...}:
 with lib;
 let
 
@@ -10,12 +10,12 @@ let
 
   types = import ./types.nix { inherit config lib; };
 
-  packageRel = util.packageSubpath config.base;
+  packageRel = basic.packageSubpath config.base;
 
   overridesDeps = name: config.internal.overridesDeps.${name} or [];
 
   overridesFromDeps = extra:
-  util.concatOverrides (map overridesDeps extra);
+  basic.concatOverrides (map overridesDeps extra);
 
   overridesGlobal = extra: overridesFromDeps (["local" "all"] ++ extra);
 
@@ -137,26 +137,28 @@ let
 
   hsLib = config.pkgs.haskell.lib;
 
-in basic // {
-  inherit
-  config
-  paramApp
-  types
-  packageRel
-  overridesDeps
-  overridesGlobal
-  overridesGlobalMin
-  json
-  visibleEnvs
-  minGhcs
-  conf
-  unlessDev
-  downloadStaticCli
-  bootstrapWithStaticCli
-  bootstrapWithDynamicCli
-  cacheWrapper
-  envSystemAllowed
-  hsLib
-  nixC
-  ;
-}
+  util = basic // {
+    inherit
+    config
+    paramApp
+    types
+    packageRel
+    overridesDeps
+    overridesGlobal
+    overridesGlobalMin
+    json
+    visibleEnvs
+    minGhcs
+    conf
+    unlessDev
+    downloadStaticCli
+    bootstrapWithStaticCli
+    bootstrapWithDynamicCli
+    cacheWrapper
+    envSystemAllowed
+    hsLib
+    nixC
+    ;
+  };
+
+in util
