@@ -44,9 +44,8 @@ let
         ${p} is not present in ${concatStringsSep ", " (attrNames config)}
         '';
     in
-    { ${p} = inner; };
-    spin = p: f: get p f;
-  in foldr spin id segs root;
+    { ${p} = inner; __zoom = true; };
+  in foldr get id segs root;
 
   listOrEmpty = f: cs: n:
   if cs == []
@@ -141,8 +140,8 @@ let
   then ["<derivation>"]
   else indent (stringifyModule c a));
 
-  stringifyValue = c: n: a:
-  if n == "_module" || n == "internal" || n == "code" || n == "runner" || n == "devGhc"
+  stringifyValue = c: n: zoomed: a:
+  if ! zoomed && (n == "_module" || n == "internal" || n == "code" || n == "runner" || n == "devGhc")
   then []
   else if isAttrs a
   then
@@ -151,9 +150,12 @@ let
   else stringifyAttrs c n a
   else stringifyAny n a;
 
-  stringifyModule = c: m: concatMapAttrs (n: a: optionals (hasAttr n c) (stringifyValue c.${n} n a)) m;
+  stringifyModule = c: opts:
+  concatMapAttrs (n: a: optionals (hasAttr n c) (stringifyValue c.${n} n (c.__zoom or false) a)) opts;
 
-  stringifyRoot = pkgs.writeText "project-options" (util.unlines (stringifyModule (zoom pathSegs mods.config) mods.options));
+  stringifyRoot = let
+    lines = stringifyModule (zoom pathSegs mods.config) mods.options ++ [""];
+  in pkgs.writeText "project-options" (util.unlines lines);
 
   palette = "Colors: ${concatStringsSep " | " (mapAttrsToList (flip color) colors)}";
 
