@@ -50,7 +50,7 @@ let
   listOrEmpty = f: cs: n:
   if cs == []
   then kv n "[]"
-  else sub n ++ indent (map f cs);
+  else sub n ++ indent (concatMap f cs);
 
   attrsOrEmpty = f: cs: n:
   if cs == {}
@@ -81,24 +81,55 @@ let
     ghc = g: "Packages for GHC ${g.ghc.version}${ghcDesc g}";
   };
 
+  stringifyStrict = c: splitString "\n" (generators.toPretty {} c);
+
+  stringifyHpackDep = c:
+  if isAttrs c
+  then stringifyStrict c
+  else [c];
+
+  multilineRenderers = {
+    strict = stringifyStrict;
+    hpack-dep = stringifyHpackDep;
+  };
+
+  stringifyMultilinePre = prefix: lines: let
+    first = [(concatStrings ([prefix] ++ take 1 lines))];
+    rest = drop 1 lines;
+  in
+  if length lines <= 1
+  then first
+  else first ++ indent rest;
+
   renderGeneric = tpe: _:
   "<${tpe}>";
 
-  stringifyOptionValue = c: tpe:
+  stringifySimpleOptionValue = c: tpe:
   (renderers.${tpe} or (renderGeneric tpe)) c;
 
-  stringifySubmodule = c: n: a:
+  stringifyOptionValuePre = prefix: c: tpe: let
+    rendered =
+    if hasAttr tpe.name multilineRenderers
+    then multilineRenderers.${tpe.name} c
+    else [(stringifySimpleOptionValue c tpe.name)];
+  in
+  stringifyMultilinePre prefix rendered;
+
+  stringifyOptionValue = c: n: tpe:
+  stringifyOptionValuePre (desc colors.option n) c tpe;
+
+  stringifySubmodule = c: n: opt:
   [(desc colors.submodule n)] ++
-  indent (stringifyModule c (a.getSubOptions []));
+  indent (stringifyModule c (opt.getSubOptions []));
 
   stringifyElem = tpe: c:
-  color 35 "* " + stringifyOptionValue c tpe;
+  stringifyOptionValuePre (color 35 "* ") c tpe;
 
-  stringifyListOf = cs: n: a:
-  listOrEmpty (stringifyElem a.nestedTypes.elemType.name) cs n;
+  stringifyListOf = cs: n: opt:
+  listOrEmpty (stringifyElem opt.nestedTypes.elemType) cs n;
 
-  stringifyAttrsOf = cs: n: a: let
-    tpe = a.nestedTypes.elemType;
+  stringifyAttrsOf = cs: n: opt: let
+    tpe = opt.nestedTypes.elemType;
   in
   attrsOrEmpty (n: c: stringifyOption c n tpe) cs n;
 
@@ -106,19 +137,22 @@ let
     if isDerivation a
     then "<derivation>"
     else if isAttrs a
-    then stringifyAttrsStrict a n null
+    then stringifyAttrset a n
     else if isFunction a
     then kv n "<function>"
-    else kv n (toString a)
+    else kv n (generators.toPretty {} a)
     ;
 
-  stringifyAttrsStrict = cs: n: _:
+  stringifyAttrset = cs: n:
   attrsOrEmpty stringifyAny cs n;
 
-  stringifyEither = c: n: a:
-  if a.nestedTypes.left.check c
-  then stringifyOption c n a.nestedTypes.left
-  else stringifyOption c n a.nestedTypes.right;
+  stringifyAttrsStrict = cs: n: _:
+  stringifyAttrset cs n;
+
+  stringifyEither = c: n: opt:
+  if opt.nestedTypes.left.check c
+  then stringifyOption c n opt.nestedTypes.left
+  else stringifyOption c n opt.nestedTypes.right;
 
   nestedHandlers = {
     submodule = stringifySubmodule;
@@ -129,10 +163,9 @@ let
     either = stringifyEither;
   };
 
-  stringifyOption = c: n: tpe:
-  if hasAttr tpe.name nestedHandlers
-  then nestedHandlers.${tpe.name} c n tpe
-  else kv n (stringifyOptionValue c tpe.name);
+  stringifyOption = c: n: tpe: let
+    handler = nestedHandlers.${tpe.name} or stringifyOptionValue;
+  in handler c n tpe;
 
   stringifyAttrs = c: n: a:
   [(desc colors.attrset n)] ++

@@ -163,7 +163,7 @@ in {
       };
 
       internal.packages = mkOption {
-        type = attrsOf unspecified;
+        type = attrsOf util.types.strict;
       };
     };
   };

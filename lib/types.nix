@@ -102,4 +102,10 @@ in {
     merge = mergeOneOption;
   };
 
+  strict = mkOptionType {
+    name = "strict";
+    description = "computed value safe for evaluation";
+    descriptionClass = "noun";
+  };
+
 }
