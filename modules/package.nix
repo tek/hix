@@ -87,11 +87,11 @@ let
 
   withoutVerbatim = set: removeAttrs set ["cabal"];
 
-  component = main: src: sort: suffix: single:
+  component = main: src: desc: sort: suffix: single:
     types.submoduleWith {
       modules = [
         cabalOptionsModule
-        (cabalComponentModule { inherit pkgName src sort suffix single; })
+        (cabalComponentModule { inherit pkgName src sort desc suffix single; })
         (withoutVerbatim global.cabal)
         (withoutVerbatim global.internal.cabal-extra)
         (withoutVerbatim pkgConfig.cabal)
@@ -100,13 +100,13 @@ let
       description = "submodule of cabal-options and cabal-component";
     };
 
-  libSubmodule = component libModule "lib" "library" null;
+  libSubmodule = component libModule "lib" "library" "library" null;
 
-  exeSubmodule = default: component (exeModule "executable" default) "app" "executable" "exeSuffix";
+  exeSubmodule = default: component (exeModule "executable" default) "app" "executable" "executable" "exeSuffix";
 
-  testSubmodule = component (exeModule "test" false) "test" "test suite" "testSuffix";
+  testSubmodule = component (exeModule "test" false) "test" "test suite" "test" "testSuffix";
 
-  benchSubmodule = component (exeModule "benchmark" false) "benchmark" "benchmark" "benchSuffix";
+  benchSubmodule = component (exeModule "benchmark" false) "benchmark" "benchmark" "benchmark" "benchSuffix";
 
   versionFromFile = let
     f = config.versionFile;

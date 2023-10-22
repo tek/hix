@@ -66,28 +66,34 @@ let
     conf.component
   ];
 
-  generateLib = pkg: visibility: conf:
-  {
-    ${conf.name} =
-      optionalAttrs (visibility && conf.public) { visibility = "public"; } //
-      optionalField "reexported-modules" conf //
-      generateComponent pkg conf;
-  };
+  extraLibrary = mainLib: conf:
+    optionalAttrs (!mainLib && conf.public) { visibility = "public"; } //
+    optionalField "reexported-modules" conf
+    ;
 
-  generateLibs = conf: let
-    lib = generateLib conf;
-    libs = attrValues conf.libraries;
+  extraExecutable = conf: { inherit (conf) main; };
+
+  plural = isLib: sort:
+  if isLib
+  then "internal-libraries"
+  else "${sort}s";
+
+  wrap = isLib: mainLib: conf: hconf:
+  if mainLib
+  then hconf
+  else { ${plural isLib conf.internal.sort} = hconf; };
+
+  generateSort = pkg: name: conf: let
+    sort = conf.internal.sort;
+    isLib = sort == "library";
+    mainLib = isLib && name == "library";
+    extra =
+      if isLib
+      then extraLibrary mainLib
+      else extraExecutable
+      ;
   in
-  optionalAttrs conf.library.enable (lib false (conf.library // { name = "library"; })) //
-  { internal-libraries = util.foldMapAttrs (lib true) libs; };
-
-  generateExe = pkg: conf:
-  { ${conf.name} = { inherit (conf) main; } // generateComponent pkg conf; };
-
-  generateExes = name: conf: let
-    plural = "${name}s";
-    exes = optional conf.${name}.enable conf.${name} ++ attrValues conf.${plural};
-  in { ${plural} = util.foldMapAttrs (generateExe conf) exes; };
+  optionalAttrs conf.enable (wrap isLib mainLib conf { ${name} = extra conf // generateComponent pkg conf; });
 
   generatePackageConf = name: conf: let
 
@@ -107,21 +113,14 @@ let
 
     desc = optionalAttrs (conf.description != null) { inherit (conf) description; };
 
-    libraries = generateLibs conf;
-    exes = generateExes "executable" conf;
-    tests = generateExes "test" conf;
-    benches = generateExes "benchmark" conf;
+    components = mapAttrsToList (generateSort conf) conf.internal.componentsSet;
 
-  in util.mergeAll [
+  in util.mergeAll ([
     cabal.meta
     basic
     opt
     desc
-    libraries
-    exes
-    tests
-    benches
-  ];
+  ] ++ components);
 
   script = import ../lib/hpack.nix { inherit config; verbose = true; };
 

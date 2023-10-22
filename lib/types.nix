@@ -86,6 +86,8 @@ in {
 
   cabalDep = either str (submodule cabalDepModule);
 
+  componentSort = enum ["library" "executable" "test" "benchmark"];
+
   env = mkOptionType {
     name = "env-ref";
     description = "name of an environment defined in config.envs";
