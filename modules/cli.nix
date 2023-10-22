@@ -50,14 +50,20 @@ in {
 
   config.internal.hixCli = {
 
-    overrides = {hackage, source, minimal, unbreak, jailbreak, ...}: let
-      meta = import ../ops/cli-dep.nix;
-      inherit (meta) version sha256;
-    in
-      if config.internal.hixCli.dev
-      then { hix = minimal (source.package ../. "hix"); }
-      else { hix = jailbreak (minimal (hackage version sha256)); }
-      ;
+    overrides = {hackage, source, minimal, jailbreak, ...}: let
+
+      devSrc = source.package ../. "hix";
+
+      prodSrc = let
+        meta = import ../ops/cli-dep.nix;
+      in jailbreak (hackage meta.version meta.sha256);
+
+      hix = if config.internal.hixCli.dev then devSrc else prodSrc ;
+
+    in {
+      hix = minimal hix;
+      exon = hackage "1.6.0.1" "0wnjywsxsmfqhyymzxlk8zzc5k4jr15y8rgl3lcdw48jl80i6ix9";
+    };
 
     ghc = {
       name = "hix";
