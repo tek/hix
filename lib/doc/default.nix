@@ -21,6 +21,7 @@ let
       pkgName = "<package>";
       src = "<src>";
       sort = "<component type>";
+      desc = "<component type>";
       suffix = null;
       single = false;
     })
