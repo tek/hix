@@ -25,6 +25,7 @@ let
     local-prelude = test "local-prelude";
     dep-versions = test "dep-versions";
     update-cli-version = test "update-cli-version";
+    direnv = test "direnv";
   };
 
   testA = n: t: "${n} ${t}";

@@ -76,6 +76,9 @@ let
   messages = util.unlinesConcatMap (s: map (m: ''echo ">>> ${m}" >&2'') (s.messages envConfig)) resolved;
 
   preamble = ''
+    _hix_unrestricted() {
+      [[ -z ''${DIRENV_IN_ENVRC-} ]] && [[ -z ''${HIX_ONLY_ENV-} ]]
+    }
     quitting=0
     quit() {
       if [[ $quitting == 0 ]]
@@ -96,21 +99,28 @@ let
         exit 1
       fi
     }
-    if [[ -z ''${_hix_is_shell-} ]]
+    if _hix_unrestricted
     then
-      trap "quit INT" INT
+      if [[ -z ''${_hix_is_shell-} ]]
+      then
+        trap "quit INT" INT
+      fi
+      trap "quit TERM" TERM
+      trap "quit KILL" KILL
+      trap quit EXIT
     fi
-    trap "quit TERM" TERM
-    trap "quit KILL" KILL
-    trap quit EXIT
     ${exportShellVars config.env}
     export PATH="${makeBinPath buildInputs}:$PATH"
     export env_args
-    ${messages}
-    ${config.setup-pre}
-    ${optionalString config.vm.enable config.vm.setup}
-    ${optionalString (config.vm.enable && config.wait > 0) waitScript}
-    ${config.setup}
+    if _hix_unrestricted
+    then
+      :
+      ${messages}
+      ${config.setup-pre}
+      ${optionalString config.vm.enable config.vm.setup}
+      ${optionalString (config.vm.enable && config.wait > 0) waitScript}
+      ${config.setup}
+    fi
   '';
 
   runner = global.pkgs.writeScript "env-${config.name}-runner.bash" ''
