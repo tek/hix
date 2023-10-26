@@ -1,9 +1,16 @@
-{ inputs, pkgs, hixUrl, }:
+{inputs, pkgs, hixUrl}:
 with pkgs.lib;
 let
   lib = pkgs.lib;
+  libBase = import ../default.nix { inherit lib; };
 
-  modules = [{ inherit (pkgs) system; }] ++ import ../../modules/all-modules.nix { inherit inputs; };
+  modules =
+    [
+      { inherit (pkgs) system; }
+      (libBase.utilModule {})
+    ] ++
+    import ../../modules/all-modules.nix { inherit inputs; };
+
   config = (evalModules { inherit modules; }).config;
 
   global = config;

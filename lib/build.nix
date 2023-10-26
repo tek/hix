@@ -5,7 +5,7 @@
   extraModules,
 }:
 let
-  util = import ./default.nix { inherit lib; };
+  libBase = import ./default.nix { inherit lib; };
 
   compat = import ./compat.nix { inherit lib; };
 
@@ -13,15 +13,8 @@ let
 
   allModules = hixModules ++ userModules;
 
-  hixlib = config:
-  let util = import ../lib/with-config.nix { inherit config lib; };
-  in util;
-
-  moduleArgs = evaledModules: {config, ...}: {
-    _module.args = {
-      util = hixlib config // { inherit allModules evaledModules; };
-    };
-  };
+  moduleArgs = evaledModules:
+  libBase.utilModule { inherit allModules evaledModules; };
 
   finalModules = system: evaled: allModules ++ [(moduleArgs evaled) { inherit system; }];
 
@@ -35,16 +28,16 @@ let
   ;
 
   # TODO should this include extraModules?
-  bootConfig = util.evalConfig ([(import ../modules/systems.nix)] ++ map onlySystemsConfig projectModules);
+  bootConfig = libBase.evalConfig ([(import ../modules/systems.nix)] ++ map onlySystemsConfig projectModules);
 
   evalSystem = system: let
-    evaled = util.evalModules (finalModules system evaled);
+    evaled = libBase.evalModules (finalModules system evaled);
   in evaled.config;
 
   oneSystem = system: (evalSystem system).output.final;
 
   dummySystem = evalSystem "x86_64-linux";
 
-  allSystems = util.flake-utils.eachSystem bootConfig.systems oneSystem;
+  allSystems = libBase.flake-utils.eachSystem bootConfig.systems oneSystem;
 
 in allSystems // { overrides = dummySystem.exportedOverrides; lib.overrides = dummySystem.exportedOverrides; }

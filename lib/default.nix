@@ -7,6 +7,15 @@ let
     sha256 = "0hynd4rbkbplxzl2a8wb3r8z0h17z2alhhdsam78g3vgzpzg0d43";
   });
 
+  utilWithConfig = config:
+  import ../lib/with-config.nix { inherit config lib; };
+
+  utilModule = extra: {config, ...}: {
+    _module.args = {
+      util = utilWithConfig config // extra;
+    };
+  };
+
   packageSubpath = base: pp:
   let
     new = strings.removePrefix (toString base + "/") (toString pp);
@@ -178,6 +187,8 @@ let
 in {
   inherit
   lib
+  utilWithConfig
+  utilModule
   flake-utils
   packageSubpath
   relativePackages
