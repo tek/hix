@@ -24,7 +24,7 @@ let
     main = libOutput.pkgMainExe config.packages.${pname};
     pkg = outputs.${pname};
   in
-  { ${pname} = appWithAppimage pkg main.name; } //
+  optionalAttrs (main != null) { ${pname} = appWithAppimage pkg main.name; } //
   util.foldAttrs (mapAttrsToList (appField pkg) (conf.executables or {}))
   ;
 

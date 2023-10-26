@@ -27,13 +27,13 @@ let
     all = allExes pkg;
     names = lib.attrNames all;
   in
-  if lib.hasAttr pkg.name all
-  then all.${pkg.name}.name
-  else if lib.length names > 0
+  if lib.length names > 0
   then all.${lib.head names}
-  else pkg.executable.name;
+  else null;
 
   mainExe = pkgMainExe config.packages.${config.main};
+
+  ifMainExe = lib.optionalAttrs (mainExe != null);
 
   foldExes = f: let
     pkgExes = pkg: lib.genAttrs (lib.attrNames (allExes pkg)) (f pkg);
@@ -41,11 +41,16 @@ let
 
   staticPackageExe = env: pkg: exe: staticDrv (env.ghc.ghc.${pkg.name}.overrideAttrs (_: { pname = exe; }));
 
+  staticPackageExeFor = env: pkgName: let
+    pkg = config.packages.${config.main};
+    exe = pkgMainExe pkg;
+  in lib.optionalAttrs (exe != null) { ${pkgName} = staticPackageExe env pkg exe.name; };
+
   staticExes = env:
   {
     executables.static =
       foldExes (staticPackageExe env) //
-      { ${config.main} = staticPackageExe env config.packages.${config.main} mainExe.name; };
+      staticPackageExeFor env config.main;
   };
 
   cross = ghc: name: let
@@ -103,12 +108,16 @@ let
 
   appimageApp = env: name: { appimage = app (appimage env name); };
 
-  envAppimages = env:
-  appimageApp env.name mainExe.name //
-  { ${config.main} = appimageApp env.name config.main; } //
+  envAppimages = env: let
+    mainAppimage = appimageApp env.name mainExe.name;
+  in
+  ifMainExe (
+    mainAppimage //
+    { ${config.main} = mainAppimage; }
+  ) //
   foldExes (pkg: n: appimageApp env.name n);
 
-  mainAppimageApp = appimageApp "dev" mainExe.name;
+  mainAppimageApp = ifMainExe (appimageApp "dev" mainExe.name);
 
   envCommands = env:
   lib.mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
