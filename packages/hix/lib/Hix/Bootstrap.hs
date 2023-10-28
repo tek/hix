@@ -2,7 +2,6 @@ module Hix.Bootstrap where
 
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ask)
-import Data.List.NonEmpty ((<|))
 import qualified Data.Text as Text
 import Distribution.Compiler (PerCompilerFlavor (PerCompilerFlavor))
 import qualified Distribution.PackageDescription as Cabal
@@ -16,10 +15,9 @@ import Distribution.PackageDescription (
   unPackageName,
   unUnqualComponentName,
   )
-import Distribution.Pretty (Pretty, pretty)
+import Distribution.Pretty (pretty)
 import Distribution.Simple (Dependency (Dependency), depVerRange)
 import Distribution.Types.PackageDescription (license)
-import Distribution.Utils.ShortText (ShortText, fromShortText)
 import qualified Distribution.Verbosity as Cabal
 import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel, parent, parseRelFile, relfile, toFilePath, (</>))
@@ -36,33 +34,19 @@ import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import qualified Hix.Monad
 import Hix.Monad (Env (Env), M, noteBootstrap)
+import Hix.NixExpr (
+  Expr (..),
+  ExprAttr (..),
+  mkAttrs,
+  multi,
+  multiOrSingle,
+  nonEmptyAttrs,
+  renderRootExpr,
+  single,
+  singleOpt,
+  )
 import qualified Hix.Prelude
 import Hix.Prelude (Prelude, findPrelude)
-
-data ExprAttr =
-  ExprAttr {
-    name :: Text,
-    value :: Expr
-  }
-  |
-  ExprAttrNil
-  deriving stock (Eq, Show, Generic)
-
-data Expr =
-  ExprString Text
-  |
-  ExprLit Text
-  |
-  ExprList [Expr]
-  |
-  ExprAttrs [ExprAttr]
-  |
-  ExprPrefix Text Expr
-  deriving stock (Eq, Show, Generic)
-
-exprStrings :: [Text] -> Expr
-exprStrings =
-  ExprList . fmap ExprString
 
 data CabalInfo =
   CabalInfo {
@@ -107,45 +91,6 @@ data HixPackage =
   }
   deriving stock (Eq, Show, Generic)
 
-indent ::
-  Functor t =>
-  Int ->
-  t Text ->
-  t Text
-indent n =
-  fmap (Text.replicate n " " <>)
-
-withSemicolon :: NonEmpty Text -> NonEmpty Text
-withSemicolon = \case
-  e :| [] ->
-    [e <> ";"]
-  h :| h1 : t -> h <| withSemicolon (h1 :| t)
-
-renderAttrs :: Int -> [ExprAttr] -> [Text]
-renderAttrs ind attrs =
-  attrs >>= \case
-    ExprAttr k v ->
-      case renderExpr ind v of
-        e :| [] -> [[exon|#{k} = #{e};|]]
-        h :| (h1 : t) -> [exon|#{k} = #{h}|] : toList (withSemicolon (h1 :| t))
-    ExprAttrNil ->
-      []
-
-renderExpr :: Int -> Expr -> NonEmpty Text
-renderExpr ind = \case
-  ExprString s -> indent ind [[exon|"#{Text.replace "\"" "\\\"" s}"|]]
-  ExprLit e -> [e]
-  ExprList l -> "[" :| (indent (ind + 2) (toList . renderExpr ind =<< l)) ++ ["]"]
-  ExprAttrs a -> case renderAttrs ind a of
-    [] -> ["{}"]
-    as -> "{" :| indent (ind + 2) as ++ ["}"]
-  ExprPrefix p (renderExpr ind -> h :| t) ->
-    [exon|#{p} #{h}|] :| t
-
-renderRootExpr :: Expr -> Text
-renderRootExpr =
-  Text.unlines . toList . renderExpr 0
-
 readCabal ::
   Path Abs Dir ->
   Path Rel File ->
@@ -155,96 +100,6 @@ readCabal cwd path = do
   pure CabalInfo {path = dir, info}
   where
     dir = parent path
-
-class RenderCabalOption a where
-  renderCabalOption :: a -> Text
-
-instance {-# overlappable #-} Pretty a => RenderCabalOption a where
-  renderCabalOption = show . pretty
-
-instance RenderCabalOption ShortText where
-  renderCabalOption = toText . fromShortText
-
-instance RenderCabalOption String where
-  renderCabalOption = toText
-
-checkEmpty ::
-  Text ->
-  Expr ->
-  ExprAttr
-checkEmpty key = \case
-  ExprString value | Text.null value ->
-    ExprAttrNil
-  ExprList value | null value ->
-    ExprAttrNil
-  value ->
-    ExprAttr key value
-
-singleOpt ::
-  RenderCabalOption a =>
-  Text ->
-  (e -> Maybe a) ->
-  e ->
-  ExprAttr
-singleOpt key get entity =
-  maybe ExprAttrNil (checkEmpty key . ExprString) (renderCabalOption <$> get entity)
-
-single ::
-  RenderCabalOption a =>
-  Text ->
-  (e -> a) ->
-  e ->
-  ExprAttr
-single key get =
-  singleOpt key (Just . get)
-
-multiOpt ::
-  RenderCabalOption a =>
-  Text ->
-  (e -> Maybe [a]) ->
-  e ->
-  ExprAttr
-multiOpt key get entity =
-  maybe ExprAttrNil (checkEmpty key . exprStrings) (fmap renderCabalOption <$> get entity)
-
-multi ::
-  RenderCabalOption a =>
-  Text ->
-  (e -> [a]) ->
-  e ->
-  ExprAttr
-multi key get =
-  multiOpt key (Just . get)
-
-multiOrSingle ::
-  ∀ a e .
-  RenderCabalOption a =>
-  Text ->
-  (e -> [a]) ->
-  e ->
-  ExprAttr
-multiOrSingle key get entity =
-  check (renderCabalOption <$> get entity)
-  where
-    check :: [Text] -> ExprAttr
-    check [] = ExprAttrNil
-    check [sing] = ExprAttr key (ExprString sing)
-    check values = ExprAttr key (exprStrings values)
-
-mkAttrs :: [e -> ExprAttr] -> e -> [ExprAttr]
-mkAttrs a e =
-  (fmap ($ e) a)
-
-notNil :: ExprAttr -> Bool
-notNil = \case
-  ExprAttrNil -> False
-  _ -> True
-
-nonEmptyAttrs :: Text -> [ExprAttr] -> ExprAttr
-nonEmptyAttrs key =
-  filter notNil >>> \case
-    [] -> ExprAttrNil
-    as -> ExprAttr key (ExprAttrs as)
 
 -- TODO extract version and put it in a file
 knownPackageKeys :: PackageDescription -> [ExprAttr]

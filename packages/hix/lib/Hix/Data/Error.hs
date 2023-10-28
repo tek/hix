@@ -1,11 +1,11 @@
 module Hix.Data.Error where
 
 import Control.Monad.Trans.Except (ExceptT, throwE)
-import qualified Data.Text.IO as Text
 import Exon (exon)
 import Path (Path, toFilePath)
-import System.IO (stderr)
 import System.IO.Error (tryIOError)
+
+import qualified Hix.Console as Console
 
 data Error =
   PreprocError Text
@@ -18,6 +18,8 @@ data Error =
   |
   BootstrapError Text
   |
+  BumpError Text
+  |
   NoMatch Text
   |
   Fatal Text
@@ -27,47 +29,62 @@ pathText :: Path b t -> Text
 pathText =
   toText . toFilePath
 
+printError ::
+  MonadIO m =>
+  Text ->
+  Text ->
+  m ()
+printError desc msg =
+  Console.error [exon|#{desc}: #{msg}|]
+
 printPreprocError ::
   MonadIO m =>
   Text ->
   m ()
-printPreprocError msg =
-  liftIO (Text.hPutStrLn stderr [exon|>>> Preprocessor generator failed: #{msg}|])
+printPreprocError =
+  printError "Preprocessor generator failed"
 
 printEnvError ::
   MonadIO m =>
   Text ->
   m ()
-printEnvError msg =
-  liftIO (Text.hPutStrLn stderr [exon|>>> Invalid env config: #{msg}|])
+printEnvError =
+  printError "Invalid env config"
 
 printGhciError ::
   MonadIO m =>
   Text ->
   m ()
-printGhciError msg =
-  liftIO (Text.hPutStrLn stderr [exon|>>> Invalid ghci config: #{msg}|])
+printGhciError =
+  printError "Invalid ghci config"
 
 printNewError ::
   MonadIO m =>
   Text ->
   m ()
-printNewError msg =
-  liftIO (Text.hPutStrLn stderr [exon|>>> Can't create new project: #{msg}|])
+printNewError =
+  printError "Can't create new project"
 
 printBootstrapError ::
   MonadIO m =>
   Text ->
   m ()
-printBootstrapError msg =
-  liftIO (Text.hPutStrLn stderr [exon|>>> Can't bootstrap project: #{msg}|])
+printBootstrapError =
+  printError "Can't bootstrap project"
+
+printBumpError ::
+  MonadIO m =>
+  Text ->
+  m ()
+printBumpError =
+  printError "Bumping deps failed"
 
 printFatalError ::
   MonadIO m =>
   Text ->
   m ()
-printFatalError msg =
-  liftIO (Text.hPutStrLn stderr [exon|>>> Fatal error: #{msg}|])
+printFatalError =
+  printError "Fatal error"
 
 sourceError :: Text -> Path b t -> Text
 sourceError reason source =

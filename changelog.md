@@ -2,6 +2,8 @@
 
 * Fetch `thax` from a static URL, removing the flake input.
 * Fix environment not being set when using `direnv`.
+* Add an app, `bump`, that updates dependency versions and tests the build before writing new bounds and overrides to
+  a file that's incorporated into the build.
 
 # 0.6.9
 

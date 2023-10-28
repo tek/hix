@@ -1,0 +1,31 @@
+cabal-version: 1.22
+
+-- This file has been generated from package.yaml by hpack version 0.35.2.
+--
+-- see: https://github.com/sol/hpack
+
+name:           dep-lib
+version:        13
+description:    See https://hackage.haskell.org/package/dep-lib/docs/Dep-Lib.html
+author:         Author McCodeface
+maintainer:     Author McCodeface
+license:        GPL-3
+build-type:     Simple
+
+library
+  exposed-modules:
+      Dep.Lib
+  other-modules:
+      Paths_dep_lib
+  reexported-modules:
+      Data.Set
+  hs-source-dirs:
+      lib
+  default-extensions:
+      OverloadedRecordDot
+      DataKinds
+  ghc-options: -Wall -Werror -Wunused-imports
+  build-depends:
+      base >=4 && <6
+    , containers
+  default-language: GHC2021

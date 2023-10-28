@@ -26,10 +26,18 @@ library
   exposed-modules:
       Hix
       Hix.Bootstrap
+      Hix.Bump
+      Hix.Bump.Build
+      Hix.Bump.Handlers.Prod
+      Hix.Bump.Handlers.Test
+      Hix.Bump.Version
       Hix.Cabal
       Hix.Compat
       Hix.Component
+      Hix.Console
       Hix.Data.BootstrapProjectConfig
+      Hix.Data.BumpConfig
+      Hix.Data.BumpHandlers
       Hix.Data.ComponentConfig
       Hix.Data.Error
       Hix.Data.GhciConfig
@@ -37,16 +45,20 @@ library
       Hix.Data.NewProjectConfig
       Hix.Data.PreprocConfig
       Hix.Data.ProjectFile
+      Hix.Data.Version
       Hix.Env
       Hix.Ghci
+      Hix.Hackage
       Hix.Json
       Hix.Monad
       Hix.New
+      Hix.NixExpr
       Hix.Options
       Hix.Optparse
       Hix.Path
       Hix.Prelude
       Hix.Preproc
+      Hix.Version
   hs-source-dirs:
       lib
   default-extensions:
@@ -90,10 +102,14 @@ library
     , aeson >=2.0 && <2.2
     , base ==4.*
     , casing >=0.1.4 && <0.2
+    , exceptions ==0.10.*
     , exon >=1.4 && <1.7
     , extra ==1.7.*
     , filepattern ==0.1.*
     , generic-lens ==2.2.*
+    , http-client ==0.7.*
+    , http-client-tls ==0.3.*
+    , http-types ==0.12.*
     , incipit-base ==0.5.*
     , lens >=5.1 && <5.3
     , lens-regex-pcre ==1.1.*
@@ -102,6 +118,7 @@ library
     , path-io >=1.7 && <1.9
     , random ==1.2.*
     , transformers
+    , typed-process ==0.2.*
     , unix
   mixins:
       base hiding (Prelude)
@@ -164,6 +181,7 @@ test-suite hix-test
   main-is: Main.hs
   other-modules:
       Hix.Test.BootstrapTest
+      Hix.Test.BumpTest
       Hix.Test.CabalFile
       Hix.Test.CabalTest
       Hix.Test.GhciTest
@@ -209,6 +227,7 @@ test-suite hix-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
+    , aeson >=2.0 && <2.2
     , base ==4.*
     , exon >=1.4 && <1.7
     , hedgehog >=1.1 && <1.3

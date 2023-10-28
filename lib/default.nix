@@ -138,7 +138,7 @@ let
 
   loadConsole = let
     console = import ./console.nix { inherit lib; };
-    inherit (console) colors color bold chevrons chevronY chevronM;
+    inherit (console) colors color bold chevrons chevronY chevronM chevronsH;
     colorFun = name: ''
     ${name}()
     {
@@ -163,6 +163,7 @@ let
   {
       echo -e "${bold "$1"}"
   }
+  chevronsH='${chevronsH}'
   chevrons='${chevrons}'
   chevronY='${chevronY}'
   chevronM='${chevronM}'
@@ -223,4 +224,6 @@ in {
   ;
 
   ghcOverlay = import ./ghc-overlay.nix;
+
+  version = import ./version.nix { inherit lib; };
 }

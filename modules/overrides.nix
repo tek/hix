@@ -37,7 +37,7 @@ with lib;
       The special keys `local` and `localMin` contain the local packages and their minimal build variants, respectively.
       Local packages are only propagated when [](#opt-general-depsFull) is used.
       '';
-      type = lazyAttrsOf (util.types.cabalOverridesVia config.main);
+      type = lazyAttrsOf (util.types.cabalOverridesVia (util.withMainOr "dependency" id));
       default = {};
     };
 
@@ -107,7 +107,7 @@ with lib;
       local = util.overridesDeps "local" ++ toList config.envs.dev.internal.overridesLocal;
       localMin = util.overridesDeps "localMin" ++ toList config.envs.min.internal.overridesLocal;
       all = util.overridesDeps "all" ++ toList config.overrides;
-      dev = util.overridesDeps "dev" ++ toList config.envs.dev.overrides;
+      dev = util.overridesDeps "dev" ++ toList config.envs.dev.internal.overridesEnv;
     }
     //
     genAttrs config.ghcVersions (v: util.overridesDeps v ++ toList config.envs.${v}.overrides)

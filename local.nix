@@ -62,9 +62,13 @@ in {
       "Cabal"
       "aeson >= 2.0 && < 2.2"
       "casing ^>= 0.1.4"
+      "exceptions ^>= 0.10"
       "exon >= 1.4 && < 1.7"
       "extra ^>= 1.7"
       "filepattern ^>= 0.1"
+      "http-client ^>= 0.7"
+      "http-client-tls ^>= 0.3"
+      "http-types ^>= 0.12"
       "generic-lens ^>= 2.2"
       "lens >= 5.1 && < 5.3"
       "lens-regex-pcre ^>= 1.1"
@@ -72,6 +76,7 @@ in {
       "path ^>= 0.9"
       "path-io >= 1.7 && < 1.9"
       "random ^>= 1.2"
+      "typed-process ^>= 0.2"
       "transformers"
       "unix"
     ];
@@ -80,6 +85,7 @@ in {
 
     test.enable = true;
     test.dependencies = [
+      "aeson >= 2.0 && < 2.2"
       "Cabal"
       "exon >= 1.4 && < 1.7"
       "hedgehog >= 1.1 && < 1.3"
@@ -118,7 +124,7 @@ in {
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
         $exe new --hix-url '${config.internal.hixUrl}' "$@"
         '' ''
-        ${util.nixC} run .#gen-cabal
+        ${util.nixC} run .#gen-cabal-quiet
         '';
       in {
         type = "app";
@@ -136,7 +142,7 @@ in {
         prog = util.bootstrapWithDynamicCli "hix-bootstrap-nocache" ''
         $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
         '' ''
-        ${util.nixC} run .#gen-cabal
+        ${util.nixC} run .#gen-cabal-quiet
         '';
       in {
         type = "app";

@@ -8,7 +8,7 @@
     global = config;
   in {
     main = "root";
-    compiler = "ghc94";
+    managedDeps.enable = true;
     cabal = {
       dependencies = ["base >= 4 && < 6"];
       ghc-options = ["-Wunused-imports"];

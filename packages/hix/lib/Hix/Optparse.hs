@@ -8,6 +8,8 @@ import Options.Applicative.Types (readerAsk)
 import Path (Abs, Dir, File, Path, Rel, parseAbsDir, parseAbsFile, parseRelDir, parseRelFile, toFilePath)
 import qualified Text.Show as Show
 
+import Hix.Data.BumpHandlers (SpecialBumpHandlers (TestBumpHandlers))
+
 -- |An absolute file path option for @optparse-applicative@.
 absFileOption :: ReadM (Path Abs File)
 absFileOption = do
@@ -46,3 +48,9 @@ jsonOption = do
   pure $ JsonConfig $ case parseAbsFile raw of
     Just f -> eitherDecodeFileStrict' (toFilePath f)
     Nothing -> pure (eitherDecodeStrict' (encodeUtf8 raw))
+
+bumpHandlersOption :: ReadM SpecialBumpHandlers
+bumpHandlersOption =
+  readerAsk >>= \case
+    "test" -> pure TestBumpHandlers
+    h -> fail [exon|Invalid value for bump handlers: #{h}|]

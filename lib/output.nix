@@ -2,14 +2,16 @@
 let
   inherit (util) app;
 
-  envCommand = import ../lib/command.nix { inherit config util; };
+  envCommand = import ./command.nix { inherit config util; };
 
-  depVersions = env: import ../lib/dep-versions.nix { inherit config lib util env; };
+  depVersions = env: import ./dep-versions.nix { inherit config lib util env; };
 
-  releaseDrv = import ../lib/release-derivation.nix {
+  releaseDrv = import ./release-derivation.nix {
     inherit lib;
     inherit (util) hsLib;
   };
+
+  libBump = import ./bump.nix { inherit util; };
 
   console = import ./console.nix { inherit lib; };
 
@@ -31,7 +33,7 @@ let
   then all.${lib.head names}
   else null;
 
-  mainExe = pkgMainExe config.packages.${config.main};
+  mainExe = util.withMainOr null (main: pkgMainExe config.packages.${main});
 
   ifMainExe = lib.optionalAttrs (mainExe != null);
 
@@ -42,7 +44,7 @@ let
   staticPackageExe = env: pkg: exe: staticDrv (env.ghc.ghc.${pkg.name}.overrideAttrs (_: { pname = exe; }));
 
   staticPackageExeFor = env: pkgName: let
-    pkg = config.packages.${config.main};
+    pkg = config.packages.${pkgName};
     exe = pkgMainExe pkg;
   in lib.optionalAttrs (exe != null) { ${pkgName} = staticPackageExe env pkg exe.name; };
 
@@ -50,7 +52,7 @@ let
   {
     executables.static =
       foldExes (staticPackageExe env) //
-      staticPackageExeFor env config.main;
+      util.attrsetMain (staticPackageExeFor env);
   };
 
   cross = ghc: name: let
@@ -67,9 +69,9 @@ let
 
   fullEnvDerivations = v: let
     env = config.envs.${v};
-  in envDerivations v // {
-    static = staticDrv env.derivations.${config.main};
-  } // staticExes env;
+  in envDerivations v // util.attrsetMain (main: {
+    static = staticDrv env.derivations.${main};
+  }) // staticExes env;
 
   prefixedEnvDerivations = envs: let
     envPkgs = v: lib.mapAttrs' (n: d: { name = "${v}-${n}"; value = d; }) (envDerivations v);
@@ -84,11 +86,11 @@ let
       min = minGhc.${name};
     };
     local = lib.mapAttrs extra config.envs.dev.derivations;
-  in local // {
-    default = local.${config.main};
-    min = local.${config.main}.min;
-    static = staticDrv local.${config.main};
-  };
+  in local // util.attrsetMain (main: {
+    default = local.${main};
+    min = local.${main}.min;
+    static = staticDrv local.${main};
+  });
 
   scopedEnvDerivations = envs: lib.genAttrs envs envDerivations;
 
@@ -111,13 +113,19 @@ let
   envAppimages = env: let
     mainAppimage = appimageApp env.name mainExe.name;
   in
-  ifMainExe (
-    mainAppimage //
-    { ${config.main} = mainAppimage; }
-  ) //
+  util.attrsetMain (main: ifMainExe (mainAppimage // { ${main} = mainAppimage; })) //
   foldExes (pkg: n: appimageApp env.name n);
 
   mainAppimageApp = ifMainExe (appimageApp "dev" mainExe.name);
+
+  envBump = env: _: package: app (libBump.package env package);
+
+  allBump = env: app (libBump.all env);
+
+  envBumps = env:
+  if config.managedDeps.enable
+  then (allBump env // lib.mapAttrs (envBump env) config.packages)
+  else throw "Set 'managedDeps.enable = true' to use this feature";
 
   envCommands = env:
   lib.mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
@@ -125,10 +133,13 @@ let
   envApps = env: {
     ${env.name} = envCommands env // envAppimages env // {
       dep-versions = app "${depVersions env.name}";
+      bump = envBumps env;
     };
   };
 
   commandApps = lib.mapAttrs (_: c: app "${c.path}");
+
+  mainBumpApps = { bump = envBumps config.envs.latest; };
 
 in {
   inherit
@@ -143,5 +154,6 @@ in {
   commandApps
   mainExe
   pkgMainExe
+  mainBumpApps
   ;
 }

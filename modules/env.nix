@@ -441,6 +441,14 @@ in {
       default = null;
     };
 
+    managedOverrides = mkOption {
+      description = mdDoc ''
+      Whether to create overrides with the latest version of each package for this env when running [](#bump).
+      '';
+      type = bool;
+      default = false;
+    };
+
     vm = {
 
       enable = mkEnableOption (mdDoc "the service VM for this env");
@@ -512,11 +520,12 @@ in {
       overridesLocal = mkOption {
         description = mdDocs "The local packages, encoded as overrides.";
         type = util.types.cabalOverridesVia "project";
-        default = import ../lib/deps/local.nix {
-          config = global;
-          inherit lib;
-          inherit (config) ifd localPackage profiling;
-        };
+      };
+
+      overridesEnv = mkOption {
+        description = mdDocs "Overrides for this env, including extras like managed dependencies.";
+        type = util.types.cabalOverridesVia "computed env ${config.name}";
+        readOnly = true;
       };
 
       overridesInherited = mkOption {
@@ -552,7 +561,7 @@ in {
           config.internal.overridesInherited
           config.internal.overridesLocal
           global.overrides
-          config.overrides
+          config.internal.overridesEnv
         ]
         );
 
@@ -589,7 +598,26 @@ in {
 
       };
 
-    internal.overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
+      internal = let
+
+        managedOverrides = {hackage, ...}: let
+          os = (util.managedDeps.overrides or {}).${config.name} or {};
+          managedOverride = _: {version, hash}: hackage version hash;
+        in mapAttrs managedOverride os;
+
+      in {
+
+        overridesLocal = import ../lib/deps/local.nix {
+          config = global;
+          inherit lib;
+          inherit (config) ifd localPackage profiling;
+        };
+
+        overridesEnv = util.concatOverrides ([config.overrides] ++ optional config.managedOverrides managedOverrides);
+
+        overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
+
+      };
 
   };
 }

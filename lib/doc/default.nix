@@ -90,6 +90,7 @@ let
     (options.importMod "services" { inherit config lib util; })
     (options.importMod "commands" { inherit config lib util; })
     (options.importMod "overrides" { inherit config lib util; })
+    (options.importMod "deps" { inherit config lib util; })
     (options.importMod "output" { inherit config lib util; })
   ];
   generalExclude = [
@@ -149,6 +150,7 @@ let
         (opt "hackage" "Hackage" mod-hackage)
         (text tags)
         (text cross)
+        (text bump)
         (text misc)
       ];
     }

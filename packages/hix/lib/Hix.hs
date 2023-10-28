@@ -1,9 +1,11 @@
 module Hix where
 
 import Hix.Bootstrap (bootstrapProject)
+import Hix.Bump (bumpCli)
 import Hix.Data.Error (
   Error (..),
   printBootstrapError,
+  printBumpError,
   printEnvError,
   printFatalError,
   printGhciError,
@@ -12,11 +14,11 @@ import Hix.Data.Error (
   )
 import Hix.Env (printEnvRunner)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
-import Hix.Monad (M, runM)
+import Hix.Monad (M, runMWith)
 import Hix.New (newProject)
 import qualified Hix.Options as Options
 import Hix.Options (
-  Command (BootstrapCmd, EnvRunner, GhciCmd, GhcidCmd, NewCmd, Preproc),
+  Command (BootstrapCmd, BumpCmd, EnvRunner, GhciCmd, GhcidCmd, NewCmd, Preproc),
   GlobalOptions (GlobalOptions),
   Options (Options),
   parseCli,
@@ -34,6 +36,7 @@ handleError GlobalOptions {verbose} = \case
   GhciError err -> printGhciError err
   NewError err -> printNewError err
   BootstrapError err -> printBootstrapError err
+  BumpError err -> printBumpError err
   NoMatch msg | fromMaybe False verbose -> printPreprocError msg
   NoMatch _ -> unit
   Fatal err -> printFatalError err
@@ -46,8 +49,9 @@ runCommand = \case
   GhciCmd opts -> printGhciCmdline opts
   NewCmd opts -> newProject opts.config
   BootstrapCmd opts -> bootstrapProject opts.config
+  BumpCmd opts -> bumpCli opts
 
 main :: IO ()
 main = do
   Options global cmd <- parseCli
-  leftA (handleError global) =<< runM global.cwd (runCommand cmd)
+  leftA (handleError global) =<< runMWith (fromMaybe False global.verbose) global.debug global.cwd (runCommand cmd)

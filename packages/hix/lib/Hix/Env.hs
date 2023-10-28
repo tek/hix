@@ -11,9 +11,9 @@ import Hix.Data.ComponentConfig (
   PackagesConfig,
   TargetOrDefault (DefaultTarget, ExplicitTarget),
   )
-import Hix.Data.Error (pathText)
+import Hix.Data.Error (Error (EnvError), pathText)
 import qualified Hix.Data.GhciConfig
-import Hix.Json (jsonConfig)
+import Hix.Json (jsonConfigE)
 import Hix.Monad (M)
 import qualified Hix.Options as Options
 import Hix.Options (EnvRunnerOptions, TargetSpec)
@@ -34,7 +34,7 @@ componentRunner cliRoot defaultPkg config spec =
 
 envRunner :: EnvRunnerOptions -> M EnvRunner
 envRunner opts = do
-  config <- either pure jsonConfig opts.config
+  config <- jsonConfigE EnvError opts.config
   let runner = componentRunner opts.root config.mainPackage config.packages
   fromMaybe config.defaultEnv . join <$> traverse runner opts.component
 

@@ -172,5 +172,5 @@ newProjectFiles conf = do
     modNameS = pascal (toString conf.name.unProjectName)
 
 newProject :: NewProjectConfig -> M ()
-newProject conf = do
+newProject conf =
   traverse_ createFile =<< newProjectFiles conf

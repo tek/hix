@@ -26,6 +26,7 @@ let
     dep-versions = test "dep-versions";
     update-cli-version = test "update-cli-version";
     direnv = test "direnv";
+    bump = test "bump";
   };
 
   testA = n: t: "${n} ${t}";
@@ -119,6 +120,15 @@ in {
   check_run()
   {
     check "$(eval $1)" $2 $3
+  }
+
+  check_diff()
+  {
+    if ! diff $1 $2
+    then
+      fail "$3"
+      return 1
+    fi
   }
 
   ghci_match()

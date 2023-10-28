@@ -31,6 +31,9 @@ import Prelude hiding (Mod, mod)
 
 import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (BootstrapProjectConfig))
+import qualified Hix.Data.BumpConfig
+import Hix.Data.BumpConfig (BumpConfig (BumpConfig), BumpEnv)
+import Hix.Data.BumpHandlers (SpecialBumpHandlers)
 import Hix.Data.ComponentConfig (
   ComponentName (ComponentName),
   EnvName,
@@ -42,7 +45,7 @@ import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig, GhciConfig, Runner
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
 import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Optparse (JsonConfig, absDirOption, absFileOption, jsonOption)
+import Hix.Optparse (JsonConfig, absDirOption, absFileOption, bumpHandlersOption, jsonOption, relFileOption)
 
 data PreprocOptions =
   PreprocOptions {
@@ -146,6 +149,14 @@ data EnvRunnerCommandOptions =
   }
   deriving stock (Show, Generic)
 
+data BumpOptions =
+  BumpOptions {
+    env :: Either BumpEnv JsonConfig,
+    config :: BumpConfig,
+    handlers :: Maybe SpecialBumpHandlers
+  }
+  deriving stock (Show, Generic)
+
 data Command =
   Preproc PreprocOptions
   |
@@ -158,11 +169,14 @@ data Command =
   NewCmd NewOptions
   |
   BootstrapCmd BootstrapOptions
+  |
+  BumpCmd BumpOptions
   deriving stock (Show)
 
 data GlobalOptions =
   GlobalOptions {
     verbose :: Maybe Bool,
+    debug :: Bool,
     cwd :: Path Abs Dir
   }
   deriving stock (Eq, Show, Generic)
@@ -318,6 +332,18 @@ bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
+bumpParser :: Parser BumpOptions
+bumpParser = do
+  envConfig <- Right <$> jsonConfigParser
+  env <- strOption (long "env" <> short 'e' <> help "Environment for building and managed overrides" <> value "dev")
+  package <- optional (strOption (long "package" <> short 'p' <> help "Bump only this package"))
+  file <- option relFileOption (long "file" <> short 'f' <> help "The relative path to the managed deps file")
+  updateProject <- switch (long "update-project" <> short 'u' <> help "Build with new versions and write to config")
+  latestOverrides <- switch (long "overrides" <> short 'o' <> help "Write latest versions to the env's overrides")
+  projectRoot <- optional (option absDirOption (long "root" <> help "The root directory of the project"))
+  handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  pure BumpOptions {env = envConfig, config = BumpConfig {..}, ..}
+
 commands :: Mod CommandFields Command
 commands =
   command "preproc" (Preproc <$> info preprocParser (progDesc "Preprocess a source file for use with ghcid"))
@@ -331,12 +357,15 @@ commands =
   command "new" (NewCmd <$> info newParser (progDesc "Create a new Hix project in the current directory"))
   <>
   command "bootstrap" (BootstrapCmd <$> info bootstrapParser (progDesc "Bootstrap an existing Cabal project in the current directory"))
+  <>
+  command "bump" (BumpCmd <$> info bumpParser (progDesc "Bump the deps of a package"))
 
 globalParser ::
   Path Abs Dir ->
   Parser GlobalOptions
 globalParser realCwd = do
   verbose <- optional (switch (long "verbose" <> short 'v' <> help "Verbose output"))
+  debug <- switch (long "debug" <> help "Debug output")
   cwd <- option absDirOption (long "cwd" <> help "Force a different working directory" <> value realCwd)
   pure GlobalOptions {..}
 

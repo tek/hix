@@ -10,6 +10,10 @@ let
 
   types = import ./types.nix { inherit config lib; };
 
+  managedDeps = let
+    file = "${config.base}/${config.managedDeps.file}";
+  in optionalAttrs (config.managedDeps.enable && pathExists file) (import file);
+
   packageRel = basic.packageSubpath config.base;
 
   overridesDeps = name: config.internal.overridesDeps.${name} or [];
@@ -20,6 +24,15 @@ let
   overridesGlobal = extra: overridesFromDeps (["local" "all"] ++ extra);
 
   overridesGlobalMin = extra: overridesFromDeps (["localMin" "all"] ++ extra);
+
+  projectHasPackages = !(basic.empty config.packages);
+
+  withMainOr = fallback: f:
+  if projectHasPackages
+  then f config.main
+  else fallback;
+
+  attrsetMain = withMainOr {};
 
   json = let
 
@@ -41,6 +54,8 @@ let
     };
 
     packages = mapAttrs (_: packageConf) config.packages;
+
+    packageDeps = _: pkg: mapAttrs (_: c: { inherit (c) dependencies; }) pkg.internal.componentsSet;
 
     env = default: {
       mainPackage = config.main;
@@ -64,6 +79,11 @@ let
       packages = if config.manualCabal then null else packages;
     };
 
+    bump = {
+      deps = mapAttrs packageDeps config.packages;
+      managed = managedDeps;
+    };
+
     jsonFile = name: value: pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
 
   in {
@@ -74,6 +94,8 @@ let
     ghciFile = jsonFile "ghci-config" ghci;
 
     preprocFile = jsonFile "preproc-config" preproc;
+
+    bumpFile = jsonFile "bump-config" bump;
 
   };
 
@@ -142,10 +164,14 @@ let
     config
     paramApp
     types
+    managedDeps
     packageRel
     overridesDeps
     overridesGlobal
     overridesGlobalMin
+    projectHasPackages
+    withMainOr
+    attrsetMain
     json
     visibleEnvs
     minGhcs

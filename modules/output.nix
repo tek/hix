@@ -22,8 +22,8 @@ let
     params = ["path"];
   };
 
-  genAll = config.pkgs.writeScript "hix-gen-all" ''
-  ${config.hpack.script}
+  genAll = quiet: config.pkgs.writeScript "hix-gen-all" ''
+  ${if quiet then config.hpack.scriptQuiet else config.hpack.script}
   ${if config.gen-overrides.enable then genOverrides else ""}
   '';
 
@@ -137,7 +137,9 @@ in {
 
         exposed = lib.filterAttrs (_: c: c.expose) config.commands;
 
-      in config.hackage.output.apps // libOutput.commandApps exposed // {
+      in config.hackage.output.apps //
+      libOutput.commandApps exposed //
+      {
         gen-cabal = app "${config.hpack.script}";
         gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
         hpack = app "${config.hpack.script}";
@@ -146,14 +148,20 @@ in {
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
         gen-overrides = app "${genOverrides}";
-        gen = app "${genAll}";
+        gen = app "${genAll false}";
+        gen-quiet = app "${genAll true}";
         show-overrides = app "${showOverrides}";
         dep-versions = app "${depVersions "dev"}";
-      } // libOutput.mainAppimageApp // optionalAttrs config.output.commandApps {
+      } //
+      libOutput.mainAppimageApp //
+      libOutput.mainBumpApps //
+      optionalAttrs config.output.commandApps {
         cmd = libOutput.commandApps config.commands;
-      } // optionalAttrs config.output.envApps {
+      } //
+      optionalAttrs config.output.envApps {
         env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleEnvs);
-      } // config.hpack.apps;
+      } //
+      config.hpack.apps;
 
     };
 

@@ -29,7 +29,7 @@ import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageNa
 import Hix.Data.Error (Error (..), sourceError, tryIO)
 import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Json (jsonConfig)
+import Hix.Json (jsonConfigE)
 import Hix.Monad (M)
 import Hix.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Optparse (JsonConfig)
@@ -460,7 +460,7 @@ fromConfig ::
   Either PreprocConfig JsonConfig ->
   M CabalConfig
 fromConfig cliRoot source pconf = do
-  conf <- either pure jsonConfig pconf
+  conf <- jsonConfigE PreprocError pconf
   target <- targetComponentOrError cliRoot Nothing conf.packages (TargetForFile source)
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,

@@ -6,15 +6,16 @@ import qualified Data.Aeson as Aeson
 import Data.Aeson (FromJSON, fromJSON)
 import Exon (exon)
 
-import Hix.Data.Error (Error (GhciError))
+import Hix.Data.Error (Error)
 import Hix.Monad (M)
 import Hix.Optparse (JsonConfig (JsonConfig))
 
 jsonConfig ::
   FromJSON a =>
+  (Text -> Error) ->
   JsonConfig ->
   M a
-jsonConfig (JsonConfig mv) =
+jsonConfig consError (JsonConfig mv) =
   liftIO mv >>= \case
     Left msg -> failure [exon|Invalid JSON: #{toText msg}|]
     Right v -> case fromJSON v of
@@ -22,4 +23,12 @@ jsonConfig (JsonConfig mv) =
       Aeson.Error err -> failure [exon|Invalid JSON: #{toText err}
 #{show v}|]
   where
-    failure = lift . throwE . GhciError
+    failure = lift . throwE . consError
+
+jsonConfigE ::
+  FromJSON a =>
+  (Text -> Error) ->
+  Either a JsonConfig ->
+  M a
+jsonConfigE consError =
+  either pure (jsonConfig consError)

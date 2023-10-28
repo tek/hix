@@ -23,12 +23,12 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   Target (Target),
   )
-import Hix.Data.Error (Error, note, pathText, tryIO)
+import Hix.Data.Error (Error (GhciError), note, pathText, tryIO)
 import qualified Hix.Data.GhciConfig
 import Hix.Data.GhciConfig (GhciConfig, GhciRunExpr (GhciRunExpr), GhciSetupCode (GhciSetupCode))
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (GhcidRun))
-import Hix.Json (jsonConfig)
+import Hix.Json (jsonConfigE)
 import Hix.Monad (M, noteGhci)
 import qualified Hix.Options as Options
 import Hix.Options (
@@ -108,7 +108,7 @@ testRun config = \case
 
 assemble :: GhciOptions -> M GhciTest
 assemble opt = do
-  config <- either pure jsonConfig opt.config
+  config <- jsonConfigE GhciError opt.config
   root <- rootDir opt.root
   Target {..} <- targetComponentOrError opt.root config.mainPackage config.packages opt.component
   script <- ghciScript config package sourceDir opt

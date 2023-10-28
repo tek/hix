@@ -1055,6 +1055,31 @@ in {
 
   '';
 
+  bump = ''
+  ## Automatic dependency updates {#bump}
+
+  ::: {.note}
+  This feature is new, so there are likely many edge cases that have not been tested.
+  :::
+
+  If the option [](#opt-general-managedDeps.enable) is enabled, the flake will expose an environment named `latest` and
+  an app called `bump`.
+
+  Running this app with `nix run .#bump` will fetch the newest versions of all dependencies and create a file in the
+  project at the path configured by [](#opt-general-managedDeps.file), containing updated dependency version ranges that
+  include the new version.
+
+  For each dependency, this app will build the associated package and omit the version update if the build fails.
+  When generating cabal files or derivations, the version ranges from this file will override those from the flake.
+
+  Additionally, the app will add overrides to the same file that select the newest version for the environment `latest`,
+  so that the `dev` environment (and all others) will still use the default versions from nixpkgs (plus regular
+  overrides), making the `latest` environment the testing ground for bleeding-edge dependencies.
+
+  You can change this behavior to apply to other environments by setting [](#opt-env-managedOverrides) to `true` and
+  running `nix run .#env.<name>.bump` instead.
+  '';
+
   misc = ''
   ## Miscellaneous tools {#misc}
 

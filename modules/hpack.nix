@@ -42,10 +42,21 @@ let
   mkPathsBlocker = name:
   { when = { condition = false; generated-other-modules = "Paths_${replaceStrings ["-"] ["_"] name}"; }; };
 
-  generateComponent = pkg: conf: let
+  replaceManagedDep = deps: dep: let
+    norm = util.version.normalize dep;
+    name = util.version.mainLibName norm.name;
+  in if hasAttr name deps
+  then { inherit name; version = deps.${name}; }
+  else dep;
+
+  addManagedDeps = deps: hconf:
+  hconf // { dependencies = map (replaceManagedDep deps) hconf.dependencies; };
+
+  generateComponent = pkg: name: conf: let
 
     prelude = conf.prelude;
     base = conf.base;
+    deps = attrByPath ["deps" pkg.name] {} util.managedDeps;
 
     basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 
@@ -59,12 +70,19 @@ let
 
     paths = if conf.paths then {} else mkPathsBlocker pkg.name;
 
-  in util.mergeAll [
-    preludeDeps
-    basic
-    paths
-    conf.component
-  ];
+    full = util.mergeAll [
+      preludeDeps
+      basic
+      paths
+      conf.component
+    ];
+
+    withManaged =
+      if config.managedDeps.enable
+      then addManagedDeps deps full
+      else full;
+
+  in withManaged;
 
   extraLibrary = mainLib: conf:
     optionalAttrs (!mainLib && conf.public) { visibility = "public"; } //
@@ -93,7 +111,7 @@ let
       else extraExecutable
       ;
   in
-  optionalAttrs conf.enable (wrap isLib mainLib conf { ${name} = extra conf // generateComponent pkg conf; });
+  optionalAttrs conf.enable (wrap isLib mainLib conf { ${name} = extra conf // generateComponent pkg name conf; });
 
   generatePackageConf = name: conf: let
 
