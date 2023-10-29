@@ -112,58 +112,81 @@ in {
       final = lib.mkDefault config.outputs;
     };
 
-    outputs = {
+    outputs = let
 
-      packages = libOutput.devOutputs // libOutput.prefixedInEnvs config.ghcVersions;
+      lowPrio = {
 
-      checks =
-        config.envs.dev.derivations //
-        optionalAttrs config.compat.enable (libOutput.prefixedInEnvs config.compat.versions) //
-        libOutput.latestChecks;
+        packages = {};
 
-      legacyPackages = libOutput.scopedEnvOutputs config.ghcVersions // libOutput.envsApi config.envs // {
-        inherit config;
-        inherit (config.envs.dev.ghc) pkgs ghc;
-        show-config = show-config.shell;
-        overrides = config.exportedOverrides;
+        checks = {};
+
+        legacyPackages = libOutput.scopedEnvOutputs config.ghcVersions // libOutput.envsApi config.envs // {
+          inherit config;
+          inherit (config.envs.dev.ghc) pkgs ghc;
+          show-config = show-config.shell;
+        };
+
+        devShells = {};
+
+        apps = config.hackage.output.apps //
+        {
+          hpack = app "${config.hpack.script}";
+          hpack-quiet = app "${config.hpack.scriptQuiet}";
+          tags = app tags.app;
+          show-config = show-config.app;
+          cli = app "${config.internal.hixCli.package}/bin/hix";
+          gen-overrides = app "${genOverrides}";
+          gen = app "${genAll false}";
+          gen-quiet = app "${genAll true}";
+          show-overrides = app "${showOverrides}";
+          dep-versions = app "${depVersions "dev"}";
+        } //
+        libOutput.mainAppimageApp //
+        libOutput.mainBumpApps //
+        optionalAttrs config.output.commandApps {
+          cmd = libOutput.commandApps config.commands;
+        } //
+        optionalAttrs config.output.envApps {
+          env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleEnvs);
+        };
+
       };
 
-      devShells = let
+      highPrio = {
+        packages = libOutput.devOutputs // libOutput.prefixedInEnvs config.ghcVersions;
 
-        shells = lib.mapAttrs (_: e: e.shell) (lib.filterAttrs (_: util.envSystemAllowed) util.visibleEnvs);
+        checks =
+          config.envs.dev.derivations //
+          optionalAttrs config.compat.enable (libOutput.prefixedInEnvs config.compat.versions) //
+          libOutput.latestChecks;
 
-      in shells // { default = shells.dev; };
+        legacyPackages = {
+          overrides = config.exportedOverrides;
+        };
 
-      apps = let
+        devShells = let
+          envShells = lib.mapAttrs (_: e: e.shell) (lib.filterAttrs (_: util.envSystemAllowed) util.visibleEnvs);
+        in envShells // { default = envShells.dev; };
 
-        exposed = lib.filterAttrs (_: c: c.expose) config.commands;
+        apps = let
+          exposedCommands = lib.filterAttrs (_: c: c.expose) config.commands;
+        in
+          libOutput.commandApps exposedCommands //
+          {
+            gen-cabal = app "${config.hpack.script}";
+            gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
+          } //
+          config.hpack.apps;
+      };
 
-      in config.hackage.output.apps //
-      libOutput.commandApps exposed //
-      {
-        gen-cabal = app "${config.hpack.script}";
-        gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
-        hpack = app "${config.hpack.script}";
-        hpack-quiet = app "${config.hpack.scriptQuiet}";
-        tags = app tags.app;
-        show-config = show-config.app;
-        cli = app "${config.internal.hixCli.package}/bin/hix";
-        gen-overrides = app "${genOverrides}";
-        gen = app "${genAll false}";
-        gen-quiet = app "${genAll true}";
-        show-overrides = app "${showOverrides}";
-        dep-versions = app "${depVersions "dev"}";
-      } //
-      libOutput.mainAppimageApp //
-      libOutput.mainBumpApps //
-      optionalAttrs config.output.commandApps {
-        cmd = libOutput.commandApps config.commands;
-      } //
-      optionalAttrs config.output.envApps {
-        env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleEnvs);
-      } //
-      config.hpack.apps;
+      merge = name: lowPrio.${name} // { ${config.buildOutputsPrefix} = lowPrio.${name}; } // highPrio.${name};
 
+    in {
+      packages = merge "packages";
+      checks = merge "checks";
+      legacyPackages = merge "legacyPackages";
+      devShells = merge "devShells";
+      apps = merge "apps";
     };
 
   };

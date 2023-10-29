@@ -36,7 +36,7 @@
   ''
   set -e
   ${cli} ${verbose} ${debug} bump ${args} $@
-  ${lib.optionalString (config.managedDeps.generate && config.managedDeps.update) "nix run .#gen"}
+  ${lib.optionalString (config.managedDeps.generate && config.managedDeps.update) (util.runBuildApp "gen")}
   '';
 
   packageScript = env: pkg: mainScript env ["--package ${pkg.name}"];

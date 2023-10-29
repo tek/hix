@@ -10,6 +10,8 @@ let
 
   types = import ./types.nix { inherit config lib; };
 
+  hsLib = config.pkgs.haskell.lib;
+
   managedDeps = let
     file = "${config.base}/${config.managedDeps.file}";
   in optionalAttrs (config.managedDeps.enable && pathExists file) (import file);
@@ -157,11 +159,13 @@ let
   envSystemAllowed = env:
   env.systems == null || (elem config.system env.systems);
 
-  hsLib = config.pkgs.haskell.lib;
+  runBuildApp = name:
+  "nix run .#${config.buildOutputsPrefix}.${name}";
 
   util = basic // {
     inherit
     config
+    hsLib
     paramApp
     types
     managedDeps
@@ -178,12 +182,12 @@ let
     conf
     unlessDev
     downloadStaticCli
+    nixC
     bootstrapWithStaticCli
     bootstrapWithDynamicCli
     cacheWrapper
     envSystemAllowed
-    hsLib
-    nixC
+    runBuildApp
     ;
   };
 

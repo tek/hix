@@ -223,6 +223,23 @@ in {
       example = literalExpression ''ghc: [ghc.fourmolu]'';
     };
 
+    buildOutputsPrefix = mkOption {
+      description = mdDoc ''
+      Some of Hix's features are exposed as top level outputs, like `nix run .#release`.
+      Since these are quite numerous, it becomes increasingly likely that these clash with some of the project's package
+      or command names, making them inaccessible.
+
+      For this reason, built-in Hix outputs are added to the outputs with lower precedence, to ensure that user-defined
+      outputs aren't shadowed.
+      To keep the built-in outputs accessible as well, they are additionally exposed in a dedicated prefix set named
+      `build`, as in `nix run .#build.release`.
+
+      If you prefer a different prefix, set this option to the desired string.
+      '';
+      type = str;
+      default = "build";
+    };
+
     pkgs = mkOption {
       type = util.types.pkgs;
       description = mdDoc ''
