@@ -443,7 +443,8 @@ in {
 
     managedOverrides = mkOption {
       description = mdDoc ''
-      Whether to create overrides with the latest version of each package for this env when running [](#bump).
+      Whether to create overrides with the latest version of each package for this env when performing
+      [](#managed-deps).
       '';
       type = bool;
       default = false;

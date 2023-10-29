@@ -18,7 +18,7 @@ with lib;
 
       update = mkOption {
         description = mdDoc ''
-        Whether to build the project with the new dependency versions and update [](#opt-general-managedDeps.file) on
+        Whether to build the project with the new dependency versions and update [](#opt-managed-managedDeps.file) on
         success.
         '';
         type = bool;
@@ -27,7 +27,7 @@ with lib;
 
       generate = mkOption {
         description = mdDoc ''
-        Whether to regenerate cabal files and override derivations after [updating](#opt-general-managedDeps.update) the
+        Whether to regenerate cabal files and override derivations after [updating](#opt-managed-managedDeps.update) the
         project.
         '';
         type = bool;
