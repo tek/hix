@@ -1078,6 +1078,9 @@ in {
 
   You can change this behavior to apply to other environments by setting [](#opt-env-managedOverrides) to `true` and
   running `nix run .#env.<name>.bump` instead.
+
+  If [](#opt-general-managedDeps.check) is `true` (the default), the derivations with latest versions will be added to
+  the `checks` output, so your CI may depend on them.
   '';
 
   misc = ''

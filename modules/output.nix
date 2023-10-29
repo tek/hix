@@ -114,13 +114,14 @@ in {
 
     outputs = {
 
-      packages = libOutput.devOutputs // libOutput.prefixedEnvDerivations config.ghcVersions;
+      packages = libOutput.devOutputs // libOutput.prefixedInEnvs config.ghcVersions;
 
       checks =
         config.envs.dev.derivations //
-        optionalAttrs config.compat.enable (libOutput.prefixedEnvDerivations config.compat.versions);
+        optionalAttrs config.compat.enable (libOutput.prefixedInEnvs config.compat.versions) //
+        libOutput.latestChecks;
 
-      legacyPackages = libOutput.scopedEnvDerivations config.ghcVersions // libOutput.envsApi config.envs // {
+      legacyPackages = libOutput.scopedEnvOutputs config.ghcVersions // libOutput.envsApi config.envs // {
         inherit config;
         inherit (config.envs.dev.ghc) pkgs ghc;
         show-config = show-config.shell;

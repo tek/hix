@@ -63,19 +63,22 @@ let
     ghc = env.ghc;
   in withStatic ghc.ghc.${name} // { cross = cross ghc name; };
 
-  envDerivations = v: let
+  envOutputs = v: let
     env = config.envs.${v};
   in lib.mapAttrs (n: d: (withCross env n)) env.derivations;
 
-  fullEnvDerivations = v: let
+  fullEnvOutputs = v: let
     env = config.envs.${v};
-  in envDerivations v // util.attrsetMain (main: {
+  in envOutputs v // util.attrsetMain (main: {
     static = staticDrv env.derivations.${main};
   }) // staticExes env;
 
-  prefixedEnvDerivations = envs: let
-    envPkgs = v: lib.mapAttrs' (n: d: { name = "${v}-${n}"; value = d; }) (envDerivations v);
-  in util.foldMapAttrs envPkgs envs;
+  prefixedInEnv = v: lib.mapAttrs' (n: d: { name = "${v}-${n}"; value = d; }) (envOutputs v);
+
+  prefixedInEnvs = envs: util.foldMapAttrs prefixedInEnv envs;
+
+  prefixedEnvDerivations = env:
+  lib.mapAttrs' (n: d: { name = "${env}-${n}"; value = d; }) config.envs.${env}.derivations;
 
   devOutputs = let
     env = config.envs.dev;
@@ -92,9 +95,9 @@ let
     static = staticDrv local.${main};
   });
 
-  scopedEnvDerivations = envs: lib.genAttrs envs envDerivations;
+  scopedEnvOutputs = envs: lib.genAttrs envs envOutputs;
 
-  envsApi = envs: { env = lib.mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; } // fullEnvDerivations n) envs; };
+  envsApi = envs: { env = lib.mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; } // fullEnvOutputs n) envs; };
 
   appimage = env: name: config.pkgs.writeScript "hix-appimage-${name}" ''
   set -eu
@@ -141,10 +144,13 @@ let
 
   mainBumpApps = { bump = envBumps config.envs.latest; };
 
+  latestChecks = lib.optionalAttrs (config.managedDeps.enable && config.managedDeps.check)
+  (prefixedEnvDerivations "latest");
+
 in {
   inherit
-  prefixedEnvDerivations
-  scopedEnvDerivations
+  prefixedInEnvs
+  scopedEnvOutputs
   devOutputs
   envsApi
   app
@@ -155,5 +161,6 @@ in {
   mainExe
   pkgMainExe
   mainBumpApps
+  latestChecks
   ;
 }

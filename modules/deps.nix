@@ -34,6 +34,12 @@ with lib;
         default = true;
       };
 
+      check = mkOption {
+        description = mdDoc "Add the build with latest versions to the flake checks.";
+        type = bool;
+        default = true;
+      };
+
       verbose = mkOption {
         description = mdDoc "Print verbose messages when building packages with new versions.";
         type = bool;

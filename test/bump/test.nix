@@ -29,6 +29,8 @@
       };
     }'
 
+    check 'nix eval .#checkNames' '[ "latest-root" "root" ]' 'checks are wrong'
+
     nix run .#bump.root -- --root $PWD --handlers test >/dev/null || fail 'bump root failed'
 
     check 'cat ops/deps.nix' $target 'ops/deps.nix is wrong after root'
