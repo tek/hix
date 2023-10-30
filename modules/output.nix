@@ -116,17 +116,11 @@ in {
 
       lowPrio = {
 
-        packages = {};
-
-        checks = {};
-
         legacyPackages = libOutput.scopedEnvOutputs config.ghcVersions // libOutput.envsApi config.envs // {
           inherit config;
           inherit (config.envs.dev.ghc) pkgs ghc;
           show-config = show-config.shell;
         };
-
-        devShells = {};
 
         apps = config.hackage.output.apps //
         {
@@ -179,7 +173,12 @@ in {
           config.hpack.apps;
       };
 
-      merge = name: lowPrio.${name} // { ${config.buildOutputsPrefix} = lowPrio.${name}; } // highPrio.${name};
+      merge = name:
+      optionalAttrs (lib.hasAttr name lowPrio) (
+        lowPrio.${name} //
+        { ${config.buildOutputsPrefix} = lowPrio.${name}; }
+      ) //
+      highPrio.${name};
 
     in {
       packages = merge "packages";
