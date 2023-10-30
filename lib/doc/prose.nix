@@ -1062,11 +1062,11 @@ in {
   This feature is new, so there are likely many edge cases that have not been tested.
   :::
 
-  If the option [](#opt-managed-managedDeps.enable) is enabled, the flake will expose an environment named `latest` and
+  If the option [](#opt-managed-deps-managedDeps.enable) is enabled, the flake will expose an environment named `latest` and
   an app called `bump`.
 
   Running this app with `nix run .#bump` will fetch the newest versions of all dependencies and create a file in the
-  project at the path configured by [](#opt-managed-managedDeps.file), containing updated dependency version ranges
+  project at the path configured by [](#opt-managed-deps-managedDeps.file), containing updated dependency version ranges
   that include the new version.
 
   For each dependency, this app will build the associated package and omit the version update if the build fails.
@@ -1079,7 +1079,7 @@ in {
   You can change this behavior to apply to other environments by setting [](#opt-env-managedOverrides) to `true` and
   running `nix run .#env.<name>.bump` instead.
 
-  If [](#opt-managed-managedDeps.check) is `true` (the default), the derivations with latest versions will be added
+  If [](#opt-managed-deps-managedDeps.check) is `true` (the default), the derivations with latest versions will be added
   to the `checks` output, so your CI may depend on them.
   '';
 

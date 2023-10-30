@@ -81,7 +81,7 @@ let
   ];
   mod-hackage = options.moduleWithout hackageExclude "hackage" { inherit config lib util; };
 
-  mod-managedDeps = options.moduleWithout [] "managed" { inherit config lib util; };
+  mod-managedDeps = options.moduleWithout [] "managed-deps" { inherit config lib util; };
 
   generalModules = [
     (options.importMod "systems" { inherit config lib; })
