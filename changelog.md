@@ -4,6 +4,7 @@
 * Fix environment not being set when using `direnv`.
 * Add an app, `bump`, that updates dependency versions and tests the build before writing new bounds and overrides to
   a file that's incorporated into the build.
+* Add the option `envs.<name>.hoogle` to pass `withHoogle` to `ghcWithPackages`.
 
 # 0.6.9
 

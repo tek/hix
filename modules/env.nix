@@ -53,7 +53,11 @@ let
     localDeps = builtins.filter isNotLocal (concatMap bInputs (map (p: ghc.${p}) global.internal.packageNames));
   in optionals config.localDeps localDeps ++ extraHs ghc ++ [ghc.cabal-install];
 
-  ghcWithPackages = config.ghc.ghc.ghcWithPackages ghcPackages;
+  ghcWithPackages =
+    config.ghc.ghc.ghcWithPackages.override (
+      { withHoogle = config.hoogle; } //
+      config.ghcWithPackagesArgs
+    ) ghcPackages;
 
   buildInputs =
   mkBuildInputs config.buildInputs ++
@@ -234,6 +238,18 @@ in {
       type = package;
       readOnly = true;
       default = ghcWithPackages;
+    };
+
+    ghcWithPackagesArgs = mkOption {
+      description = mdDoc "Additional arguments to pass to `ghcWithPackages`.";
+      type = attrsOf unspecified;
+      default = {};
+    };
+
+    hoogle = mkOption {
+      description = mdDoc "Whether to enable Hoogle in this environment.";
+      type = bool;
+      default = false;
     };
 
     overrides = mkOption {
