@@ -3,6 +3,7 @@
   test = builtins.toFile "basic-test" ''
     cd ./root
     flake_update
+    nix run .#gen-cabal-quiet
 
     target='[ "ghc90-root" "ghc92-root" "ghc94-root" "ghc96-root" "root" ]'
     check 'nix eval .#checks.x86_64-linux --apply builtins.attrNames' $target 'Checks are wrong'

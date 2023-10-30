@@ -21,7 +21,7 @@ let
     new = strings.removePrefix (toString base + "/") (toString pp);
     failed = new == toString pp;
   in
-  if builtins.isPath pp
+  if builtins.isPath pp || builtins.substring 0 1 (toString pp) == "/"
   then
   if pp == base then "."
   else if failed then throw "invalid package path ${pp} for base ${base}" else new

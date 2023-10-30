@@ -6,7 +6,7 @@
   outputs = { hix, ... }:
   hix.lib.flake {
     packages.root = {
-      src = ./.;
+      src = builtins.path { path = ./.; filter = (_: _: true); };
       cabal.dependencies = ["aeson"];
       library.enable = true;
       library.dependencies = ["messagepack"];
