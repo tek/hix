@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, util, ... }:
 with builtins;
 with lib;
 let
@@ -29,8 +29,23 @@ let
     else spec;
     in head (splitString ":" (head (splitString " " name)));
 
-  drvWith = conf: { pkgs, self, hsLib, ... }: pname: pkg:
+  drvWith = preConf: { pkgs, self, hsLib, ... }: pname: pkg:
   let
+
+    processCondition = dep: let
+      inherit (dep) condition;
+    in
+      if condition == null || condition.type == "verbatim"
+      then [dep]
+      else if lib.hasAttr condition.type config.conditions
+      then
+      if (config.conditions.${condition.type} condition.args).satisfied self
+      then [dep]
+      else []
+      else throw "Invalid condition type '${condition.type}': Not defined in 'config.conditions'.";
+
+    conf = util.mapComponents (util.overDependencies (concatMap processCondition)) preConf;
+
     attr = n:
     if hasAttr n conf
     then conf.${n}
@@ -44,21 +59,24 @@ let
     depspec = spec: let
       name = depPkg spec;
     in
-    if name == pname
-    then []
-    else [(dep name)];
+      if name == pname
+      then []
+      else [(dep name)];
 
     deps = c: concatMap depspec (c.dependencies or []);
 
+    multiDeps = sort: concatMap deps (attrValues (conf.${sort} or {}));
+
+  # TODO setupDepends?
   in self.callPackage ({mkDerivation}: mkDerivation ({
     inherit pname;
     src = srcWithCabal pkgs conf pname pkg.src;
     version = attr "version";
     license = attr "license";
-    libraryHaskellDepends = deps (conf.library or {});
-    executableHaskellDepends = concatMap deps (attrValues (conf.executables or {}));
-    testHaskellDepends = concatMap deps (attrValues (conf.tests or {}));
-    benchmarkHaskellDepends = concatMap deps (attrValues (conf.benchmarks or {}));
+    libraryHaskellDepends = deps (conf.library or {}) ++ multiDeps "internal-libraries";
+    executableHaskellDepends = multiDeps "executables";
+    testHaskellDepends = multiDeps "tests";
+    benchmarkHaskellDepends = multiDeps "benchmarks";
   } // conf.passthru or {})) {};
 
   drv = api: pname:

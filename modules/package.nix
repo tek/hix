@@ -39,20 +39,20 @@ let
 
         minor = mkOption {
           description = mdDoc ''
-          Dependency string for referencing this library with its version from other Cabal package.
+          Dependency string for referencing this library with its version from other Cabal packages.
           Like [](#opt-package-dep.minor), but for sublibraries.
           '';
-          type = util.types.hpackDep;
+          type = util.types.cabalDep;
           readOnly = true;
           default = { name = "${pkgConfig.name}:${config.name}"; version = "^>= ${pkgConfig.cabal-config.version}"; };
         };
 
         exact = mkOption {
           description = mdDoc ''
-          Dependency string for referencing this library with its version from other Cabal package.
+          Dependency string for referencing this library with its version from other Cabal packages.
           Like [](#opt-package-libraries._name_.dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
           '';
-          type = util.types.hpackDep;
+          type = util.types.cabalDep;
           readOnly = true;
           default = { name = "${pkgConfig.name}:${config.name}"; version = "== ${pkgConfig.cabal-config.version}"; };
         };
@@ -312,7 +312,7 @@ in {
 
       minor = mkOption {
         description = mdDoc ''
-        Dependency string for referencing this package with its version from other Cabal package.
+        Dependency string for referencing this package with its version from other Cabal packages.
         Uses the minor version dependency bound, strictly greater than the precise version.
 
         ```
@@ -330,17 +330,17 @@ in {
 
         Also works when using [](#opt-package-versionFile).
         '';
-        type = util.types.hpackDep;
+        type = util.types.cabalDep;
         readOnly = true;
         default = { name = config.name; version = "^>= ${config.cabal-config.version}"; };
       };
 
       exact = mkOption {
         description = mdDoc ''
-        Dependency string for referencing this package with its version from other Cabal package.
+        Dependency string for referencing this package with its version from other Cabal packages.
         Like [](#opt-package-dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
         '';
-        type = util.types.hpackDep;
+        type = util.types.cabalDep;
         readOnly = true;
         default = { name = config.name; version = "== ${config.cabal-config.version}"; };
       };

@@ -1,12 +1,11 @@
 { config, verbose ? false }:
-with builtins;
 let
-  inherit (config.hpack.internal) packages;
+  inherit (config.hpack.internal) finalPackages;
   inherit (config.internal) pkgs;
 
   packageCall = n: p:
-  if hasAttr n packages
-  then "synthetic ${n} ${p} ${toFile "package.yaml" (toJSON packages.${n})}"
+  if builtins.hasAttr n finalPackages
+  then "synthetic ${n} ${p} ${builtins.toFile "package.yaml" (builtins.toJSON finalPackages.${n})}"
   else "regular ${n} ${p}";
 
   packageCalls =
@@ -60,5 +59,5 @@ in pkgs.writeScript "hpack.zsh" ''
     popd
   }
 
-  ${concatStringsSep "\n" packageCalls}
+  ${builtins.concatStringsSep "\n" packageCalls}
 ''

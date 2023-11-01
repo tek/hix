@@ -1,13 +1,14 @@
 {
   config,
   lib,
+  util,
   ifd,
   profiling,
   localPackage,
 }:
 with lib;
 let
-  cabalDrv = import ../cabal-drv.nix { inherit config lib; };
+  cabalDrv = import ../cabal-drv.nix { inherit config lib util; };
 
   localProfiling = api: if profiling then id else api.noprofiling;
 

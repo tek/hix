@@ -8,6 +8,8 @@
 
     check_diff ${./root.cabal} root.cabal "The generated Cabal file for 'root' differs from the target."
 
-    check 'nix run .#run' 'string/lib2/lib1' 'Output is wrong'
+    check 'nix run .#run' 'string/lib2/lib1' 'run output is wrong'
+
+    check_match_err 'nix build .#ghc92.root' 'Could not load module ‘Data.Hashable’' 'Error output with GHC lower than condition is wrong'
   '';
 }

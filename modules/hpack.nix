@@ -40,17 +40,15 @@ let
   in [preludePackage] ++ optional (base != null) base;
 
   mkPathsBlocker = name:
-  { when = { condition = false; generated-other-modules = "Paths_${replaceStrings ["-"] ["_"] name}"; }; };
+  { when = [{ condition = false; generated-other-modules = "Paths_${replaceStrings ["-"] ["_"] name}"; }]; };
 
+  # TODO normalize now unnecessary since it's done in cabalDep?
   replaceManagedDep = deps: dep: let
     norm = util.version.normalize dep;
     name = util.version.mainLibName norm.name;
   in if hasAttr name deps
-  then { inherit name; version = deps.${name}; }
+  then norm // { inherit name; version = deps.${name}; }
   else dep;
-
-  addManagedDeps = deps: hconf:
-  hconf // { dependencies = map (replaceManagedDep deps) hconf.dependencies; };
 
   generateComponent = pkg: name: conf: let
 
@@ -60,26 +58,33 @@ let
 
     basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 
-    # TODO omit base dep if it's already in conf.dependencies
+    withoutBase = util.mergeAll [
+      basic
+      paths
+      conf.component
+    ];
+
+    explicitBase = let
+      isBase = dep: dep.name == "base";
+    in any isBase withoutBase.dependencies or [];
+
     preludeDeps = {
       dependencies =
         if prelude.enable
         then mkPrelude prelude conf.baseHide
-        else optional (base != null) base;
+        else optional (base != null && !explicitBase) base;
     };
 
     paths = if conf.paths then {} else mkPathsBlocker pkg.name;
 
     full = util.mergeAll [
       preludeDeps
-      basic
-      paths
-      conf.component
+      withoutBase
     ];
 
     withManaged =
       if config.managedDeps.enable
-      then addManagedDeps deps full
+      then util.mapDependencies (replaceManagedDep deps) full
       else full;
 
   in withManaged;
@@ -133,12 +138,41 @@ let
 
     components = mapAttrsToList (generateSort conf) conf.internal.componentsSet;
 
-  in util.mergeAll ([
-    cabal.meta
-    basic
-    opt
-    desc
-  ] ++ components);
+    merged = util.mergeAll ([
+      cabal.meta
+      basic
+      opt
+      desc
+    ] ++ components);
+
+  in util.mapComponents (util.mapDependencies util.version.normalize) merged;
+
+  removeCondition = dep: removeAttrs dep ["condition"];
+
+  # TODO generalize for non-dependencies
+  # TODO can be grouped by condition
+  renderCondition = condition: dep: let
+    rendered =
+      if condition.type == "verbatim"
+      then condition.args.value
+      else if lib.hasAttr condition.type config.conditions
+      then (config.conditions.${condition.type} condition.args).render
+      else throw "Invalid condition type '${condition.type}': Not defined in 'config.conditions'.";
+  in { condition = rendered; dependencies = [dep]; };
+
+  processCondition = dep:
+  renderCondition dep.condition (removeCondition dep);
+
+  conditionalDeps = deps: let
+    conds = map processCondition deps;
+  in optionalAttrs (conds != []) { when = conds; };
+
+  processConditions = conf: let
+    byCondition = lib.partition (dep: dep.condition == null) conf.dependencies or [];
+  in util.mergeAll [
+    (conf // { dependencies = map removeCondition byCondition.right; })
+    (conditionalDeps byCondition.wrong)
+  ];
 
   script = import ../lib/hpack.nix { inherit config; verbose = true; };
 
@@ -182,6 +216,10 @@ in {
       internal.packages = mkOption {
         type = attrsOf util.types.strict;
       };
+
+      internal.finalPackages = mkOption {
+        type = attrsOf util.types.strict;
+      };
     };
   };
 
@@ -200,6 +238,8 @@ in {
       scriptQuiet = scriptQuiet;
 
       internal.packages = mapAttrs generatePackageConf config.packages;
+
+      internal.finalPackages = mapAttrs (_: util.mapComponents processConditions) config.hpack.internal.packages;
 
     };
   };

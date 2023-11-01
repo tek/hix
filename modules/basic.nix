@@ -240,6 +240,12 @@ in {
       default = "build";
     };
 
+    conditions = mkOption {
+      description = mdDoc "TODO";
+      type = attrsOf (functionTo util.types.conditionHandler);
+      default = {};
+    };
+
     pkgs = mkOption {
       type = util.types.pkgs;
       description = mdDoc ''
@@ -323,6 +329,8 @@ in {
       }
       ''
     );
+
+    conditions = import ../lib/conditions.nix { inherit config lib util; };
 
     pkgs = mkDefault config.envs.dev.ghc.pkgs;
 

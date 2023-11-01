@@ -40,7 +40,17 @@
           dependOnLibrary = false;
           main = "Run.hs";
           source-dirs = ["app"];
-          dependencies = [global.packages.root.dep.minor];
+          dependencies = [
+            global.packages.root.dep.minor
+            {
+              name = "sop-core";
+              condition = { type = "os"; args = { os = "windows"; }; };
+            }
+            {
+              name = "hashable";
+              condition = { type = "impl"; args = { version = "9.4"; op = ">="; }; };
+            }
+          ];
         };
 
         library = {
@@ -64,7 +74,7 @@
           };
           lib2 = {
             public = true;
-            dependencies = ["transformers" config.libraries.lib1.dep.exact];
+            dependencies = ["transformers" "extra" config.libraries.lib1.dep.exact];
           };
         };
 

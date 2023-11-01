@@ -626,7 +626,7 @@ in {
 
         overridesLocal = import ../lib/deps/local.nix {
           config = global;
-          inherit lib;
+          inherit lib util;
           inherit (config) ifd localPackage profiling;
         };
 

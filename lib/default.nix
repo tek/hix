@@ -185,6 +185,26 @@ let
   }
   '';
 
+  mapComponents = f: conf: let
+    mapSingle' = f': name: c: c // optionalAttrs (hasAttr name c) { ${name} = c.${name} // f' c.${name}; };
+    mapSingle = mapSingle' f;
+    mapMulti = mapSingle' (mapAttrs (_: f));
+  in pipe conf [
+    (mapSingle "library")
+    (mapSingle "executable")
+    (mapSingle "test")
+    (mapSingle "benchmark")
+    (mapMulti "internal-libraries")
+    (mapMulti "executables")
+    (mapMulti "tests")
+    (mapMulti "benchmarks")
+  ];
+
+  overDependencies = f: hconf:
+  hconf // optionalAttrs (hconf ? dependencies) { dependencies = f hconf.dependencies; };
+
+  mapDependencies = f: overDependencies (map f);
+
 in {
   inherit
   lib
@@ -221,6 +241,9 @@ in {
   cabalDepPackage
   app
   loadConsole
+  mapComponents
+  overDependencies
+  mapDependencies
   ;
 
   ghcOverlay = import ./ghc-overlay.nix;

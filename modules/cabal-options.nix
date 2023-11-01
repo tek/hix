@@ -141,7 +141,7 @@ in {
 
     dependencies = mkOption {
       description = mdDoc "Cabal dependencies used for all components in this option tree.";
-      type = listOf util.types.hpackDep;
+      type = listOf util.types.cabalDep;
       example = literalExpression ''["aeson" "containers"]'';
       default = [];
     };
@@ -149,7 +149,7 @@ in {
     base = mkOption {
       description = mdDoc "The dependency spec for the `base` package.";
       type = util.types.cabalDep;
-      default = "base >= 4 && < 5";
+      default = { name = "base"; version = ">=4 && <5"; };
     };
 
     baseHide = mkOption {

@@ -6,6 +6,42 @@ let
 
   util = import ./default.nix { inherit lib; };
 
+  conditionModule = {
+    options = {
+
+      type = mkOption {
+        description = mdDoc "Name of an attribute of [](#opt-general-conditions).";
+        type = str;
+      };
+
+      args = mkOption {
+        description = mdDoc "Arguments for the condition handler in [](#opt-general-conditions).";
+        type = attrs;
+        default = {};
+      };
+
+    };
+  };
+
+  conditionHandlerModule = {
+    options = {
+
+      render = mkOption {
+        description = mdDoc "Rendered form for Cabal files.";
+        type = str;
+      };
+
+      satisfied = mkOption {
+        description = mdDoc "Whether the condition is satisfied for derivation dependencies.";
+        type = functionTo bool;
+        default = _: true;
+      };
+
+    };
+  };
+
+  verbatimCondition = value: { type = "verbatim"; args = { inherit value; }; };
+
   cabalDepModule = {
     options = {
 
@@ -30,6 +66,12 @@ let
             "hiding (IncipitBase)"
           ]
         '';
+      };
+
+      condition = mkOption {
+        description = mdDoc "";
+        type = nullOr (coercedTo str verbatimCondition (submodule conditionModule));
+        default = null;
       };
 
     };
@@ -84,7 +126,8 @@ in {
     merge = mergeOneOption;
   };
 
-  cabalDep = either str (submodule cabalDepModule);
+  cabalDep =
+    coercedTo str util.version.normalize (submodule cabalDepModule);
 
   componentSort = enum ["library" "executable" "test" "benchmark"];
 
@@ -96,18 +139,12 @@ in {
     merge = mergeOneOption;
   };
 
-  hpackDep = mkOptionType {
-    name = "hpack-dep";
-    description = "package dependency in HPack format";
-    descriptionClass = "noun";
-    check = a: isString a || isAttrs a;
-    merge = mergeOneOption;
-  };
-
   strict = mkOptionType {
     name = "strict";
     description = "computed value safe for evaluation";
     descriptionClass = "noun";
   };
+
+  conditionHandler = submodule conditionHandlerModule;
 
 }

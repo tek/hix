@@ -56,6 +56,7 @@ library lib2
   ghc-options: -Wunused-imports
   build-depends:
       base >=4 && <6
+    , extra
     , root:lib1 ==23
     , transformers
   default-language: GHC2021
@@ -76,6 +77,12 @@ executable run
     , root >=23 && <23.1
     , root:{lib1,lib2}
   default-language: GHC2021
+  if os(windows)
+    build-depends:
+        sop-core
+  if impl(ghc >= 9.4)
+    build-depends:
+        hashable
 
 test-suite root-unit
   type: exitcode-stdio-1.0
