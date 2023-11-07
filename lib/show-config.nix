@@ -184,7 +184,7 @@ let
   else stringifyAny n a;
 
   stringifyModule = c: opts:
-  concatMapAttrs (n: a: optionals (hasAttr n c) (stringifyValue c.${n} n (c.__zoom or false) a)) opts;
+  concatMapAttrs (n: a: optionals (n != "__zoom" && isAttrs c && hasAttr n c) (stringifyValue c.${n} n (c.__zoom or false) a)) opts;
 
   stringifyRoot = let
     lines = stringifyModule (zoom pathSegs mods.config) mods.options ++ [""];
