@@ -12,6 +12,8 @@
     compat.enable = false;
     hackage = {
       commit = true;
+      commitExtraArgs = "--no-gpg-sign";
+      tagExtraArgs = "--no-sign";
       tag = true;
       uploadCommand = args: "echo '${builtins.toJSON args}'";
       askVersion = false;

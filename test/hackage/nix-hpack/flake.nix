@@ -1,7 +1,7 @@
 {
   description = "hix test project";
 
-  inputs.hix.url = path:HIX;
+  inputs.hix.url = "path:HIX";
 
   outputs = { hix, ... }:
   hix.lib.flake {
@@ -32,6 +32,8 @@
     compat.enable = false;
     hackage = {
       commit = true;
+      commitExtraArgs = "--no-gpg-sign";
+      tagExtraArgs = "--no-sign";
       tag = true;
       uploadCommand = args: "echo '${builtins.toJSON args}'";
       askVersion = false;

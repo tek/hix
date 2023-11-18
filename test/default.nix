@@ -34,7 +34,7 @@ let
 
   testsA = lib.concatStringsSep " " (lib.mapAttrsToList testA tests);
 
-  ciSkipTests = "ghci-vm service postgres hackage";
+  ciSkipTests = "ghci-vm service postgres";
 
   rsyncFilter = pkgs.writeText "hix-test-rsync-filter" ''
   + /*.nix

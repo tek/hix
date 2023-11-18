@@ -100,7 +100,7 @@ let
   tagFragment = ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} tag -m "Release $version" "${formatTag null}"
+      ${git} tag ${cfg.tagExtraArgs} -m "Release $version" "${formatTag null}"
     fi
   '';
 
@@ -108,7 +108,7 @@ let
     if [[ -n ''${version:-} ]]
     then
       ${cfg.hooks.preCommitAll}
-      ${git} commit --allow-empty -m "Release $version"
+      ${git} commit ${cfg.commitExtraArgs} --allow-empty -m "Release $version"
       ${cfg.hooks.postCommitAll}
     fi
   '';
@@ -116,14 +116,14 @@ let
   tagPackageFragment = name: ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} tag -m "Release ${name} $version" "${formatTag name}"
+      ${git} tag ${cfg.tagExtraArgs} -m "Release ${name} $version" "${formatTag name}"
     fi
   '';
 
   commitPackageFragment = name: ''
     if [[ -n ''${version:-} ]]
     then
-      ${git} commit --allow-empty -m "Release ${name} $version"
+      ${git} commit ${cfg.commitExtraArgs} --allow-empty -m "Release ${name} $version"
     fi
   '';
 

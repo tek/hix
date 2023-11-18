@@ -98,6 +98,12 @@ in {
       default = true;
     };
 
+    commitExtraArgs = mkOption {
+      description = mdDoc "Extra CLI options for `git commit`.";
+      type = str;
+      default = "";
+    };
+
     add = mkOption {
       description = mdDoc ''
       When [](#opt-hackage-hackage.add) is set to `false`, this option can be enabled to git-add the files but not
@@ -114,6 +120,12 @@ in {
       '';
       type = bool;
       default = true;
+    };
+
+    tagExtraArgs = mkOption {
+      description = mdDoc "Extra CLI options for `git tag`.";
+      type = str;
+      default = "";
     };
 
     formatTag = mkOption {
