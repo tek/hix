@@ -9,10 +9,11 @@ import Hix.Data.Version (NewRange (NewRange, OldRange), NewVersion (NewVersion))
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (
   BuildMutation (BuildMutation),
-  Candidate (Candidate),
   DepMutation (DepMutation),
   MutationResult (MutationFailed, MutationKeep, MutationSuccess, MutationUpdateBounds),
   )
+import qualified Hix.Managed.Data.Candidate
+import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers (MutationHandlers))
 import qualified Hix.Managed.Lower.Data.Bump
@@ -37,7 +38,7 @@ processMutationBump state DepMutation {package, mutation = Bump {version, range}
       MutationFailed
   where
     onlyRange = \case
-      NewRange newRange -> MutationUpdateBounds newRange
+      NewRange newRange -> MutationUpdateBounds candidate.version newRange
       OldRange -> MutationKeep
 
     candidate = Candidate {version = NewVersion {package, version}, range}

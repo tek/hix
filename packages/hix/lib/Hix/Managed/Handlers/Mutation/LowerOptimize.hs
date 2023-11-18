@@ -7,23 +7,24 @@ import Exon (exon)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ManagedEnv (ManagedState)
+import Hix.Data.Monad (M)
 import qualified Hix.Data.Version
 import Hix.Data.Version (Major (Major), NewRange (NewRange), NewVersion (NewVersion))
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (
   BuildMutation,
-  Candidate (Candidate),
   DepMutation (DepMutation),
   MutationResult (MutationKeep, MutationSuccess),
   )
 import Hix.Managed.Build.Solve (buildWithSolver)
+import qualified Hix.Managed.Data.Candidate
+import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers (MutationHandlers))
 import qualified Hix.Managed.Lower.Data.LowerOptimize
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize (LowerOptimize), LowerOptimizeState (LowerOptimizeState))
-import Hix.Monad (M)
 import Hix.Pretty (showP)
 import Hix.Version (setLowerBound)
 

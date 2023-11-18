@@ -56,6 +56,17 @@ with lib;
         default = true;
       };
 
+      # TODO
+      gitAdd = mkOption {
+        description = mdDoc ''
+        Git-add [the managed deps](#opt-managed-managed.file) after the first run.
+        Since nix ignores untracked files in flakes, the state wouldn't be loaded if you forgot to add the file
+        yourself.
+        '';
+        type = bool;
+        default = true;
+      };
+
       verbose = mkOption {
         description = mdDoc "Print verbose messages when managing dependencies.";
         type = bool;

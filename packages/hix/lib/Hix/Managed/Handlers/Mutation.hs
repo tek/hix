@@ -1,8 +1,8 @@
 module Hix.Managed.Handlers.Mutation where
 
 import Hix.Data.ManagedEnv (ManagedState)
+import Hix.Data.Monad (M)
 import Hix.Managed.Build.Mutation (BuildMutation, DepMutation, MutationResult)
-import Hix.Monad (M)
 
 data MutationHandlers a s =
   MutationHandlers {

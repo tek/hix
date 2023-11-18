@@ -3,13 +3,14 @@ module Hix.Managed.Build.Mutation where
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Version (VersionRange)
 import qualified Text.PrettyPrint as PrettyPrint
-import Text.PrettyPrint (brackets, (<+>))
+import Text.PrettyPrint ((<+>))
 
 import Hix.Data.Bounds (BoundExtensions)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.Package (PackageName)
-import Hix.Data.Version (NewRange, NewVersion, renderNewRange)
+import Hix.Data.Version (NewVersion)
+import Hix.Managed.Data.Candidate (Candidate)
 
 data DepMutation a =
   DepMutation {
@@ -20,17 +21,6 @@ data DepMutation a =
 
 instance Pretty a => Pretty (DepMutation a) where
   pretty DepMutation {package, mutation} = pretty package PrettyPrint.<> ":" <+> pretty mutation
-
-data Candidate =
-  Candidate {
-    version :: NewVersion,
-    range :: NewRange
-  }
-  deriving stock (Eq, Show, Generic)
-
-instance Pretty Candidate where
-  pretty Candidate {..} =
-    pretty version <+> brackets (renderNewRange range)
 
 data BuildMutation =
   BuildMutation {
@@ -44,7 +34,7 @@ data BuildMutation =
 data MutationResult s =
   MutationSuccess Candidate ManagedState s
   |
-  MutationUpdateBounds VersionRange
+  MutationUpdateBounds NewVersion VersionRange
   |
   MutationKeep
   |

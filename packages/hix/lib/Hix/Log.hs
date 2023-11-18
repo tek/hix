@@ -1,45 +1,50 @@
 module Hix.Log where
 
-import Control.Monad.Trans.Reader (asks)
+import Control.Monad.Trans.Reader (ask)
 import Exon (exon)
 
-import qualified Hix.Console as Console
-import Hix.Console (color, sgis)
+import Hix.Console (color, withChevrons)
 import qualified Hix.Data.Monad
-import Hix.Data.Monad (M)
+import Hix.Data.Monad (LogLevel (..), M)
 
-withChevrons :: Int -> Text -> Text
-withChevrons col msg =
-  [exon|#{sgis [show (30 + col), "1"] ">>>"} #{msg}|]
+log :: LogLevel -> Text -> M ()
+log level msg = do
+  env <- ask
+  env.logger level msg
 
 verbose :: Text -> M ()
 verbose msg =
-  whenM (asks (.verbose)) do
-    Console.out (withChevrons 4 msg)
+  log LogVerbose (withChevrons 4 msg)
 
 debug :: Text -> M ()
 debug msg =
-  whenM (asks (.debug)) do
-    Console.err [exon|[#{color 6 "debug"}] #{msg}|]
+  log LogDebug [exon|[#{color 6 "debug"}] #{msg}|]
 
 info :: Text -> M ()
 info msg =
-  unlessM (asks (.quiet)) do
-    Console.out (withChevrons 5 msg)
+  log LogInfo (withChevrons 5 msg)
 
 warn :: Text -> M ()
 warn msg =
-  unlessM (asks (.quiet)) do
-    Console.out (withChevrons 3 msg)
+  log LogWarn (withChevrons 3 msg)
 
 infoCont :: Text -> M ()
 infoCont msg =
-  unlessM (asks (.quiet)) do
-    Console.out [exon|    #{msg}|]
+  log LogInfo [exon|    #{msg}|]
 
-error ::
-  MonadIO m =>
-  Text ->
-  m ()
+error :: Text -> M ()
 error msg =
-  Console.err (withChevrons 1 [exon|Error: #{msg}|])
+  log LogError (withChevrons 1 [exon|Error: #{msg}|])
+
+logWith :: (LogLevel -> Text -> IO ()) -> LogLevel -> Text -> M ()
+logWith handler level msg = do
+  env <- ask
+  case level of
+    LogDebug | env.debug -> accept
+    LogVerbose | env.verbose -> accept
+    LogInfo | not env.quiet -> accept
+    LogWarn | not env.quiet -> accept
+    LogError -> accept
+    _ -> unit
+  where
+    accept = liftIO (handler level msg)

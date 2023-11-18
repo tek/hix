@@ -1,6 +1,6 @@
 module Hix.Managed.Project where
 
-import Hix.Data.Bounds (UninitializedBounds)
+import Hix.Data.Bounds (RemovableBounds)
 import Hix.Data.ManagedEnv (ManagedEnvState)
 import Hix.Data.Monad (M)
 import qualified Hix.Managed.Data.Build
@@ -17,10 +17,10 @@ updateProject ::
   ReportHandlers a ->
   StateFileConfig ->
   ManagedJob ->
-  UninitializedBounds ->
+  RemovableBounds ->
   ManagedEnvState ->
   BuildResult a ->
   M ()
-updateProject stateFile report conf job uninitialized originalManaged result = do
+updateProject stateFile report conf job removable originalManaged result = do
   writeProjectState stateFile job conf originalManaged result.managed
-  report.mutations uninitialized result
+  report.mutations removable result

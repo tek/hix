@@ -68,6 +68,7 @@ library
       Hix.Managed.Bump
       Hix.Managed.Bump.Candidates
       Hix.Managed.Data.Build
+      Hix.Managed.Data.Candidate
       Hix.Managed.Data.CurrentBuild
       Hix.Managed.Data.ManagedConfig
       Hix.Managed.Data.ManagedJob

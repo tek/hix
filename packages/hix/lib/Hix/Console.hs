@@ -4,6 +4,8 @@ import qualified Data.Text.IO as Text
 import Exon (exon)
 import System.IO (Handle, stderr, stdout)
 
+import Hix.Data.Monad (LogLevel (LogDebug, LogError))
+
 hPrint ::
   MonadIO m =>
   Handle ->
@@ -33,3 +35,17 @@ sgis params chunk =
 color :: Int -> Text -> Text
 color n =
   sgis [show (30 + n)]
+
+withChevrons :: Int -> Text -> Text
+withChevrons col msg =
+  [exon|#{sgis [show (30 + col), "1"] ">>>"} #{msg}|]
+
+errorMessage :: Text -> Text
+errorMessage msg =
+  withChevrons 1 [exon|Error: #{msg}|]
+
+logger :: LogLevel -> Text -> IO ()
+logger = \case
+  LogError -> err
+  LogDebug -> err
+  _ -> out

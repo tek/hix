@@ -9,7 +9,7 @@ import Path (Abs, Dir, File, Path, Rel, absdir, parent, reldir, relfile, toFileP
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import qualified Hix.Data.Bounds
-import Hix.Data.Bounds (TargetBound (TargetLower), UninitializedBounds (UninitializedBounds))
+import Hix.Data.Bounds (TargetBound (TargetLower), RemovableBounds (RemovableBounds))
 import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Error (pathText)
 import qualified Hix.Data.LowerConfig
@@ -259,18 +259,18 @@ test_lowerNative = do
             targetBound = TargetLower
           }
         lowerInitConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = mempty}
-        uninitialized = UninitializedBounds {targetBound = TargetLower, deps = mempty}
+        removable = RemovableBounds {targetBound = TargetLower, deps = mempty}
 
       let stateFile = root </> [relfile|ops/managed.nix|]
       env1 <- managedApp handlersInit.build env conf \ app -> do
         result <- lowerInit handlersInit lowerInitConf app
-        updateProject handlersInit.build.stateFile handlersInit.report conf.stateFile app.job uninitialized env.state result
+        updateProject handlersInit.build.stateFile handlersInit.report conf.stateFile app.job removable env.state result
         pure (envWithOverrides conf.env app.job.targetDeps result.managed env)
       stateFileContentInit <- liftIO (Text.readFile (toFilePath stateFile))
       let lowerOptimizeConf = LowerOptimizeConfig {oldest = False, initialBounds = []}
       managedApp handlersInit.build env1 conf \ app -> do
         result <- lowerOptimize handlersOptimize lowerOptimizeConf app
-        updateProject handlersInit.build.stateFile handlersOptimize.report conf.stateFile app.job uninitialized env.state result
+        updateProject handlersInit.build.stateFile handlersOptimize.report conf.stateFile app.job removable env.state result
       stateFileContentOptimize <- liftIO (Text.readFile (toFilePath stateFile))
       pure (stateFileContentInit, stateFileContentOptimize)
   eqLines targetStateFileInit stateFileContentInit

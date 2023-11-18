@@ -11,8 +11,8 @@ import Hix.Data.Package (PackageName)
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewRange (NewRange, OldRange))
 import Hix.Deps (distributeBounds)
-import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (Candidate)
+import qualified Hix.Managed.Data.Candidate
+import Hix.Managed.Data.Candidate (Candidate)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import qualified Hix.Managed.Data.ManagedJob

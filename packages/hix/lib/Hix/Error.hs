@@ -8,8 +8,9 @@ import Exon (exon)
 import Path (Path, toFilePath)
 import System.IO.Error (tryIOError)
 
+import qualified Hix.Console as Console
+import Hix.Console (errorMessage)
 import Hix.Data.Error (Error (..))
-import qualified Hix.Log as Log
 
 pathText :: Path b t -> Text
 pathText =
@@ -21,7 +22,7 @@ prefixedError ::
   Text ->
   m ()
 prefixedError desc msg =
-  Log.error [exon|#{desc}: #{msg}|]
+  Console.err (errorMessage [exon|#{desc}: #{msg}|])
 
 printPreprocError ::
   MonadIO m =>
@@ -102,4 +103,4 @@ printError verbose = \case
   NoMatch msg | verbose -> printPreprocError msg
   NoMatch _ -> unit
   Fatal err -> printFatalError err
-  Client err -> Log.error err
+  Client err -> Console.err (errorMessage err)

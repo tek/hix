@@ -1,41 +1,43 @@
 module Hix.Managed.Handlers.Report.Prod where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import Exon (exon)
 
 import qualified Hix.Data.Bounds
-import Hix.Data.Bounds (UninitializedBounds)
+import Hix.Data.Bounds (RemovableBounds)
 import Hix.Data.Monad (M)
 import Hix.Data.Package (PackageName)
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion (NewVersion), renderNewRange)
 import qualified Hix.Log as Log
-import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (Candidate (Candidate), RenderMutation (renderMutation))
-import qualified Hix.Managed.Data.Build
+import Hix.Managed.Build.Mutation (RenderMutation (renderMutation))
+import qualified Hix.Managed.Data.Build as BuildResult
 import Hix.Managed.Data.Build (BuildResult)
+import qualified Hix.Managed.Data.Candidate
+import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import qualified Hix.Managed.Handlers.Report
 import Hix.Managed.Handlers.Report (ReportHandlers (ReportHandlers))
 import Hix.Pretty (showP)
 
 mutations ::
   RenderMutation a =>
-  UninitializedBounds ->
+  RemovableBounds ->
   BuildResult a ->
   M ()
-mutations uninitialized results = do
-  for_ (nonEmpty results.success) \ success -> do
+mutations removable results = do
+  for_ (nonEmpty changed) \ success -> do
     Log.info "Updated dependency versions:"
-    for_ success \ p ->
+    for_ (NonEmpty.reverse success) \ p ->
       Log.infoCont (listSuccess p)
   for_ (nonEmpty results.failed) \ failed -> do
     Log.info "Failed to find working versions for some dependencies:"
-    for_ failed \ mut ->
+    for_ (NonEmpty.reverse failed) \ mut ->
       Log.infoCont (listFailed mut)
-  for_ (Map.toList uninitialized.deps) \ (target, deps) -> do
+  for_ (Map.toList removable.deps) \ (target, deps) -> do
     for_ (nonEmpty (toList (Set.intersection deps successNames))) \ added -> do
-      Log.info [exon|You can remove the #{showP uninitialized.targetBound} bounds from these deps of '##{target}':|]
+      Log.info [exon|You can remove the #{showP removable.targetBound} bounds from these deps of '##{target}':|]
       for_ added \ dep ->
         Log.infoCont [exon|📦 ##{dep}|]
   where
@@ -48,7 +50,9 @@ mutations uninitialized results = do
     listPkg (package :: PackageName) version range =
       [exon|📦 ##{package} #{version} [#{renderNewRange range}]|]
 
-    successNames = Set.fromList (results.success <&> (.version.package))
+    successNames = Set.fromList (changed <&> (.version.package))
+
+    changed = BuildResult.changed results
 
 handlersProd ::
   RenderMutation a =>

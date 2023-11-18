@@ -2,6 +2,7 @@ module Hix.Test.Managed.LowerInit.MutationTest where
 
 import Data.Aeson (eitherDecodeStrict')
 import Data.IORef (IORef, readIORef)
+import qualified Data.Text as Text
 import Distribution.Pretty (pretty)
 import Distribution.Version (Version, VersionRange, orLaterVersion, thisVersion)
 import Exon (exon)
@@ -32,12 +33,13 @@ import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Hackage (fetchHash)
 import Hix.Managed.Handlers.LowerInit (LowerInitHandlers (..), versions)
 import qualified Hix.Managed.Handlers.LowerInit.Test as LowerInitHandlers
+import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
 import Hix.Managed.Lower (lowerInit)
 import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit))
-import Hix.Monad (M, runMWith, throwM)
+import Hix.Monad (M, runMLog, throwM)
 import Hix.NixExpr (Expr, renderRootExpr)
 import Hix.Test.Hedgehog (eqLines)
 import qualified Hix.Test.Managed.Solver
@@ -288,6 +290,28 @@ stateFileTarget =
 }
 |]
 
+logTarget :: [Text]
+logTarget =
+  Text.lines [exon|[33m[1m>>>[0m No suitable version found for 'direct1'.
+[35m[1m>>>[0m Updated dependency versions:
+    📦 direct2 1.3.1 [>=1.3.1 && <1.5]
+    📦 direct3 1.0.5 [>=1.0.5]
+    📦 direct5 5.0 [>=5.0 && <5.1]
+    📦 direct6 1.0.1 [>=1.0.1 && <1.5]
+    📦 direct7 1.0.3 [>=1.0.3]
+[35m[1m>>>[0m Failed to find working versions for some dependencies:
+    📦 direct4 2.0.1 [>=2.0]
+[35m[1m>>>[0m You can remove the lower bounds from these deps of 'local1':
+    📦 direct3
+    📦 direct5
+    📦 direct6
+    📦 direct7
+[35m[1m>>>[0m You can remove the lower bounds from these deps of 'local3':
+    📦 direct3
+[35m[1m>>>[0m You can remove the lower bounds from these deps of 'local4':
+    📦 direct7
+|]
+
 failedMutationsTarget :: [DepMutation LowerInit]
 failedMutationsTarget =
   [
@@ -328,7 +352,7 @@ test_lowerInitMutation = do
   deps <- leftA fail depsConfig
   managedBounds <- leftA fail managedBoundsFile
   managedOverrides <- leftA fail managedOverridesFile
-  (handlers, stateFileRef, bumpsRef) <- liftIO handlersTest
+  (handlers, stateFileRef, _) <- liftIO handlersTest
   let
     env =
       ManagedEnv {
@@ -350,10 +374,10 @@ test_lowerInitMutation = do
         targetBound = TargetLower
       }
     lowerConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = []}
-  evalEither =<< liftIO do
-    runMWith False False True root $ runManagedApp handlers.build handlers.report env conf \ app ->
+  (log, result) <- liftIO do
+    runMLog False False False root $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
       Right <$> lowerInit handlers lowerConf app
+  evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)
-  failedMutations <- liftIO (readIORef bumpsRef)
-  failedMutationsTarget === failedMutations
+  logTarget === reverse log

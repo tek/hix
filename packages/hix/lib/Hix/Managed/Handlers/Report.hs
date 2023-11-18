@@ -1,12 +1,12 @@
 module Hix.Managed.Handlers.Report where
 
-import Hix.Data.Bounds (UninitializedBounds)
+import Hix.Data.Bounds (RemovableBounds)
 import Hix.Managed.Data.Build (BuildResult)
 import Hix.Monad (M)
 
 data ReportHandlers a =
   ReportHandlers {
-    mutations :: UninitializedBounds -> BuildResult a -> M ()
+    mutations :: RemovableBounds -> BuildResult a -> M ()
   }
 
 handlersNull :: ReportHandlers a

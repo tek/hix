@@ -10,11 +10,12 @@ import Hix.Data.Bounds (Bounds (Bounds), TargetBounds (TargetBounds))
 import Hix.Data.EnvName (EnvName (EnvName))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedEnvState, ManagedState)
+import Hix.Data.Monad (M)
 import Hix.Data.Overrides (EnvOverrides (EnvOverrides), Override (..), Overrides (Overrides))
 import Hix.Data.Package (LocalPackage (LocalPackage), PackageName (PackageName))
 import Hix.Data.Version (SourceHash (SourceHash))
 import qualified Hix.Log as Log
-import Hix.Managed.Build.Mutation (Candidate)
+import Hix.Managed.Data.Candidate (Candidate)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import Hix.Managed.Data.ManagedJob (ManagedJob)
@@ -22,7 +23,6 @@ import Hix.Managed.Handlers.Build.Prod (rootOrCwd)
 import qualified Hix.Managed.Handlers.StateFile
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import Hix.Managed.State (managedEnvForBuild, managedEnvForProject, managedWithCandidate)
-import Hix.Monad (M)
 import Hix.NixExpr (Expr (..), ExprAttr (..), renderRootExpr)
 import Hix.Pretty (showP)
 

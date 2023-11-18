@@ -1,6 +1,8 @@
 module Hix where
 
 import Hix.Bootstrap (bootstrapProject)
+import qualified Hix.Console as Console
+import Hix.Console (errorMessage)
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (
   Command (..),
@@ -20,7 +22,6 @@ import Hix.Error (
   printPreprocError,
   )
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
-import qualified Hix.Log as Log
 import Hix.Managed.Bump (bumpCli)
 import Hix.Managed.Lower (lowerInitCli, lowerOptimizeCli)
 import Hix.Monad (M, runMWith)
@@ -42,7 +43,7 @@ handleError GlobalOptions {verbose} = \case
   NoMatch msg | fromMaybe False verbose -> printPreprocError msg
   NoMatch _ -> unit
   Fatal err -> printFatalError err
-  Client err -> Log.error err
+  Client err -> Console.err (errorMessage err)
 
 runCommand :: Command -> M ()
 runCommand = \case

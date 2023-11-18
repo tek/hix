@@ -2,17 +2,19 @@ module Hix.Managed.Handlers.Mutation.LowerInit where
 
 import Data.Foldable.Extra (firstJustM)
 
+import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ManagedEnv (ManagedState)
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewRange (NewRange), NewVersion (NewVersion))
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (
   BuildMutation,
-  Candidate (Candidate),
   DepMutation (DepMutation),
   MutationResult (MutationFailed, MutationSuccess),
   )
 import Hix.Managed.Build.Solve (buildWithSolver)
+import qualified Hix.Managed.Data.Candidate
+import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers (MutationHandlers))
@@ -20,7 +22,6 @@ import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit), LowerInitState (..))
 import Hix.Monad (M)
 import Hix.Version (setLowerBound)
-import Hix.Data.Bounds (TargetBound(TargetLower))
 
 processMutationLowerInit ::
   BuildHandlers ->

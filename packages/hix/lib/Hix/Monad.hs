@@ -7,6 +7,7 @@ module Hix.Monad (
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (runExceptT, throwE)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask, asks)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import Exon (exon)
@@ -16,11 +17,13 @@ import Path.IO (withSystemTempDir)
 import System.IO (hClose)
 import System.IO.Error (tryIOError)
 
+import qualified Hix.Console as Console
 import qualified Hix.Data.Error as Error
 import Hix.Data.Error (Error (BootstrapError, Client, EnvError, GhciError, NewError))
-import Hix.Data.Monad (Env (..), M)
+import Hix.Data.Monad (Env (..), LogLevel, M)
 import Hix.Error (tryIO, tryIOWith)
 import qualified Hix.Log as Log
+import Hix.Log (logWith)
 
 throwM :: Error -> M a
 throwM =
@@ -67,10 +70,22 @@ whenDebug m =
   whenM (asks (.debug)) do
     m
 
+logIORef :: IORef [Text] -> LogLevel -> Text -> IO ()
+logIORef ref _ msg =
+  modifyIORef' ref (msg :)
+
+runMLog :: Bool -> Bool -> Bool -> Path Abs Dir -> M a -> IO ([Text], Either Error a)
+runMLog verbose debug quiet cwd ma = do
+  logRef <- newIORef []
+  withSystemTempDir "hix-cli" \ tmp -> do
+    result <- runExceptT (runReaderT ma Env {logger = logWith (logIORef logRef), ..})
+    log <- readIORef logRef
+    pure (log, result)
+
 runMWith :: Bool -> Bool -> Bool -> Path Abs Dir -> M a -> IO (Either Error a)
 runMWith verbose debug quiet cwd ma =
   withSystemTempDir "hix-cli" \ tmp ->
-    runExceptT (runReaderT ma (Env {..}))
+    runExceptT (runReaderT ma Env {logger = logWith Console.logger, ..})
 
 runM :: Path Abs Dir -> M a -> IO (Either Error a)
 runM = runMWith False False False

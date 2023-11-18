@@ -1,10 +1,11 @@
 module Hix.Managed.App where
 
 import Hix.Class.Map ((!!))
-import Hix.Data.Bounds (Bounds, UninitializedBounds, filterUninitialized)
+import Hix.Data.Bounds (Bounds, RemovableBounds, removableBounds)
 import Hix.Data.Dep (Dep)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedEnv, ManagedState (ManagedState))
+import Hix.Data.Monad (M)
 import Hix.Deps (allDeps, depsFromConfig, forTargets, mergeBounds, withManagedRanges)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.Data.Build (BuildResult)
@@ -18,7 +19,6 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import Hix.Managed.Handlers.Report (ReportHandlers)
 import Hix.Managed.Project (updateProject)
 import Hix.Managed.Report (ReportMutation, reportMutations)
-import Hix.Monad (M)
 
 data ManagedApp =
   ManagedApp {
@@ -28,18 +28,21 @@ data ManagedApp =
     deps :: [Dep],
     state :: ManagedState,
     solverBounds :: Bounds,
-    uninitialized :: UninitializedBounds
+    -- | The deps in each target that had a 'targetBound' in the flake config, but not in the managed state.
+    -- For the purpose of informing the user that they can be removed.
+    removable :: RemovableBounds
   }
 
 managedJob ::
   ManagedEnv ->
   ManagedConfig ->
-  M ManagedJob
+  M (RemovableBounds, ManagedJob)
 managedJob env conf = do
   configDeps <- depsFromConfig env.deps env.targets
   let targets = sortTargets configDeps env.targets
       targetDeps = forTargets targets (withManagedRanges env.state.bounds configDeps)
-  pure ManagedJob {env = conf.env, targetBound = conf.targetBound, ..}
+      removable = removableBounds conf.targetBound targetDeps env.state.bounds
+  pure (removable, ManagedJob {env = conf.env, targetBound = conf.targetBound, ..})
 
 managedApp ::
   BuildHandlers ->
@@ -48,7 +51,7 @@ managedApp ::
   (ManagedApp -> M a) ->
   M a
 managedApp build env conf use = do
-  job <- managedJob env conf
+  (removable, job) <- managedJob env conf
   use ManagedApp {
     build,
     conf = conf.stateFile,
@@ -56,7 +59,7 @@ managedApp build env conf use = do
     deps = allDeps job.targetDeps,
     state = ManagedState {bounds = mergeBounds job.targetDeps, overrides},
     solverBounds = env.lower.solverBounds,
-    uninitialized = filterUninitialized conf.targetBound job.targetDeps
+    removable
   }
   where
     overrides = env.state.overrides !! conf.env
@@ -72,7 +75,7 @@ processAppResult ::
   M ()
 processAppResult build report env conf app = \case
   Right result ->
-    updateProject build.stateFile report conf.stateFile app.job app.uninitialized env.state result
+    updateProject build.stateFile report conf.stateFile app.job app.removable env.state result
   Left mutations ->
     reportMutations mutations
 

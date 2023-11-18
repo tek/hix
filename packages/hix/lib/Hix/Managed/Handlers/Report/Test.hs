@@ -2,16 +2,16 @@ module Hix.Managed.Handlers.Report.Test where
 
 import Data.IORef (IORef, modifyIORef, newIORef)
 
-import Hix.Data.Bounds (UninitializedBounds)
+import Hix.Data.Bounds (RemovableBounds)
+import Hix.Data.Monad (M)
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.Build
 import Hix.Managed.Data.Build (BuildResult)
 import Hix.Managed.Handlers.Report (ReportHandlers (..), handlersNull)
-import Hix.Monad (M)
 
 reportMutationsIORef ::
   IORef [DepMutation a] ->
-  UninitializedBounds ->
+  RemovableBounds ->
   BuildResult a ->
   M ()
 reportMutationsIORef out _ results =

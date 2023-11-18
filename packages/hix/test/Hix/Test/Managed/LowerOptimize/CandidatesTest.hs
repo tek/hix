@@ -11,7 +11,9 @@ import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
 import Hix.Data.Package (PackageName)
 import Hix.Data.Version (NewRange (NewRange), NewVersion (..))
-import Hix.Managed.Build.Mutation (Candidate (..), MutationResult (MutationSuccess))
+import Hix.Managed.Build.Mutation (MutationResult (MutationSuccess))
+import qualified Hix.Managed.Data.Candidate
+import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import Hix.Managed.Data.SolverBounds (SolverBound (ExtendedBound, NoBounds))
 import qualified Hix.Managed.Handlers.Build as BuildHandlers
 import Hix.Managed.Handlers.Build (BuildHandlers (..))

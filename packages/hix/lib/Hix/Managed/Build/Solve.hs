@@ -16,7 +16,9 @@ import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion (NewVersion))
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation), Candidate)
+import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation))
+import qualified Hix.Managed.Data.Candidate
+import Hix.Managed.Data.Candidate (Candidate)
 import Hix.Managed.Data.SolverBounds (SolverBound (..), SolverBounds, solverRanges)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (BuildHandlers)

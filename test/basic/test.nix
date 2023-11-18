@@ -16,8 +16,8 @@
     nix build .#ghc92-root
     check 'result/bin/root' 'string' 'Running the main package produced the wrong output'
 
-    target='fourmolu 0.11.0.0
-using ghc-lib-parser 9.4.6.20230808'
+    target='fourmolu 0.14.0.0
+using ghc-lib-parser 9.6.3.20231014'
     check 'nix develop -c fourmolu --version' $target 'Fourmolu version output wrong'
   '';
 }
