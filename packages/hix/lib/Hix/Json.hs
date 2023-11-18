@@ -7,7 +7,7 @@ import Data.Aeson (FromJSON, fromJSON)
 import Exon (exon)
 
 import Hix.Data.Error (Error)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.Optparse (JsonConfig (JsonConfig))
 
 jsonConfig ::

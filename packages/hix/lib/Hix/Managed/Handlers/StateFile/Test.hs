@@ -4,7 +4,7 @@ import Data.IORef (IORef, modifyIORef, newIORef)
 import Path (Abs, File, Path)
 
 import Hix.Managed.Handlers.StateFile (StateFileHandlers, handlersNull, writeFile)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.NixExpr (Expr)
 
 writeFileIORef ::

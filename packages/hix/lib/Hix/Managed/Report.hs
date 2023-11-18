@@ -10,7 +10,7 @@ import qualified Hix.Managed.Lower.Data.Bump
 import Hix.Managed.Lower.Data.Bump (Bump (Bump))
 import Hix.Managed.Lower.Data.LowerInit (LowerInit)
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.Pretty (showP)
 
 class ReportMutation a where

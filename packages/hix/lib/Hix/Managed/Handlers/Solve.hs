@@ -3,7 +3,7 @@ module Hix.Managed.Handlers.Solve where
 import Hix.Data.Bounds (Bounds)
 import Hix.Data.Version (NewVersion)
 import Hix.Managed.Solve.Changes (SolverPlan)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 data SolveHandlers =
   SolveHandlers {

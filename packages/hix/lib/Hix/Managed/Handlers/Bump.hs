@@ -8,7 +8,7 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Report as Report
 import Hix.Managed.Handlers.Report (ReportHandlers)
 import Hix.Managed.Lower.Data.Bump (Bump)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 data BumpHandlers =
   BumpHandlers {

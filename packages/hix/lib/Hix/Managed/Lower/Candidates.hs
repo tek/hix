@@ -15,7 +15,7 @@ import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit))
 import qualified Hix.Managed.Lower.Data.LowerOptimize
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize (LowerOptimize))
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.Version (
   beforeMajor,
   hasMajor,

@@ -12,7 +12,7 @@ import qualified Hix.Data.Options as Options
 import Hix.Data.Options (EnvRunnerOptions, TargetSpec)
 import Hix.Data.Package (PackageName)
 import Hix.Json (jsonConfigE)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 -- TODO when there is a solution for default command env fallback configuration, the DefaultTarget case must return
 -- Nothing when the config requests it

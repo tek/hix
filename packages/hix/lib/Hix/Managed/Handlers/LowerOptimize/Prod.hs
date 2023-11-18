@@ -10,7 +10,7 @@ import qualified Hix.Managed.Handlers.Build.Prod as Build
 import qualified Hix.Managed.Handlers.LowerOptimize
 import Hix.Managed.Handlers.LowerOptimize (LowerOptimizeHandlers (LowerOptimizeHandlers))
 import qualified Hix.Managed.Handlers.Report.Prod as Report
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 handlersProd ::
   Maybe (Path Abs Dir) ->

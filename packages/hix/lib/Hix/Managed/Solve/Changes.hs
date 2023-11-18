@@ -21,7 +21,7 @@ import Hix.Data.Version (NewVersion (NewVersion))
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Handlers.Hackage
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.Pretty (showPL)
 
 data SolverPlan =

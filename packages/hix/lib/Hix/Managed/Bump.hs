@@ -22,7 +22,7 @@ import Hix.Managed.Handlers.Bump.Test (handlersTest)
 import Hix.Managed.Handlers.Mutation.Bump (handlersBump)
 import qualified Hix.Managed.Lower.Data.Bump
 import Hix.Managed.Lower.Data.Bump (Bump, BumpState (BumpState))
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 buildAndUpdate ::
   BumpHandlers ->

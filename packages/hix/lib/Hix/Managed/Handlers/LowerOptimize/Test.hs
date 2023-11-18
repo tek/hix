@@ -8,7 +8,7 @@ import Hix.Managed.Handlers.LowerOptimize (LowerOptimizeHandlers (..), handlersN
 import Hix.Managed.Handlers.LowerOptimize.Prod (handlersProd)
 import qualified Hix.Managed.Handlers.Report.Test as ReportHandlers
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 handlersTest ::
   Maybe (Path Abs Dir) ->

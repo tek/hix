@@ -5,7 +5,7 @@ import Exon (exon)
 
 import Hix.Data.Package (PackageName)
 import Hix.Data.Version (SourceHash (SourceHash))
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.Pretty (showP)
 
 data HackageHandlers =

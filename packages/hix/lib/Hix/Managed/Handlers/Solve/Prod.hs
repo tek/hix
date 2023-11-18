@@ -7,7 +7,7 @@ import Hix.Managed.Handlers.Solve (SolveHandlers (..))
 import Hix.Managed.Solve (solveWithCabal)
 import qualified Hix.Managed.Solve.Resources as SolveResources
 import Hix.Managed.Solve.Resources (solverParams)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 handlersProd ::
   (DepResolverParams -> DepResolverParams) ->

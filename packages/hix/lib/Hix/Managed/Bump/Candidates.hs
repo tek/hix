@@ -11,7 +11,7 @@ import qualified Hix.Managed.Handlers.Bump
 import Hix.Managed.Handlers.Bump (BumpHandlers)
 import qualified Hix.Managed.Lower.Data.Bump
 import Hix.Managed.Lower.Data.Bump (Bump (Bump))
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.Version (amendLowerBound, currentMajor, nextMajor, requireUpperBound)
 
 extendCurrentDep :: Version -> VersionRange -> NewRange

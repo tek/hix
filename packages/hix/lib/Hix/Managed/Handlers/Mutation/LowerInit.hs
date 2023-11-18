@@ -20,7 +20,7 @@ import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers (MutationHandlers))
 import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit), LowerInitState (..))
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.Version (setLowerBound)
 
 processMutationLowerInit ::

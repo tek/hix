@@ -8,7 +8,7 @@ import Hix.Managed.Handlers.LowerInit (LowerInitHandlers (..), handlersNull)
 import Hix.Managed.Handlers.LowerInit.Prod (handlersProd)
 import qualified Hix.Managed.Handlers.Report.Test as ReportHandlers
 import Hix.Managed.Lower.Data.LowerInit (LowerInit)
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 
 handlersTest ::
   Maybe (Path Abs Dir) ->

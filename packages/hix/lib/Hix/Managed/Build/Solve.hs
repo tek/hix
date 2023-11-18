@@ -12,6 +12,7 @@ import Hix.Data.Bounds (
   TargetBound (TargetUpper),
   )
 import Hix.Data.ManagedEnv (ManagedState)
+import Hix.Data.Monad (M)
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion (NewVersion))
 import qualified Hix.Log as Log
@@ -25,7 +26,6 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Solve
 import qualified Hix.Managed.Solve.Changes
 import Hix.Managed.Solve.Changes (processSolverPlan)
-import Hix.Monad (M)
 import Hix.Pretty (showP)
 
 -- | Use the version selected by the solver as the candidate's new upper bound for future solver runs.

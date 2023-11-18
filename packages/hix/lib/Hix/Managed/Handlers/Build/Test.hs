@@ -6,7 +6,7 @@ import Path (Abs, Dir, Path)
 import Hix.Managed.Handlers.Build (BuildHandlers (..), TempProjectBracket (TempProjectBracket), handlersNull)
 import Hix.Managed.Handlers.Build.Prod (handlersProd)
 import qualified Hix.Managed.Handlers.StateFile.Test as StateFileHandlers
-import Hix.Monad (M)
+import Hix.Data.Monad (M)
 import Hix.NixExpr (Expr)
 
 withTempProjectAt :: Path Abs Dir -> TempProjectBracket
