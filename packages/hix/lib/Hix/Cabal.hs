@@ -29,7 +29,8 @@ import System.FilePattern.Directory (getDirectoryFiles)
 import System.IO.Error (tryIOError)
 
 import Hix.Compat (readGenericPackageDescription)
-import Hix.Data.Error (Error (..), pathText, sourceError)
+import Hix.Data.Error (Error (..))
+import Hix.Error (pathText, sourceError)
 
 noMatch :: Text -> Path b File -> ExceptT Error IO a
 noMatch reason source =

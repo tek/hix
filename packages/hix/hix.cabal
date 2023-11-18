@@ -26,38 +26,104 @@ library
   exposed-modules:
       Hix
       Hix.Bootstrap
-      Hix.Bump
-      Hix.Bump.Build
-      Hix.Bump.Handlers.Prod
-      Hix.Bump.Handlers.Test
-      Hix.Bump.Version
       Hix.Cabal
+      Hix.Class.Map
       Hix.Compat
       Hix.Component
       Hix.Console
       Hix.Data.BootstrapProjectConfig
-      Hix.Data.BumpConfig
-      Hix.Data.BumpHandlers
+      Hix.Data.Bounds
       Hix.Data.ComponentConfig
+      Hix.Data.ConfigDeps
+      Hix.Data.Dep
+      Hix.Data.Deps
+      Hix.Data.EnvName
       Hix.Data.Error
       Hix.Data.GhciConfig
       Hix.Data.GhciTest
+      Hix.Data.Json
+      Hix.Data.LowerConfig
+      Hix.Data.ManagedEnv
+      Hix.Data.Monad
       Hix.Data.NewProjectConfig
+      Hix.Data.Options
+      Hix.Data.Overrides
+      Hix.Data.Package
       Hix.Data.PreprocConfig
       Hix.Data.ProjectFile
       Hix.Data.Version
+      Hix.Deps
       Hix.Env
+      Hix.Error
       Hix.Ghci
       Hix.Hackage
       Hix.Json
+      Hix.Log
+      Hix.Managed.App
+      Hix.Managed.Build
+      Hix.Managed.Build.Env
+      Hix.Managed.Build.Mutation
+      Hix.Managed.Build.Solve
+      Hix.Managed.Build.UpdateState
+      Hix.Managed.Bump
+      Hix.Managed.Bump.Candidates
+      Hix.Managed.Data.Build
+      Hix.Managed.Data.CurrentBuild
+      Hix.Managed.Data.ManagedConfig
+      Hix.Managed.Data.ManagedJob
+      Hix.Managed.Data.SolverBounds
+      Hix.Managed.Data.Targets
+      Hix.Managed.Handlers.Build
+      Hix.Managed.Handlers.Build.Prod
+      Hix.Managed.Handlers.Build.Test
+      Hix.Managed.Handlers.Bump
+      Hix.Managed.Handlers.Bump.Prod
+      Hix.Managed.Handlers.Bump.Test
+      Hix.Managed.Handlers.Hackage
+      Hix.Managed.Handlers.Hackage.Prod
+      Hix.Managed.Handlers.LowerInit
+      Hix.Managed.Handlers.LowerInit.Prod
+      Hix.Managed.Handlers.LowerInit.Test
+      Hix.Managed.Handlers.LowerOptimize
+      Hix.Managed.Handlers.LowerOptimize.Prod
+      Hix.Managed.Handlers.LowerOptimize.Test
+      Hix.Managed.Handlers.Mutation
+      Hix.Managed.Handlers.Mutation.Bump
+      Hix.Managed.Handlers.Mutation.LowerInit
+      Hix.Managed.Handlers.Mutation.LowerOptimize
+      Hix.Managed.Handlers.Report
+      Hix.Managed.Handlers.Report.Prod
+      Hix.Managed.Handlers.Report.Test
+      Hix.Managed.Handlers.Solve
+      Hix.Managed.Handlers.Solve.Prod
+      Hix.Managed.Handlers.StateFile
+      Hix.Managed.Handlers.StateFile.Prod
+      Hix.Managed.Handlers.StateFile.Test
+      Hix.Managed.Lower
+      Hix.Managed.Lower.Candidates
+      Hix.Managed.Lower.Data.Bump
+      Hix.Managed.Lower.Data.LowerInit
+      Hix.Managed.Lower.Data.LowerOptimize
+      Hix.Managed.Project
+      Hix.Managed.Report
+      Hix.Managed.Solve
+      Hix.Managed.Solve.Changes
+      Hix.Managed.Solve.Config
+      Hix.Managed.Solve.Init
+      Hix.Managed.Solve.Print
+      Hix.Managed.Solve.Resources
+      Hix.Managed.State
+      Hix.Managed.StateFile
       Hix.Monad
       Hix.New
       Hix.NixExpr
       Hix.Options
       Hix.Optparse
+      Hix.Orphans.Version
       Hix.Path
       Hix.Prelude
       Hix.Preproc
+      Hix.Pretty
       Hix.Version
   hs-source-dirs:
       lib
@@ -76,6 +142,7 @@ library
       GADTs
       LambdaCase
       LiberalTypeSynonyms
+      MonadComprehensions
       MultiWayIf
       OverloadedLabels
       OverloadedLists
@@ -101,7 +168,10 @@ library
       Cabal
     , aeson >=2.0 && <2.2
     , base ==4.*
+    , cabal-install
+    , cabal-install-solver
     , casing >=0.1.4 && <0.2
+    , containers
     , exceptions ==0.10.*
     , exon >=1.4 && <1.7
     , extra ==1.7.*
@@ -116,6 +186,7 @@ library
     , optparse-applicative ==0.17.*
     , path ==0.9.*
     , path-io >=1.7 && <1.9
+    , pretty
     , random ==1.2.*
     , transformers
     , typed-process ==0.2.*
@@ -145,6 +216,7 @@ executable hix
       GADTs
       LambdaCase
       LiberalTypeSynonyms
+      MonadComprehensions
       MultiWayIf
       OverloadedLabels
       OverloadedLists
@@ -181,12 +253,22 @@ test-suite hix-test
   main-is: Main.hs
   other-modules:
       Hix.Test.BootstrapTest
-      Hix.Test.BumpTest
+      Hix.Test.BoundsTest
       Hix.Test.CabalFile
       Hix.Test.CabalTest
       Hix.Test.GhciTest
+      Hix.Test.Hedgehog
+      Hix.Test.LowerNativeTest
+      Hix.Test.Managed.Bump.CandidatesTest
+      Hix.Test.Managed.Bump.MutationTest
+      Hix.Test.Managed.LowerInit.MutationTest
+      Hix.Test.Managed.LowerOptimize.CandidatesTest
+      Hix.Test.Managed.LowerOptimize.MutationTest
+      Hix.Test.Managed.Solver
       Hix.Test.NewTest
       Hix.Test.PreprocTest
+      Hix.Test.Utils
+      Hix.Test.VersionTest
   hs-source-dirs:
       test
   default-extensions:
@@ -204,6 +286,7 @@ test-suite hix-test
       GADTs
       LambdaCase
       LiberalTypeSynonyms
+      MonadComprehensions
       MultiWayIf
       OverloadedLabels
       OverloadedLists
@@ -230,6 +313,7 @@ test-suite hix-test
     , aeson >=2.0 && <2.2
     , base ==4.*
     , exon >=1.4 && <1.7
+    , extra ==1.7.*
     , hedgehog >=1.1 && <1.3
     , hix
     , incipit-base ==0.5.*

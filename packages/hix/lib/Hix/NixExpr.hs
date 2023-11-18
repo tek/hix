@@ -27,6 +27,16 @@ data Expr =
   ExprPrefix Text Expr
   deriving stock (Eq, Show, Generic)
 
+exprShow :: Show a => a -> Expr
+exprShow =
+  ExprLit . show
+
+exprBool :: Bool -> Expr
+exprBool =
+  ExprLit . \case
+    True -> "true"
+    False -> "false"
+
 exprStrings :: [Text] -> Expr
 exprStrings =
   ExprList . fmap ExprString

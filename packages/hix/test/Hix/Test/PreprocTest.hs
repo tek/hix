@@ -8,10 +8,12 @@ import Distribution.PackageDescription (
   Library (libBuildInfo),
   )
 import Exon (exon)
-import Hedgehog (TestT, evalMaybe, (===))
+import Hedgehog (evalMaybe, (===))
+import Path (absfile)
+
 import Hix.Preproc (fromCabal, preprocessModule)
 import Hix.Test.CabalFile (testPackage, testPackageNoPrelude)
-import Path (absfile)
+import Hix.Test.Utils (UnitTest)
 
 pragmas :: Text
 pragmas =
@@ -28,7 +30,7 @@ preprocTestNoPrelude ::
   HasCallStack =>
   ByteString ->
   Text ->
-  TestT IO ()
+  UnitTest
 preprocTestNoPrelude module_ target =
   withFrozenCallStack do
     pkg <- liftIO testPackageNoPrelude
@@ -40,7 +42,7 @@ preprocTest ::
   HasCallStack =>
   ByteString ->
   Text ->
-  TestT IO ()
+  UnitTest
 preprocTest module_ target =
   withFrozenCallStack do
     pkg <- liftIO testPackage
@@ -85,7 +87,7 @@ f :: Int
 f = 1
 |]
 
-test_preprocInsertPrelude :: TestT IO ()
+test_preprocInsertPrelude :: UnitTest
 test_preprocInsertPrelude =
   preprocTest moduleInsert targetInsert
 
@@ -134,7 +136,7 @@ f :: Int
 f = 1
 |]
 
-test_preprocReplacePrelude :: TestT IO ()
+test_preprocReplacePrelude :: UnitTest
 test_preprocReplacePrelude =
   preprocTest moduleReplace targetReplace
 
@@ -159,7 +161,7 @@ f :: Int
 f = 1
 |]
 
-test_preprocSingleLineModule :: TestT IO ()
+test_preprocSingleLineModule :: UnitTest
 test_preprocSingleLineModule =
   preprocTest moduleSingleLineModule targetSingleLineModule
 
@@ -184,7 +186,7 @@ f :: Int
 f = 1
 |]
 
-test_preprocSelfExport :: TestT IO ()
+test_preprocSelfExport :: UnitTest
 test_preprocSelfExport =
   preprocTest moduleSelfExport targetSelfExport
 
@@ -217,7 +219,7 @@ f :: Int
 f = 1
 |]
 
-test_preprocSelfExport2 :: TestT IO ()
+test_preprocSelfExport2 :: UnitTest
 test_preprocSelfExport2 =
   preprocTest moduleSelfExport2 targetSelfExport2
 
@@ -235,7 +237,7 @@ module Main where
 import System.Exit (exitSuccess)
 |]
 
-test_preprocNoPrelude :: TestT IO ()
+test_preprocNoPrelude :: UnitTest
 test_preprocNoPrelude =
   preprocTestNoPrelude moduleNoPrelude targetNoPrelude
 
@@ -258,6 +260,6 @@ type Hix_Dummy = Int
 {-# line 4 "/foo/bar/Foo.hs" #-}
 |]
 
-test_preprocPreludePrefix :: TestT IO ()
+test_preprocPreludePrefix :: UnitTest
 test_preprocPreludePrefix =
   preprocTest modulePreludePrefix targetPreludePrefix

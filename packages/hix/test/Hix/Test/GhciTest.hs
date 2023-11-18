@@ -2,7 +2,7 @@ module Hix.Test.GhciTest where
 
 import Control.Monad.Trans.Class (lift)
 import Exon (exon)
-import Hedgehog (TestT, evalEither, (===))
+import Hedgehog (evalEither, (===))
 import Path (Abs, Dir, File, Path, Rel, SomeBase (Rel), absdir, absfile, reldir, relfile, (</>))
 import Path.IO (withSystemTempDir)
 
@@ -15,14 +15,11 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   SourceDirs (SourceDirs),
   )
-import Hix.Data.Error (pathText)
+import Hix.Error (pathText)
 import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig (EnvConfig), GhciConfig (..))
 import qualified Hix.Data.GhciTest as GhciTest
-import Hix.Env (envRunner)
-import Hix.Ghci (assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
-import Hix.Monad (runM)
-import qualified Hix.Options as Options
-import Hix.Options (
+import qualified Hix.Data.Options as Options
+import Hix.Data.Options (
   ComponentCoords (ComponentCoords),
   ComponentSpec (ComponentSpec),
   EnvRunnerOptions (EnvRunnerOptions),
@@ -32,6 +29,10 @@ import Hix.Options (
   TargetSpec (TargetForComponent, TargetForFile),
   TestOptions (TestOptions),
   )
+import Hix.Env (envRunner)
+import Hix.Ghci (assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
+import Hix.Monad (runM)
+import Hix.Test.Utils (UnitTest)
 
 root :: Path Abs Dir
 root =
@@ -126,7 +127,7 @@ ghcidTarget cwd scriptFile =
     path = [exon|#{dir}packages/api/test/:#{dir}packages/api/lib/:#{dir}packages/core/lib/|]
     dir = pathText cwd
 
-test_ghcid :: TestT IO ()
+test_ghcid :: UnitTest
 test_ghcid = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
     runM root (ghcidCmdlineFromOptions tmp options)
@@ -164,7 +165,7 @@ mainPackageTarget cwd scriptFile =
     path = [exon|#{dir}packages/core/test/:#{dir}packages/api/lib/:#{dir}packages/core/lib/|]
     dir = pathText cwd
 
-test_mainPackage :: TestT IO ()
+test_mainPackage :: UnitTest
 test_mainPackage = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
     runM root (ghciCmdlineFromOptions tmp mainOptions)
@@ -182,14 +183,14 @@ spec3 =
     component = Just (ComponentSpec "core-test" (Just (SourceDir [reldir|core-test|])))
   }
 
-runnerFor :: EnvRunner -> TargetSpec -> TestT IO ()
+runnerFor :: EnvRunner -> TargetSpec -> UnitTest
 runnerFor target spec = do
   res <- evalEither =<< liftIO (runM root (envRunner conf))
   target === res
   where
     conf = EnvRunnerOptions (Left (EnvConfig packages defaultRunner Nothing)) Nothing (Just spec)
 
-test_componentEnv :: TestT IO ()
+test_componentEnv :: UnitTest
 test_componentEnv = do
   runnerFor runner1 spec1
   runnerFor runner2 spec2
@@ -208,7 +209,7 @@ import #{m}|]
   where
     m = "Core.Test.Main"
 
-test_moduleName :: TestT IO ()
+test_moduleName :: UnitTest
 test_moduleName = do
   conf <- evalEither =<< liftIO (runM root (assemble options.ghci { component = spec4 }))
   target_moduleName === conf.script

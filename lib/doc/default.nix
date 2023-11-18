@@ -81,7 +81,7 @@ let
   ];
   mod-hackage = options.moduleWithout hackageExclude "hackage" { inherit config lib util; };
 
-  mod-managedDeps = options.moduleWithout [] "managed-deps" { inherit config lib util; };
+  mod-managed = options.moduleWithout [] "managed" { inherit config lib util; };
 
   generalModules = [
     (options.importMod "systems" { inherit config lib; })
@@ -151,8 +151,8 @@ let
         (opt "hackage" "Hackage" mod-hackage)
         (text tags)
         (text cross)
-        (text managedDeps)
-        (opt "managed-deps" "Managed dependency" mod-managedDeps)
+        (text managed)
+        (opt "managed" "Managed dependencies" mod-managed)
         (text misc)
       ];
     }

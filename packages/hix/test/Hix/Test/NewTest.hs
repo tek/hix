@@ -1,7 +1,7 @@
 module Hix.Test.NewTest where
 
 import Exon (exon)
-import Hedgehog (TestT, evalEither, (===))
+import Hedgehog (evalEither, (===))
 import Path (absdir, relfile)
 
 import qualified Hix.Data.NewProjectConfig
@@ -9,6 +9,7 @@ import Hix.Data.NewProjectConfig (HixUrl, NewProjectConfig (NewProjectConfig))
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile))
 import Hix.Monad (runM)
 import Hix.New (license, newProjectFiles)
+import Hix.Test.Utils (UnitTest)
 
 conf :: NewProjectConfig
 conf =
@@ -119,7 +120,7 @@ target =
     ProjectFile [relfile|test/Spider/Test/NameTest.hs|] nameTestModule
   ]
 
-test_new :: TestT IO ()
+test_new :: UnitTest
 test_new = do
   res <- evalEither =<< liftIO (runM [absdir|/project|] (newProjectFiles conf))
   target === res

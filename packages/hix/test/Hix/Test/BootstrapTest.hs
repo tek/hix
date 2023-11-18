@@ -1,8 +1,9 @@
 module Hix.Test.BootstrapTest where
 
+import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import Exon (exon)
-import Hedgehog (TestT, evalEither, (===))
+import Hedgehog (evalEither, (===))
 import Path (parent, reldir, relfile, toFilePath, (</>))
 import Path.IO (createDirIfMissing, withSystemTempDir)
 
@@ -11,7 +12,7 @@ import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (BootstrapProjectConfig))
 import qualified Hix.Data.ProjectFile as ProjectFile
 import Hix.Monad (runM)
-import qualified Data.Text as Text
+import Hix.Test.Utils (UnitTest)
 
 cabal :: Text
 cabal =
@@ -173,7 +174,7 @@ flakeTarget =
 }
 |]
 
-test_bootstrap :: TestT IO ()
+test_bootstrap :: UnitTest
 test_bootstrap = do
   result <- liftIO $ withSystemTempDir "hix-unit" \ tmp -> do
     let

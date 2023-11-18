@@ -186,9 +186,9 @@ let
     then
       ${handleVersion file type}
       ${if publish && cfg.check then "nix flake check" else ""}
-      nix run .#upload-${if publish then "release" else "candidates"} $version
+      ${util.runBuildApp "hackage.upload.${if publish then "release" else "candidates"}"} $version
     else
-      nix run .#bump-${if publish then "release" else "candidate"}-''${pkg} $version
+      ${util.runBuildApp ''hackage.bump.${if publish then "release" else "candidate"}-''${pkg}''} $version
     fi
     '';
 
@@ -197,9 +197,9 @@ let
     ${readArgs}
     if [[ -z ''${pkg:-} ]]
     then
-      nix run .#upload-docs
+      ${util.runBuildApp "hackage.upload.docs"}
     else
-      nix run .#upload-docs-''${pkg}
+      ${util.runBuildApp ''hackage.upload.docs-''${pkg}''}
     fi
     '';
 
@@ -223,7 +223,7 @@ let
   version=''${1:-}
   ${handleVersion file type}
   ${if publish && cfg.check then "nix -L flake check" else ""}
-  nix run .#upload-${if publish then "release" else "candidate"}-${pkg} $version
+  ${util.runBuildApp "hackage.upload.${if publish then "release" else "candidate"}-${pkg}"} $version
   '';
 
   uploadPackage = source: publish: name:
@@ -240,10 +240,10 @@ let
       upload = n: app "${uploadPackage source publish n}";
       version = n: app "${packageVersion publish n}";
       target = n: {
-        "upload-${type}-${n}" = upload n;
-        "bump-${type}-${n}" = version n;
+        upload = { "${type}-${n}" = upload n; };
+        bump = { "${type}-${n}" = version n; };
       };
-    in util.foldMapAttrs target allTargets;
+    in { hackage = util.mergeAll (map target allTargets); };
 
   uploadCandidates =
     uploadPackageApps true false "candidate";
@@ -254,13 +254,27 @@ let
   uploadDocs =
     uploadPackageApps false true "docs";
 
-in {
-  apps = uploadCandidates // uploadReleases // uploadDocs // {
+  mainApps = {
     candidates = app "${askAndUpload false}";
     release = app "${askAndUpload true}";
     docs = app "${checkUploadDocs}";
-    upload-candidates = app "${uploadAll true false}";
-    upload-release = app "${uploadAll true true}";
-    upload-docs = app "${uploadAll false true}";
   };
+
+  uploadMainApps = {
+    hackage.upload = {
+      candidates = app "${uploadAll true false}";
+      release = app "${uploadAll true true}";
+      docs = app "${uploadAll false true}";
+    };
+  };
+
+in {
+  apps =
+    util.mergeAll [
+      uploadCandidates
+      uploadReleases
+      uploadDocs
+      uploadMainApps
+      mainApps
+    ];
 }

@@ -19,19 +19,16 @@ import Hix.Data.ComponentConfig (
   ComponentConfig,
   ModuleName (ModuleName),
   PackageConfig,
-  PackageName,
   SourceDir (SourceDir),
   Target (Target),
   )
-import Hix.Data.Error (Error (GhciError), note, pathText, tryIO)
+import Hix.Error (Error (GhciError), note, pathText, tryIO)
 import qualified Hix.Data.GhciConfig
 import Hix.Data.GhciConfig (GhciConfig, GhciRunExpr (GhciRunExpr), GhciSetupCode (GhciSetupCode))
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (GhcidRun))
-import Hix.Json (jsonConfigE)
-import Hix.Monad (M, noteGhci)
-import qualified Hix.Options as Options
-import Hix.Options (
+import qualified Hix.Data.Options as Options
+import Hix.Data.Options (
   ExtraGhciOptions (ExtraGhciOptions),
   ExtraGhcidOptions (ExtraGhcidOptions),
   GhciOptions (GhciOptions),
@@ -39,6 +36,9 @@ import Hix.Options (
   TargetSpec (TargetForFile),
   TestOptions (TestOptions),
   )
+import Hix.Data.Package (PackageName)
+import Hix.Json (jsonConfigE)
+import Hix.Monad (M, noteGhci)
 import Hix.Path (rootDir)
 
 relativeToComponent ::

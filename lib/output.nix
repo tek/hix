@@ -11,7 +11,7 @@ let
     inherit (util) hsLib;
   };
 
-  libBump = import ./bump.nix { inherit util; };
+  libManaged = import ./managed.nix { inherit util; };
 
   console = import ./console.nix { inherit lib; };
 
@@ -121,31 +121,51 @@ let
 
   mainAppimageApp = ifMainExe (appimageApp "dev" mainExe.name);
 
-  envBump = env: _: package: app (libBump.package env package);
-
-  allBump = env: app (libBump.all env);
-
-  envBumps = env:
-  if config.managedDeps.enable
-  then (allBump env // lib.mapAttrs (envBump env) config.packages)
-  else throw "Set 'managedDeps.enable = true' to use this feature";
-
   envCommands = env:
-  lib.mapAttrs (_: command: app "${(envCommand { inherit env command; }).path}") config.commands;
+  lib.mapAttrs (_: command: app ((envCommand { inherit env command; }).path)) config.commands;
 
-  envApps = env: {
-    ${env.name} = envCommands env // envAppimages env // {
-      dep-versions = app "${depVersions env.name}";
-      bump = envBumps env;
-    };
+  managedAll = latest: lower: {
+    bump = app (libManaged.bump latest);
+    lower.init = app (libManaged.lowerInit lower);
+    lower.optimize = app (libManaged.lowerOptimize lower);
   };
 
-  commandApps = lib.mapAttrs (_: c: app "${c.path}");
+  envApps = env: {
+    ${env.name} =
+      envCommands env //
+      envAppimages env //
+      managedAll env env //
+      { dep-versions = app (depVersions env.name); };
+  };
 
-  mainBumpApps = { bump = envBumps config.envs.latest; };
+  commandApps = lib.mapAttrs (_: c: app c.path);
 
-  latestChecks = lib.optionalAttrs (config.managedDeps.enable && config.managedDeps.check)
-  (prefixedEnvDerivations "latest");
+  wantManagedChecks = config.managed.enable && config.managed.check;
+
+  managedChecks =
+    lib.optionalAttrs wantManagedChecks
+    (util.foldMapAttrs prefixedEnvDerivations (lib.attrNames util.managed.envs))
+    ;
+
+  lowerInit = libManaged.lowerInit config.envs.lower;
+
+  lowerOptimize = libManaged.lowerOptimize config.envs.lower;
+
+  managedCmdMulti = sort: mk: names: lib.genAttrs names (name: app (mk config.envs.${"${sort}-${name}"}));
+
+  managedMulti = sets: {
+    bump = managedCmdMulti "latest" libManaged.bump sets;
+    lower.init = managedCmdMulti "lower" libManaged.lowerInit sets;
+    lower.optimize = managedCmdMulti "lower" libManaged.lowerOptimize sets;
+  };
+
+  managedApps =
+    if config.managed.sets == "all"
+    then managedAll config.envs.latest config.envs.lower
+    else if config.managed.sets == "each"
+    then managedMulti config.internal.packageNames
+    else managedMulti (lib.attrNames config.managed.sets)
+    ;
 
 in {
   inherit
@@ -160,7 +180,9 @@ in {
   commandApps
   mainExe
   pkgMainExe
-  mainBumpApps
-  latestChecks
+  managedChecks
+  lowerInit
+  lowerOptimize
+  managedApps
   ;
 }

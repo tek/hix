@@ -37,8 +37,12 @@ let
     then readOverrides
     else reified;
 
-  packages = prev.haskell.packages.${ghc.compiler}.override { overrides = computeOverrides; };
+  packagesWith = overrides: prev.haskell.packages.${ghc.compiler}.override { inherit overrides; };
+
+  packages = packagesWith computeOverrides;
 
 in {
+  inherit packagesWith;
+
   hixPackages = packages // { hix-nixpkgs-rev = ghc.nixpkgs.rev; hix-name = ghc.name; };
 }

@@ -19,6 +19,7 @@
       "GADTs"
       "LambdaCase"
       "LiberalTypeSynonyms"
+      "MonadComprehensions"
       "MultiWayIf"
       "OverloadedLabels"
       "OverloadedLists"

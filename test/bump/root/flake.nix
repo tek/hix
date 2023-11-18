@@ -4,7 +4,12 @@
   inputs.hix.url = "path:HIX";
 
   outputs = {self, hix, ...}: hix.lib.flake ({config, lib, ...}: {
-    managedDeps.enable = true;
+    managed = {
+      enable = true;
+      verbose = false;
+      debug = false;
+      quiet = true;
+    };
     compat.enable = false;
     packages = {
       root = {

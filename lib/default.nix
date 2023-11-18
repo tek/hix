@@ -41,13 +41,6 @@ let
     depsFullOverrides = map (o: o.overrides) depsFull;
   in { all = []; } // mergeOverrides (depsOverrides ++ depsFullOverrides ++ [norm]);
 
-  overridesFor = o: n:
-  let c = o.${n} or [];
-  in if isList c then c else [c];
-
-  asFunction = f:
-  if isFunction f then f else _: f;
-
   concatMapAttrsToList = f: a: concatLists (mapAttrsToList f a);
 
   unwords = concatStringsSep " ";
@@ -70,7 +63,9 @@ let
   else attrs;
 
   mergeAttr = a: b:
-  if isAttrs a
+  if isDerivation a
+  then throw "'mergeAuto' can not be used with sets containing competing derivations! Derivation name: ${a.pname}"
+  else if isAttrs a
   then mergeAttrset a b
   else if isList a
   then a ++ b
@@ -196,8 +191,6 @@ in {
   mergeOverrides
   concatOverrides
   normalizeOverrides
-  overridesFor
-  asFunction
   concatMapAttrsToList
   unwords
   unlines

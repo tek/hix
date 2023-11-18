@@ -8,7 +8,9 @@ import Options.Applicative.Types (readerAsk)
 import Path (Abs, Dir, File, Path, Rel, parseAbsDir, parseAbsFile, parseRelDir, parseRelFile, toFilePath)
 import qualified Text.Show as Show
 
-import Hix.Data.BumpHandlers (SpecialBumpHandlers (TestBumpHandlers))
+import Hix.Managed.Handlers.Bump (SpecialBumpHandlers (TestBumpHandlers))
+import Hix.Managed.Handlers.LowerInit (SpecialLowerInitHandlers (TestLowerInitHandlers))
+import Hix.Managed.Handlers.LowerOptimize (SpecialLowerOptimizeHandlers (TestLowerOptimizeHandlers))
 
 -- |An absolute file path option for @optparse-applicative@.
 absFileOption :: ReadM (Path Abs File)
@@ -54,3 +56,15 @@ bumpHandlersOption =
   readerAsk >>= \case
     "test" -> pure TestBumpHandlers
     h -> fail [exon|Invalid value for bump handlers: #{h}|]
+
+lowerInitHandlersOption :: ReadM SpecialLowerInitHandlers
+lowerInitHandlersOption =
+  readerAsk >>= \case
+    "test" -> pure TestLowerInitHandlers
+    h -> fail [exon|Invalid value for lower.init handlers: #{h}|]
+
+lowerOptimizeHandlersOption :: ReadM SpecialLowerOptimizeHandlers
+lowerOptimizeHandlersOption =
+  readerAsk >>= \case
+    "test" -> pure TestLowerOptimizeHandlers
+    h -> fail [exon|Invalid value for lower.optimize handlers: #{h}|]

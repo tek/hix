@@ -16,7 +16,7 @@ let
     ./ghci.nix
     ./hackage.nix
     ./cli.nix
-    ./managed-deps.nix
+    ./managed.nix
     inputsConfig
   ];
 

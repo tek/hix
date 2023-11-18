@@ -135,13 +135,13 @@ in {
           show-overrides = app "${showOverrides}";
           dep-versions = app "${depVersions "dev"}";
         } //
+        libOutput.managedApps //
         libOutput.mainAppimageApp //
-        libOutput.mainBumpApps //
         optionalAttrs config.output.commandApps {
           cmd = libOutput.commandApps config.commands;
         } //
         optionalAttrs config.output.envApps {
-          env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleEnvs);
+          env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleAppEnvs);
         };
 
       };
@@ -152,7 +152,8 @@ in {
         checks =
           config.envs.dev.derivations //
           optionalAttrs config.compat.enable (libOutput.prefixedInEnvs config.compat.versions) //
-          libOutput.latestChecks;
+          libOutput.managedChecks
+          ;
 
         legacyPackages = {
           overrides = config.exportedOverrides;

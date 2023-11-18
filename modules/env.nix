@@ -13,61 +13,26 @@ let
 
   vmLib = import ../lib/vm.nix { inherit (global) pkgs; };
 
-  waitSeconds = toString config.wait;
-
-  waitScript = ''
-  running=0
-  echo ">>> Waiting ${waitSeconds} seconds for VM to boot..." >&2
-  timeout=$(( $SECONDS + ${waitSeconds} ))
-  while (( $SECONDS < $timeout ))
-  do
-    pong=$(${global.pkgs.socat}/bin/socat -T 1 - TCP:localhost:${toString (config.hostPorts.hix-internal-env-wait)} <<< 'ping' 2>&1)
-    if [[ $pong == 'running' ]]
-    then
-      running=1
-      break
-    else
-      sleep 0.1
-    fi
-  done
-  if [[ $running == 0 ]]
-  then
-    echo ">>> VM wasn't ready after ${waitSeconds} seconds." >&2
-    exit 1
-  fi
-  '';
-
   mkBuildInputs = def:
     if isFunction def
     then def config.ghc.pkgs
     else def;
 
-  extraHs = ghc:
-  if isFunction config.haskellPackages
-  then config.haskellPackages ghc
-  else map (n: ghc.${n}) config.haskellPackages;
-
-  ghcPackages = ghc: let
-    bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
-    isNotLocal = p: !(p ? pname && elem p.pname global.internal.packageNames);
-    localDeps = builtins.filter isNotLocal (concatMap bInputs (map (p: ghc.${p}) global.internal.packageNames));
-  in optionals config.localDeps localDeps ++ extraHs ghc ++ [ghc.cabal-install];
-
   ghcWithPackages =
     config.ghc.ghc.ghcWithPackages.override (
       { withHoogle = config.hoogle; } //
       config.ghcWithPackagesArgs
-    ) ghcPackages;
+    ) (util.ghc.packageDb config);
 
   buildInputs =
-  mkBuildInputs config.buildInputs ++
-  mkBuildInputs global.buildInputs ++
-  config.haskellTools config.ghc.vanillaGhc ++
-  global.haskellTools config.ghc.vanillaGhc ++
-  optional config.hls.enable config.hls.package ++
-  optional config.ghcid.enable config.ghcid.package ++
-  [ghcWithPackages]
-  ;
+    mkBuildInputs config.buildInputs ++
+    mkBuildInputs global.buildInputs ++
+    config.haskellTools config.ghc.vanillaGhc ++
+    global.haskellTools config.ghc.vanillaGhc ++
+    optional config.hls.enable config.hls.package ++
+    optional config.ghcid.enable config.ghcid.package ++
+    [ghcWithPackages]
+    ;
 
   exportShellVars = vars: let
     defs = toShellVars config.env;
@@ -122,7 +87,7 @@ let
       ${messages}
       ${config.setup-pre}
       ${optionalString config.vm.enable config.vm.setup}
-      ${optionalString (config.vm.enable && config.wait > 0) waitScript}
+      ${optionalString (config.vm.enable && config.wait > 0) (util.env.waitScript config)}
       ${config.setup}
     fi
   '';
@@ -200,7 +165,7 @@ let
 
   extraPackages = genAttrs global.output.extraPackages (n: ghc.${n});
 
-  localPackages = genAttrs global.internal.packageNames (n: ghc.${n} // { inherit ghc; });
+  localPackages = genAttrs (util.env.targets config) (n: ghc.${n} // { inherit ghc; });
 
   ghcidMod = if util.minGhc "9.4" config then config.ghc.pkgs.haskell.lib.dontCheck else id;
 
@@ -225,6 +190,26 @@ in {
       description = mdDoc "Environment variables to set when running scripts in this environment.";
       type = attrsOf (either int str);
       default = {};
+    };
+
+    packages = mkOption {
+      description = mdDoc ''
+      The subset of local [packages](#opt-general-packages) that should be built by this environment.
+
+      Entries must correspond to existing keys in [](#opt-general-packages).
+      If the value is `null`, all packages are included.
+
+      This is useful when the project contains multiple sets of packages that should have separate dependency trees with
+      different versions.
+
+      Setting this has a variety of effects:
+      - These packages will be exposed as outputs for this env
+      - The GHC package db will not contain them, so they won't be built when entering a shell or starting `.#ghci` for
+        this env
+      - Managed dependencies envs use this to produce separate sets of bounds
+      '';
+      type = nullOr (listOf util.types.localPackage);
+      default = null;
     };
 
     ghc = mkOption {
@@ -391,7 +376,13 @@ in {
     };
 
     hide = mkOption {
-      description = mdDoc "Skip this env for user-facing actions, like command exposition in `apps`.";
+      description = mdDoc "Skip this env for `devShells`.";
+      type = bool;
+      default = false;
+    };
+
+    hideApps = mkOption {
+      description = mdDoc "Skip this env for `apps.env`.";
       type = bool;
       default = false;
     };
@@ -402,7 +393,6 @@ in {
       [](#opt-general-output.extraPackages).
       '';
       type = lazyAttrsOf package;
-      default = localPackages // extraPackages;
     };
 
     localPackage = mkOption {
@@ -460,7 +450,7 @@ in {
     managedOverrides = mkOption {
       description = mdDoc ''
       Whether to create overrides with the latest version of each package for this env when performing
-      [](#managed-deps).
+      [](#managed).
       '';
       type = bool;
       default = false;
@@ -580,10 +570,12 @@ in {
           global.overrides
           config.internal.overridesEnv
         ]
-        );
+      );
 
       gen-overrides = mkDefault true;
     };
+
+    derivations = mkDefault (localPackages // extraPackages);
 
     hostPorts = util.foldMapAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
 
@@ -617,9 +609,10 @@ in {
 
       internal = let
 
-        managedOverrides = {hackage, ...}: let
-          os = (util.managedDeps.overrides or {}).${config.name} or {};
-          managedOverride = _: {version, hash}: hackage version hash;
+        managedOverrides = api: let
+          os = (util.managedEnv.overrides or {}).${config.name} or {};
+          managedOverride = _: {version, hash}:
+          api.jailbreak (api.notest (api.nodoc (api.hackage version hash)));
         in mapAttrs managedOverride os;
 
       in {

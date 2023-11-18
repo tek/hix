@@ -25,168 +25,56 @@ import Options.Applicative (
   switch,
   value,
   )
-import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir)
+import Path (Abs, Dir, File, Path, parseRelDir, parseSomeDir)
 import Path.IO (getCurrentDir)
 import Prelude hiding (Mod, mod)
 
 import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (BootstrapProjectConfig))
-import qualified Hix.Data.BumpConfig
-import Hix.Data.BumpConfig (BumpConfig (BumpConfig), BumpEnv)
-import Hix.Data.BumpHandlers (SpecialBumpHandlers)
-import Hix.Data.ComponentConfig (
-  ComponentName (ComponentName),
-  EnvName,
-  ModuleName,
-  PackageName (PackageName),
-  SourceDir (SourceDir),
-  )
-import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig, GhciConfig, RunnerName)
+import Hix.Data.Bounds (TargetBound (TargetLower, TargetUpper))
+import Hix.Data.ComponentConfig (ComponentName (ComponentName), ModuleName, SourceDir (SourceDir))
+import Hix.Data.EnvName (EnvName)
+import Hix.Data.GhciConfig (ChangeDir (ChangeDir), RunnerName)
+import qualified Hix.Data.LowerConfig
+import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), LowerOptimizeConfig (LowerOptimizeConfig))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
-import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Optparse (JsonConfig, absDirOption, absFileOption, bumpHandlersOption, jsonOption, relFileOption)
-
-data PreprocOptions =
-  PreprocOptions {
-    config :: Maybe (Either PreprocConfig JsonConfig),
-    root :: Maybe (Path Abs Dir),
-    source :: Path Abs File,
-    inFile :: Path Abs File,
-    outFile :: Path Abs File
-  }
-  deriving stock (Show, Generic)
-
-data PackageSpec =
-  PackageSpec {
-    name :: PackageName,
-    dir :: Maybe (SomeBase Dir)
-  }
-  deriving stock (Eq, Show, Generic)
-
-data ComponentSpec =
-  ComponentSpec {
-    name :: ComponentName,
-    dir :: Maybe SourceDir
-  }
-  deriving stock (Eq, Show, Generic)
-
-data ComponentCoords =
-  ComponentCoords {
-    package :: Maybe PackageSpec,
-    component :: Maybe ComponentSpec
-  }
-  deriving stock (Eq, Show, Generic)
-
-data TargetSpec =
-  TargetForFile (Path Abs File)
-  |
-  TargetForComponent ComponentCoords
-  deriving stock (Eq, Show, Generic)
-
-data TestOptions =
-  TestOptions {
-    mod :: ModuleName,
-    test :: Maybe Text,
-    runner :: Maybe RunnerName,
-    cd :: ChangeDir
-  }
-  deriving stock (Eq, Show, Generic)
-
-data EnvRunnerOptions =
-  EnvRunnerOptions {
-    config :: Either EnvConfig JsonConfig,
-    root :: Maybe (Path Abs Dir),
-    component :: Maybe TargetSpec
-  }
-  deriving stock (Show, Generic)
-
-newtype ExtraGhciOptions =
-  ExtraGhciOptions Text
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString)
-
-newtype ExtraGhcidOptions =
-  ExtraGhcidOptions Text
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString)
-
-data GhciOptions =
-  GhciOptions {
-    config :: Either GhciConfig JsonConfig,
-    root :: Maybe (Path Abs Dir),
-    component :: TargetSpec,
-    test :: TestOptions,
-    extra :: Maybe ExtraGhciOptions
-  }
-  deriving stock (Show, Generic)
-
-data GhcidOptions =
-  GhcidOptions {
-    ghci :: GhciOptions,
-    extra :: Maybe ExtraGhcidOptions
-  }
-  deriving stock (Show, Generic)
-
-data NewOptions =
-  NewOptions {
-    config :: NewProjectConfig
-  }
-  deriving stock (Eq, Show, Generic)
-
-data BootstrapOptions =
-  BootstrapOptions {
-    config :: BootstrapProjectConfig
-  }
-  deriving stock (Eq, Show, Generic)
-
-data EnvRunnerCommandOptions =
-  EnvRunnerCommandOptions {
-    options :: EnvRunnerOptions,
-    test :: TestOptions,
-    extraGhci :: Maybe ExtraGhciOptions,
-    extraGhcid :: Maybe ExtraGhcidOptions
-  }
-  deriving stock (Show, Generic)
-
-data BumpOptions =
-  BumpOptions {
-    env :: Either BumpEnv JsonConfig,
-    config :: BumpConfig,
-    handlers :: Maybe SpecialBumpHandlers
-  }
-  deriving stock (Show, Generic)
-
-data Command =
-  Preproc PreprocOptions
-  |
-  EnvRunner EnvRunnerCommandOptions
-  |
-  GhcidCmd GhcidOptions
-  |
-  GhciCmd GhciOptions
-  |
-  NewCmd NewOptions
-  |
-  BootstrapCmd BootstrapOptions
-  |
-  BumpCmd BumpOptions
-  deriving stock (Show)
-
-data GlobalOptions =
-  GlobalOptions {
-    verbose :: Maybe Bool,
-    debug :: Bool,
-    cwd :: Path Abs Dir
-  }
-  deriving stock (Eq, Show, Generic)
-
-data Options =
-  Options {
-    global :: GlobalOptions,
-    cmd :: Command
-  }
-  deriving stock (Show)
+import Hix.Data.Options (
+  BootstrapOptions (..),
+  BumpOptions (..),
+  Command (..),
+  ComponentCoords (ComponentCoords),
+  ComponentSpec (..),
+  EnvRunnerCommandOptions (..),
+  EnvRunnerOptions (EnvRunnerOptions, component, config, root),
+  ExtraGhciOptions,
+  ExtraGhcidOptions,
+  GhciOptions (..),
+  GhcidOptions (..),
+  GlobalOptions (..),
+  LowerCommand (..),
+  LowerInitOptions (..),
+  LowerOptimizeOptions (..),
+  NewOptions (..),
+  Options (Options),
+  PackageSpec (..),
+  PreprocOptions (PreprocOptions),
+  TargetSpec (..),
+  TestOptions (..),
+  )
+import Hix.Data.Package (PackageName (PackageName))
+import qualified Hix.Managed.Data.ManagedConfig
+import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Optparse (
+  JsonConfig,
+  absDirOption,
+  absFileOption,
+  bumpHandlersOption,
+  jsonOption,
+  lowerInitHandlersOption,
+  lowerOptimizeHandlersOption,
+  relFileOption,
+  )
 
 fileParser ::
   String ->
@@ -332,17 +220,44 @@ bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
-bumpParser :: Parser BumpOptions
-bumpParser = do
-  envConfig <- Right <$> jsonConfigParser
+managedConfigParser :: TargetBound -> Parser ManagedConfig
+managedConfigParser targetBound = do
   env <- strOption (long "env" <> short 'e' <> help "Environment for building and managed overrides" <> value "dev")
-  package <- optional (strOption (long "package" <> short 'p' <> help "Bump only this package"))
   file <- option relFileOption (long "file" <> short 'f' <> help "The relative path to the managed deps file")
   updateProject <- switch (long "update-project" <> short 'u' <> help "Build with new versions and write to config")
   latestOverrides <- switch (long "overrides" <> short 'o' <> help "Write latest versions to the env's overrides")
   projectRoot <- optional (option absDirOption (long "root" <> help "The root directory of the project"))
+  ghc <- optional (option absDirOption (long "ghc" <> help "The lower env's GHC store path"))
+  pure ManagedConfig {stateFile = StateFileConfig {..}, ..}
+
+bumpParser :: Parser BumpOptions
+bumpParser = do
+  env <- Right <$> jsonConfigParser
+  config <- managedConfigParser TargetUpper
   handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
-  pure BumpOptions {env = envConfig, config = BumpConfig {..}, ..}
+  pure BumpOptions {..}
+
+lowerInitParser :: Parser LowerInitOptions
+lowerInitParser = do
+  env <- Right <$> jsonConfigParser
+  config <- managedConfigParser TargetLower
+  stabilize <- switch (long "stabilize" <> help "Try all versions in range if the build fails for a dep")
+  lowerMajor <- switch (long "lower-major" <> help "Only pick versions from the lower bound's major if it exists")
+  handlers <- optional (option lowerInitHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  pure LowerInitOptions {lowerInit = LowerInitConfig {oldest = False, initialBounds = mempty, ..}, ..}
+
+lowerOptimizeParser :: Parser LowerOptimizeOptions
+lowerOptimizeParser = do
+  env <- Right <$> jsonConfigParser
+  config <- managedConfigParser TargetLower
+  handlers <- optional (option lowerOptimizeHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  pure LowerOptimizeOptions {lowerOptimize = LowerOptimizeConfig {oldest = False, initialBounds = mempty}, ..}
+
+lowerCommands :: Mod CommandFields LowerCommand
+lowerCommands =
+  command "init" (LowerInitCmd <$> info lowerInitParser (progDesc "Initialize the lower bounds"))
+  <>
+  command "optimize" (LowerOptimizeCmd <$> info lowerOptimizeParser (progDesc "Optimize the lower bounds"))
 
 commands :: Mod CommandFields Command
 commands =
@@ -359,6 +274,8 @@ commands =
   command "bootstrap" (BootstrapCmd <$> info bootstrapParser (progDesc "Bootstrap an existing Cabal project in the current directory"))
   <>
   command "bump" (BumpCmd <$> info bumpParser (progDesc "Bump the deps of a package"))
+  <>
+  command "lower" (LowerCmd <$> info (hsubparser lowerCommands) (progDesc "Modify the lower bounds of a package"))
 
 globalParser ::
   Path Abs Dir ->
@@ -366,6 +283,7 @@ globalParser ::
 globalParser realCwd = do
   verbose <- optional (switch (long "verbose" <> short 'v' <> help "Verbose output"))
   debug <- switch (long "debug" <> help "Debug output")
+  quiet <- switch (long "quiet" <> help "Suppress info output")
   cwd <- option absDirOption (long "cwd" <> help "Force a different working directory" <> value realCwd)
   pure GlobalOptions {..}
 

@@ -8,7 +8,7 @@
     global = config;
   in {
     main = "root";
-    managedDeps.enable = true;
+    managed.enable = true;
     cabal = {
       dependencies = ["base >= 4 && < 6"];
       ghc-options = ["-Wunused-imports"];

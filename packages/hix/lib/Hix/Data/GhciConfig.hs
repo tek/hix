@@ -3,7 +3,8 @@ module Hix.Data.GhciConfig where
 import Data.Aeson (FromJSON, FromJSONKey)
 import GHC.Exts (IsList)
 
-import Hix.Data.ComponentConfig (EnvRunner, PackageName, PackagesConfig)
+import Hix.Data.ComponentConfig (EnvRunner, PackagesConfig)
+import Hix.Data.Package (PackageName)
 
 newtype RunnerName =
   RunnerName { unRunnerName :: Text }

@@ -1055,32 +1055,83 @@ in {
 
   '';
 
-  managedDeps = ''
-  ## Automatic dependency management {#managed-deps}
+  managed = ''
+  ## Automatic dependency management {#managed}
+
+  Hix provides some functionality for adapting and verifying dependency bounds.
 
   ::: {.note}
   This feature is new, so there are likely many edge cases that have not been tested.
   :::
 
-  If the option [](#opt-managed-deps-managedDeps.enable) is enabled, the flake will expose an environment named `latest` and
-  an app called `bump`.
+  ### Upper bounds and latest versions {#latest}
+
+  If the option [](#opt-managed-managed.enable) is enabled, the flake will expose an environment named `latest`
+  and an app named `bump`.
 
   Running this app with `nix run .#bump` will fetch the newest versions of all dependencies and create a file in the
-  project at the path configured by [](#opt-managed-deps-managedDeps.file), containing updated dependency version ranges
+  project at the path configured by [](#opt-managed-managed.file), containing updated dependency version ranges
   that include the new version.
 
-  For each dependency, this app will build the associated package and omit the version update if the build fails.
+  For each dependency, this app will build all of the project's packages and omit the version update if the build fails.
   When generating cabal files or derivations, the version ranges from this file will override those from the flake.
 
   Additionally, the app will add overrides to the same file that select the newest version for the environment `latest`,
   so that the `dev` environment (and all others) will still use the default versions from nixpkgs (plus regular
-  overrides), making the `latest` environment the testing ground for bleeding-edge dependencies.
+  overrides), making the `latest` environment the testing ground for bleeding-edge dependency versions.
 
   You can change this behavior to apply to other environments by setting [](#opt-env-managedOverrides) to `true` and
   running `nix run .#env.<name>.bump` instead.
 
-  If [](#opt-managed-deps-managedDeps.check) is `true` (the default), the derivations with latest versions will be added
+  If [](#opt-managed-managed.check) is `true` (the default), the derivations with latest versions will be added
   to the `checks` output, so your CI may depend on them.
+
+  ### Lower bounds {#lower}
+
+  If the option [](#opt-managed-managed.lower.enable) is enabled, the flake will expose an environment named `lower` and
+  two apps named `lower.init` and `lower.optimize`.
+
+  Running `nix run .#lower.init` will update the dependency bounds and build the project for each update, like the
+  `bump` app – with the difference that the chosen versions will be the lowest that match the specified bounds, and that
+  the overrides will be written for the environment `lower`.
+
+  If the specified dependencies have no lower bounds, a conservative choice will be made: the first version in the major
+  range of the upper bound (or the latest version if none was specified).
+  For example, if the upper bound is `<1.5`, it will choose `1.4.0.0` if that version exists, or `1.4.1.0` and so on.
+  If no version in the `1.4` major range exists, it will choose `1.3` and so on.
+
+  After the lower bounds have been initialized, you can run `nix run .#lower.optimize` to find the lowest possible
+  bounds with which the project builds successfully.
+
+  Since older versions require boot packages from older GHCs, it is advisable to use the oldest GHC available.
+  See the option [](#opt-managed-managed.lower.compiler) for more information.
+
+  ### Target sets {#managed-targets}
+
+  In the default mode, the managed-deps apps operate on the entirety of local packages, finding new bounds that work for
+  all packages.
+  This might be undesirable – some of the packages might have stricter version requirements than others, or they might
+  be completely independent from each other.
+
+  For that purpose, the option [](#opt-managed-managed.sets) may be used to specify multiple sets of packages that are
+  processed independently.
+
+  The simplest variant, with the value `managed.sets = "each";`, is to create one app and one env for each package, so
+  that you would run `nix run .#bump.api` to bump only the package `api`, with a flake check created as `bump-api`.
+
+  More granular sets can be specified like this:
+
+  ```
+  {
+    main = ["core" "api" "app"];
+    other = ["docs" "compat"];
+  }
+  ```
+
+  Now the apps have paths like `nix run .#lower.init.main`, while the checks use the schema `lower-main-api`.
+
+  The default value for `sets` is `"all"`, which processes all packages at once as described above.
+  If your packages are dependent on each other, this might be more desirable, since it reduces the build time.
   '';
 
   misc = ''

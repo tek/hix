@@ -26,12 +26,13 @@ import Hix.Cabal (buildInfoForFile)
 import Hix.Component (targetComponentOrError)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec))
-import Hix.Data.Error (Error (..), sourceError, tryIO)
+import Hix.Data.Monad (M)
+import Hix.Data.Options (PreprocOptions (..), TargetSpec (TargetForFile))
+import Hix.Data.Package (PackageName (PackageName))
 import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
+import Hix.Error (Error (..), sourceError, tryIO)
 import Hix.Json (jsonConfigE)
-import Hix.Monad (M)
-import Hix.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Optparse (JsonConfig)
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
@@ -43,7 +44,7 @@ fromPreludeConfig :: PreprocConfig -> PreludeConfig -> Prelude
 fromPreludeConfig ppconf conf =
   Prelude (toString name) (toString conf.module_.unModuleName) local
   where
-    local = Map.member (coerce name) ppconf.packages
+    local = Map.member (PackageName name) ppconf.packages
     name = case conf.package of
       PreludePackageName n -> n
       PreludePackageSpec n -> n

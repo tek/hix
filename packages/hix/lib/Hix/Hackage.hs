@@ -1,15 +1,32 @@
 module Hix.Hackage where
 
+import Control.Monad.Extra (fromMaybeM)
 import Data.Aeson (FromJSON (parseJSON), eitherDecodeStrict', withObject, (.:))
+import Data.IORef (IORef, modifyIORef', readIORef)
+import qualified Data.Map.Strict as Map
+import Data.Map.Strict ((!?))
+import qualified Data.Text as Text
 import Distribution.Parsec (eitherParsec)
 import Distribution.Version (Version)
 import Exon (exon)
 import Network.HTTP.Client (Manager, Request (..), Response (..), defaultRequest, httpLbs)
-import Network.HTTP.Types
+import Network.HTTP.Types (
+  Status (statusCode, statusMessage),
+  hAccept,
+  statusIsClientError,
+  statusIsServerError,
+  statusIsSuccessful,
+  )
+import System.Exit (ExitCode (ExitFailure, ExitSuccess))
+import System.Process.Typed (proc, readProcess)
 
-import Hix.Data.ComponentConfig (PackageName)
-import Hix.Data.Error (printError)
-import Hix.Monad (M)
+import Hix.Data.Error (Error (Fatal))
+import Hix.Data.Package (PackageName)
+import qualified Hix.Data.Version
+import Hix.Data.Version (NewVersion (NewVersion), SourceHash (SourceHash), renderNewVersion)
+import qualified Hix.Log as Log
+import Hix.Monad (M, throwM, tryIOM)
+import Hix.Pretty (showP)
 
 data HackageVersions =
   HackageVersions {
@@ -20,23 +37,28 @@ data HackageVersions =
 instance FromJSON HackageVersions where
   parseJSON = withObject "HackageVersions" \ o -> HackageVersions <$> o .: "normal-version"
 
-parseResult :: PackageName -> LByteString -> M (Maybe Version)
-parseResult pkg body =
+parseVersion :: String -> Either (String, String) Version
+parseVersion s =
+  case eitherParsec s of
+    Right v -> pure v
+    Left err -> Left (s, err)
+
+parseResult :: LByteString -> M (Either Text [Version])
+parseResult body =
   case eitherDecodeStrict' (toStrict body) of
     Left err ->
       noVersion [exon|Hackage response parse error: #{toText err}|]
     Right (HackageVersions []) ->
       noVersion "No versions on Hackage"
-    Right (HackageVersions (versionString : _)) ->
-      case eitherParsec versionString of
-        Left err -> noVersion (toText [exon|Version '#{versionString}' has invalid format (#{err})|])
-        Right version -> pure (Just version)
+    Right (HackageVersions versions) ->
+      case traverse parseVersion versions of
+        Left (v, err) -> noVersion (toText [exon|Version '#{v}' has invalid format (#{err})|])
+        Right vs -> pure (Right vs)
   where
-    noVersion msg =
-      Nothing <$ printError [exon|Finding latest version for '##{pkg}'|] msg
+    noVersion = pure . Left
 
-latestVersionHackage :: Manager -> PackageName -> M (Maybe Version)
-latestVersionHackage manager pkg = do
+versionsHackage :: Manager -> PackageName -> M [Version]
+versionsHackage manager pkg = do
   res <- liftIO (httpLbs request manager)
   let
     body = responseBody res
@@ -46,7 +68,7 @@ latestVersionHackage manager pkg = do
     errorStatus category = noVersion [exon|#{category} (#{decodeUtf8 (statusMessage status)})|]
 
   if
-    | statusIsSuccessful status -> parseResult pkg body
+    | statusIsSuccessful status -> leftA noVersion =<< parseResult body
     | statusCode status == 404 -> noVersion "Package does not exist"
     | statusIsClientError status -> errorStatus "Client error"
     | statusIsServerError status -> errorStatus "Server error"
@@ -63,4 +85,41 @@ latestVersionHackage manager pkg = do
       }
 
     noVersion msg =
-      Nothing <$ printError [exon|Hackage request for '##{pkg}' failed|] msg
+      [] <$ Log.error [exon|Hackage request for '##{pkg}' failed: #{msg}|]
+
+latestVersionHackage :: Manager -> PackageName -> M (Maybe Version)
+latestVersionHackage manager pkg =
+  head <$> versionsHackage manager pkg
+
+fetchHashHackage ::
+  PackageName ->
+  Version ->
+  M SourceHash
+fetchHashHackage pkg version = do
+  Log.debug [exon|Fetching hash for '##{pkg}' from ##{url}|]
+  tryIOM (readProcess conf) >>= \case
+    (ExitFailure _, _, err) ->
+      throwM (Fatal [exon|Prefetching source of '##{pkg}' from hackage failed: #{decodeUtf8 err}|])
+    (ExitSuccess, hash, _) ->
+      pure (SourceHash (Text.stripEnd (decodeUtf8 hash)))
+  where
+    conf = proc "nix-prefetch-url" ["--unpack", url]
+    url = [exon|https://hackage.haskell.org/package/#{name}/#{name}.tar.gz|]
+    name = [exon|##{pkg}-#{showP version}|]
+
+fetchHashHackageCached ::
+  IORef (Map Text SourceHash) ->
+  PackageName ->
+  Version ->
+  M SourceHash
+fetchHashHackageCached cacheRef package version =
+  liftIO (readIORef cacheRef) >>= \ cache ->
+    fromMaybeM fetch (pure (cache !? cacheKey))
+  where
+    fetch = do
+      hash <- fetchHashHackage package version
+      hash <$ addToCache hash
+
+    addToCache hash = liftIO (modifyIORef' cacheRef (Map.insert cacheKey hash))
+
+    cacheKey = renderNewVersion NewVersion {..}

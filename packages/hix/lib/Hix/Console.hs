@@ -18,18 +18,18 @@ out = hPrint stdout
 err :: MonadIO m => Text -> m ()
 err = hPrint stderr
 
-hMessage ::
-  MonadIO m =>
-  Handle ->
-  Text ->
-  m ()
-hMessage h msg =
-  hPrint h [exon|#{esc}[5m>>>#{esc}[0m #{msg}|]
+sgi :: Text -> Text
+sgi param =
+  [exon|#{esc}[#{param}m|]
   where
     esc = "\ESC"
 
-info :: MonadIO m => Text -> m ()
-info = hMessage stdout
+sgis :: [Text] -> Text -> Text
+sgis params chunk =
+  [exon|#{seqs}#{chunk}#{sgi "0"}|]
+  where
+    seqs = mconcat (sgi <$> params)
 
-error :: MonadIO m => Text -> m ()
-error = hMessage stderr
+color :: Int -> Text -> Text
+color n =
+  sgis [show (30 + n)]

@@ -1,10 +1,14 @@
 module Main where
 
-import Hedgehog (TestT, property, test, withTests)
 import Hix.Test.BootstrapTest (test_bootstrap)
-import Hix.Test.BumpTest (test_bumpBuild, test_bumpVersions)
+import Hix.Test.BoundsTest (test_bounds)
 import Hix.Test.CabalTest (test_cabal)
 import Hix.Test.GhciTest (test_componentEnv, test_ghcid, test_moduleName)
+import Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump)
+import Hix.Test.Managed.Bump.MutationTest (test_bumpMutation)
+import Hix.Test.Managed.LowerInit.MutationTest (test_lowerInitMutation)
+import Hix.Test.Managed.LowerOptimize.CandidatesTest (test_candidatesOptimize)
+import Hix.Test.Managed.LowerOptimize.MutationTest (test_lowerOptimizeMutation)
 import Hix.Test.NewTest (test_new)
 import Hix.Test.PreprocTest (
   test_preprocInsertPrelude,
@@ -15,17 +19,9 @@ import Hix.Test.PreprocTest (
   test_preprocSelfExport2,
   test_preprocSingleLineModule,
   )
-import Test.Tasty (TestName, TestTree, defaultMain, testGroup)
-import Test.Tasty.Hedgehog (testProperty)
-
-unitTest ::
-  HasCallStack =>
-  TestName ->
-  TestT IO () ->
-  TestTree
-unitTest desc t =
-  withFrozenCallStack do
-    testProperty desc (withTests 1 (property (test t)))
+import Hix.Test.Utils (unitTest)
+import Hix.Test.VersionTest (test_version)
+import Test.Tasty (TestTree, defaultMain, testGroup)
 
 tests :: TestTree
 tests =
@@ -45,9 +41,18 @@ tests =
       unitTest "generate a project" test_new,
       unitTest "bootstrap a project" test_bootstrap
     ],
-    testGroup "bump" [
-      unitTest "versions" test_bumpVersions,
-      unitTest "build" test_bumpBuild
+    test_version,
+    test_bounds,
+    testGroup "managed" [
+      testGroup "candidates" [
+        unitTest "bump" test_candidatesBump,
+        unitTest "optimize" test_candidatesOptimize
+      ],
+      testGroup "mutation build" [
+        unitTest "build" test_bumpMutation,
+        unitTest "lower.init" test_lowerInitMutation,
+        unitTest "lower.optimize" test_lowerOptimizeMutation
+      ]
     ]
   ]
 

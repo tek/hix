@@ -27,6 +27,7 @@ let
     update-cli-version = test "update-cli-version";
     direnv = test "direnv";
     bump = test "bump";
+    lower = test "lower";
   };
 
   testA = n: t: "${n} ${t}";

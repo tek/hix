@@ -6,9 +6,9 @@ import qualified Data.Text.IO as Text
 import Path (File, Path, Rel, parent, toFilePath, (</>))
 import Path.IO (createDirIfMissing)
 
-import Hix.Data.Error (tryIO)
-import qualified Hix.Monad
-import Hix.Monad (Env (Env), M)
+import qualified Hix.Data.Monad (Env (cwd))
+import Hix.Data.Monad (Env (Env), M)
+import Hix.Error (tryIO)
 
 data ProjectFile =
   ProjectFile {

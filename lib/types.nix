@@ -88,6 +88,14 @@ in {
 
   componentSort = enum ["library" "executable" "test" "benchmark"];
 
+  localPackage = mkOptionType {
+    name = "local-package";
+    description = "name of a package defined in config.packages";
+    descriptionClass = "noun";
+    check = a: isString a && hasAttr a config.packages;
+    merge = mergeOneOption;
+  };
+
   env = mkOptionType {
     name = "env-ref";
     description = "name of an environment defined in config.envs";

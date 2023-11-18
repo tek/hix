@@ -12,9 +12,9 @@ let
 
   hsLib = config.pkgs.haskell.lib;
 
-  managedDeps = let
-    file = "${config.base}/${config.managedDeps.file}";
-  in optionalAttrs (config.managedDeps.enable && pathExists file) (import file);
+  managedEnv = let
+    file = "${config.base}/${config.managed.file}";
+  in optionalAttrs (config.managed.enable && pathExists file) (import file);
 
   packageRel = basic.packageSubpath config.base;
 
@@ -57,7 +57,8 @@ let
 
     packages = mapAttrs (_: packageConf) config.packages;
 
-    packageDeps = _: pkg: mapAttrs (_: c: { inherit (c) dependencies; }) pkg.internal.componentsSet;
+    packageDeps = _: pkg:
+    mapAttrs (_: c: { dependencies = map basic.version.normalize c.dependencies; }) pkg.internal.componentsSet;
 
     env = default: {
       mainPackage = config.main;
@@ -81,9 +82,13 @@ let
       packages = if config.manualCabal then null else packages;
     };
 
-    bump = {
+    managed = targets: {
       deps = mapAttrs packageDeps config.packages;
-      managed = managedDeps;
+      state = managedEnv;
+      lower = {
+        inherit (config.managed.lower) solverBounds;
+      };
+      inherit targets;
     };
 
     jsonFile = name: value: pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
@@ -97,11 +102,13 @@ let
 
     preprocFile = jsonFile "preproc-config" preproc;
 
-    bumpFile = jsonFile "bump-config" bump;
+    managedFile = targets: jsonFile "managed-config" (managed targets);
 
   };
 
   visibleEnvs = filterAttrs (_: e: !e.hide) config.envs;
+
+  visibleAppEnvs = filterAttrs (_: e: !e.hideApps) config.envs;
 
   minGhcs = version:
   all (basic.minGhc version) (attrValues config.envs);
@@ -168,9 +175,10 @@ let
     hsLib
     paramApp
     types
-    managedDeps
+    managedEnv
     packageRel
     overridesDeps
+    overridesFromDeps
     overridesGlobal
     overridesGlobalMin
     projectHasPackages
@@ -178,6 +186,7 @@ let
     attrsetMain
     json
     visibleEnvs
+    visibleAppEnvs
     minGhcs
     conf
     unlessDev
@@ -189,6 +198,12 @@ let
     envSystemAllowed
     runBuildApp
     ;
+
+    ghc = import ./ghc.nix { inherit config lib util; };
+
+    managed = import ./managed.nix { inherit util; };
+
+    env = import ./env.nix { inherit util; };
   };
 
 in util

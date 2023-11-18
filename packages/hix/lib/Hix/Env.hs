@@ -5,18 +5,14 @@ import Path (Abs, Dir, Path)
 
 import Hix.Component (targetComponent)
 import qualified Hix.Data.ComponentConfig
-import Hix.Data.ComponentConfig (
-  EnvRunner (EnvRunner),
-  PackageName,
-  PackagesConfig,
-  TargetOrDefault (DefaultTarget, ExplicitTarget),
-  )
-import Hix.Data.Error (Error (EnvError), pathText)
+import Hix.Data.ComponentConfig (EnvRunner (EnvRunner), PackagesConfig, TargetOrDefault (DefaultTarget, ExplicitTarget))
+import Hix.Error (Error (EnvError), pathText)
 import qualified Hix.Data.GhciConfig
+import qualified Hix.Data.Options as Options
+import Hix.Data.Options (EnvRunnerOptions, TargetSpec)
+import Hix.Data.Package (PackageName)
 import Hix.Json (jsonConfigE)
 import Hix.Monad (M)
-import qualified Hix.Options as Options
-import Hix.Options (EnvRunnerOptions, TargetSpec)
 
 -- TODO when there is a solution for default command env fallback configuration, the DefaultTarget case must return
 -- Nothing when the config requests it

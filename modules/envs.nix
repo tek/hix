@@ -46,7 +46,7 @@ in {
   };
 
   config = {
-    envs = ghcVersionEnvs // {
+    envs = ghcVersionEnvs // util.managed.envs // {
 
       dev = {
         ghc = {
@@ -69,6 +69,7 @@ in {
         hls.enable = true;
         hls.package = mkDefault config.envs.hls.ghc.ghc.haskell-language-server;
         hide = true;
+        hideApps = true;
         ghc.overrides = config.envs.hls.overrides;
         # TODO this didn't use mkForce before, should that mean that all dep overrides are active in this env?
         # ghc.overrides has an explicit redirect here, and the default for that option uses mkDefault, so that should
@@ -76,10 +77,6 @@ in {
         # overridesInherited.
         internal.overridesInherited = mkForce [];
         localDeps = false;
-      };
-
-      latest = mkIf config.managedDeps.enable {
-        managedOverrides = true;
       };
 
     };

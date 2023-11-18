@@ -42,21 +42,21 @@ let
   mkPathsBlocker = name:
   { when = { condition = false; generated-other-modules = "Paths_${replaceStrings ["-"] ["_"] name}"; }; };
 
-  replaceManagedDep = deps: dep: let
+  replaceManagedBounds = deps: dep: let
     norm = util.version.normalize dep;
     name = util.version.mainLibName norm.name;
   in if hasAttr name deps
   then { inherit name; version = deps.${name}; }
   else dep;
 
-  addManagedDeps = deps: hconf:
-  hconf // { dependencies = map (replaceManagedDep deps) hconf.dependencies; };
+  addManagedBounds = deps: hconf:
+  hconf // { dependencies = map (replaceManagedBounds deps) hconf.dependencies; };
 
   generateComponent = pkg: name: conf: let
 
     prelude = conf.prelude;
     base = conf.base;
-    deps = attrByPath ["deps" pkg.name] {} util.managedDeps;
+    bounds = attrByPath ["bounds" pkg.name] {} util.managedEnv;
 
     basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 
@@ -78,8 +78,8 @@ let
     ];
 
     withManaged =
-      if config.managedDeps.enable
-      then addManagedDeps deps full
+      if config.managed.enable
+      then addManagedBounds bounds full
       else full;
 
   in withManaged;

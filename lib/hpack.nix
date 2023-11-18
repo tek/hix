@@ -60,5 +60,6 @@ in pkgs.writeScript "hpack.zsh" ''
     popd
   }
 
+  info 'Generating Cabal files...'
   ${concatStringsSep "\n" packageCalls}
 ''

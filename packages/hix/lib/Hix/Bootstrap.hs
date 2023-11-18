@@ -26,13 +26,12 @@ import System.FilePattern.Directory (getDirectoryFilesIgnore)
 import Hix.Compat (readGenericPackageDescription)
 import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
-import qualified Hix.Data.ComponentConfig
-import Hix.Data.ComponentConfig (PackageName (PackageName))
-import Hix.Data.Error (pathText, tryIO)
+import qualified Hix.Data.Monad (Env (cwd))
 import qualified Hix.Data.NewProjectConfig
+import Hix.Data.Package (PackageName (PackageName))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
-import qualified Hix.Monad
+import Hix.Error (pathText, tryIO)
 import Hix.Monad (Env (Env), M, noteBootstrap)
 import Hix.NixExpr (
   Expr (..),
@@ -243,17 +242,16 @@ renderComponent HixComponent {..} =
 
 flakePackage :: HixPackage -> ExprAttr
 flakePackage pkg =
-  ExprAttr name attrs
+  ExprAttr (coerce pkg.name) attrs
   where
     attrs = ExprAttrs (src : pkg.description : (ExprAttr "cabal" cabalConfig : comps))
-    name = pkg.name.unPackageName
     src = ExprAttr "src" (ExprLit [exon|./#{Text.dropWhileEnd ('/' ==) (pathText pkg.src)}|])
     cabalConfig = ExprAttrs (pkg.known <> (if null pkg.meta then [] else [ExprAttr "meta" (ExprAttrs pkg.meta)]))
     comps = renderComponent <$> pkg.components
 
 mainPackage :: [HixPackage] -> ExprAttr
 mainPackage = \case
-  pkg : _ : _ -> ExprAttr "main" (ExprString pkg.name.unPackageName)
+  pkg : _ : _ -> ExprAttr "main" (ExprString (coerce pkg.name))
   _ -> ExprAttrNil
 
 flake :: BootstrapProjectConfig -> [HixPackage] -> Expr

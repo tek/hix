@@ -60,8 +60,11 @@ in {
     library.enable = true;
     library.dependencies = [
       "Cabal"
+      "cabal-install"
+      "cabal-install-solver"
       "aeson >= 2.0 && < 2.2"
       "casing ^>= 0.1.4"
+      "containers"
       "exceptions ^>= 0.10"
       "exon >= 1.4 && < 1.7"
       "extra ^>= 1.7"
@@ -75,6 +78,7 @@ in {
       "optparse-applicative ^>= 0.17"
       "path ^>= 0.9"
       "path-io >= 1.7 && < 1.9"
+      "pretty"
       "random ^>= 1.2"
       "typed-process ^>= 0.2"
       "transformers"
@@ -88,6 +92,7 @@ in {
       "aeson >= 2.0 && < 2.2"
       "Cabal"
       "exon >= 1.4 && < 1.7"
+      "extra ^>= 1.7"
       "hedgehog >= 1.1 && < 1.3"
       "path ^>= 0.9"
       "path-io >= 1.7 && < 1.9"
