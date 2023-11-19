@@ -40,6 +40,12 @@
   set -e
   ${cli} ${verbose} ${debug} ${quiet} ${cmd} $@ ${args}
   ${lib.optionalString conf.generate (util.runBuildApp "gen${lib.optionalString conf.quiet "-quiet"}")}
+  ${lib.optionalString conf.gitAdd ''
+    if ${config.pkgs.git}/bin/git status &>/dev/null
+    then
+      ${config.pkgs.git}/bin/git add ${conf.file}
+    fi
+  ''}
   '';
 
   checkedScript = flags: cmd: env: lib.foldl (z: flag: withCheckFor flag env.name z) (mainScript cmd env) flags;

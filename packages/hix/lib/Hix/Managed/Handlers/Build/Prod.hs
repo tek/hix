@@ -78,7 +78,7 @@ buildProject root env target NewVersion {package, version} = do
 
     pv = [exon|##{package}-#{showP version}|]
 
-    args = ["-L", "build", [exon|#{".#"}env.##{env}.##{target}|]]
+    args = ["-L", "build", [exon|path:#{".#"}env.##{env}.##{target}|]]
 
 handlersProdNoSolver :: IO BuildHandlers
 handlersProdNoSolver = do

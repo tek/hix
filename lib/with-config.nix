@@ -151,7 +151,7 @@ let
   set -e
   exe="${config.outputs.packages.hix}/bin/hix"
   ${pre}
-  if ! git status &>/dev/null
+  if ! ${pkgs.git}/bin/git status &>/dev/null
   then
     ${pkgs.git}/bin/git init
   fi
