@@ -22,8 +22,8 @@ import Hix.Error (
   printPreprocError,
   )
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
-import Hix.Managed.Bump (bumpCli)
-import Hix.Managed.Lower (lowerInitCli, lowerOptimizeCli)
+import Hix.Managed.Bump.App (bumpCli)
+import Hix.Managed.Lower.App (lowerInitCli, lowerOptimizeCli)
 import Hix.Monad (M, runMWith)
 import Hix.New (newProject)
 import Hix.Options (parseCli)

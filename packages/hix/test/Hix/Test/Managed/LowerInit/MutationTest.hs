@@ -37,7 +37,7 @@ import qualified Hix.Managed.Handlers.LowerInit.Test as LowerInitHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
-import Hix.Managed.Lower (lowerInit)
+import Hix.Managed.Lower.App (lowerInit)
 import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit))
 import Hix.Monad (M, runMLog, throwM)

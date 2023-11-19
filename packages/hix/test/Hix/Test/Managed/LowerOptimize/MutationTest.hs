@@ -35,7 +35,7 @@ import Hix.Managed.Handlers.LowerOptimize (LowerOptimizeHandlers (..), versions)
 import qualified Hix.Managed.Handlers.LowerOptimize.Test as LowerOptimizeHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
-import Hix.Managed.Lower (lowerOptimize)
+import Hix.Managed.Lower.App (lowerOptimize)
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
 import Hix.Monad (M, runMWith, throwM)
 import Hix.NixExpr (renderRootExpr)

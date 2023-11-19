@@ -23,7 +23,7 @@ import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion, SourceHash (SourceHash))
 import Hix.Managed.App (runManagedApp)
-import Hix.Managed.Bump (bumpDeps)
+import Hix.Managed.Bump.App (bumpDeps)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
 import Hix.Managed.Handlers.Build (BuildHandlers (..), withTempProject)

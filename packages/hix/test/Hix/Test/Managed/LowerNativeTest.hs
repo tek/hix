@@ -32,7 +32,7 @@ import qualified Hix.Managed.Handlers.LowerInit
 import qualified Hix.Managed.Handlers.LowerInit.Prod as LowerInit
 import qualified Hix.Managed.Handlers.LowerOptimize
 import qualified Hix.Managed.Handlers.LowerOptimize.Prod as LowerOptimize
-import Hix.Managed.Lower (lowerInit, lowerOptimize)
+import Hix.Managed.Lower.App (lowerInit, lowerOptimize)
 import Hix.Managed.Project (updateProject)
 import Hix.Managed.State (envWithOverrides)
 import qualified Hix.Monad

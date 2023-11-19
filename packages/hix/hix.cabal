@@ -68,7 +68,7 @@ library
       Hix.Managed.Build.Mutation
       Hix.Managed.Build.Solve
       Hix.Managed.Build.UpdateState
-      Hix.Managed.Bump
+      Hix.Managed.Bump.App
       Hix.Managed.Bump.Candidates
       Hix.Managed.Data.Build
       Hix.Managed.Data.Candidate
@@ -103,7 +103,7 @@ library
       Hix.Managed.Handlers.StateFile
       Hix.Managed.Handlers.StateFile.Prod
       Hix.Managed.Handlers.StateFile.Test
-      Hix.Managed.Lower
+      Hix.Managed.Lower.App
       Hix.Managed.Lower.Candidates
       Hix.Managed.Lower.Data.Bump
       Hix.Managed.Lower.Data.LowerInit

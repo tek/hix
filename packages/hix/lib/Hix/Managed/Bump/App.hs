@@ -1,8 +1,9 @@
-module Hix.Managed.Bump where
+module Hix.Managed.Bump.App where
 
 import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState)
+import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (BumpOptions)
 import Hix.Json (jsonConfigE)
@@ -22,7 +23,6 @@ import Hix.Managed.Handlers.Bump.Test (handlersTest)
 import Hix.Managed.Handlers.Mutation.Bump (handlersBump)
 import qualified Hix.Managed.Lower.Data.Bump
 import Hix.Managed.Lower.Data.Bump (Bump, BumpState (BumpState))
-import Hix.Data.Monad (M)
 
 buildAndUpdate ::
   BumpHandlers ->

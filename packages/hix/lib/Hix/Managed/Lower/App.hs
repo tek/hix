@@ -1,4 +1,4 @@
-module Hix.Managed.Lower where
+module Hix.Managed.Lower.App where
 
 import Distribution.Pretty (Pretty)
 import Distribution.Version (Version)
