@@ -39,7 +39,8 @@ envStateWithOverrides ::
 envStateWithOverrides env deps old new =
   ManagedEnvState {
     bounds = distributeBounds new.bounds deps <> old.bounds,
-    overrides = ntInsert env new.overrides old.overrides
+    overrides = ntInsert env new.overrides old.overrides,
+    resolving = old.resolving
   }
 
 envWithOverrides ::
@@ -80,7 +81,8 @@ managedEnvForBuild ::
 managedEnvForBuild job state =
   ManagedEnvState {
     bounds = distributeBounds state.bounds job.targetDeps,
-    overrides = EnvOverrides [(job.env, state.overrides)]
+    overrides = EnvOverrides [(job.env, state.overrides)],
+    resolving = True
   }
 
 managedEnvForProject ::
@@ -93,6 +95,6 @@ managedEnvForProject job conf old new
   | conf.latestOverrides
   = full
   | otherwise
-  = ManagedEnvState {bounds = full.bounds, overrides = old.overrides}
+  = ManagedEnvState {bounds = full.bounds, overrides = old.overrides, resolving = False}
   where
     full = envStateWithOverrides job.env job.targetDeps old new

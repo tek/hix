@@ -56,7 +56,7 @@ let
 
     prelude = conf.prelude;
     base = conf.base;
-    bounds = attrByPath ["bounds" pkg.name] {} util.managedEnv;
+    bounds = util.managedEnv.bounds.${pkg.name} or {};
 
     basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 

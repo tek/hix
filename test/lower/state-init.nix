@@ -61,4 +61,5 @@
       };
     };
   };
+  resolving = false;
 }

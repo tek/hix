@@ -216,7 +216,5 @@ in {
   loadConsole
   ;
 
-  ghcOverlay = import ./ghc-overlay.nix;
-
   version = import ./version.nix { inherit lib; };
 }

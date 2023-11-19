@@ -1,18 +1,16 @@
-{
-  global,
-  ghc,
-}:
+{util}:
+{ghc}:
 final: prev:
-with prev.lib;
 let
+  inherit (util) config lib;
 
   deps = import ./deps/default.nix { pkgs = prev; };
 
-  gen = global.gen-overrides;
+  gen = config.gen-overrides;
 
   reified = deps.reify ghc.overrides;
 
-  path = "${global.base}/${gen.file}";
+  path = "${config.base}/${gen.file}";
 
   noOverridesFile = file: ''
   The option 'gen-overrides.enable' is set, but the file '${file}' doesn't exist.
@@ -26,14 +24,14 @@ let
   '';
 
   readOverrides = self: super: let
-    exists = pathExists path;
-    pregen = optionalAttrs exists (import path);
-    stored = optionalAttrs exists (pregen.${ghc.name} or {});
-    error = if exists then if hasAttr ghc.name pregen then null else noOverridesGhc else noOverridesFile gen.file;
+    exists = lib.pathExists path;
+    pregen = lib.optionalAttrs exists (import path);
+    stored = lib.optionalAttrs exists (pregen.${ghc.name} or {});
+    error = if exists then if lib.hasAttr ghc.name pregen then null else noOverridesGhc else noOverridesFile gen.file;
   in deps.replace error stored ghc.overrides self super;
 
   computeOverrides =
-    if gen.enable && ghc.gen-overrides
+    if gen.enable && ghc.gen-overrides && !util.managedEnv.resolving
     then readOverrides
     else reified;
 

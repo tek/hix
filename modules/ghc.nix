@@ -94,7 +94,7 @@ with lib;
     nixpkgsOptions = util.unlessDev config global.envs.dev.ghc.nixpkgsOptions;
 
     pkgs = let
-      go = util.ghcOverlay { inherit global; ghc = config; };
+      go = util.ghcOverlay { ghc = config; };
       options = recursiveUpdate {
         inherit (global) system;
         overlays = [go] ++ config.overlays;

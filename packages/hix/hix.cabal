@@ -259,10 +259,10 @@ test-suite hix-test
       Hix.Test.CabalTest
       Hix.Test.GhciTest
       Hix.Test.Hedgehog
-      Hix.Test.LowerNativeTest
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
       Hix.Test.Managed.LowerInit.MutationTest
+      Hix.Test.Managed.LowerNativeTest
       Hix.Test.Managed.LowerOptimize.CandidatesTest
       Hix.Test.Managed.LowerOptimize.MutationTest
       Hix.Test.Managed.Solver

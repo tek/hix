@@ -17,6 +17,7 @@
     };
     ghcVersions = [];
     compat.enable = false;
+    gen-overrides.enable = true;
     packages = {
       root = {
         src = ./.;

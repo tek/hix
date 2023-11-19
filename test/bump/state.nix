@@ -22,4 +22,5 @@
       };
     };
   };
+  resolving = false;
 }

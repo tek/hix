@@ -1,4 +1,4 @@
-module Hix.Test.LowerNativeTest where
+module Hix.Test.Managed.LowerNativeTest where
 
 import Control.Monad.Trans.Reader (ask)
 import Data.Aeson (eitherDecodeStrict')
@@ -9,9 +9,8 @@ import Path (Abs, Dir, File, Path, Rel, absdir, parent, reldir, relfile, toFileP
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import qualified Hix.Data.Bounds
-import Hix.Data.Bounds (TargetBound (TargetLower), RemovableBounds (RemovableBounds))
+import Hix.Data.Bounds (RemovableBounds (RemovableBounds), TargetBound (TargetLower))
 import Hix.Data.ConfigDeps (ConfigDeps)
-import Hix.Error (pathText)
 import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), LowerOptimizeConfig (LowerOptimizeConfig))
 import qualified Hix.Data.ManagedEnv
@@ -21,6 +20,7 @@ import Hix.Data.ManagedEnv (
   ManagedLowerEnv (ManagedLowerEnv),
   state,
   )
+import Hix.Error (pathText)
 import qualified Hix.Managed.App
 import Hix.Managed.App (managedApp)
 import qualified Hix.Managed.Data.Build
@@ -159,6 +159,7 @@ targetStateFileInit =
       };
     };
   };
+  resolving = false;
 }
 |]
 
@@ -227,6 +228,7 @@ targetStateFileOptimize =
       };
     };
   };
+  resolving = false;
 }
 |]
 
@@ -242,7 +244,7 @@ test_lowerNative = do
         env =
           ManagedEnv {
             deps = deps,
-            state = ManagedEnvState mempty mempty,
+            state = ManagedEnvState mempty mempty True,
             lower = ManagedLowerEnv {solverBounds = []},
             targets = ["root"]
           }

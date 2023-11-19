@@ -144,6 +144,7 @@ stateFileStep1Target =
       };
     };
   };
+  resolving = true;
 }
 |]
 
@@ -179,6 +180,7 @@ stateFileTarget =
       };
     };
   };
+  resolving = false;
 }
 |]
 
@@ -192,7 +194,7 @@ test_bumpMutation = do
     env =
       ManagedEnv {
         deps = deps,
-        state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides},
+        state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, resolving = False},
         lower = ManagedLowerEnv mempty,
         targets = ["panda"]
       }

@@ -21,6 +21,7 @@ import qualified Hix.Managed.Handlers.Report
 import Hix.Managed.Handlers.Report (ReportHandlers (ReportHandlers))
 import Hix.Pretty (showP)
 
+-- TODO print unmodified deps, maybe only if none succeeded otherwise
 mutations ::
   RenderMutation a =>
   RemovableBounds ->

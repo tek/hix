@@ -23,7 +23,7 @@ import Hix.Managed.Handlers.Build.Prod (rootOrCwd)
 import qualified Hix.Managed.Handlers.StateFile
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import Hix.Managed.State (managedEnvForBuild, managedEnvForProject, managedWithCandidate)
-import Hix.NixExpr (Expr (..), ExprAttr (..), renderRootExpr)
+import Hix.NixExpr (Expr (..), ExprAttr (..), renderRootExpr, exprBool)
 import Hix.Pretty (showP)
 
 renderMap ::
@@ -35,8 +35,12 @@ renderMap v =
   ExprAttrs . fmap (uncurry ExprAttr . bimap coerce v) . Map.toList
 
 renderManaged :: ManagedEnvState -> Expr
-renderManaged conf =
-  ExprAttrs [ExprAttr "bounds" (renderPackages conf.bounds), ExprAttr "overrides" (renderOverrides conf.overrides)]
+renderManaged state =
+  ExprAttrs [
+    ExprAttr "bounds" (renderPackages state.bounds),
+    ExprAttr "overrides" (renderOverrides state.overrides),
+    ExprAttr "resolving" (exprBool state.resolving)
+  ]
   where
     renderPackages (TargetBounds pkgs) =
       renderMap renderPackage pkgs

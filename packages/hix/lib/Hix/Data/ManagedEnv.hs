@@ -23,7 +23,8 @@ instance Pretty ManagedState where
 data ManagedEnvState =
   ManagedEnvState {
     bounds :: TargetBounds,
-    overrides :: EnvOverrides
+    overrides :: EnvOverrides,
+    resolving :: Bool
   }
   deriving stock (Eq, Show, Generic)
 
@@ -35,7 +36,7 @@ instance FromJSON ManagedEnvState where
   parseJSON = withObject "ManagedEnvState" \ o -> do
     deps <- o .: "bounds" <|> pure mempty
     overrides <- o .: "overrides" <|> pure mempty
-    pure (ManagedEnvState deps overrides)
+    pure (ManagedEnvState deps overrides False)
 
 data ManagedLowerEnv =
   ManagedLowerEnv {

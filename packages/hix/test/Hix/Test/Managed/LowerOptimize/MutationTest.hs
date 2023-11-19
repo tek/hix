@@ -169,6 +169,7 @@ stateFileTarget =
       };
     };
   };
+  resolving = false;
 }
 |]
 
@@ -196,7 +197,7 @@ test_lowerOptimizeMutation = do
     env =
       ManagedEnv {
         deps,
-        state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides},
+        state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, resolving = False},
         lower = ManagedLowerEnv {solverBounds = mempty},
         targets = ["local1"]
       }

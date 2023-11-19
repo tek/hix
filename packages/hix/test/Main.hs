@@ -49,7 +49,7 @@ tests =
         unitTest "optimize" test_candidatesOptimize
       ],
       testGroup "mutation build" [
-        unitTest "build" test_bumpMutation,
+        unitTest "bump" test_bumpMutation,
         unitTest "lower.init" test_lowerInitMutation,
         unitTest "lower.optimize" test_lowerOptimizeMutation
       ]

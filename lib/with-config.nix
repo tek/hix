@@ -14,7 +14,9 @@ let
 
   managedEnv = let
     file = "${config.base}/${config.managed.file}";
-  in optionalAttrs (config.managed.enable && pathExists file) (import file);
+  in
+  { bounds = {}; overrides = {}; resolving = false; } //
+  optionalAttrs (config.managed.enable && pathExists file) (import file);
 
   packageRel = basic.packageSubpath config.base;
 
@@ -200,6 +202,8 @@ let
     ;
 
     ghc = import ./ghc.nix { inherit config lib util; };
+
+    ghcOverlay = import ./ghc-overlay.nix { inherit util; };
 
     managed = import ./managed.nix { inherit util; };
 
