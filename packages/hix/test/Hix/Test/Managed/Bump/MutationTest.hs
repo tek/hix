@@ -17,6 +17,7 @@ import Hix.Data.ManagedEnv (
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
+import Hix.Data.NixExpr (Expr)
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import qualified Hix.Data.Version
@@ -31,7 +32,7 @@ import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
 import Hix.Managed.Handlers.Hackage (fetchHash)
 import qualified Hix.Managed.Handlers.StateFile.Test as StateFileHandlers
 import Hix.Monad (M, runMWith, throwM)
-import Hix.NixExpr (Expr, renderRootExpr)
+import Hix.NixExpr (renderRootExpr)
 import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Utils (UnitTest)
 

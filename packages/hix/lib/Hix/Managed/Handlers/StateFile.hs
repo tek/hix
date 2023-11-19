@@ -3,7 +3,7 @@ module Hix.Managed.Handlers.StateFile where
 import Path (Abs, Dir, File, Path, Rel, (</>))
 
 import Hix.Data.Monad (M)
-import Hix.NixExpr (Expr)
+import Hix.Data.NixExpr (Expr)
 
 data StateFileHandlers =
   StateFileHandlers {

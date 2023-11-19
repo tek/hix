@@ -1,19 +1,15 @@
 module Hix.Managed.StateFile where
 
 import qualified Data.Map.Strict as Map
-import Distribution.Pretty (pretty)
-import Distribution.Version (simplifyVersionRange)
 import Exon (exon)
 import Path (Abs, File, Path)
 
-import Hix.Data.Bounds (Bounds (Bounds), TargetBounds (TargetBounds))
-import Hix.Data.EnvName (EnvName (EnvName))
-import qualified Hix.Data.ManagedEnv
+import Hix.Class.EncodeNix (encodeNix)
+import Hix.Data.Bounds (Bounds)
 import Hix.Data.ManagedEnv (ManagedEnvState, ManagedState)
 import Hix.Data.Monad (M)
-import Hix.Data.Overrides (EnvOverrides (EnvOverrides), Override (..), Overrides (Overrides))
-import Hix.Data.Package (LocalPackage (LocalPackage), PackageName (PackageName))
-import Hix.Data.Version (SourceHash (SourceHash))
+import Hix.Data.NixExpr (Expr (..), ExprAttr (..))
+import Hix.Data.Overrides (Overrides)
 import qualified Hix.Log as Log
 import Hix.Managed.Data.Candidate (Candidate)
 import qualified Hix.Managed.Data.ManagedConfig
@@ -23,8 +19,7 @@ import Hix.Managed.Handlers.Build.Prod (rootOrCwd)
 import qualified Hix.Managed.Handlers.StateFile
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import Hix.Managed.State (managedEnvForBuild, managedEnvForProject, managedWithCandidate)
-import Hix.NixExpr (Expr (..), ExprAttr (..), renderRootExpr, exprBool)
-import Hix.Pretty (showP)
+import Hix.NixExpr (renderRootExpr)
 
 renderMap ::
   Coercible k Text =>
@@ -34,27 +29,9 @@ renderMap ::
 renderMap v =
   ExprAttrs . fmap (uncurry ExprAttr . bimap coerce v) . Map.toList
 
-renderManaged :: ManagedEnvState -> Expr
-renderManaged state =
-  ExprAttrs [
-    ExprAttr "bounds" (renderPackages state.bounds),
-    ExprAttr "overrides" (renderOverrides state.overrides),
-    ExprAttr "resolving" (exprBool state.resolving)
-  ]
-  where
-    renderPackages (TargetBounds pkgs) =
-      renderMap renderPackage pkgs
-    renderPackage (Bounds deps) =
-      renderMap (ExprString . show . pretty . simplifyVersionRange) deps
-    renderOverrides (EnvOverrides os) =
-      renderMap renderOverridesEnv os
-    renderOverridesEnv (Overrides os) =
-      renderMap renderOverride os
-    renderOverride (Override {version = version, hash = SourceHash hash}) =
-      ExprAttrs [
-        ExprAttr "version" (ExprString (showP version)),
-        ExprAttr "hash" (ExprString hash)
-      ]
+renderManaged' :: ManagedEnvState -> Expr
+renderManaged' =
+  encodeNix
 
 writeStateFile ::
   StateFileHandlers ->
@@ -65,7 +42,7 @@ writeStateFile handlers stateFile state = do
   Log.debug [exon|writing managed stated file: #{renderRootExpr expr}|]
   handlers.writeFile stateFile expr
   where
-    expr = renderManaged state
+    expr = encodeNix state
 
 writeProjectState ::
   StateFileHandlers ->

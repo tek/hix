@@ -28,22 +28,13 @@ import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import qualified Hix.Data.Monad (Env (cwd))
 import qualified Hix.Data.NewProjectConfig
+import Hix.Data.NixExpr (Expr (ExprAttrs, ExprLit, ExprPrefix, ExprString), ExprAttr (ExprAttr, ExprAttrNil))
 import Hix.Data.Package (PackageName (PackageName))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Error (pathText, tryIO)
 import Hix.Monad (Env (Env), M, noteBootstrap)
-import Hix.NixExpr (
-  Expr (..),
-  ExprAttr (..),
-  mkAttrs,
-  multi,
-  multiOrSingle,
-  nonEmptyAttrs,
-  renderRootExpr,
-  single,
-  singleOpt,
-  )
+import Hix.NixExpr (mkAttrs, multi, multiOrSingle, nonEmptyAttrs, renderRootExpr, single, singleOpt)
 import qualified Hix.Prelude
 import Hix.Prelude (Prelude, findPrelude)
 
@@ -105,10 +96,10 @@ knownPackageKeys :: PackageDescription -> [ExprAttr]
 knownPackageKeys =
   mkAttrs [
     single "author" (.author),
-    single "build-type" buildType,
+    single "build-type" (pretty . buildType),
     single "copyright" (.copyright),
-    single "license" license,
-    singleOpt "license-file" (head . licenseFiles),
+    single "license" (pretty . license),
+    singleOpt "license-file" (fmap pretty . head . licenseFiles),
     single "version" (.package.pkgVersion)
   ]
 
@@ -136,17 +127,17 @@ knownComponentKeys prelude info =
   where
     vals =
       mkAttrs [
-        multi "dependencies" (const deps),
-        multi "default-extensions" (.defaultExtensions),
-        multiOrSingle "source-dirs" (.hsSourceDirs),
-        singleOpt "language" (.defaultLanguage),
-        multi "ghc-options" (filter notDefaultGhcOption . ghcFlavour . (.options)),
+        multi "dependencies" (fmap pretty . const deps),
+        multi "default-extensions" (fmap pretty . (.defaultExtensions)),
+        multiOrSingle "source-dirs" (fmap pretty . (.hsSourceDirs)),
+        singleOpt "language" (fmap pretty . (.defaultLanguage)),
+        multi "ghc-options" (fmap (ExprString . toText) . filter notDefaultGhcOption . ghcFlavour . (.options)),
         misc
       ] info
 
     misc e =
       nonEmptyAttrs "component" (mkAttrs [
-        multi "other-modules" (.otherModules)
+        multi "other-modules" (fmap pretty . (.otherModules))
       ] e)
 
     (preludeWithVersion, deps)
@@ -177,7 +168,7 @@ convertLibrary lib =
   convertComponent Library lib.libBuildInfo extra
   where
     extra = mkAttrs [
-      multi "reexported-modules" (.reexportedModules)
+      multi "reexported-modules" (fmap pretty . (.reexportedModules))
       ] lib
 
 convertExecutable :: UnqualComponentName -> Cabal.Executable -> HixComponent
@@ -244,7 +235,7 @@ flakePackage :: HixPackage -> ExprAttr
 flakePackage pkg =
   ExprAttr (coerce pkg.name) attrs
   where
-    attrs = ExprAttrs (src : pkg.description : (ExprAttr "cabal" cabalConfig : comps))
+    attrs = ExprAttrs (src : pkg.description : ExprAttr "cabal" cabalConfig : comps)
     src = ExprAttr "src" (ExprLit [exon|./#{Text.dropWhileEnd ('/' ==) (pathText pkg.src)}|])
     cabalConfig = ExprAttrs (pkg.known <> (if null pkg.meta then [] else [ExprAttr "meta" (ExprAttrs pkg.meta)]))
     comps = renderComponent <$> pkg.components

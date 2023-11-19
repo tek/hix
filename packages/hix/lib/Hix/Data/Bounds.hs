@@ -12,11 +12,12 @@ import qualified Hix.Data.Dep
 import Hix.Data.Deps (TargetDeps)
 import Hix.Data.Json (jsonParsec)
 import Hix.Data.Package (LocalPackage, PackageName)
+import Hix.Class.EncodeNix (EncodeNix)
 
 newtype Bounds =
   Bounds (Map PackageName VersionRange)
   deriving stock (Eq, Show, Generic)
-  deriving newtype (Semigroup, Monoid, IsList)
+  deriving newtype (Semigroup, Monoid, IsList, EncodeNix)
 
 instance NtMap Bounds PackageName VersionRange LookupMaybe where
 
@@ -30,7 +31,7 @@ instance FromJSON Bounds where
 newtype TargetBounds =
   TargetBounds (Map LocalPackage Bounds)
   deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON, Semigroup, Monoid, IsList)
+  deriving newtype (FromJSON, Semigroup, Monoid, IsList, EncodeNix)
 
 instance NtMap TargetBounds LocalPackage Bounds LookupMonoid where
 

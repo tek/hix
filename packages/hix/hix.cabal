@@ -27,7 +27,9 @@ library
       Hix
       Hix.Bootstrap
       Hix.Cabal
+      Hix.Class.EncodeNix
       Hix.Class.Map
+      Hix.Class.SOP
       Hix.Compat
       Hix.Component
       Hix.Console
@@ -46,6 +48,7 @@ library
       Hix.Data.ManagedEnv
       Hix.Data.Monad
       Hix.Data.NewProjectConfig
+      Hix.Data.NixExpr
       Hix.Data.Options
       Hix.Data.Overrides
       Hix.Data.Package
@@ -178,6 +181,7 @@ library
     , extra ==1.7.*
     , filepattern ==0.1.*
     , generic-lens ==2.2.*
+    , generics-sop ==0.5.*
     , http-client ==0.7.*
     , http-client-tls ==0.3.*
     , http-types ==0.12.*

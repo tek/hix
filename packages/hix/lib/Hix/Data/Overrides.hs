@@ -11,6 +11,7 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.Json (JsonParsec (JsonParsec))
 import Hix.Data.Package (PackageName)
 import Hix.Data.Version (SourceHash)
+import Hix.Class.EncodeNix (EncodeNix)
 
 data Override =
   Override {
@@ -18,6 +19,7 @@ data Override =
     hash :: SourceHash
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (EncodeNix)
 
 instance FromJSON Override where
   parseJSON =
@@ -32,7 +34,7 @@ instance Pretty Override where
 newtype Overrides =
   Overrides (Map PackageName Override)
   deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON, Semigroup, Monoid, IsList)
+  deriving newtype (FromJSON, Semigroup, Monoid, IsList, EncodeNix)
 
 instance NtMap Overrides PackageName Override LookupMaybe where
 
@@ -42,7 +44,7 @@ instance Pretty Overrides where
 newtype EnvOverrides =
   EnvOverrides (Map EnvName Overrides)
   deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON, Semigroup, Monoid, IsList)
+  deriving newtype (FromJSON, Semigroup, Monoid, IsList, EncodeNix)
 
 instance NtMap EnvOverrides EnvName Overrides LookupMonoid where
 

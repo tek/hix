@@ -5,9 +5,10 @@ import Path (Abs, Dir, File, Path, Rel, parent, toFilePath, (</>))
 import Path.IO (createDirIfMissing, doesDirExist, doesFileExist)
 import System.Posix (fileMode, getFileStatus, ownerWriteMode, setFileMode, unionFileModes)
 
+import Hix.Data.NixExpr (Expr)
 import Hix.Managed.Handlers.StateFile (StateFileHandlers (..))
 import Hix.Monad (M, tryIOM)
-import Hix.NixExpr (Expr, renderRootExpr)
+import Hix.NixExpr (renderRootExpr)
 
 setDepsFileWritable ::
   Path Abs File ->

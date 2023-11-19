@@ -73,6 +73,7 @@ in {
       "http-client-tls ^>= 0.3"
       "http-types ^>= 0.12"
       "generic-lens ^>= 2.2"
+      "generics-sop ^>= 0.5"
       "lens >= 5.1 && < 5.3"
       "lens-regex-pcre ^>= 1.1"
       "optparse-applicative ^>= 0.17"

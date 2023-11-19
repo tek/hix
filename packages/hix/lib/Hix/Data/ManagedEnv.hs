@@ -4,6 +4,7 @@ import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Distribution.Pretty (Pretty (pretty))
 import Text.PrettyPrint (hang, ($+$))
 
+import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Data.Bounds (Bounds, TargetBounds)
 import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.Overrides (EnvOverrides, Overrides)
@@ -27,6 +28,7 @@ data ManagedEnvState =
     resolving :: Bool
   }
   deriving stock (Eq, Show, Generic)
+  deriving anyclass (EncodeNix)
 
 instance Pretty ManagedEnvState where
   pretty ManagedEnvState {..} =

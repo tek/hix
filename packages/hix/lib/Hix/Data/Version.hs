@@ -8,6 +8,7 @@ import Exon (exon)
 import qualified Text.PrettyPrint as PrettyPrint
 import qualified Text.PrettyPrint as Pretty
 
+import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Data.Package (PackageName)
 import Hix.Orphans.Version ()
 import Hix.Pretty (showP)
@@ -65,7 +66,7 @@ showVersions = \case
 newtype SourceHash =
   SourceHash Text
   deriving stock (Eq, Show, Generic)
-  deriving newtype (Ord, FromJSON)
+  deriving newtype (Ord, FromJSON, EncodeNix)
 
 instance Pretty SourceHash where
   pretty (SourceHash h) = Pretty.text (toString h)

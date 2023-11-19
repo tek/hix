@@ -2,44 +2,10 @@ module Hix.NixExpr where
 
 import Data.List.NonEmpty ((<|))
 import qualified Data.Text as Text
-import Distribution.Pretty (Pretty, pretty)
-import Distribution.Utils.ShortText (ShortText, fromShortText)
 import Exon (exon)
 
-data ExprAttr =
-  ExprAttr {
-    name :: Text,
-    value :: Expr
-  }
-  |
-  ExprAttrNil
-  deriving stock (Eq, Show, Generic)
-
-data Expr =
-  ExprString Text
-  |
-  ExprLit Text
-  |
-  ExprList [Expr]
-  |
-  ExprAttrs [ExprAttr]
-  |
-  ExprPrefix Text Expr
-  deriving stock (Eq, Show, Generic)
-
-exprShow :: Show a => a -> Expr
-exprShow =
-  ExprLit . show
-
-exprBool :: Bool -> Expr
-exprBool =
-  ExprLit . \case
-    True -> "true"
-    False -> "false"
-
-exprStrings :: [Text] -> Expr
-exprStrings =
-  ExprList . fmap ExprString
+import Hix.Class.EncodeNix (EncodeNix (encodeNix))
+import Hix.Data.NixExpr (Expr (..), ExprAttr (ExprAttr, ExprAttrNil))
 
 indent ::
   Functor t =>
@@ -80,18 +46,6 @@ renderRootExpr :: Expr -> Text
 renderRootExpr =
   Text.unlines . toList . renderExpr 0
 
-class RenderNix a where
-  renderNix :: a -> Text
-
-instance {-# overlappable #-} Pretty a => RenderNix a where
-  renderNix = show . pretty
-
-instance RenderNix ShortText where
-  renderNix = toText . fromShortText
-
-instance RenderNix String where
-  renderNix = toText
-
 checkEmpty ::
   Text ->
   Expr ->
@@ -105,16 +59,16 @@ checkEmpty key = \case
     ExprAttr key value
 
 singleOpt ::
-  RenderNix a =>
+  EncodeNix a =>
   Text ->
   (e -> Maybe a) ->
   e ->
   ExprAttr
 singleOpt key get entity =
-  maybe ExprAttrNil (checkEmpty key . ExprString) (renderNix <$> get entity)
+  maybe ExprAttrNil (checkEmpty key . encodeNix) (get entity)
 
 single ::
-  RenderNix a =>
+  EncodeNix a =>
   Text ->
   (e -> a) ->
   e ->
@@ -123,16 +77,16 @@ single key get =
   singleOpt key (Just . get)
 
 multiOpt ::
-  RenderNix a =>
+  EncodeNix a =>
   Text ->
   (e -> Maybe [a]) ->
   e ->
   ExprAttr
 multiOpt key get entity =
-  maybe ExprAttrNil (checkEmpty key . exprStrings) (fmap renderNix <$> get entity)
+  maybe ExprAttrNil (checkEmpty key . encodeNix) (get entity)
 
 multi ::
-  RenderNix a =>
+  EncodeNix a =>
   Text ->
   (e -> [a]) ->
   e ->
@@ -142,18 +96,18 @@ multi key get =
 
 multiOrSingle ::
   ∀ a e .
-  RenderNix a =>
+  EncodeNix a =>
   Text ->
   (e -> [a]) ->
   e ->
   ExprAttr
 multiOrSingle key get entity =
-  check (renderNix <$> get entity)
+  check (get entity)
   where
-    check :: [Text] -> ExprAttr
+    check :: [a] -> ExprAttr
     check [] = ExprAttrNil
-    check [sing] = ExprAttr key (ExprString sing)
-    check values = ExprAttr key (exprStrings values)
+    check [sing] = ExprAttr key (encodeNix sing)
+    check values = ExprAttr key (encodeNix values)
 
 mkAttrs :: [e -> ExprAttr] -> e -> [ExprAttr]
 mkAttrs a e =

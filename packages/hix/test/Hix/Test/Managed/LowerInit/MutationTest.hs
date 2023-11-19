@@ -21,6 +21,7 @@ import Hix.Data.ManagedEnv (
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
+import Hix.Data.NixExpr (Expr)
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
@@ -40,7 +41,7 @@ import Hix.Managed.Lower (lowerInit)
 import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit))
 import Hix.Monad (M, runMLog, throwM)
-import Hix.NixExpr (Expr, renderRootExpr)
+import Hix.NixExpr (renderRootExpr)
 import Hix.Test.Hedgehog (eqLines)
 import qualified Hix.Test.Managed.Solver
 import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)

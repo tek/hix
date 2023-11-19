@@ -7,10 +7,12 @@ import Distribution.Pretty (Pretty (pretty))
 import Distribution.Types.Dependency (Dependency)
 import Text.PrettyPrint (text)
 
+import Hix.Class.EncodeNix (EncodeNixKey)
+
 newtype PackageName =
   PackageName Text
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
+  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, EncodeNixKey)
 
 instance Pretty PackageName where
   pretty (PackageName n) = text (toString n)
@@ -26,7 +28,7 @@ depPackageName =
 newtype LocalPackage =
   LocalPackage PackageName
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, Pretty)
+  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, Pretty, EncodeNixKey)
 
 localPackageName :: LocalPackage -> PackageName
 localPackageName = coerce

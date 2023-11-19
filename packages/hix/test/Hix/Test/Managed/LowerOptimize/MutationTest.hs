@@ -20,6 +20,7 @@ import Hix.Data.ManagedEnv (
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
+import Hix.Data.NixExpr (Expr)
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
@@ -37,7 +38,7 @@ import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
 import Hix.Managed.Lower (lowerOptimize)
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
 import Hix.Monad (M, runMWith, throwM)
-import Hix.NixExpr (Expr, renderRootExpr)
+import Hix.NixExpr (renderRootExpr)
 import Hix.Test.Hedgehog (eqLines)
 import qualified Hix.Test.Managed.Solver
 import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)
