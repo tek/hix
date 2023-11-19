@@ -1,11 +1,14 @@
 module Hix.Managed.Handlers.Mutation.LowerInit where
 
 import Data.Foldable.Extra (firstJustM)
+import Exon (exon)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ManagedEnv (ManagedState)
+import Hix.Data.Monad (M)
 import qualified Hix.Data.Version
-import Hix.Data.Version (NewRange (NewRange), NewVersion (NewVersion))
+import Hix.Data.Version (Major (Major), NewRange (NewRange), NewVersion (NewVersion))
+import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (
   BuildMutation,
@@ -20,7 +23,7 @@ import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers (MutationHandlers))
 import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit), LowerInitState (..))
-import Hix.Data.Monad (M)
+import Hix.Pretty (showP)
 import Hix.Version (setLowerBound)
 
 processMutationLowerInit ::
@@ -30,24 +33,24 @@ processMutationLowerInit ::
   (BuildMutation -> M (Maybe ManagedState)) ->
   M (MutationResult LowerInitState)
 processMutationLowerInit handlers state mutation build = do
-  firstJustM buildCandidate candidates <&> \case
+  firstJustM buildMajor majors <&> \case
     Just (candidate, newManaged, newBounds) ->
-      MutationSuccess candidate newManaged state {solverBounds = newBounds}
+      MutationSuccess candidate newManaged LowerInitState {solverBounds = newBounds}
     Nothing ->
       MutationFailed
   where
-    buildCandidate candidate =
-      buildWithSolver handlers build TargetLower state.solverBounds candidate
+    buildMajor Major {prefix, versions} = do
+      Log.debug [exon|Building major #{showP prefix} for '##{package}'|]
+      firstJustM buildCandidate versions
 
-    candidates = mkCandidate <$> versions
-
-    mkCandidate version =
-      Candidate {
+    buildCandidate version = do
+      let candidate = Candidate {
         version = NewVersion {package, version},
         range = NewRange (setLowerBound version range)
       }
+      buildWithSolver handlers build TargetLower state.solverBounds candidate
 
-    DepMutation {package, mutation = LowerInit {versions, range}} = mutation
+    DepMutation {package, mutation = LowerInit {majors, range}} = mutation
 
 handlersLowerInit ::
   BuildHandlers ->

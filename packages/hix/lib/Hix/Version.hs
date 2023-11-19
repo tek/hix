@@ -2,6 +2,7 @@
 
 module Hix.Version where
 
+import Data.List.Extra (groupOnKey)
 import Data.List.NonEmpty.Extra (foldl1')
 import Distribution.Parsec (eitherParsec)
 import Distribution.Version (
@@ -216,43 +217,11 @@ lastMajorBefore s m =
       where
         mp = majorParts a
 
-majorsBefore :: Int -> Int -> [Version] -> [Major]
-majorsBefore s m =
-  reverse . add . foldl step ([], [], (0, 0))
-  where
-    step (z, maj, cur) a
-      | Just (s', m') <- mp
-      , s' > s || (s' == s && m' >= m)
-      = (z, maj, cur)
-      | Just pre <- mp
-      , pre /= cur
-      = (add (z, maj, cur), [a], pre)
-      | otherwise
-      = (z, a : maj, cur)
-      where
-        mp = majorParts a
+zipApply :: (a -> b) -> [a] -> [(a, b)]
+zipApply f = fmap \ a -> (a, f a)
 
-    add (z, maj, (s', m')) =
-      case reverse maj of
-        [] -> z
-        h : t -> cons s' m' h t : z
-
-    cons s' m' h t = Major {prefix = [s', m'], versions = h :| t}
-
-secondMajorBefore :: Int -> Int -> [Version] -> [Version]
-secondMajorBefore s m allVersions =
-  case take 2 (reverse (majorsBefore s m allVersions)) of
-    [Major {versions}] -> toList versions
-    [_, Major {versions}] -> toList versions
-    _ -> []
-
-lowerRangeF :: VersionRangeF VersionRange -> VersionRange
-lowerRangeF = \case
-  ThisVersionF v -> orLaterVersion v
-  OrLaterVersionF v -> orLaterVersion v
-  LaterVersionF v -> laterVersion v
-  IntersectVersionRangesF l _ -> l
-  _ -> orLaterVersion version0
+zipApplyL :: (a -> b) -> [a] -> [(b, a)]
+zipApplyL f = fmap \ a -> (f a, a)
 
 nextMajor :: Version -> Version
 nextMajor =
@@ -271,3 +240,50 @@ prevMajor =
 
 currentMajor :: Version -> Version
 currentMajor = alterVersion (take 2)
+
+isMajor :: Int -> Int -> Major -> Bool
+isMajor s m Major {prefix} =
+  prefix == [s, m]
+
+majorOlder :: Int -> Int -> Major -> Bool
+majorOlder s m Major {prefix} =
+  prefix < [s, m]
+
+majorNewer :: Int -> Int -> Major -> Bool
+majorNewer s m Major {prefix} =
+  prefix > [s, m]
+
+allMajors :: [Version] -> [Major]
+allMajors =
+  mapMaybe (uncurry cons) . groupOnKey currentMajor
+  where
+    cons prefix = \case
+      (h : t) -> Just (Major {prefix, versions = h :| t})
+      [] -> Nothing
+
+majorsBefore :: Int -> Int -> [Version] -> [Major]
+majorsBefore s m =
+  takeWhile (majorOlder s m) . allMajors
+
+majorsFrom :: Int -> Int -> [Version] -> [Major]
+majorsFrom s m =
+  dropWhile (majorOlder s m) . allMajors
+
+onlyMajor :: Int -> Int -> [Version] -> Maybe Major
+onlyMajor s m =
+  find (isMajor s m) . allMajors
+
+secondMajorBefore :: Int -> Int -> [Version] -> [Version]
+secondMajorBefore s m allVersions =
+  case take 2 (reverse (majorsBefore s m allVersions)) of
+    [Major {versions}] -> toList versions
+    [_, Major {versions}] -> toList versions
+    _ -> []
+
+lowerRangeF :: VersionRangeF VersionRange -> VersionRange
+lowerRangeF = \case
+  ThisVersionF v -> orLaterVersion v
+  OrLaterVersionF v -> orLaterVersion v
+  LaterVersionF v -> laterVersion v
+  IntersectVersionRangesF l _ -> l
+  _ -> orLaterVersion version0

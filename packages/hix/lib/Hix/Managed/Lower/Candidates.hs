@@ -7,6 +7,7 @@ import Exon (exon)
 
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep)
+import Hix.Data.Monad (M)
 import Hix.Data.Package (PackageName)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
@@ -15,18 +16,7 @@ import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit))
 import qualified Hix.Managed.Lower.Data.LowerOptimize
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize (LowerOptimize))
-import Hix.Data.Monad (M)
-import Hix.Version (
-  beforeMajor,
-  hasMajor,
-  lastMajor,
-  lowerBound,
-  majorParts,
-  majorsBefore,
-  minMajor,
-  secondMajorBefore,
-  upperBound,
-  )
+import Hix.Version (allMajors, lowerBound, majorParts, majorsBefore, majorsFrom, onlyMajor)
 
 logNoVersions ::
   PackageName ->
@@ -50,13 +40,9 @@ toDepMutation package allVersions result =
 data InitConfig =
   InitLowerMajor Int Int
   |
-  InitBetweenMajors Int Int Int Int
+  InitFromLowerMajor Int Int
   |
-  InitAfterLowerMajor Int Int
-  |
-  InitSecondMajorBefore Int Int
-  |
-  InitLatestMajor
+  InitAll
   deriving stock (Eq, Show, Generic)
 
 initConfig ::
@@ -64,16 +50,12 @@ initConfig ::
   VersionRange ->
   InitConfig
 initConfig onlyLowerMajor version =
-  case (specifiedLower, specifiedUpper) of
-    (Just (sl, ml), upper)
-      | onlyLowerMajor -> InitLowerMajor sl ml
-      | Just (su, mu) <- upper -> InitBetweenMajors sl ml su mu
-      | otherwise -> InitAfterLowerMajor sl ml
-    (Nothing, Just (s, m)) -> InitSecondMajorBefore s m
-    _ -> InitLatestMajor
+  case specifiedLower of
+    Just (s, m) | onlyLowerMajor -> InitLowerMajor s m
+                | otherwise -> InitFromLowerMajor s m
+    _ -> InitAll
   where
     specifiedLower = majorParts =<< lowerBound version
-    specifiedUpper = majorParts =<< upperBound version
 
 prefix :: Int -> Int -> Text
 prefix s m = [exon|#{show s}.#{show m}|]
@@ -85,14 +67,10 @@ logInitConfig package conf =
     desc = case conf of
       InitLowerMajor s m ->
         [exon|the major #{prefix s m} of the specified lower bound|]
-      InitBetweenMajors sl ml su mu ->
-        [exon|the majors between the specified bounds, #{prefix sl ml} - #{prefix su mu}|]
-      InitAfterLowerMajor s m ->
-        [exon|all majors after the specified lower bound, #{prefix s m}|]
-      InitSecondMajorBefore s m ->
-        [exon|the second major before the specified upper bound, #{prefix s m}|]
-      InitLatestMajor ->
-        "the latest available major"
+      InitFromLowerMajor s m ->
+        [exon|the major #{prefix s m} of the specified lower bound and later, then all lower versions|]
+      InitAll ->
+        "all versions"
 
 chooseInit ::
   [Version] ->
@@ -100,15 +78,13 @@ chooseInit ::
   Dep ->
   Maybe LowerInit
 chooseInit allVersions conf dep = do
-  versions <- nonEmpty (selection (sort allVersions))
-  pure LowerInit {versions, range = dep.version}
+  majors <- selection (sort allVersions)
+  pure LowerInit {majors, range = dep.version}
   where
     selection = case conf of
-      InitLowerMajor s m -> filter (hasMajor s m)
-      InitBetweenMajors sl ml su mu -> filter (beforeMajor su mu) . filter (minMajor sl ml)
-      InitAfterLowerMajor s m -> filter (minMajor s m)
-      InitSecondMajorBefore s m -> secondMajorBefore s m
-      InitLatestMajor -> lastMajor
+      InitLowerMajor s m -> fmap pure . onlyMajor s m
+      InitFromLowerMajor s m -> \ vs -> nonEmpty (majorsFrom s m vs ++ reverse (majorsBefore s m vs))
+      InitAll -> nonEmpty . reverse . allMajors
 
 candidatesInit ::
   (PackageName -> M [Version]) ->

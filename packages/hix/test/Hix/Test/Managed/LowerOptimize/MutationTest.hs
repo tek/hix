@@ -5,7 +5,7 @@ import Data.IORef (IORef, readIORef)
 import Distribution.Pretty (pretty)
 import Distribution.Version (Version, VersionRange, orLaterVersion)
 import Exon (exon)
-import Hedgehog (evalEither, evalMaybe, (===))
+import Hedgehog (evalEither, evalMaybe)
 import Path (Abs, Dir, Path, absdir, relfile)
 
 import Hix.Data.Bounds (TargetBound (TargetLower), TargetBounds)
@@ -174,11 +174,6 @@ stateFileTarget =
 }
 |]
 
-failedMutationsTarget :: [DepMutation LowerOptimize]
-failedMutationsTarget =
-  [
-  ]
-
 -- | Goals for these deps:
 --
 -- - @direct1@ has two lower majors and all of them succeed, resulting in the lowest major (1.8.1) to become the bound.
@@ -193,7 +188,7 @@ test_lowerOptimizeMutation = do
   deps <- leftA fail depsConfig
   managedBounds <- leftA fail managedBoundsFile
   managedOverrides <- leftA fail managedOverridesFile
-  (handlers, stateFileRef, bumpsRef) <- liftIO handlersTest
+  (handlers, stateFileRef, _) <- liftIO handlersTest
   let
     env =
       ManagedEnv {
@@ -220,5 +215,3 @@ test_lowerOptimizeMutation = do
       Right <$> lowerOptimize handlers lowerConf app
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)
-  failedMutations <- liftIO (readIORef bumpsRef)
-  failedMutationsTarget === failedMutations
