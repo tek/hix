@@ -38,10 +38,16 @@
   in
   config.pkgs.writeScript "managed-${env.name}" ''
   set -e
+  if [[ -e "${conf.file}" ]]
+  then
+    initial=false
+  else
+    initial=true
+  fi
   ${cli} ${verbose} ${debug} ${quiet} ${cmd} $@ ${args}
   ${lib.optionalString conf.generate (util.runBuildApp "gen${lib.optionalString conf.quiet "-quiet"}")}
   ${lib.optionalString conf.gitAdd ''
-    if ${config.pkgs.git}/bin/git status &>/dev/null
+    if ${config.pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]]
     then
       ${config.pkgs.git}/bin/git add ${conf.file}
     fi

@@ -56,7 +56,6 @@ with lib;
         default = true;
       };
 
-      # TODO
       gitAdd = mkOption {
         description = mdDoc ''
         Git-add [the managed deps](#opt-managed-managed.file) after the first run.
