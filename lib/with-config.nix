@@ -12,12 +12,6 @@ let
 
   hsLib = config.pkgs.haskell.lib;
 
-  managedEnv = let
-    file = "${config.base}/${config.managed.file}";
-  in
-  { bounds = {}; overrides = {}; resolving = false; } //
-  optionalAttrs (config.managed.enable && pathExists file) (import file);
-
   packageRel = basic.packageSubpath config.base;
 
   overridesDeps = name: config.internal.overridesDeps.${name} or [];
@@ -86,7 +80,7 @@ let
 
     managed = targets: {
       deps = mapAttrs packageDeps config.packages;
-      state = managedEnv;
+      state = util.managed.envState;
       lower = {
         inherit (config.managed.lower) solverBounds;
       };
@@ -177,7 +171,6 @@ let
     hsLib
     paramApp
     types
-    managedEnv
     packageRel
     overridesDeps
     overridesFromDeps

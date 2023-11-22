@@ -46,7 +46,7 @@ in {
   };
 
   config = {
-    envs = ghcVersionEnvs // util.managed.envs // {
+    envs = ghcVersionEnvs // util.managed.envModules // {
 
       dev = {
         ghc = {

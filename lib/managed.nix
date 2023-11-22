@@ -60,39 +60,50 @@
   lowerInit = env: checkedScript [["lower" "enable"] ["enable"]] "lower init --stabilize" env;
   lowerOptimize = env: checkedScript [["lower" "enable"] ["enable"]] "lower optimize" env;
 
-  envFor = packages: config.managed.envConfig // {
-    inherit packages;
-  };
+  envModules = let
 
-  lowerEnvConfigExtra = {
-    ghc.compiler = lib.mkOverride 500 config.managed.lower.compiler;
-  };
+    lowerEnvConfigExtra = {
+      ghc.compiler = lib.mkOverride 500 config.managed.lower.compiler;
+    };
 
-  envsFor = suf: packages: {
-    ${"latest${suf}"} = envFor packages;
-  } // lib.optionalAttrs conf.lower.enable {
-    ${"lower${suf}"} = envFor packages // lowerEnvConfigExtra;
-  };
+    envFor = packages: config.managed.envConfig // {
+      inherit packages;
+    };
 
-  envsAll = envsFor "" null;
+    envsFor = suf: packages: {
+      ${"latest${suf}"} = envFor packages;
+    } // lib.optionalAttrs conf.lower.enable {
+      ${"lower${suf}"} = envFor packages // lowerEnvConfigExtra;
+    };
 
-  envsSingle = name: envsFor "-${name}" [name];
+    envsAll = envsFor "" null;
 
-  envsSet = name: envsFor "-${name}";
+    envsSingle = name: envsFor "-${name}" [name];
 
-  envsEach = util.foldMapAttrs envsSingle config.internal.packageNames;
+    envsSet = name: envsFor "-${name}";
 
-  envsSets = lib.concatMapAttrs envsSet conf.sets;
+    envsEach = util.foldMapAttrs envsSingle config.internal.packageNames;
 
-  envs =
-    lib.optionalAttrs conf.enable (
+    envsSets = lib.concatMapAttrs envsSet conf.sets;
+
+    value =
       if conf.sets == "all"
       then envsAll
       else if conf.sets == "each"
       then envsEach
       else envsSets
-    );
+      ;
+
+  in lib.optionalAttrs conf.enable value;
+
+  envs = lib.mapAttrs (name: _: config.envs.${name}) envModules;
+
+  envState = let
+    file = "${config.base}/${config.managed.file}";
+  in
+  { bounds = {}; overrides = {}; resolving = false; } //
+  lib.optionalAttrs (config.managed.enable && lib.pathExists file) (import file);
 
 in {
-  inherit bump lowerInit lowerOptimize envs;
+  inherit bump lowerInit lowerOptimize envModules envs envState;
 }

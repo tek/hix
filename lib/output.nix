@@ -147,9 +147,6 @@ let
     (util.foldMapAttrs prefixedEnvDerivations (lib.attrNames util.managed.envs))
     ;
 
-  lowerInit = libManaged.lowerInit config.envs.lower;
-
-  lowerOptimize = libManaged.lowerOptimize config.envs.lower;
 
   managedCmdMulti = sort: mk: names: lib.genAttrs names (name: app (mk config.envs.${"${sort}-${name}"}));
 
@@ -181,8 +178,6 @@ in {
   mainExe
   pkgMainExe
   managedChecks
-  lowerInit
-  lowerOptimize
   managedApps
   ;
 }
