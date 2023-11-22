@@ -9,6 +9,7 @@ import Hix.Data.Dep (mainDep)
 import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
+import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Package (PackageName)
 import Hix.Data.Version (NewRange (NewRange), NewVersion (..))
 import Hix.Managed.Build.Mutation (MutationResult (MutationSuccess))
@@ -53,7 +54,7 @@ test_candidatesOptimize = do
         [1, 9, 2] -> Just SolverPlan {configured = [nv], preexisting = []}
         _ -> Nothing
     handlers = BuildHandlers.handlersNull {solve = SolveHandlers {solveForVersion}}
-  result <- liftIO $ runMWith False False True [absdir|/project|] do
+  result <- liftIO $ runMWith False False True OutputNone [absdir|/project|] do
     majors <- candidatesOptimize availableVersions dep
     for majors \ mut ->
       processMutationLowerOptimize handlers state mut build

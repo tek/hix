@@ -20,6 +20,7 @@ import Hix.Data.ManagedEnv (
   ManagedLowerEnv (ManagedLowerEnv),
   state,
   )
+import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Error (pathText)
 import qualified Hix.Managed.App
 import Hix.Managed.App (managedApp)
@@ -236,7 +237,7 @@ test_lowerNative :: UnitTest
 test_lowerNative = do
   deps <- leftA fail depsConf
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
-    runMWith True True False [absdir|/invalid/cwd|] do
+    runMWith True True False OutputNone [absdir|/invalid/cwd|] do
       handlersInit <- LowerInit.handlersProd Nothing False
       handlersOptimize <- LowerOptimize.handlersProd Nothing False
       root <- setupProject

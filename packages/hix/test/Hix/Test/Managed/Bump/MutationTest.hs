@@ -18,6 +18,7 @@ import Hix.Data.ManagedEnv (
   ManagedLowerEnv (ManagedLowerEnv),
   )
 import Hix.Data.NixExpr (Expr)
+import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import qualified Hix.Data.Version
@@ -211,7 +212,9 @@ test_bumpMutation = do
         env = "fancy",
         targetBound = TargetUpper
       }
-  evalEither =<< liftIO (runMWith False False True root (runManagedApp handlers.build handlers.report env conf (bumpDeps handlers)))
+  evalEither =<< liftIO do
+    runMWith False False True OutputNone root do
+      runManagedApp handlers.build handlers.report env conf (bumpDeps handlers)
   files <- liftIO (readIORef stateFileRef)
   eqLines stateFileStep1Target . renderRootExpr =<< evalMaybe (last files)
   eqLines stateFileTarget . renderRootExpr =<< evalMaybe (head files)

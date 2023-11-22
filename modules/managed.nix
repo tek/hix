@@ -66,6 +66,13 @@ with lib;
         default = true;
       };
 
+      # TODO probably better to do this in CI
+      commit = mkOption {
+        description = mdDoc "";
+        type = bool;
+        default = false;
+      };
+
       verbose = mkOption {
         description = mdDoc "Print verbose messages when managing dependencies.";
         type = bool;

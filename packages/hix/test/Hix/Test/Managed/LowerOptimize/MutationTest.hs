@@ -21,6 +21,7 @@ import Hix.Data.ManagedEnv (
   ManagedLowerEnv (ManagedLowerEnv),
   )
 import Hix.Data.NixExpr (Expr)
+import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
@@ -211,7 +212,7 @@ test_lowerOptimizeMutation = do
       }
     lowerConf = LowerOptimizeConfig {oldest = False, initialBounds = []}
   evalEither =<< liftIO do
-    runMWith False False True root $ runManagedApp handlers.build handlers.report env conf \ app ->
+    runMWith False False True OutputNone root $ runManagedApp handlers.build handlers.report env conf \ app ->
       Right <$> lowerOptimize handlers lowerConf app
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)

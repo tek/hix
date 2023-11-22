@@ -22,6 +22,7 @@ import Hix.Data.ManagedEnv (
   ManagedLowerEnv (ManagedLowerEnv),
   )
 import Hix.Data.NixExpr (Expr)
+import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
@@ -335,7 +336,7 @@ test_lowerInitMutation = do
       }
     lowerConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = []}
   (log, result) <- liftIO do
-    runMLog False False False root $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
+    runMLog False False False OutputNone root $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
       Right <$> lowerInit handlers lowerConf app
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)

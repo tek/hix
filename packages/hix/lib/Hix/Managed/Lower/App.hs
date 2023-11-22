@@ -17,7 +17,7 @@ import Hix.Data.Package (PackageName)
 import Hix.Json (jsonConfigE)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.App
-import Hix.Managed.App (ManagedApp, managedApp, processAppResult, runManagedApp)
+import Hix.Managed.App (ManagedApp, runManagedApp)
 import Hix.Managed.Build (buildMutations)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.Data.Build (BuildResult)
@@ -126,6 +126,5 @@ lowerOptimizeCli :: LowerOptimizeOptions -> M ()
 lowerOptimizeCli opts = do
   env <- jsonConfigE Client opts.env
   handlers <- chooseHandlersOptimize opts.config.ghc opts.lowerOptimize.oldest opts.handlers
-  managedApp handlers.build env opts.config \ app -> do
-    result <- lowerOptimize handlers opts.lowerOptimize app
-    processAppResult handlers.build handlers.report env opts.config app (Right result)
+  runManagedApp handlers.build handlers.report env opts.config \ app ->
+    Right <$> lowerOptimize handlers opts.lowerOptimize app

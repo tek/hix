@@ -8,6 +8,7 @@ import Options.Applicative.Types (readerAsk)
 import Path (Abs, Dir, File, Path, Rel, parseAbsDir, parseAbsFile, parseRelDir, parseRelFile, toFilePath)
 import qualified Text.Show as Show
 
+import Hix.Data.OutputFormat (OutputFormat (..))
 import Hix.Managed.Handlers.Bump (SpecialBumpHandlers (TestBumpHandlers))
 import Hix.Managed.Handlers.LowerInit (SpecialLowerInitHandlers (TestLowerInitHandlers))
 import Hix.Managed.Handlers.LowerOptimize (SpecialLowerOptimizeHandlers (TestLowerOptimizeHandlers))
@@ -68,3 +69,10 @@ lowerOptimizeHandlersOption =
   readerAsk >>= \case
     "test" -> pure TestLowerOptimizeHandlers
     h -> fail [exon|Invalid value for lower.optimize handlers: #{h}|]
+
+outputFormatOption :: ReadM OutputFormat
+outputFormatOption =
+  readerAsk >>= \case
+    "none" -> pure OutputNone
+    "json" -> pure OutputJson
+    fmt -> fail [exon|Invalid output format: #{fmt}|]

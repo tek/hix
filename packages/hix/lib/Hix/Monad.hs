@@ -21,6 +21,7 @@ import qualified Hix.Console as Console
 import qualified Hix.Data.Error as Error
 import Hix.Data.Error (Error (BootstrapError, Client, EnvError, GhciError, NewError))
 import Hix.Data.Monad (Env (..), LogLevel, M)
+import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Error (tryIO, tryIOWith)
 import qualified Hix.Log as Log
 import Hix.Log (logWith)
@@ -74,24 +75,24 @@ logIORef :: IORef [Text] -> LogLevel -> Text -> IO ()
 logIORef ref _ msg =
   modifyIORef' ref (msg :)
 
-runMLog :: Bool -> Bool -> Bool -> Path Abs Dir -> M a -> IO ([Text], Either Error a)
-runMLog verbose debug quiet cwd ma = do
+runMLog :: Bool -> Bool -> Bool -> OutputFormat -> Path Abs Dir -> M a -> IO ([Text], Either Error a)
+runMLog verbose debug quiet output cwd ma = do
   logRef <- newIORef []
   withSystemTempDir "hix-cli" \ tmp -> do
     result <- runExceptT (runReaderT ma Env {logger = logWith (logIORef logRef), ..})
     log <- readIORef logRef
     pure (log, result)
 
-runMWith :: Bool -> Bool -> Bool -> Path Abs Dir -> M a -> IO (Either Error a)
-runMWith verbose debug quiet cwd ma =
+runMWith :: Bool -> Bool -> Bool -> OutputFormat -> Path Abs Dir -> M a -> IO (Either Error a)
+runMWith verbose debug quiet output cwd ma =
   withSystemTempDir "hix-cli" \ tmp ->
     runExceptT (runReaderT ma Env {logger = logWith (const Console.err), ..})
 
 runM :: Path Abs Dir -> M a -> IO (Either Error a)
-runM = runMWith False False False
+runM = runMWith False False False OutputNone
 
 runMDebug :: Path Abs Dir -> M a -> IO (Either Error a)
-runMDebug = runMWith True True False
+runMDebug = runMWith True True False OutputNone
 
 tryIOMWith :: (Text -> Text) -> IO a -> M a
 tryIOMWith mkErr ma = lift (tryIOWith mkErr ma)

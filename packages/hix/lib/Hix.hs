@@ -62,4 +62,4 @@ main :: IO ()
 main = do
   Options global cmd <- parseCli
   let verbose = fromMaybe False global.verbose
-  leftA (printError verbose) =<< runMWith verbose global.debug global.quiet global.cwd (runCommand cmd)
+  leftA (printError verbose) =<< runMWith verbose global.debug global.quiet global.output global.cwd (runCommand cmd)

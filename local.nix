@@ -63,6 +63,7 @@ in {
       "cabal-install"
       "cabal-install-solver"
       "aeson >= 2.0 && < 2.2"
+      "bytestring"
       "casing ^>= 0.1.4"
       "containers"
       "exceptions ^>= 0.10"

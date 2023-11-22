@@ -22,6 +22,7 @@ import Options.Applicative (
   showHelpOnEmpty,
   showHelpOnError,
   strOption,
+  subparserInline,
   switch,
   value,
   )
@@ -62,6 +63,7 @@ import Hix.Data.Options (
   TargetSpec (..),
   TestOptions (..),
   )
+import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Package (PackageName (PackageName))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
@@ -73,6 +75,7 @@ import Hix.Optparse (
   jsonOption,
   lowerInitHandlersOption,
   lowerOptimizeHandlersOption,
+  outputFormatOption,
   relFileOption,
   )
 
@@ -271,11 +274,13 @@ commands =
   <>
   command "new" (NewCmd <$> info newParser (progDesc "Create a new Hix project in the current directory"))
   <>
-  command "bootstrap" (BootstrapCmd <$> info bootstrapParser (progDesc "Bootstrap an existing Cabal project in the current directory"))
+  command "bootstrap" (BootstrapCmd <$> info bootstrapParser (progDesc bootstrapDesc))
   <>
   command "bump" (BumpCmd <$> info bumpParser (progDesc "Bump the deps of a package"))
   <>
   command "lower" (LowerCmd <$> info (hsubparser lowerCommands) (progDesc "Modify the lower bounds of a package"))
+  where
+    bootstrapDesc = "Bootstrap an existing Cabal project in the current directory"
 
 globalParser ::
   Path Abs Dir ->
@@ -285,7 +290,10 @@ globalParser realCwd = do
   debug <- switch (long "debug" <> help "Debug output")
   quiet <- switch (long "quiet" <> help "Suppress info output")
   cwd <- option absDirOption (long "cwd" <> help "Force a different working directory" <> value realCwd)
+  output <- option outputFormatOption (long "output" <> help outputHelp <> value OutputNone)
   pure GlobalOptions {..}
+  where
+    outputHelp = "Result output format, if commands support it"
 
 appParser ::
   Path Abs Dir ->
@@ -300,6 +308,6 @@ parseCli = do
   customExecParser parserPrefs (info (appParser realCwd <**> helper) desc)
   where
     parserPrefs =
-      prefs (showHelpOnEmpty <> showHelpOnError)
+      prefs (showHelpOnEmpty <> showHelpOnError <> subparserInline)
     desc =
       fullDesc <> header "Tools for maintaining Hix projects"

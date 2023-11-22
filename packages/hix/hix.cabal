@@ -50,6 +50,7 @@ library
       Hix.Data.NewProjectConfig
       Hix.Data.NixExpr
       Hix.Data.Options
+      Hix.Data.OutputFormat
       Hix.Data.Overrides
       Hix.Data.Package
       Hix.Data.PreprocConfig
@@ -172,6 +173,7 @@ library
       Cabal
     , aeson >=2.0 && <2.2
     , base ==4.*
+    , bytestring
     , cabal-install
     , cabal-install-solver
     , casing >=0.1.4 && <0.2

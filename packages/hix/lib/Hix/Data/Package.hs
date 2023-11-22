@@ -1,6 +1,6 @@
 module Hix.Data.Package where
 
-import Data.Aeson (FromJSON, FromJSONKey)
+import Data.Aeson (FromJSON, FromJSONKey, ToJSON)
 import qualified Distribution.Package as Cabal
 import Distribution.Package (depPkgName)
 import Distribution.Pretty (Pretty (pretty))
@@ -12,7 +12,7 @@ import Hix.Class.EncodeNix (EncodeNixKey)
 newtype PackageName =
   PackageName Text
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, EncodeNixKey)
+  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, ToJSON, EncodeNixKey)
 
 instance Pretty PackageName where
   pretty (PackageName n) = text (toString n)

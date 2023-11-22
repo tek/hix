@@ -1,6 +1,6 @@
 module Hix.Data.Version where
 
-import Data.Aeson (FromJSON)
+import Data.Aeson (FromJSON, ToJSON (toJSON))
 import qualified Data.List.NonEmpty as NonEmpty
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Version (Version, VersionRange)
@@ -31,6 +31,9 @@ newRange :: NewRange -> Maybe VersionRange
 newRange = \case
   NewRange r -> Just r
   OldRange -> Nothing
+
+instance ToJSON NewRange where
+  toJSON = toJSON @(Maybe Text) . fmap showP . newRange
 
 forNewRange ::
   Applicative m =>

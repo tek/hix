@@ -7,11 +7,12 @@ import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
 import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
 import Hix.Data.LowerConfig (LowerInitConfig, LowerOptimizeConfig)
-import Hix.Managed.Data.ManagedConfig (ManagedConfig)
 import Hix.Data.ManagedEnv (ManagedEnv)
 import Hix.Data.NewProjectConfig (NewProjectConfig)
+import Hix.Data.OutputFormat (OutputFormat)
 import Hix.Data.Package (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
+import Hix.Managed.Data.ManagedConfig (ManagedConfig)
 import Hix.Managed.Handlers.Bump (SpecialBumpHandlers)
 import Hix.Managed.Handlers.LowerInit (SpecialLowerInitHandlers)
 import Hix.Managed.Handlers.LowerOptimize (SpecialLowerOptimizeHandlers)
@@ -175,7 +176,8 @@ data GlobalOptions =
     verbose :: Maybe Bool,
     debug :: Bool,
     quiet :: Bool,
-    cwd :: Path Abs Dir
+    cwd :: Path Abs Dir,
+    output :: OutputFormat
   }
   deriving stock (Eq, Show, Generic)
 
