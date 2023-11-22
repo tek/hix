@@ -4,8 +4,6 @@ import qualified Data.Text.IO as Text
 import Exon (exon)
 import System.IO (Handle, stderr, stdout)
 
-import Hix.Data.Monad (LogLevel (LogDebug, LogError))
-
 hPrint ::
   MonadIO m =>
   Handle ->
@@ -43,9 +41,3 @@ withChevrons col msg =
 errorMessage :: Text -> Text
 errorMessage msg =
   withChevrons 1 [exon|Error: #{msg}|]
-
-logger :: LogLevel -> Text -> IO ()
-logger = \case
-  LogError -> err
-  LogDebug -> err
-  _ -> out

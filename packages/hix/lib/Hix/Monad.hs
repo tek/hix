@@ -85,7 +85,7 @@ runMLog verbose debug quiet cwd ma = do
 runMWith :: Bool -> Bool -> Bool -> Path Abs Dir -> M a -> IO (Either Error a)
 runMWith verbose debug quiet cwd ma =
   withSystemTempDir "hix-cli" \ tmp ->
-    runExceptT (runReaderT ma Env {logger = logWith Console.logger, ..})
+    runExceptT (runReaderT ma Env {logger = logWith (const Console.err), ..})
 
 runM :: Path Abs Dir -> M a -> IO (Either Error a)
 runM = runMWith False False False
