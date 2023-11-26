@@ -6,30 +6,42 @@ import Path (Abs, File, Path)
 
 import qualified Hix.Console as Console
 import Hix.Data.Monad (M)
-import Hix.Error (pathText)
-import Hix.Managed.BuildOutput (loadBatchLog)
+import Hix.Managed.BuildOutput (requireBatchLog)
 import qualified Hix.Managed.Data.Build
 import Hix.Managed.Data.Build (BuildOutput)
 import Hix.Managed.Data.Candidate (Candidate)
-import Hix.Monad (noteClient)
+import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
 import Hix.Pretty (showP)
 
-commitHeadline :: Int -> Text -> Text
-commitHeadline num names
+commitMessage :: ManagedOp -> Int -> Text -> Text
+commitMessage op num names
   | num <= 3
-  = [exon|Bump #{names}|]
+  = [exon|#{action} #{names}|]
   | otherwise
-  = [exon|Bump #{show num} dependencies|]
+  = [exon|#{action} #{show num} dependencies|]
+  where
+    action = case op of
+      OpBump -> "Bump"
+      OpLower -> "Adjust lower bounds of"
 
-commitDetails :: [Candidate] -> [Text]
-commitDetails = fmap showP
+candidateList :: [Candidate] -> [Text]
+candidateList = fmap \ c -> [exon|* #{showP c}|]
 
-formatCommitMsg :: BuildOutput -> Maybe Text
-formatCommitMsg output =
+commitBody :: [Candidate] -> [Text]
+commitBody candidates =
+  ["New versions:", ""] ++ candidateList candidates
+
+commit :: BuildOutput -> Maybe (Text, [Text])
+commit output =
   output.modifiedNames <&> \ names ->
-    Text.unlines ([commitHeadline (length output.modified) names, "", "New versions:"] ++ commitDetails output.modified)
+    (commitMessage output.operation (length output.modified) names, commitBody output.modified)
+
+formatCommit :: BuildOutput -> Maybe Text
+formatCommit output =
+  commit output <&> \ (msg, body) ->
+    Text.unlines ([msg, ""] ++ body)
 
 managedCommitMsgCli :: Path Abs File -> M ()
 managedCommitMsgCli file = do
-  output <- noteClient [exon|No build output log found at #{pathText file}|] =<< loadBatchLog file
-  traverse_ Console.out (formatCommitMsg output)
+  output <- requireBatchLog file
+  traverse_ Console.out (formatCommit output)

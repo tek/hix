@@ -26,7 +26,11 @@ import Hix.Data.Version (NewVersion, SourceHash (SourceHash))
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Bump.App (bumpDeps)
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpBump),
+  StateFileConfig (StateFileConfig),
+  )
 import Hix.Managed.Handlers.Build (BuildHandlers (..), withTempProject)
 import Hix.Managed.Handlers.Build.Test (withTempProjectAt)
 import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
@@ -203,6 +207,7 @@ test_bumpMutation = do
     conf =
       ManagedConfig {
         ghc = Nothing,
+        operation = OpBump,
         stateFile = StateFileConfig {
           file = [relfile|ops/managed.nix|],
           updateProject = True,
@@ -210,7 +215,8 @@ test_bumpMutation = do
           latestOverrides = True
         },
         env = "fancy",
-        targetBound = TargetUpper
+        targetBound = TargetUpper,
+        batchLog = Nothing
       }
   evalEither =<< liftIO do
     runMWith False False True OutputNone root do

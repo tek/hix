@@ -9,8 +9,11 @@
 
     check_diff '${./state.nix}' 'ops/managed.nix' 'ops/managed.nix is wrong after batch run'
     check_diff '${./batch-result.json}' $batch_result 'batch result is wrong'
-    msg=$(nix run .#cli -- managed commit-msg --file $batch_result)
-    check_diff '${./commit-msg}' =(print $msg) 'commit message is wrong'
+    nix run .#cli -- managed commit-msg --file $batch_result > $PWD/commit-msg-out
+    check_diff '${./commit-msg}' $PWD/commit-msg-out 'commit message is wrong'
+    export GITHUB_OUTPUT="$PWD/github-output-out"
+    nix run .#cli -- managed github-pr --file $batch_result
+    check_diff '${./github-output}' $GITHUB_OUTPUT 'github output is wrong'
 
     nix run .#env.latest-main.bump -- --root $PWD --handlers test || fail 'bump env failed'
 

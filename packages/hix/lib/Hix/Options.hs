@@ -56,7 +56,7 @@ import Hix.Data.Options (
   LowerCommand (..),
   LowerInitOptions (..),
   LowerOptimizeOptions (..),
-  ManagedCommand (ManagedCommitMsg),
+  ManagedCommand (ManagedCommitMsg, ManagedGithubPr),
   NewOptions (..),
   Options (Options),
   PackageSpec (..),
@@ -272,11 +272,18 @@ managedCommitMsgParser :: Parser (Path Abs File)
 managedCommitMsgParser =
   option absFileOption (long "file" <> help "The JSON file written by a managed deps app")
 
+managedGithubPrParser :: Parser (Path Abs File)
+managedGithubPrParser =
+  option absFileOption (long "file" <> help "The JSON file written by a managed deps app")
+
 managedCommands :: Mod CommandFields ManagedCommand
 managedCommands =
   command "commit-msg" (ManagedCommitMsg <$> info managedCommitMsgParser (progDesc commitMsgHelp))
+  <>
+  command "github-pr" (ManagedGithubPr <$> info managedGithubPrParser (progDesc githubPrHelp))
   where
     commitMsgHelp = "Print a commit message for updated versions and bounds"
+    githubPrHelp = "Print input args for the Github action create-pull-request to $GITHUB_OUTPUT"
 
 commands :: Mod CommandFields Command
 commands =

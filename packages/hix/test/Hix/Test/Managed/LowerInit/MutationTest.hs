@@ -29,7 +29,11 @@ import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpLower),
+  StateFileConfig (StateFileConfig),
+  )
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Hackage (fetchHash)
@@ -324,6 +328,7 @@ test_lowerInitMutation = do
       }
     conf =
       ManagedConfig {
+        operation = OpLower,
         ghc = Nothing,
         stateFile = StateFileConfig {
           file = [relfile|ops/managed.nix|],

@@ -8,7 +8,7 @@ import Hix.Data.Options (
   Command (..),
   GlobalOptions (GlobalOptions),
   LowerCommand (LowerInitCmd, LowerOptimizeCmd),
-  ManagedCommand (ManagedCommitMsg),
+  ManagedCommand (ManagedCommitMsg, ManagedGithubPr),
   Options (Options),
   )
 import Hix.Env (printEnvRunner)
@@ -25,6 +25,7 @@ import Hix.Error (
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
 import Hix.Managed.Bump.App (bumpCli)
 import Hix.Managed.CommitMsg.App (managedCommitMsgCli)
+import Hix.Managed.GithubPr.App (managedGithubPrCli)
 import Hix.Managed.Lower.App (lowerInitCli, lowerOptimizeCli)
 import Hix.Monad (M, runMWith)
 import Hix.New (newProject)
@@ -61,6 +62,7 @@ runCommand = \case
     LowerOptimizeCmd opts -> lowerOptimizeCli opts
   ManagedCmd sub -> case sub of
     ManagedCommitMsg file -> managedCommitMsgCli file
+    ManagedGithubPr file -> managedGithubPrCli file
 
 main :: IO ()
 main = do

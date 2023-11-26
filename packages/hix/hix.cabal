@@ -80,6 +80,7 @@ library
       Hix.Managed.Data.ManagedJob
       Hix.Managed.Data.SolverBounds
       Hix.Managed.Data.Targets
+      Hix.Managed.GithubPr.App
       Hix.Managed.Handlers.Build
       Hix.Managed.Handlers.Build.Prod
       Hix.Managed.Handlers.Build.Test

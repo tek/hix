@@ -37,7 +37,8 @@
     args = util.unwords general;
   in
   config.pkgs.writeScript "managed-${env.name}" ''
-  set -e
+  #!${config.pkgs.zsh}/bin/zsh
+  setopt err_exit
   if [[ -e "${conf.file}" ]]
   then
     initial=false

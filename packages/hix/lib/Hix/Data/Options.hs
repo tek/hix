@@ -154,6 +154,8 @@ data LowerCommand =
 
 data ManagedCommand =
   ManagedCommitMsg (Path Abs File)
+  |
+  ManagedGithubPr (Path Abs File)
   deriving stock (Show)
 
 data Command =

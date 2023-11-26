@@ -24,6 +24,7 @@ import Hix.Data.Bounds (Bounds)
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep, mainDep, newVersionDep, renderDep)
 import Hix.Data.Version (NewVersion)
+import Hix.Error (Error (Fatal))
 import qualified Hix.Log as Log
 import Hix.Managed.Solve.Changes (SolverPlan, solverPlan)
 import qualified Hix.Managed.Solve.Config
@@ -73,7 +74,7 @@ solveTargets ::
 solveTargets res targets = do
   pkgSpecifiers <- tryIOM (withRepoContext res.conf.verbosity res.flags.global (specifiers res uniqueTargets))
   Log.debug [exon|Running solver for: #{Text.intercalate ", " (renderDep <$> uniqueTargets)}|]
-  first fromString <$> tryIOMAs "Cabal solver crashed." (solveSpecifiers res pkgSpecifiers)
+  first fromString <$> tryIOMAs (Fatal "Cabal solver crashed.") (solveSpecifiers res pkgSpecifiers)
   where
     uniqueTargets = nubOrdOn (.package) targets
 

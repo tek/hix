@@ -71,19 +71,19 @@ sourceError reason source =
   [exon|#{reason} the source file '#{pathText source}'|]
 
 tryIOWith ::
-  (Text -> Text) ->
+  (Text -> Error) ->
   IO a ->
   ExceptT Error IO a
 tryIOWith mkErr ma =
   liftIO (tryIOError ma) >>= \case
     Right a -> pure a
-    Left err -> throwE (Fatal (mkErr (show err)))
+    Left err -> throwE (mkErr (show err))
 
 tryIO ::
   IO a ->
   ExceptT Error IO a
 tryIO =
-  tryIOWith id
+  tryIOWith Fatal
 
 note :: Text -> Maybe a -> ExceptT Error IO a
 note err =

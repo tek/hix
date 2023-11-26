@@ -157,12 +157,16 @@ let
   echo $log
   '';
 
+  managedAllSetsGithubPr = prefix:
+  config.pkgs.writeScript "managed-${prefix}-all-github-pr" ''
+  log=$(${util.runBuildApp prefix} -- $@)
+  nix run .#cli -- managed github-pr --file=$log
+  '';
+
   managedCmdMulti = prefix: envSort: mk: sets: let
     singles = lib.genAttrs sets (name: app (mk config.envs.${"${envSort}-${name}"}));
   in
-    singles //
-    app (managedAllSets prefix sets)
-    ;
+    singles // { github-pr = app (managedAllSetsGithubPr prefix); } // app (managedAllSets prefix sets);
 
   managedMulti = sets: {
     bump = managedCmdMulti "bump" "latest" libManaged.bump sets;
