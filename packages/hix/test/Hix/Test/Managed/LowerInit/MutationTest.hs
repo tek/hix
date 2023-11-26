@@ -92,7 +92,7 @@ depsConfig =
     "local5": {
       "library": {
         "dependencies": [
-          "direc5"
+          "direct5"
         ]
       }
     }
@@ -187,7 +187,7 @@ managedBoundsFile =
     "local1": {
     },
     "local5": {
-      "direc5": "^>= 1.5"
+      "direct5": "^>= 1.5"
     }
   }|]
 
@@ -220,7 +220,7 @@ stateFileTarget =
       direct4 = ">=1.0.3";
     };
     local5 = {
-      direc5 = ">=1.5 && <1.6";
+      direct5 = ">=1.5 && <1.6";
     };
   };
   overrides = {
@@ -305,9 +305,9 @@ failedMutationsTarget =
 --   version requirement, so that the build fails for @<= direct4-1.0.2@ in @local1@ but only for @direct4-1.0.1@ in
 --   @local4@.
 --
--- - @direc5@ is a dependency of @local5@, which is not part of the target set.
+-- - @direct5@ is a dependency of @local5@, which is not part of the target set.
 --   The managed bounds for @local5@ in the initial file should be preserved and unchanged (save for version range
---   normalization), and @direc5@ should never appear int the solver and build deps.
+--   normalization), and @direct5@ should never appear int the solver and build deps.
 test_lowerInitMutation :: UnitTest
 test_lowerInitMutation = do
   deps <- leftA fail depsConfig
@@ -332,7 +332,8 @@ test_lowerInitMutation = do
           latestOverrides = True
         },
         env = "lower-main",
-        targetBound = TargetLower
+        targetBound = TargetLower,
+        batchLog = Nothing
       }
     lowerConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = []}
   (log, result) <- liftIO do

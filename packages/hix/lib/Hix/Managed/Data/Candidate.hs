@@ -1,12 +1,13 @@
 module Hix.Managed.Data.Candidate where
 
-import Data.Aeson (ToJSON (toJSON), object, (.=))
+import Data.Aeson (ToJSON (toJSON), object, (.=), FromJSON (parseJSON), withObject, (.:))
 import Distribution.Pretty (Pretty (pretty))
 import Text.PrettyPrint (brackets, (<+>))
 
 import qualified Hix.Data.Version
-import Hix.Data.Version (NewRange, NewVersion, renderNewRange)
+import Hix.Data.Version (NewRange, NewVersion (NewVersion), renderNewRange)
 import Hix.Pretty (showP)
+import Hix.Data.Json (jsonParsec)
 
 data Candidate =
   Candidate {
@@ -26,3 +27,11 @@ instance ToJSON Candidate where
       "version" .= toJSON (showP @Text version.version),
       "range" .= toJSON range
     ]
+
+instance FromJSON Candidate where
+  parseJSON =
+    withObject "Candidate" \ o -> do
+      package <- o .: "package"
+      version <- jsonParsec <$> o .: "version"
+      range <- o .: "range"
+      pure Candidate {version = NewVersion {package, version}, range}

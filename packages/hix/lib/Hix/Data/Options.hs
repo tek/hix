@@ -152,6 +152,10 @@ data LowerCommand =
   LowerOptimizeCmd LowerOptimizeOptions
   deriving stock (Show)
 
+data ManagedCommand =
+  ManagedCommitMsg (Path Abs File)
+  deriving stock (Show)
+
 data Command =
   Preproc PreprocOptions
   |
@@ -168,6 +172,8 @@ data Command =
   BumpCmd BumpOptions
   |
   LowerCmd LowerCommand
+  |
+  ManagedCmd ManagedCommand
   deriving stock (Show)
 
 data GlobalOptions =

@@ -147,13 +147,27 @@ let
     (util.foldMapAttrs prefixedEnvDerivations (lib.attrNames util.managed.envs))
     ;
 
+  managedAllSets = prefix: sets: let
+    envApp = name: "${util.runBuildApp "${prefix}.${name}"} -- $@ --batch-log=$log";
+  in
+  config.pkgs.writeScript "managed-${prefix}-all" ''
+  set -e
+  log=$(mktemp --tmpdir hix-${prefix}-XXXXX.json)
+  ${util.unlinesMap envApp sets}
+  echo $log
+  '';
 
-  managedCmdMulti = sort: mk: names: lib.genAttrs names (name: app (mk config.envs.${"${sort}-${name}"}));
+  managedCmdMulti = prefix: envSort: mk: sets: let
+    singles = lib.genAttrs sets (name: app (mk config.envs.${"${envSort}-${name}"}));
+  in
+    singles //
+    app (managedAllSets prefix sets)
+    ;
 
   managedMulti = sets: {
-    bump = managedCmdMulti "latest" libManaged.bump sets;
-    lower.init = managedCmdMulti "lower" libManaged.lowerInit sets;
-    lower.optimize = managedCmdMulti "lower" libManaged.lowerOptimize sets;
+    bump = managedCmdMulti "bump" "latest" libManaged.bump sets;
+    lower.init = managedCmdMulti "lower.init" "lower" libManaged.lowerInit sets;
+    lower.optimize = managedCmdMulti "lower.optimize" "lower" libManaged.lowerOptimize sets;
   };
 
   managedApps =

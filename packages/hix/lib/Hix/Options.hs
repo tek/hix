@@ -56,6 +56,7 @@ import Hix.Data.Options (
   LowerCommand (..),
   LowerInitOptions (..),
   LowerOptimizeOptions (..),
+  ManagedCommand (ManagedCommitMsg),
   NewOptions (..),
   Options (Options),
   PackageSpec (..),
@@ -66,7 +67,11 @@ import Hix.Data.Options (
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Package (PackageName (PackageName))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpBump, OpLower),
+  StateFileConfig (StateFileConfig),
+  )
 import Hix.Optparse (
   JsonConfig,
   absDirOption,
@@ -223,27 +228,28 @@ bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
-managedConfigParser :: TargetBound -> Parser ManagedConfig
-managedConfigParser targetBound = do
+managedConfigParser :: ManagedOp -> TargetBound -> Parser ManagedConfig
+managedConfigParser operation targetBound = do
   env <- strOption (long "env" <> short 'e' <> help "Environment for building and managed overrides" <> value "dev")
   file <- option relFileOption (long "file" <> short 'f' <> help "The relative path to the managed deps file")
   updateProject <- switch (long "update-project" <> short 'u' <> help "Build with new versions and write to config")
   latestOverrides <- switch (long "overrides" <> short 'o' <> help "Write latest versions to the env's overrides")
   projectRoot <- optional (option absDirOption (long "root" <> help "The root directory of the project"))
   ghc <- optional (option absDirOption (long "ghc" <> help "The lower env's GHC store path"))
+  batchLog <- optional (option absFileOption (long "batch-log" <> help "Read and write JSON state using this file"))
   pure ManagedConfig {stateFile = StateFileConfig {..}, ..}
 
 bumpParser :: Parser BumpOptions
 bumpParser = do
   env <- Right <$> jsonConfigParser
-  config <- managedConfigParser TargetUpper
+  config <- managedConfigParser OpBump TargetUpper
   handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure BumpOptions {..}
 
 lowerInitParser :: Parser LowerInitOptions
 lowerInitParser = do
   env <- Right <$> jsonConfigParser
-  config <- managedConfigParser TargetLower
+  config <- managedConfigParser OpLower TargetLower
   stabilize <- switch (long "stabilize" <> help "Try all versions in range if the build fails for a dep")
   lowerMajor <- switch (long "lower-major" <> help "Only pick versions from the lower bound's major if it exists")
   handlers <- optional (option lowerInitHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
@@ -252,7 +258,7 @@ lowerInitParser = do
 lowerOptimizeParser :: Parser LowerOptimizeOptions
 lowerOptimizeParser = do
   env <- Right <$> jsonConfigParser
-  config <- managedConfigParser TargetLower
+  config <- managedConfigParser OpLower TargetLower
   handlers <- optional (option lowerOptimizeHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure LowerOptimizeOptions {lowerOptimize = LowerOptimizeConfig {oldest = False, initialBounds = mempty}, ..}
 
@@ -261,6 +267,16 @@ lowerCommands =
   command "init" (LowerInitCmd <$> info lowerInitParser (progDesc "Initialize the lower bounds"))
   <>
   command "optimize" (LowerOptimizeCmd <$> info lowerOptimizeParser (progDesc "Optimize the lower bounds"))
+
+managedCommitMsgParser :: Parser (Path Abs File)
+managedCommitMsgParser =
+  option absFileOption (long "file" <> help "The JSON file written by a managed deps app")
+
+managedCommands :: Mod CommandFields ManagedCommand
+managedCommands =
+  command "commit-msg" (ManagedCommitMsg <$> info managedCommitMsgParser (progDesc commitMsgHelp))
+  where
+    commitMsgHelp = "Print a commit message for updated versions and bounds"
 
 commands :: Mod CommandFields Command
 commands =
@@ -279,6 +295,8 @@ commands =
   command "bump" (BumpCmd <$> info bumpParser (progDesc "Bump the deps of a package"))
   <>
   command "lower" (LowerCmd <$> info (hsubparser lowerCommands) (progDesc "Modify the lower bounds of a package"))
+  <>
+  command "managed" (ManagedCmd <$> info (hsubparser managedCommands) (progDesc "Utilities for managed dependencies"))
   where
     bootstrapDesc = "Bootstrap an existing Cabal project in the current directory"
 

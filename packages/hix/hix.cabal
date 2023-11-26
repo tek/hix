@@ -69,8 +69,10 @@ library
       Hix.Managed.Build.Mutation
       Hix.Managed.Build.Solve
       Hix.Managed.Build.UpdateState
+      Hix.Managed.BuildOutput
       Hix.Managed.Bump.App
       Hix.Managed.Bump.Candidates
+      Hix.Managed.CommitMsg.App
       Hix.Managed.Data.Build
       Hix.Managed.Data.Candidate
       Hix.Managed.Data.CurrentBuild

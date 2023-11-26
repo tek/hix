@@ -54,9 +54,13 @@ noteFatal :: Text -> Maybe a -> M a
 noteFatal err =
   maybe (throwM (Error.Fatal err)) pure
 
+eitherClient :: Text -> Either Text a -> M a
+eitherClient msg =
+  leftA \ err -> throwM (Error.Client [exon|#{msg}: #{err}|])
+
 eitherFatal :: Text -> Either Text a -> M a
 eitherFatal msg =
-  leftA (\err -> throwM (Error.Fatal [exon|#{msg}: #{err}|]))
+  leftA \ err -> throwM (Error.Fatal [exon|#{msg}: #{err}|])
 
 eitherFatalShow ::
   Show b =>

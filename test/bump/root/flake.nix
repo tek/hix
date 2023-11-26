@@ -9,11 +9,15 @@
       verbose = false;
       debug = false;
       quiet = true;
+      sets = {
+        main = ["local1"];
+        other = ["local2"];
+      };
     };
     compat.enable = false;
     packages = {
-      root = {
-        src = ./.;
+      local1 = {
+        src = ./packages/local1;
         library = {
           enable = true;
           dependencies = [
@@ -23,6 +27,15 @@
           ];
         };
         test.enable = true;
+      };
+      local2 = {
+        src = ./packages/local2;
+        library = {
+          enable = true;
+          dependencies = [
+            "path"
+          ];
+        };
       };
     };
     overrides = {hackage, ...}: {

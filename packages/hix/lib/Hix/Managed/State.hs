@@ -13,8 +13,6 @@ import Hix.Data.Version (NewRange (NewRange, OldRange))
 import Hix.Deps (distributeBounds)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate)
-import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import qualified Hix.Managed.Data.ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob)
 
@@ -87,14 +85,8 @@ managedEnvForBuild job state =
 
 managedEnvForProject ::
   ManagedJob ->
-  StateFileConfig ->
   ManagedEnvState ->
   ManagedState ->
   ManagedEnvState
-managedEnvForProject job conf old new
-  | conf.latestOverrides
-  = full
-  | otherwise
-  = ManagedEnvState {bounds = full.bounds, overrides = old.overrides, resolving = False}
-  where
-    full = envStateWithOverrides job.env job.targetDeps old new
+managedEnvForProject job old new =
+  envStateWithOverrides job.env job.targetDeps old new

@@ -1,6 +1,7 @@
 module Hix.Managed.Data.Build where
 
-import Data.Aeson (ToJSON)
+import Data.Aeson (FromJSON, ToJSON)
+import Data.List.Extra (nubOrd, nubOrdOn)
 import qualified Data.Text as Text
 import Distribution.Version (VersionRange)
 
@@ -12,6 +13,7 @@ import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
+import Hix.Managed.Data.ManagedConfig (ManagedOp)
 
 data BuildSuccess =
   CandidateBuilt Candidate
@@ -57,6 +59,7 @@ unchanged BuildResult {success} =
 
 data BuildOutput =
   BuildOutput {
+    operation :: ManagedOp,
     modified :: [Candidate],
     unmodified :: [PackageName],
     failed :: [PackageName],
@@ -65,11 +68,12 @@ data BuildOutput =
     failedNames :: Maybe Text
   }
   deriving stock (Eq, Show, Generic)
-  deriving anyclass (ToJSON)
+  deriving anyclass (ToJSON, FromJSON)
 
-buildOutput :: BuildResult a -> BuildOutput
-buildOutput result =
+buildOutputFromLists :: ManagedOp -> [Candidate] -> [PackageName] -> [PackageName] -> BuildOutput
+buildOutputFromLists operation modified' unmodified' failed' =
   BuildOutput {
+    operation,
     modified,
     unmodified,
     failed,
@@ -78,7 +82,38 @@ buildOutput result =
     failedNames = comma failed
   }
   where
+    modified = sortOn (.version.package) (nubOrdOn (.version.package) modified')
+    unmodified = sort (nubOrd unmodified')
+    failed = sort (nubOrd failed')
+    comma = fmap (Text.intercalate ", " . fmap coerce . toList) . nonEmpty
+
+emptyBuildOutput :: ManagedOp -> BuildOutput
+emptyBuildOutput operation =
+  BuildOutput {
+    operation,
+    modified = [],
+    unmodified = [],
+    failed = [],
+    modifiedNames = Nothing,
+    unmodifiedNames = Nothing,
+    failedNames = Nothing
+  }
+
+combineBuildOutputs :: BuildOutput -> BuildOutput -> Either Text BuildOutput
+combineBuildOutputs left right
+  | left.operation /= right.operation
+  = Left "Can't combine build outputs of different managed operations"
+  | otherwise
+  = Right (buildOutputFromLists right.operation modified unmodified failed)
+  where
+    modified = left.modified <> right.modified
+    unmodified = left.unmodified <> right.unmodified
+    failed = left.failed <> right.failed
+
+buildOutput :: ManagedOp -> BuildResult a -> BuildOutput
+buildOutput operation result =
+  buildOutputFromLists operation modified unmodified failed
+  where
     modified = sortOn (.version.package) (changed result)
     unmodified = sort (unchanged result)
     failed = sort ((.package) <$> result.failed)
-    comma = fmap (Text.intercalate ", " . fmap coerce . toList) . nonEmpty

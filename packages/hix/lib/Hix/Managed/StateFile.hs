@@ -34,12 +34,13 @@ renderManaged' =
   encodeNix
 
 writeStateFile ::
+  Text ->
   StateFileHandlers ->
   Path Abs File ->
   ManagedEnvState ->
   M ()
-writeStateFile handlers stateFile state = do
-  Log.debug [exon|writing managed stated file: #{renderRootExpr expr}|]
+writeStateFile purpose handlers stateFile state = do
+  Log.debug [exon|writing managed stated file for #{purpose}: #{renderRootExpr expr}|]
   handlers.writeFile stateFile expr
   where
     expr = encodeNix state
@@ -54,7 +55,7 @@ writeProjectState ::
 writeProjectState handlers job conf originalManaged managed = do
   root <- rootOrCwd conf.projectRoot
   stateFile <- handlers.initFile root conf.file
-  writeStateFile handlers stateFile (managedEnvForProject job conf originalManaged managed)
+  writeStateFile "final result persistence" handlers stateFile (managedEnvForProject job originalManaged managed)
 
 writeBuildState ::
   StateFileHandlers ->
@@ -65,7 +66,7 @@ writeBuildState ::
   Overrides ->
   M ManagedState
 writeBuildState handlers job bounds stateFile candidate overrides =
-  state <$ writeStateFile handlers stateFile envState
+  state <$ writeStateFile "current build" handlers stateFile envState
   where
     envState = managedEnvForBuild job state
     state = managedWithCandidate bounds candidate overrides

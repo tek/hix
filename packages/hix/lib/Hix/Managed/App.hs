@@ -1,8 +1,6 @@
 module Hix.Managed.App where
 
 import Control.Monad.Trans.Reader (asks)
-import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Lazy.Char8 as ByteString
 
 import Hix.Class.Map ((!!))
 import Hix.Data.Bounds (Bounds, RemovableBounds, removableBounds)
@@ -11,9 +9,9 @@ import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedEnv, ManagedState (ManagedState))
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M)
-import Hix.Data.OutputFormat (OutputFormat (..))
 import Hix.Deps (allDeps, depsFromConfig, forTargets, mergeBounds, withManagedRanges)
 import Hix.Managed.Build.Mutation (DepMutation)
+import Hix.Managed.BuildOutput (outputResult, updateBatchLog)
 import Hix.Managed.Data.Build (BuildResult, buildOutput)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (ManagedConfig, StateFileConfig)
@@ -70,11 +68,6 @@ managedApp build env conf use = do
   where
     overrides = env.state.overrides !! conf.env
 
-outputResult :: BuildResult a -> OutputFormat -> M ()
-outputResult result = \case
-  OutputNone -> unit
-  OutputJson -> liftIO (ByteString.putStrLn (Aeson.encode (buildOutput result)))
-
 processAppResult ::
   ReportMutation a =>
   ReportHandlers a ->
@@ -86,7 +79,9 @@ processAppResult ::
 processAppResult report env conf app = \case
   Right result -> do
     updateProject app.build.stateFile report conf.stateFile app.job app.removable env.state result
-    outputResult result =<< asks (.output)
+    let output = buildOutput conf.operation result
+    outputResult output =<< asks (.output)
+    traverse_ (updateBatchLog output) conf.batchLog
   Left mutations ->
     reportMutations mutations
 

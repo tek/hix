@@ -14,6 +14,7 @@ latestVersion = \case
   "aeson" -> found [2, 2, 0, 0]
   "extra" -> found [1, 7, 14]
   "th-abstraction" -> found [0, 5, 0, 0]
+  "path" -> found [0, 9, 5]
   n -> throwM (Client [exon|Invalid package for latestVersion: ##{n}|])
   where
     found = pure . Just . mkVersion

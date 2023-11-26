@@ -1,6 +1,6 @@
 module Hix.Data.Version where
 
-import Data.Aeson (FromJSON, ToJSON (toJSON))
+import Data.Aeson (FromJSON (parseJSON), ToJSON (toJSON))
 import qualified Data.List.NonEmpty as NonEmpty
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Version (Version, VersionRange)
@@ -9,6 +9,7 @@ import qualified Text.PrettyPrint as PrettyPrint
 import qualified Text.PrettyPrint as Pretty
 
 import Hix.Class.EncodeNix (EncodeNix)
+import Hix.Data.Json (jsonParsec)
 import Hix.Data.Package (PackageName)
 import Hix.Orphans.Version ()
 import Hix.Pretty (showP)
@@ -34,6 +35,9 @@ newRange = \case
 
 instance ToJSON NewRange where
   toJSON = toJSON @(Maybe Text) . fmap showP . newRange
+
+instance FromJSON NewRange where
+  parseJSON = fmap (maybe OldRange (NewRange . jsonParsec)) . parseJSON
 
 forNewRange ::
   Applicative m =>

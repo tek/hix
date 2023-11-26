@@ -1,5 +1,6 @@
 module Hix.Console where
 
+import qualified Data.ByteString.Char8 as ByteString
 import qualified Data.Text.IO as Text
 import Exon (exon)
 import System.IO (Handle, stderr, stdout)
@@ -12,11 +13,25 @@ hPrint ::
 hPrint h msg =
   liftIO (Text.hPutStrLn h msg)
 
+hPrintBS ::
+  MonadIO m =>
+  Handle ->
+  ByteString ->
+  m ()
+hPrintBS h msg =
+  liftIO (ByteString.hPutStrLn h msg)
+
 out :: MonadIO m => Text -> m ()
 out = hPrint stdout
 
 err :: MonadIO m => Text -> m ()
 err = hPrint stderr
+
+bytesOut :: MonadIO m => ByteString -> m ()
+bytesOut = hPrintBS stdout
+
+bytesErr :: MonadIO m => ByteString -> m ()
+bytesErr = hPrintBS stderr
 
 sgi :: Text -> Text
 sgi param =
