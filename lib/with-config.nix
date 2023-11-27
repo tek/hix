@@ -85,6 +85,7 @@ let
         inherit (config.managed.lower) solverBounds;
       };
       inherit targets;
+      envs = mapAttrs (_: env: { ghc = util.ghc.packageDbLocal env; }) util.managed.envs;
     };
 
     jsonFile = name: value: pkgs.writeText "hix-${name}-json" (builtins.toJSON value);

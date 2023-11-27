@@ -12,7 +12,7 @@ import qualified Hix.Managed.Handlers.Report.Prod as Report
 handlersProd :: IO BumpHandlers
 handlersProd = do
   manager <- liftIO (newManager tlsManagerSettings)
-  build <- Build.handlersProdNoSolver
+  build <- Build.handlersProd
   pure BumpHandlers {
     build,
     report = Report.handlersProd,

@@ -1,7 +1,8 @@
 module Hix.Data.Monad where
 
 import Control.Monad.Trans.Except (ExceptT)
-import Control.Monad.Trans.Reader (ReaderT)
+import Control.Monad.Trans.Reader (ReaderT, asks)
+import GHC.Records (HasField (getField))
 import Path (Abs, Dir, Path)
 
 import Hix.Data.Error (Error)
@@ -31,3 +32,11 @@ data Env =
   }
 
 type M a = ReaderT Env (ExceptT Error IO) a
+
+data EnvM = EnvM
+
+instance HasField name Env a => HasField name EnvM (M a) where
+  getField EnvM = asks (getField @name)
+
+envM :: EnvM
+envM = EnvM

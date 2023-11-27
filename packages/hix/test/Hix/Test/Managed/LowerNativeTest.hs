@@ -26,13 +26,17 @@ import qualified Hix.Managed.App
 import Hix.Managed.App (managedApp)
 import qualified Hix.Managed.Data.Build
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpLower),
+  StateFileConfig (StateFileConfig),
+  )
 import qualified Hix.Managed.Data.ManagedJob
 import qualified Hix.Managed.Handlers.Build
-import qualified Hix.Managed.Handlers.LowerInit
-import qualified Hix.Managed.Handlers.LowerInit.Prod as LowerInit
-import qualified Hix.Managed.Handlers.LowerOptimize
-import qualified Hix.Managed.Handlers.LowerOptimize.Prod as LowerOptimize
+import Hix.Managed.Handlers.Build (ghcDb)
+import qualified Hix.Managed.Handlers.Build.Prod as Build
+import qualified Hix.Managed.Handlers.Lower
+import qualified Hix.Managed.Handlers.Lower.Prod as Lower
 import Hix.Managed.Lower.App (lowerInit, lowerOptimize)
 import Hix.Managed.Project (updateProject)
 import Hix.Managed.State (envWithOverrides)
@@ -75,6 +79,7 @@ flake hixRoot =
       lower.enable = true;
     };
     compat.enable = false;
+    ghcVersions = [];
     packages = {
       root = {
         src = ./.;
@@ -238,14 +243,15 @@ test_lowerNative = do
   deps <- leftA fail depsConf
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
     runMWith True True False OutputNone [absdir|/invalid/cwd|] do
-      handlersInit <- LowerInit.handlersProd Nothing False
-      handlersOptimize <- LowerOptimize.handlersProd Nothing False
+      build <- liftIO Build.handlersProd <&> \ h -> h {ghcDb = \ _ _ -> (pure Nothing)}
+      handlersInit <- Lower.handlersProdWith build False
+      handlersOptimize <- Lower.handlersProdWith build False
       root <- setupProject
       let
         env =
           ManagedEnv {
             deps = deps,
-            state = ManagedEnvState mempty mempty True,
+            state = ManagedEnvState mempty mempty False,
             lower = ManagedLowerEnv {solverBounds = []},
             targets = ["root"]
           }
@@ -257,9 +263,11 @@ test_lowerNative = do
               projectRoot = Just root,
               latestOverrides = True
             },
+            operation = OpLower,
             ghc = Nothing,
             env = "lower",
-            targetBound = TargetLower
+            targetBound = TargetLower,
+            batchLog = Nothing
           }
         lowerInitConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = mempty}
         removable = RemovableBounds {targetBound = TargetLower, deps = mempty}

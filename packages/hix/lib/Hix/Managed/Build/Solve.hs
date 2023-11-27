@@ -21,9 +21,9 @@ import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation))
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate)
 import Hix.Managed.Data.SolverBounds (SolverBound (..), SolverBounds, solverRanges)
-import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (BuildHandlers)
+import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Solve
+import Hix.Managed.Handlers.Solve (SolveHandlers)
 import qualified Hix.Managed.Solve.Changes
 import Hix.Managed.Solve.Changes (processSolverPlan)
 import Hix.Pretty (showP)
@@ -65,17 +65,18 @@ directBounds targetBound versions =
 -- to pin them down for the ultimate result, and to avoid that the solver picks a later version (for @lower@ runs) when
 -- examining subsequent mutations (since Cabal may prefer installed or later versions if given the freedeom).
 buildWithSolver ::
-  BuildHandlers ->
+  SolveHandlers ->
+  HackageHandlers ->
   (BuildMutation -> M (Maybe ManagedState)) ->
   TargetBound ->
   SolverBounds ->
   Candidate ->
   M (Maybe (Candidate, ManagedState, SolverBounds))
-buildWithSolver handlers build targetBound bounds candidate = do
+buildWithSolver solve hackage build targetBound bounds candidate = do
   logStart candidate.version bounds
   runMaybeT do
-    newVersions <- MaybeT (handlers.solve.solveForVersion (solverRanges bounds) candidate.version)
-    solverChanges <- lift (processSolverPlan allDeps handlers.hackage newVersions)
+    newVersions <- MaybeT (solve.solveForVersion (solverRanges bounds) candidate.version)
+    solverChanges <- lift (processSolverPlan allDeps hackage newVersions)
     new <- MaybeT (build (mutation solverChanges))
     let newBounds = foldl updateSolverBound bounds solverChanges.projectDeps
     lift (Log.debug [exon|New solver bounds: #{showP newBounds}|])

@@ -89,12 +89,9 @@ library
       Hix.Managed.Handlers.Bump.Test
       Hix.Managed.Handlers.Hackage
       Hix.Managed.Handlers.Hackage.Prod
-      Hix.Managed.Handlers.LowerInit
-      Hix.Managed.Handlers.LowerInit.Prod
-      Hix.Managed.Handlers.LowerInit.Test
-      Hix.Managed.Handlers.LowerOptimize
-      Hix.Managed.Handlers.LowerOptimize.Prod
-      Hix.Managed.Handlers.LowerOptimize.Test
+      Hix.Managed.Handlers.Lower
+      Hix.Managed.Handlers.Lower.Prod
+      Hix.Managed.Handlers.Lower.Test
       Hix.Managed.Handlers.Mutation
       Hix.Managed.Handlers.Mutation.Bump
       Hix.Managed.Handlers.Mutation.LowerInit

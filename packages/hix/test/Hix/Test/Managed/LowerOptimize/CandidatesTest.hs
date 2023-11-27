@@ -53,11 +53,12 @@ test_candidatesOptimize = do
       pure case nv.version of
         [1, 9, 2] -> Just SolverPlan {configured = [nv], preexisting = []}
         _ -> Nothing
-    handlers = BuildHandlers.handlersNull {solve = SolveHandlers {solveForVersion}}
+    handlers = BuildHandlers.handlersNull -- {solve = SolveHandlers {solveForVersion}}
+    solve = SolveHandlers {solveForVersion}
   result <- liftIO $ runMWith False False True OutputNone [absdir|/project|] do
     majors <- candidatesOptimize availableVersions dep
     for majors \ mut ->
-      processMutationLowerOptimize handlers state mut build
+      processMutationLowerOptimize solve handlers.hackage state mut build
   mutationResults <- evalEither result
   Just (MutationSuccess candidate mstate newState) === mutationResults
   triedVersions <- liftIO (readIORef buildRef)

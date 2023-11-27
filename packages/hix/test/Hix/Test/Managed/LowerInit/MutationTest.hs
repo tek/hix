@@ -37,8 +37,8 @@ import Hix.Managed.Data.ManagedConfig (
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Hackage (fetchHash)
-import Hix.Managed.Handlers.LowerInit (LowerInitHandlers (..), versions)
-import qualified Hix.Managed.Handlers.LowerInit.Test as LowerInitHandlers
+import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
+import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
@@ -169,17 +169,15 @@ buildProjectTest _ _ target newVersion =
     "direct4" -> pure True
     pkg -> throwM (Fatal [exon|Unexpected dep for building ##{target}: ##{pkg}|])
 
-handlersTest :: IO (LowerInitHandlers, IORef [Expr], IORef [DepMutation LowerInit])
+handlersTest :: IO (LowerHandlers LowerInit, IORef [Expr], IORef [DepMutation LowerInit])
 handlersTest = do
   (build, stateFileRef) <- BuildHandlers.handlersUnitTest tmpRoot
-  (handlers, bumpsRef) <- LowerInitHandlers.handlersUnitTest
+  (handlers, bumpsRef) <- LowerHandlers.handlersUnitTest
   let handlers' = handlers {
+    solve = \ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
     build = build {
       buildProject = buildProjectTest,
-      solve = SolveHandlers {solveForVersion = testSolver testDeps},
-      hackage = build.hackage {
-        fetchHash = fetchHashTest
-      }
+      hackage = build.hackage {fetchHash = fetchHashTest}
     },
     versions = fetchVersions
   }

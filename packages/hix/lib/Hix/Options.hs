@@ -78,8 +78,7 @@ import Hix.Optparse (
   absFileOption,
   bumpHandlersOption,
   jsonOption,
-  lowerInitHandlersOption,
-  lowerOptimizeHandlersOption,
+  lowerHandlersOption,
   outputFormatOption,
   relFileOption,
   )
@@ -252,14 +251,14 @@ lowerInitParser = do
   config <- managedConfigParser OpLower TargetLower
   stabilize <- switch (long "stabilize" <> help "Try all versions in range if the build fails for a dep")
   lowerMajor <- switch (long "lower-major" <> help "Only pick versions from the lower bound's major if it exists")
-  handlers <- optional (option lowerInitHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure LowerInitOptions {lowerInit = LowerInitConfig {oldest = False, initialBounds = mempty, ..}, ..}
 
 lowerOptimizeParser :: Parser LowerOptimizeOptions
 lowerOptimizeParser = do
   env <- Right <$> jsonConfigParser
   config <- managedConfigParser OpLower TargetLower
-  handlers <- optional (option lowerOptimizeHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure LowerOptimizeOptions {lowerOptimize = LowerOptimizeConfig {oldest = False, initialBounds = mempty}, ..}
 
 lowerCommands :: Mod CommandFields LowerCommand

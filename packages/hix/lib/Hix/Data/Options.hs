@@ -14,8 +14,7 @@ import Hix.Data.Package (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Managed.Data.ManagedConfig (ManagedConfig)
 import Hix.Managed.Handlers.Bump (SpecialBumpHandlers)
-import Hix.Managed.Handlers.LowerInit (SpecialLowerInitHandlers)
-import Hix.Managed.Handlers.LowerOptimize (SpecialLowerOptimizeHandlers)
+import Hix.Managed.Handlers.Lower (SpecialLowerHandlers)
 import Hix.Optparse (JsonConfig)
 
 data PreprocOptions =
@@ -133,7 +132,7 @@ data LowerInitOptions =
     env :: Either ManagedEnv JsonConfig,
     config :: ManagedConfig,
     lowerInit :: LowerInitConfig,
-    handlers :: Maybe SpecialLowerInitHandlers
+    handlers :: Maybe SpecialLowerHandlers
   }
   deriving stock (Show)
 
@@ -142,7 +141,7 @@ data LowerOptimizeOptions =
     env :: Either ManagedEnv JsonConfig,
     config :: ManagedConfig,
     lowerOptimize :: LowerOptimizeConfig,
-    handlers :: Maybe SpecialLowerOptimizeHandlers
+    handlers :: Maybe SpecialLowerHandlers
   }
   deriving stock (Show)
 

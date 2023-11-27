@@ -138,6 +138,8 @@ let
       { dep-versions = app (depVersions env.name); };
   };
 
+  managedEnvGhcs = lib.mapAttrs (_: env: { ghc-local = util.ghc.packageDbLocal env; }) util.managed.envs;
+
   commandApps = lib.mapAttrs (_: c: app c.path);
 
   wantManagedChecks = config.managed.enable && config.managed.check;
@@ -174,6 +176,8 @@ let
     lower.optimize = managedCmdMulti "lower.optimize" "lower" libManaged.lowerOptimize sets;
   };
 
+  # We're not guarding this with a `optionalAttrs` so that we can print an error when the user executes an app.
+  # TODO Add an override option that opts into removing these apps from the flake.
   managedApps =
     if config.managed.sets == "all"
     then managedAll config.envs.latest config.envs.lower
@@ -197,5 +201,6 @@ in {
   pkgMainExe
   managedChecks
   managedApps
+  managedEnvGhcs
   ;
 }

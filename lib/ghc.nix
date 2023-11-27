@@ -24,6 +24,8 @@
 
   packageDbLocal = env: (local env).ghcWithPackages (packageDb env);
 
+  packageDbFull = env: args: env.ghc.ghc.ghcWithPackages.override args (packageDb env);
+
 in {
-  inherit packageDb local packageDbLocal;
+  inherit packageDb local packageDbLocal packageDbFull;
 }
