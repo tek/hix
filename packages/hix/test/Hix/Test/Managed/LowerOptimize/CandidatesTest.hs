@@ -3,13 +3,11 @@ module Hix.Test.Managed.LowerOptimize.CandidatesTest where
 import Data.IORef (modifyIORef', newIORef, readIORef)
 import Distribution.Version (Version, orLaterVersion)
 import Hedgehog (evalEither, (===))
-import Path (absdir)
 
 import Hix.Data.Dep (mainDep)
 import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
-import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Package (PackageName)
 import Hix.Data.Version (NewRange (NewRange), NewVersion (..))
 import Hix.Managed.Build.Mutation (MutationResult (MutationSuccess))
@@ -24,8 +22,8 @@ import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
 import Hix.Managed.Lower.Candidates (candidatesOptimize)
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimizeState (..))
 import Hix.Managed.Solve.Changes (SolverPlan (..))
-import Hix.Monad (M, runMWith, throwM)
-import Hix.Test.Utils (UnitTest)
+import Hix.Monad (M, throwM)
+import Hix.Test.Utils (UnitTest, runMTest)
 
 availableVersions :: PackageName -> M [Version]
 availableVersions = \case
@@ -55,7 +53,7 @@ test_candidatesOptimize = do
         _ -> Nothing
     handlers = BuildHandlers.handlersNull -- {solve = SolveHandlers {solveForVersion}}
     solve = SolveHandlers {solveForVersion}
-  result <- liftIO $ runMWith False False True OutputNone [absdir|/project|] do
+  result <- liftIO $ runMTest False do
     majors <- candidatesOptimize availableVersions dep
     for majors \ mut ->
       processMutationLowerOptimize solve handlers.hackage state mut build

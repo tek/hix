@@ -10,6 +10,7 @@ import qualified Hix.Managed.Handlers.Report.Test as ReportHandlers
 
 handlersTest ::
   RenderMutation a =>
+  Maybe Text ->
   Bool ->
   M (LowerHandlers a)
 handlersTest =

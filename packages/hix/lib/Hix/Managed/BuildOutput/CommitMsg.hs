@@ -1,12 +1,8 @@
-module Hix.Managed.CommitMsg.App where
+module Hix.Managed.BuildOutput.CommitMsg where
 
 import qualified Data.Text as Text
 import Exon (exon)
-import Path (Abs, File, Path)
 
-import qualified Hix.Console as Console
-import Hix.Data.Monad (M)
-import Hix.Managed.BuildOutput (requireBatchLog)
 import qualified Hix.Managed.Data.Build
 import Hix.Managed.Data.Build (BuildOutput)
 import Hix.Managed.Data.Candidate (Candidate)
@@ -39,9 +35,4 @@ commit output =
 formatCommit :: BuildOutput -> Maybe Text
 formatCommit output =
   commit output <&> \ (msg, body) ->
-    Text.unlines ([msg, ""] ++ body)
-
-managedCommitMsgCli :: Path Abs File -> M ()
-managedCommitMsgCli file = do
-  output <- requireBatchLog file
-  traverse_ Console.out (formatCommit output)
+    Text.intercalate "\n" ([msg, ""] ++ body)

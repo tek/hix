@@ -11,8 +11,7 @@ data StateFileConfig =
   StateFileConfig {
     file :: Path Rel File,
     projectRoot :: Maybe (Path Abs Dir),
-    updateProject :: Bool,
-    latestOverrides :: Bool
+    updateProject :: Bool
   }
   deriving stock (Eq, Show, Generic)
 
@@ -39,9 +38,8 @@ data ManagedConfig =
   ManagedConfig {
     stateFile :: StateFileConfig,
     operation :: ManagedOp,
-    env :: EnvName,
+    envs :: [EnvName],
     ghc :: Maybe (Path Abs Dir),
-    targetBound :: TargetBound,
-    batchLog :: Maybe (Path Abs File)
+    targetBound :: TargetBound
   }
   deriving stock (Eq, Show, Generic)

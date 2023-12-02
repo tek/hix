@@ -19,8 +19,9 @@ import System.IO.Error (tryIOError)
 
 import qualified Hix.Console as Console
 import Hix.Data.Error (Error (BootstrapError, Client, EnvError, GhciError, NewError))
+import qualified Hix.Data.GlobalOptions as GlobalOptions
+import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions), defaultGlobalOptions)
 import Hix.Data.Monad (Env (..), LogLevel, M)
-import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Error (Error (Fatal), tryIO, tryIOWith)
 import qualified Hix.Log as Log
 import Hix.Log (logWith)
@@ -82,24 +83,34 @@ logIORef :: IORef [Text] -> LogLevel -> Text -> IO ()
 logIORef ref _ msg =
   modifyIORef' ref (msg :)
 
-runMLog :: Bool -> Bool -> Bool -> OutputFormat -> Path Abs Dir -> M a -> IO ([Text], Either Error a)
-runMLog verbose debug quiet output cwd ma = do
+runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
+runMLogWith GlobalOptions {..} ma = do
   logRef <- newIORef []
   withSystemTempDir "hix-cli" \ tmp -> do
     result <- runExceptT (runReaderT ma Env {logger = logWith (logIORef logRef), ..})
     log <- readIORef logRef
     pure (log, result)
 
-runMWith :: Bool -> Bool -> Bool -> OutputFormat -> Path Abs Dir -> M a -> IO (Either Error a)
-runMWith verbose debug quiet output cwd ma =
+runMLog :: Path Abs Dir -> M a -> IO ([Text], Either Error a)
+runMLog = runMLogWith . defaultGlobalOptions
+
+runMWith :: GlobalOptions -> M a -> IO (Either Error a)
+runMWith GlobalOptions {..} ma =
   withSystemTempDir "hix-cli" \ tmp ->
     runExceptT (runReaderT ma Env {logger = logWith (const Console.err), ..})
 
 runM :: Path Abs Dir -> M a -> IO (Either Error a)
-runM = runMWith False False False OutputNone
+runM = runMWith . defaultGlobalOptions
 
 runMDebug :: Path Abs Dir -> M a -> IO (Either Error a)
-runMDebug = runMWith True True False OutputNone
+runMDebug cwd =
+  runMWith (defaultGlobalOptions cwd) {GlobalOptions.verbose = True, GlobalOptions.debug = True}
+
+tryIOMWithM :: (Text -> M a) -> IO a -> M a
+tryIOMWithM handleError ma =
+  liftIO (tryIOError ma) >>= \case
+    Right a -> pure a
+    Left err -> handleError (show err)
 
 tryIOMWith :: (Text -> Error) -> IO a -> M a
 tryIOMWith mkErr ma = lift (tryIOWith mkErr ma)
@@ -115,6 +126,12 @@ tryIOMAs err ma = do
 
 tryIOM :: IO a -> M a
 tryIOM ma = lift (tryIO ma)
+
+catchIOM :: IO a -> (Text -> M a) -> M a
+catchIOM ma handle =
+  liftIO (tryIOError ma) >>= \case
+    Right a -> pure a
+    Left err -> handle (show err)
 
 withTempDir :: String -> (Path Abs Dir -> M a) -> M a
 withTempDir name use = do

@@ -6,6 +6,8 @@ import Hix.Data.ComponentConfig (ComponentName)
 import Hix.Data.Dep (Dep)
 import Hix.Data.Package (LocalPackage)
 
+-- | This type reflects the structure of deps in the module options.
+-- It is converted to a type without the component level right after parsing.
 newtype ConfigComponentDeps =
   ConfigComponentDeps [Dep]
   deriving stock (Eq, Show, Generic)

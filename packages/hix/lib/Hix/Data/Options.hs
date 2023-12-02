@@ -1,15 +1,14 @@
 module Hix.Data.Options where
 
 import Path (Abs, Dir, File, Path, SomeBase)
-import Prelude hiding (Mod, mod)
 
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
 import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
+import Hix.Data.GlobalOptions (GlobalOptions)
 import Hix.Data.LowerConfig (LowerInitConfig, LowerOptimizeConfig)
 import Hix.Data.ManagedEnv (ManagedEnv)
 import Hix.Data.NewProjectConfig (NewProjectConfig)
-import Hix.Data.OutputFormat (OutputFormat)
 import Hix.Data.Package (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Managed.Data.ManagedConfig (ManagedConfig)
@@ -151,12 +150,6 @@ data LowerCommand =
   LowerOptimizeCmd LowerOptimizeOptions
   deriving stock (Show)
 
-data ManagedCommand =
-  ManagedCommitMsg (Path Abs File)
-  |
-  ManagedGithubPr (Path Abs File)
-  deriving stock (Show)
-
 data Command =
   Preproc PreprocOptions
   |
@@ -173,20 +166,7 @@ data Command =
   BumpCmd BumpOptions
   |
   LowerCmd LowerCommand
-  |
-  ManagedCmd ManagedCommand
   deriving stock (Show)
-
-data GlobalOptions =
-  GlobalOptions {
-    -- TODO why is this Maybe? we're always using @fromMaybe False@ for it
-    verbose :: Maybe Bool,
-    debug :: Bool,
-    quiet :: Bool,
-    cwd :: Path Abs Dir,
-    output :: OutputFormat
-  }
-  deriving stock (Eq, Show, Generic)
 
 data Options =
   Options {

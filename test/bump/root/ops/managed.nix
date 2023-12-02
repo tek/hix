@@ -1,5 +1,5 @@
 {
   bounds = {
-    root.aeson = "^>= 2.2";
+    local1.aeson = "^>= 2.2";
   };
 }

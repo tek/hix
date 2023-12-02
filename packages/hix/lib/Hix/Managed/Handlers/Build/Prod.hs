@@ -90,26 +90,27 @@ buildProject root env target NewVersion {package, version} = do
 
     pv = [exon|##{package}-#{showP version}|]
 
--- TODO need to pass in @buildOutputsPrefix@
 ghcDb ::
+  Maybe Text ->
   Path Abs Dir ->
   EnvName ->
   M (Maybe (Path Abs Dir))
-ghcDb root env = do
-  conf <- nixProc root ["eval", "--raw"] [exon|build.env.##{env}.ghc-local|] []
+ghcDb buildOutputsPrefix root env = do
+  conf <- nixProc root ["eval", "--raw"] [exon|#{prefix}.env.##{env}.ghc-local|] []
   tryIOM (readProcessStdout conf) >>= \case
     (ExitSuccess, decodeUtf8 -> out) -> Just <$> noteFatal (parseError out) (parseAbsDir out)
     (ExitFailure _, _) -> throwM (Fatal "Evaluation failed for vanilla GHC path")
   where
+    prefix = fromMaybe "build" buildOutputsPrefix
     parseError out = [exon|Parse error for vanilla GHC path: #{toText out}|]
 
-handlersProd :: IO BuildHandlers
-handlersProd = do
+handlersProd :: Maybe Text -> IO BuildHandlers
+handlersProd buildOutputsPrefix = do
   hackage <- HackageHandlers.handlersProd
   pure BuildHandlers {
     stateFile = StateFileHandlers.handlersProd,
     hackage,
     withTempProject = TempProjectBracket withTempProject,
     buildProject,
-    ghcDb
+    ghcDb = ghcDb buildOutputsPrefix
   }

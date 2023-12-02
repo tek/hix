@@ -1,14 +1,17 @@
 module Hix.Managed.Lower.App where
 
+import Control.Monad (foldM)
 import Distribution.Pretty (Pretty)
 import Distribution.Version (Version)
 import Exon (exon)
+import Path
 
 import Hix.Data.Dep (Dep)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), LowerOptimizeConfig (LowerOptimizeConfig))
+import qualified Hix.Data.ManagedEnv
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (LowerInitOptions, LowerOptimizeOptions)
@@ -19,9 +22,12 @@ import qualified Hix.Log as Log
 import qualified Hix.Managed.App
 import Hix.Managed.App (ManagedApp, runManagedApp)
 import Hix.Managed.Build (buildMutations)
+import qualified Hix.Managed.Build.Env
+import Hix.Managed.Build.Env (BuildEnv, withBuildEnv)
 import Hix.Managed.Build.Mutation (DepMutation, RenderMutation)
-import Hix.Managed.Data.Build (BuildResult)
+import Hix.Managed.Data.Build (BuildResult, BuildResults, initBuildResults, updateBuildResults)
 import qualified Hix.Managed.Data.ManagedJob
+import Hix.Managed.Data.ManagedJob (ManagedJob)
 import qualified Hix.Managed.Data.SolverBounds as SolverBounds
 import Hix.Managed.Data.SolverBounds (SolverBounds, noBounds, optimizeBounds)
 import qualified Hix.Managed.Handlers.Build
@@ -54,46 +60,68 @@ reportFailures pkgs = do
   Log.warn "The build failed with some of the lower bound versions:"
   for_ pkgs \ (pkg, version) -> Log.infoCont (listPackageVersion pkg version)
 
-lowerCommon ::
+lowerCommonJob ::
   Pretty a =>
-  SolverBounds ->
+  ([Dep] -> SolverBounds) ->
   (SolverBounds -> s) ->
   (Dep -> M (Maybe (DepMutation a))) ->
-  (EnvName -> M (MutationHandlers a s)) ->
+  (Path Abs Dir -> EnvName -> M (MutationHandlers a s)) ->
   ManagedApp ->
+  BuildEnv ->
+  ManagedJob ->
   M (BuildResult a)
-lowerCommon initialBounds consState candidates mkMutationHandlers app = do
-  mutations <- catMaybes <$> traverse candidates app.deps
-  mutationHandlers <- mkMutationHandlers app.job.env
-  buildMutations app.build mutationHandlers app.conf app.job app.state mutations ext
+lowerCommonJob initialBounds consState candidates mkMutationHandlers app buildEnv job = do
+  mutations <- catMaybes <$> traverse candidates job.deps
+  handlers <- mkMutationHandlers buildEnv.root job.env
+  buildMutations buildEnv handlers job job.state mutations ext
   where
-    solverBounds = SolverBounds.fromConfig app.solverBounds <> initialBounds
+    solverBounds = SolverBounds.fromConfig app.solverBounds <> initialBounds job.deps
     ext = consState solverBounds
+    -- TODO where does this go now? copied it from somewhere but I think I left it there as well
+    -- newState = managedEnvForProject job originalManaged managed
+
+lowerCommon ::
+  Pretty a =>
+  ([Dep] -> SolverBounds) ->
+  (SolverBounds -> s) ->
+  (Dep -> M (Maybe (DepMutation a))) ->
+  (Path Abs Dir -> EnvName -> M (MutationHandlers a s)) ->
+  ManagedApp ->
+  M (BuildResults a)
+lowerCommon initialBounds consState candidates mkMutationHandlers app = do
+  -- TODO rename BuildEnv to TempProject
+  withBuildEnv app.build app.conf \ buildEnv -> do
+    let
+      build results job = do
+        res <- lowerCommonJob initialBounds consState candidates mkMutationHandlers app buildEnv job
+        pure (updateBuildResults job.env job.targetDeps results res)
+    foldM build (initBuildResults app.state) app.jobs
 
 lowerInit ::
   LowerHandlers LowerInit ->
   LowerInitConfig ->
   ManagedApp ->
-  M (BuildResult LowerInit)
+  M (BuildResults LowerInit)
 lowerInit handlers LowerInitConfig {initialBounds, lowerMajor} app =
-  lowerCommon (initialBounds <> noBounds app.deps) LowerInitState candidates mutationHandlers app
+  lowerCommon (\ deps -> initialBounds <> noBounds deps) LowerInitState candidates mutationHandlers app
   where
     candidates = candidatesInit handlers.versions lowerMajor
     mutationHandlers = Mutation.handlersLowerInit app.build.hackage handlers.solve
 
 chooseHandlers ::
   RenderMutation a =>
+  Maybe Text ->
   Bool ->
   Maybe SpecialLowerHandlers ->
   M (LowerHandlers a)
-chooseHandlers oldest = \case
-  Just TestLowerHandlers -> Lower.handlersTest oldest
-  Nothing -> Lower.handlersProd oldest
+chooseHandlers buildOutputsPrefix oldest = \case
+  Just TestLowerHandlers -> Lower.handlersTest buildOutputsPrefix oldest
+  Nothing -> Lower.handlersProd buildOutputsPrefix oldest
 
 lowerInitCli :: LowerInitOptions -> M ()
 lowerInitCli opts = do
   env <- jsonConfigE Client opts.env
-  handlers <- chooseHandlers opts.lowerInit.oldest opts.handlers
+  handlers <- chooseHandlers env.buildOutputsPrefix opts.lowerInit.oldest opts.handlers
   runManagedApp handlers.build handlers.report env opts.config \ app ->
     Right <$> lowerInit handlers opts.lowerInit app
 
@@ -101,9 +129,9 @@ lowerOptimize ::
   LowerHandlers LowerOptimize ->
   LowerOptimizeConfig ->
   ManagedApp ->
-  M (BuildResult LowerOptimize)
+  M (BuildResults LowerOptimize)
 lowerOptimize handlers LowerOptimizeConfig {initialBounds} app =
-  lowerCommon (initialBounds <> optimizeBounds app.deps) LowerOptimizeState candidates mutationHandlers app
+  lowerCommon (\ deps -> initialBounds <> optimizeBounds deps) LowerOptimizeState candidates mutationHandlers app
   where
     candidates = candidatesOptimize handlers.versions
     mutationHandlers = Mutation.handlersLowerOptimize app.build.hackage handlers.solve
@@ -111,6 +139,6 @@ lowerOptimize handlers LowerOptimizeConfig {initialBounds} app =
 lowerOptimizeCli :: LowerOptimizeOptions -> M ()
 lowerOptimizeCli opts = do
   env <- jsonConfigE Client opts.env
-  handlers <- chooseHandlers opts.lowerOptimize.oldest opts.handlers
+  handlers <- chooseHandlers env.buildOutputsPrefix opts.lowerOptimize.oldest opts.handlers
   runManagedApp handlers.build handlers.report env opts.config \ app ->
     Right <$> lowerOptimize handlers opts.lowerOptimize app

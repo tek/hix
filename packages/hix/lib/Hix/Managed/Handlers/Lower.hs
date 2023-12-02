@@ -1,6 +1,7 @@
 module Hix.Managed.Handlers.Lower where
 
 import Distribution.Version (Version)
+import Path (Abs, Dir, Path)
 
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
@@ -15,7 +16,7 @@ import Hix.Managed.Handlers.Solve (SolveHandlers)
 data LowerHandlers a =
   LowerHandlers {
     build :: BuildHandlers,
-    solve :: EnvName -> M SolveHandlers,
+    solve :: Path Abs Dir -> EnvName -> M SolveHandlers,
     report :: ReportHandlers a,
     versions :: PackageName -> M [Version]
   }
@@ -28,7 +29,7 @@ handlersNull :: LowerHandlers a
 handlersNull =
   LowerHandlers {
     build = Build.handlersNull,
-    solve = \ _ -> pure Solve.handlersNull,
+    solve = \ _ _ -> pure Solve.handlersNull,
     report = Report.handlersNull,
     versions = \ _ -> pure []
   }

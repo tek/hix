@@ -18,7 +18,7 @@ import Hix.Managed.Data.ManagedJob (ManagedJob)
 import Hix.Managed.Handlers.Build.Prod (rootOrCwd)
 import qualified Hix.Managed.Handlers.StateFile
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
-import Hix.Managed.State (managedEnvForBuild, managedEnvForProject, managedWithCandidate)
+import Hix.Managed.State (managedEnvForBuild, managedWithCandidate)
 import Hix.NixExpr (renderRootExpr)
 
 renderMap ::
@@ -47,15 +47,24 @@ writeStateFile purpose handlers stateFile state = do
 
 writeProjectState ::
   StateFileHandlers ->
-  ManagedJob ->
   StateFileConfig ->
   ManagedEnvState ->
-  ManagedState ->
   M ()
-writeProjectState handlers job conf originalManaged managed = do
+writeProjectState handlers conf newState = do
   root <- rootOrCwd conf.projectRoot
   stateFile <- handlers.initFile root conf.file
-  writeStateFile "final result persistence" handlers stateFile (managedEnvForProject job originalManaged managed)
+  writeStateFile "final result persistence" handlers stateFile newState
+
+writeInitialBuildState ::
+  StateFileHandlers ->
+  ManagedJob ->
+  ManagedState ->
+  Path Abs File ->
+  M ManagedState
+writeInitialBuildState handlers job state stateFile =
+  state <$ writeStateFile "initial build" handlers stateFile envState
+  where
+    envState = managedEnvForBuild job state
 
 writeBuildState ::
   StateFileHandlers ->

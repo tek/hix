@@ -16,5 +16,5 @@ handlersUnitTest tmpRoot = do
   (stateFile, stateFileRef) <- StateFileHandlers.handlersUnitTest
   pure (handlersNull {stateFile, withTempProject = withTempProjectAt tmpRoot}, stateFileRef)
 
-handlersTest :: IO BuildHandlers
+handlersTest :: Maybe Text -> IO BuildHandlers
 handlersTest = handlersProd

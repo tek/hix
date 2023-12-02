@@ -4,11 +4,7 @@ import Hix.Test.BootstrapTest (test_bootstrap)
 import Hix.Test.BoundsTest (test_bounds)
 import Hix.Test.CabalTest (test_cabal)
 import Hix.Test.GhciTest (test_componentEnv, test_ghcid, test_moduleName)
-import Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump)
-import Hix.Test.Managed.Bump.MutationTest (test_bumpMutation)
-import Hix.Test.Managed.LowerInit.MutationTest (test_lowerInitMutation)
-import Hix.Test.Managed.LowerOptimize.CandidatesTest (test_candidatesOptimize)
-import Hix.Test.Managed.LowerOptimize.MutationTest (test_lowerOptimizeMutation)
+import Hix.Test.ManagedTest (test_managed)
 import Hix.Test.NewTest (test_new)
 import Hix.Test.PreprocTest (
   test_preprocInsertPrelude,
@@ -43,17 +39,7 @@ tests =
     ],
     test_version,
     test_bounds,
-    testGroup "managed" [
-      testGroup "candidates" [
-        unitTest "bump" test_candidatesBump,
-        unitTest "optimize" test_candidatesOptimize
-      ],
-      testGroup "mutation build" [
-        unitTest "bump" test_bumpMutation,
-        unitTest "lower.init" test_lowerInitMutation,
-        unitTest "lower.optimize" test_lowerOptimizeMutation
-      ]
-    ]
+    test_managed
   ]
 
 main :: IO ()

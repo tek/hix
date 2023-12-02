@@ -2,11 +2,15 @@ module Hix.Data.ManagedEnv where
 
 import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Distribution.Pretty (Pretty (pretty))
+import GHC.Exts (IsList)
+import Path
 import Text.PrettyPrint (hang, ($+$))
 
 import Hix.Class.EncodeNix (EncodeNix)
+import Hix.Class.Map (LookupMaybe, NtMap)
 import Hix.Data.Bounds (Bounds, TargetBounds)
 import Hix.Data.ConfigDeps (ConfigDeps)
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.Overrides (EnvOverrides, Overrides)
 import Hix.Data.Package (LocalPackage)
 
@@ -47,12 +51,28 @@ data ManagedLowerEnv =
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
 
+data EnvConfig =
+  EnvConfig {
+    ghc :: Maybe (Path Abs Dir),
+    targets :: [LocalPackage]
+  }
+  deriving stock (Eq, Show, Generic)
+  deriving anyclass (FromJSON)
+
+newtype EnvsConfig =
+  EnvsConfig (Map EnvName EnvConfig)
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (Semigroup, Monoid, IsList, FromJSON)
+
+instance NtMap EnvsConfig EnvName EnvConfig LookupMaybe where
+
 data ManagedEnv =
   ManagedEnv {
     deps :: ConfigDeps,
     state :: ManagedEnvState,
     lower :: ManagedLowerEnv,
-    targets :: [LocalPackage]
+    envs :: EnvsConfig,
+    buildOutputsPrefix :: Maybe Text
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

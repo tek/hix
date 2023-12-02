@@ -125,16 +125,16 @@ let
   lib.mapAttrs (_: command: app ((envCommand { inherit env command; }).path)) config.commands;
 
   managedAll = latest: lower: {
-    bump = app (libManaged.bump latest);
-    lower.init = app (libManaged.lowerInit lower);
-    lower.optimize = app (libManaged.lowerOptimize lower);
+    bump = app (libManaged.bump [latest]);
+    lower.init = app (libManaged.lowerInit [lower]);
+    lower.optimize = app (libManaged.lowerOptimize [lower]);
   };
 
   envApps = env: {
     ${env.name} =
       envCommands env //
       envAppimages env //
-      managedAll env env //
+      managedAll env.name env.name //
       { dep-versions = app (depVersions env.name); };
   };
 
@@ -149,26 +149,12 @@ let
     (util.foldMapAttrs prefixedEnvDerivations (lib.attrNames util.managed.envs))
     ;
 
-  managedAllSets = prefix: sets: let
-    envApp = name: "${util.runBuildApp "${prefix}.${name}"} -- $@ --batch-log=$log";
-  in
-  config.pkgs.writeScript "managed-${prefix}-all" ''
-  set -e
-  log=$(mktemp --tmpdir hix-${prefix}-XXXXX.json)
-  ${util.unlinesMap envApp sets}
-  echo $log
-  '';
-
-  managedAllSetsGithubPr = prefix:
-  config.pkgs.writeScript "managed-${prefix}-all-github-pr" ''
-  log=$(${util.runBuildApp prefix} -- $@)
-  nix run .#cli -- managed github-pr --file=$log
-  '';
-
   managedCmdMulti = prefix: envSort: mk: sets: let
-    singles = lib.genAttrs sets (name: app (mk config.envs.${"${envSort}-${name}"}));
+    envName = name: "${envSort}-${name}";
+    envs = map (name: envName name) sets;
   in
-    singles // { github-pr = app (managedAllSetsGithubPr prefix); } // app (managedAllSets prefix sets);
+  lib.genAttrs sets (name: app (mk [(envName name)])) //
+  app (mk envs);
 
   managedMulti = sets: {
     bump = managedCmdMulti "bump" "latest" libManaged.bump sets;
@@ -180,7 +166,7 @@ let
   # TODO Add an override option that opts into removing these apps from the flake.
   managedApps =
     if config.managed.sets == "all"
-    then managedAll config.envs.latest config.envs.lower
+    then managedAll "latest" "lower"
     else if config.managed.sets == "each"
     then managedMulti config.internal.packageNames
     else managedMulti (lib.attrNames config.managed.sets)

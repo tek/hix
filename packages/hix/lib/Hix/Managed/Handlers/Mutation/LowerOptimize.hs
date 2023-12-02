@@ -4,6 +4,7 @@ import Control.Monad (foldM)
 import Data.Foldable.Extra (firstJustM)
 import qualified Data.List.NonEmpty.Extra as NonEmpty
 import Exon (exon)
+import Path (Abs, Dir, Path)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.EnvName (EnvName)
@@ -66,11 +67,12 @@ processMutationLowerOptimize solve hackage state mutation build = do
 
 handlersLowerOptimize ::
   HackageHandlers ->
-  (EnvName -> M SolveHandlers) ->
+  (Path Abs Dir -> EnvName -> M SolveHandlers) ->
+  Path Abs Dir ->
   EnvName ->
   M (MutationHandlers LowerOptimize LowerOptimizeState)
-handlersLowerOptimize hackage mkSolve env = do
-  solve <- mkSolve env
+handlersLowerOptimize hackage mkSolve root env = do
+  solve <- mkSolve root env
   pure MutationHandlers {
     process = processMutationLowerOptimize solve hackage
   }

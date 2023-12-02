@@ -2,6 +2,7 @@ module Hix.Managed.Handlers.Mutation.LowerInit where
 
 import Data.Foldable.Extra (firstJustM)
 import Exon (exon)
+import Path
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.EnvName (EnvName)
@@ -57,11 +58,12 @@ processMutationLowerInit solve hackage state mutation build = do
 
 handlersLowerInit ::
   HackageHandlers ->
-  (EnvName -> M SolveHandlers) ->
+  (Path Abs Dir -> EnvName -> M SolveHandlers) ->
+  Path Abs Dir ->
   EnvName ->
   M (MutationHandlers LowerInit LowerInitState)
-handlersLowerInit hackage mkSolve env = do
-  solve <- mkSolve env
+handlersLowerInit hackage mkSolve root env = do
+  solve <- mkSolve root env
   pure MutationHandlers {
     process = processMutationLowerInit solve hackage
   }

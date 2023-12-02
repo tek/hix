@@ -31,10 +31,10 @@ import Hix.Managed.Data.ManagedJob (ManagedJob)
 envStateWithOverrides ::
   EnvName ->
   TargetDeps ->
-  ManagedEnvState ->
   ManagedState ->
+  ManagedEnvState ->
   ManagedEnvState
-envStateWithOverrides env deps old new =
+envStateWithOverrides env deps new old =
   ManagedEnvState {
     bounds = distributeBounds new.bounds deps <> old.bounds,
     overrides = ntInsert env new.overrides old.overrides,
@@ -48,7 +48,14 @@ envWithOverrides ::
   ManagedEnv ->
   ManagedEnv
 envWithOverrides env deps' new ManagedEnv {..} =
-  ManagedEnv {state = envStateWithOverrides env deps' state new, ..}
+  ManagedEnv {state = envStateWithOverrides env deps' new state, ..}
+
+envWithState ::
+  ManagedEnvState ->
+  ManagedEnv ->
+  ManagedEnv
+envWithState new ManagedEnv {..} =
+  ManagedEnv {state = new, ..}
 
 managedWithCandidate ::
   Bounds ->
@@ -89,4 +96,4 @@ managedEnvForProject ::
   ManagedState ->
   ManagedEnvState
 managedEnvForProject job old new =
-  envStateWithOverrides job.env job.targetDeps old new
+  envStateWithOverrides job.env job.targetDeps new old

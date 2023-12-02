@@ -7,12 +7,12 @@ import Distribution.Pretty (Pretty (pretty))
 import Distribution.Version (Version, VersionRange, hasLowerBound, hasUpperBound)
 import GHC.Exts (IsList)
 
+import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, convert1, ntAmend1, ntInsert, ntPretty, ntPretty1, via)
 import qualified Hix.Data.Dep
 import Hix.Data.Deps (TargetDeps)
 import Hix.Data.Json (jsonParsec)
 import Hix.Data.Package (LocalPackage, PackageName)
-import Hix.Class.EncodeNix (EncodeNix)
 
 newtype Bounds =
   Bounds (Map PackageName VersionRange)

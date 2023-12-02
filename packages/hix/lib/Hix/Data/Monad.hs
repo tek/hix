@@ -7,6 +7,7 @@ import Path (Abs, Dir, Path)
 
 import Hix.Data.Error (Error)
 import Hix.Data.OutputFormat (OutputFormat)
+import Hix.Data.OutputTarget (OutputTarget)
 
 data LogLevel =
   LogError
@@ -28,6 +29,7 @@ data Env =
     debug :: Bool,
     quiet :: Bool,
     output :: OutputFormat,
+    target :: OutputTarget,
     logger :: LogLevel -> Text -> M ()
   }
 

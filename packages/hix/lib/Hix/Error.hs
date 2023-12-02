@@ -70,6 +70,15 @@ sourceError :: Text -> Path b t -> Text
 sourceError reason source =
   [exon|#{reason} the source file '#{pathText source}'|]
 
+catchIO ::
+  (Text -> ExceptT Error IO a) ->
+  IO a ->
+  ExceptT Error IO a
+catchIO handleError ma =
+  liftIO (tryIOError ma) >>= \case
+    Right a -> pure a
+    Left err -> handleError (show err)
+
 tryIOWith ::
   (Text -> Error) ->
   IO a ->
