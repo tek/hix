@@ -9,33 +9,33 @@ import Path (Abs, Dir, File, Path, Rel, parseAbsDir, parseAbsFile, parseRelDir, 
 import qualified Text.Show as Show
 
 import Hix.Data.OutputFormat (OutputFormat (..))
+import Hix.Data.OutputTarget (OutputTarget (..))
 import Hix.Managed.Handlers.Bump (SpecialBumpHandlers (TestBumpHandlers))
-import Hix.Managed.Handlers.LowerInit (SpecialLowerInitHandlers (TestLowerInitHandlers))
-import Hix.Managed.Handlers.LowerOptimize (SpecialLowerOptimizeHandlers (TestLowerOptimizeHandlers))
+import Hix.Managed.Handlers.Lower (SpecialLowerHandlers (TestLowerHandlers))
+
+pathOption ::
+  String ->
+  (String -> Either e a) ->
+  ReadM a
+pathOption desc parse = do
+  raw <- readerAsk
+  leftA (const (readerError [exon|not a valid #{desc} path: #{raw}|])) (parse raw)
 
 -- |An absolute file path option for @optparse-applicative@.
 absFileOption :: ReadM (Path Abs File)
-absFileOption = do
-  raw <- readerAsk
-  leftA (const (readerError [exon|not a valid absolute file path: #{raw}|])) (parseAbsFile raw)
+absFileOption = pathOption "absolute file" parseAbsFile
 
 -- |A relative file path option for @optparse-applicative@.
 relFileOption :: ReadM (Path Rel File)
-relFileOption = do
-  raw <- readerAsk
-  leftA (const (readerError [exon|not a valid relative file path: #{raw}|])) (parseRelFile raw)
+relFileOption = pathOption "relative file" parseRelFile
 
 -- |A relative dir path option for @optparse-applicative@.
 absDirOption :: ReadM (Path Abs Dir)
-absDirOption = do
-  raw <- readerAsk
-  leftA (const (readerError [exon|not a valid absolute dir path: #{raw}|])) (parseAbsDir raw)
+absDirOption = pathOption "absolute dir" parseAbsDir
 
 -- |A relative dir path option for @optparse-applicative@.
 relDirOption :: ReadM (Path Rel Dir)
-relDirOption = do
-  raw <- readerAsk
-  leftA (const (readerError [exon|not a valid relative dir path: #{raw}|])) (parseRelDir raw)
+relDirOption = pathOption "relative dir" parseRelDir
 
 newtype JsonConfig =
   JsonConfig { unJsonConfig :: IO (Either String Value) }
@@ -58,21 +58,26 @@ bumpHandlersOption =
     "test" -> pure TestBumpHandlers
     h -> fail [exon|Invalid value for bump handlers: #{h}|]
 
-lowerInitHandlersOption :: ReadM SpecialLowerInitHandlers
-lowerInitHandlersOption =
+lowerHandlersOption :: ReadM SpecialLowerHandlers
+lowerHandlersOption =
   readerAsk >>= \case
-    "test" -> pure TestLowerInitHandlers
-    h -> fail [exon|Invalid value for lower.init handlers: #{h}|]
-
-lowerOptimizeHandlersOption :: ReadM SpecialLowerOptimizeHandlers
-lowerOptimizeHandlersOption =
-  readerAsk >>= \case
-    "test" -> pure TestLowerOptimizeHandlers
-    h -> fail [exon|Invalid value for lower.optimize handlers: #{h}|]
+    "test" -> pure TestLowerHandlers
+    h -> fail [exon|Invalid value for lower handlers: #{h}|]
 
 outputFormatOption :: ReadM OutputFormat
 outputFormatOption =
   readerAsk >>= \case
     "none" -> pure OutputNone
     "json" -> pure OutputJson
+    "commit-msg" -> pure OutputCommitMsg
+    "ga-pr" -> pure OutputGaPr
     fmt -> fail [exon|Invalid output format: #{fmt}|]
+
+outputTargetOption :: ReadM OutputTarget
+outputTargetOption =
+  readerAsk >>= \case
+    "default" -> pure OutputDefault
+    "stdout" -> pure OutputStdout
+    other -> maybe (badFile other) (pure . OutputFile) (parseAbsFile other)
+  where
+    badFile f = fail [exon|Argument for --output is neither an absolute filepath nor 'default' or 'stdout': #{f}|]

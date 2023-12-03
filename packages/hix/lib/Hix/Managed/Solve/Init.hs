@@ -48,8 +48,8 @@ globalFlags hackage cacheDir =
     globalRemoteRepos = toNubList [hackage]
   }
 
-badCacheDir :: Text -> Text
-badCacheDir err = [exon|Cannot access Cabal cache dir: #{err}|]
+badCacheDir :: Text -> Error
+badCacheDir err = Fatal [exon|Cannot access Cabal cache dir: #{err}|]
 
 fullHackageRepo ::
   SolveConfig ->
@@ -105,5 +105,5 @@ initialize conf = do
   let main = mainFlags conf
   unlessM (indexExists conf global) do
     Log.verbose "Hackage snapshot doesn't exist, fetching..."
-    tryIOMWith (\ err -> [exon|Fetching hackage snapshot failed: #{err}|]) (updateAction main [] global)
+    tryIOMWith (\ err -> Fatal [exon|Fetching hackage snapshot failed: #{err}|]) (updateAction main [] global)
   pure SolveFlags {global, main}

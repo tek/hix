@@ -2,8 +2,10 @@ module Hix.Managed.Handlers.Mutation.LowerInit where
 
 import Data.Foldable.Extra (firstJustM)
 import Exon (exon)
+import Path
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Version
@@ -18,21 +20,23 @@ import Hix.Managed.Build.Mutation (
 import Hix.Managed.Build.Solve (buildWithSolver)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
-import Hix.Managed.Handlers.Build (BuildHandlers)
+import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers (MutationHandlers))
+import Hix.Managed.Handlers.Solve (SolveHandlers)
 import qualified Hix.Managed.Lower.Data.LowerInit
 import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit), LowerInitState (..))
 import Hix.Pretty (showP)
 import Hix.Version (setLowerBound)
 
 processMutationLowerInit ::
-  BuildHandlers ->
+  SolveHandlers ->
+  HackageHandlers ->
   LowerInitState ->
   DepMutation LowerInit ->
   (BuildMutation -> M (Maybe ManagedState)) ->
   M (MutationResult LowerInitState)
-processMutationLowerInit handlers state mutation build = do
+processMutationLowerInit solve hackage state mutation build = do
   firstJustM buildMajor majors <&> \case
     Just (candidate, newManaged, newBounds) ->
       MutationSuccess candidate newManaged LowerInitState {solverBounds = newBounds}
@@ -48,14 +52,18 @@ processMutationLowerInit handlers state mutation build = do
         version = NewVersion {package, version},
         range = NewRange (setLowerBound version range)
       }
-      buildWithSolver handlers build TargetLower state.solverBounds candidate
+      buildWithSolver solve hackage build TargetLower state.solverBounds candidate
 
     DepMutation {package, mutation = LowerInit {majors, range}} = mutation
 
 handlersLowerInit ::
-  BuildHandlers ->
-  MutationHandlers LowerInit LowerInitState
-handlersLowerInit build =
-  MutationHandlers {
-    process = processMutationLowerInit build
+  HackageHandlers ->
+  (Path Abs Dir -> EnvName -> M SolveHandlers) ->
+  Path Abs Dir ->
+  EnvName ->
+  M (MutationHandlers LowerInit LowerInitState)
+handlersLowerInit hackage mkSolve root env = do
+  solve <- mkSolve root env
+  pure MutationHandlers {
+    process = processMutationLowerInit solve hackage
   }

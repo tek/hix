@@ -114,6 +114,25 @@ in {
 
     outputs = let
 
+      prefix = config.buildOutputsPrefix;
+
+      basicApps = {
+        hpack = app "${config.hpack.script}";
+        hpack-quiet = app "${config.hpack.scriptQuiet}";
+        tags = app tags.app;
+        show-config = show-config.app;
+        cli = app "${config.internal.hixCli.package}/bin/hix";
+        gen-overrides = app "${genOverrides}";
+        gen = app "${genAll false}";
+        gen-quiet = app "${genAll true}";
+        show-overrides = app "${showOverrides}";
+        dep-versions = app "${depVersions "dev"}";
+      };
+
+      basicEnvApps = optionalAttrs config.output.envApps {
+        env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleAppEnvs);
+      };
+
       lowPrio = {
 
         legacyPackages = libOutput.scopedEnvOutputs config.ghcVersions // libOutput.envsApi config.envs // {
@@ -123,26 +142,11 @@ in {
         };
 
         apps = config.hackage.output.apps //
-        {
-          hpack = app "${config.hpack.script}";
-          hpack-quiet = app "${config.hpack.scriptQuiet}";
-          tags = app tags.app;
-          show-config = show-config.app;
-          cli = app "${config.internal.hixCli.package}/bin/hix";
-          gen-overrides = app "${genOverrides}";
-          gen = app "${genAll false}";
-          gen-quiet = app "${genAll true}";
-          show-overrides = app "${showOverrides}";
-          dep-versions = app "${depVersions "dev"}";
-        } //
+        basicApps //
         libOutput.managedApps //
         libOutput.mainAppimageApp //
-        optionalAttrs config.output.commandApps {
-          cmd = libOutput.commandApps config.commands;
-        } //
-        optionalAttrs config.output.envApps {
-          env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleAppEnvs);
-        };
+        { cmd = lib.mkIf config.output.commandApps (libOutput.commandApps config.commands); } //
+        basicEnvApps;
 
       };
 
@@ -157,6 +161,7 @@ in {
 
         legacyPackages = {
           overrides = config.exportedOverrides;
+          ${prefix}.env = libOutput.managedEnvGhcs;
         };
 
         devShells = let
@@ -176,8 +181,7 @@ in {
 
       merge = name:
       optionalAttrs (lib.hasAttr name lowPrio) (
-        lowPrio.${name} //
-        { ${config.buildOutputsPrefix} = lowPrio.${name}; }
+        util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; }
       ) //
       highPrio.${name};
 

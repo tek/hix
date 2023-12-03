@@ -9,10 +9,12 @@ import qualified Hix.Managed.Handlers.Bump
 import Hix.Managed.Handlers.Bump (BumpHandlers (BumpHandlers))
 import qualified Hix.Managed.Handlers.Report.Prod as Report
 
-handlersProd :: IO BumpHandlers
-handlersProd = do
+handlersProd ::
+  Maybe Text ->
+  IO BumpHandlers
+handlersProd buildOutputsPrefix = do
   manager <- liftIO (newManager tlsManagerSettings)
-  build <- Build.handlersProdNoSolver
+  build <- Build.handlersProd buildOutputsPrefix
   pure BumpHandlers {
     build,
     report = Report.handlersProd,

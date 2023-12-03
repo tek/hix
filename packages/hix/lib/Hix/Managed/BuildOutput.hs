@@ -1,25 +1,38 @@
 module Hix.Managed.BuildOutput where
 
-import Control.Exception (catch)
 import qualified Data.Aeson as Aeson
 import Data.Aeson (decodeFileStrict', encodeFile)
+import Exon (exon)
 import Path (Abs, File, Path, toFilePath)
-import System.IO.Error (IOError)
 
-import qualified Hix.Console as Console
 import Hix.Data.Monad (M)
 import Hix.Data.OutputFormat (OutputFormat (..))
+import Hix.Data.OutputTarget (OutputTarget (..))
+import Hix.Error (pathText)
+import Hix.Managed.BuildOutput.CommitMsg (formatCommit)
+import Hix.Managed.BuildOutput.GithubActionsPr (githubActionsPr)
 import Hix.Managed.Data.Build (BuildOutput, combineBuildOutputs)
 import qualified Hix.Monad as Monad
+import Hix.Monad (catchIOM, noteClient)
+import qualified Hix.OutputWriter
+import Hix.OutputWriter (outputWriterGlobal)
 
-outputResult :: BuildOutput -> OutputFormat -> M ()
-outputResult output = \case
+outputResult :: BuildOutput -> OutputTarget -> OutputFormat -> M ()
+outputResult output target = \case
   OutputNone -> unit
-  OutputJson -> Console.bytesOut (toStrict (Aeson.encode output))
+  OutputJson -> writer.bytes (toStrict (Aeson.encode output))
+  OutputCommitMsg -> traverse_ writer.text (formatCommit output)
+  OutputGaPr -> githubActionsPr output target
+  where
+    writer = outputWriterGlobal target
 
 loadBatchLog :: Path Abs File -> M (Maybe BuildOutput)
 loadBatchLog file =
-  liftIO (catch (decodeFileStrict' (toFilePath file)) \ (_ :: IOError) -> pure Nothing)
+  catchIOM (decodeFileStrict' (toFilePath file)) \ _ -> pure Nothing
+
+requireBatchLog :: Path Abs File -> M BuildOutput
+requireBatchLog file =
+  noteClient [exon|No build output log found at #{pathText file}|] =<< loadBatchLog file
 
 updateBatchLog :: BuildOutput -> Path Abs File -> M ()
 updateBatchLog output file = do

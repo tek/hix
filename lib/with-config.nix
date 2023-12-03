@@ -78,13 +78,19 @@ let
       packages = if config.manualCabal then null else packages;
     };
 
-    managed = targets: {
+    managed = {
       deps = mapAttrs packageDeps config.packages;
       state = util.managed.envState;
       lower = {
         inherit (config.managed.lower) solverBounds;
       };
-      inherit targets;
+      # TODO assess whether passing ghc here is feasible.
+      # Right now we're reading it via `nix eval .#build.env.foo.ghc-local`, since the local packages get different
+      # bounds after each run, which would not be reflected in a multi-env batch run if all package dbs are evaluated
+      # ahead of execution.
+      # But: this only matters for sets with dependencies on each other.
+      envs = mapAttrs (_: env: { ghc = util.ghc.packageDbLocal env; targets = env.packages; }) util.managed.envs;
+      inherit (config) buildOutputsPrefix;
     };
 
     jsonFile = name: value: pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
@@ -98,7 +104,7 @@ let
 
     preprocFile = jsonFile "preproc-config" preproc;
 
-    managedFile = targets: jsonFile "managed-config" (managed targets);
+    managedFile = jsonFile "managed-config" managed;
 
   };
 

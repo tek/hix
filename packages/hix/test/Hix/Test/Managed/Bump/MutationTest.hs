@@ -2,6 +2,7 @@ module Hix.Test.Managed.Bump.MutationTest where
 
 import Data.Aeson (eitherDecodeStrict')
 import Data.IORef (IORef, readIORef)
+import Data.List.Extra (dropEnd)
 import Distribution.Version (Version)
 import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
@@ -13,32 +14,33 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Client, Fatal))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
+  EnvConfig (EnvConfig),
   ManagedEnv (ManagedEnv),
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
 import Hix.Data.NixExpr (Expr)
-import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion, SourceHash (SourceHash))
 import Hix.Managed.App (runManagedApp)
-import Hix.Managed.Bump.App (bumpDeps)
+import Hix.Managed.Bump.App (bumpBuild)
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpBump),
+  StateFileConfig (StateFileConfig),
+  )
 import Hix.Managed.Handlers.Build (BuildHandlers (..), withTempProject)
 import Hix.Managed.Handlers.Build.Test (withTempProjectAt)
 import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
 import Hix.Managed.Handlers.Hackage (fetchHash)
 import qualified Hix.Managed.Handlers.StateFile.Test as StateFileHandlers
-import Hix.Monad (M, runMWith, throwM)
+import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Utils (UnitTest)
-
-root :: Path Abs Dir
-root = [absdir|/project|]
+import Hix.Test.Utils (UnitTest, runMTest, testRoot)
 
 tmpRoot :: Path Abs Dir
 tmpRoot = [absdir|/tmp/project|]
@@ -198,23 +200,24 @@ test_bumpMutation = do
         deps = deps,
         state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, resolving = False},
         lower = ManagedLowerEnv mempty,
-        targets = ["panda"]
+        envs = [("fancy", EnvConfig {targets = ["panda"], ghc = Nothing})],
+        buildOutputsPrefix = Nothing
       }
     conf =
       ManagedConfig {
         ghc = Nothing,
+        operation = OpBump,
         stateFile = StateFileConfig {
           file = [relfile|ops/managed.nix|],
           updateProject = True,
-          projectRoot = Just root,
-          latestOverrides = True
+          projectRoot = Just testRoot
         },
-        env = "fancy",
+        envs = ["fancy"],
         targetBound = TargetUpper
       }
   evalEither =<< liftIO do
-    runMWith False False True OutputNone root do
-      runManagedApp handlers.build handlers.report env conf (bumpDeps handlers)
+    runMTest False do
+      runManagedApp handlers.build handlers.report env conf (fmap Right <$> bumpBuild handlers)
   files <- liftIO (readIORef stateFileRef)
-  eqLines stateFileStep1Target . renderRootExpr =<< evalMaybe (last files)
+  eqLines stateFileStep1Target . renderRootExpr =<< evalMaybe (last (dropEnd 1 files))
   eqLines stateFileTarget . renderRootExpr =<< evalMaybe (head files)

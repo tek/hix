@@ -2,20 +2,18 @@ module Hix.Managed.Handlers.Report.Test where
 
 import Data.IORef (IORef, modifyIORef, newIORef)
 
-import Hix.Data.Bounds (RemovableBounds)
 import Hix.Data.Monad (M)
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.Build
-import Hix.Managed.Data.Build (BuildResult)
+import Hix.Managed.Data.Build (BuildResults)
 import Hix.Managed.Handlers.Report (ReportHandlers (..), handlersNull)
 
 reportMutationsIORef ::
   IORef [DepMutation a] ->
-  RemovableBounds ->
-  BuildResult a ->
+  BuildResults a ->
   M ()
-reportMutationsIORef out _ results =
-  liftIO $ modifyIORef out (results.failed ++)
+reportMutationsIORef out results =
+  liftIO $ modifyIORef out \ old -> foldl' (\ z res -> res.failed ++ z) old (toList results.envs)
 
 handlersUnitTest :: IO (ReportHandlers a, IORef [DepMutation a])
 handlersUnitTest = do

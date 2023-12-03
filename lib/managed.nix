@@ -15,8 +15,7 @@
 
   quiet = lib.optionalString conf.quiet "--quiet";
 
-  overrides = env: lib.optionalString env.managedOverrides "--overrides";
-
+  # TODO change this to use only one script that loops over all the options
   withCheckFor = flag: name: main:
     if lib.attrByPath flag false conf
     then main
@@ -25,19 +24,22 @@
     die "Set $(blue 'managed.${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
     '';
 
-  mainScript = cmd: env: let
+  mainScript = cmd: envs: let
     general = [
-      "--config ${util.json.managedFile (util.env.targets env)}"
-      "--env ${env.name}"
+      "--config ${util.json.managedFile}"
       "--file ${file}"
-      "--ghc ${util.ghc.packageDbLocal env}"
       update
-      (overrides env)
     ];
-    args = util.unwords general;
+
+    envsArgs = map (env: "--env ${env}") envs;
+
+    args = util.unwords (general ++ envsArgs);
+
+    desc = if lib.length envs == 1 then lib.head envs else "${cmd}-multi";
   in
-  config.pkgs.writeScript "managed-${env.name}" ''
-  set -e
+  config.pkgs.writeScript "managed-${desc}" ''
+  #!${config.pkgs.zsh}/bin/zsh
+  setopt err_exit
   if [[ -e "${conf.file}" ]]
   then
     initial=false
@@ -54,11 +56,12 @@
   ''}
   '';
 
-  checkedScript = flags: cmd: env: lib.foldl (z: flag: withCheckFor flag env.name z) (mainScript cmd env) flags;
+  checkedScript = flags: cmd: envs:
+  lib.foldl (z: flag: lib.foldl (z': env: withCheckFor flag env z') z envs) (mainScript cmd envs) flags;
 
-  bump = env: checkedScript [["enable"]] "bump" env;
-  lowerInit = env: checkedScript [["lower" "enable"] ["enable"]] "lower init --stabilize" env;
-  lowerOptimize = env: checkedScript [["lower" "enable"] ["enable"]] "lower optimize" env;
+  bump = checkedScript [["enable"]] "bump";
+  lowerInit = checkedScript [["lower" "enable"] ["enable"]] "lower init --stabilize";
+  lowerOptimize = checkedScript [["lower" "enable"] ["enable"]] "lower optimize";
 
   envModules = let
 

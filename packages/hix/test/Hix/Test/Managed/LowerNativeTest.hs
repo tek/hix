@@ -5,41 +5,42 @@ import Data.Aeson (eitherDecodeStrict')
 import qualified Data.Text.IO as Text
 import Exon (exon)
 import Hedgehog (evalEither)
-import Path (Abs, Dir, File, Path, Rel, absdir, parent, reldir, relfile, toFilePath, (</>))
+import Path (Abs, Dir, File, Path, Rel, parent, reldir, relfile, toFilePath, (</>))
 import Path.IO (createDirIfMissing, getCurrentDir)
 
-import qualified Hix.Data.Bounds
-import Hix.Data.Bounds (RemovableBounds (RemovableBounds), TargetBound (TargetLower))
+import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ConfigDeps (ConfigDeps)
 import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), LowerOptimizeConfig (LowerOptimizeConfig))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
+  EnvConfig (EnvConfig),
   ManagedEnv (ManagedEnv),
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   state,
   )
-import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Error (pathText)
-import qualified Hix.Managed.App
 import Hix.Managed.App (managedApp)
 import qualified Hix.Managed.Data.Build
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
-import qualified Hix.Managed.Data.ManagedJob
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpLower),
+  StateFileConfig (StateFileConfig),
+  )
 import qualified Hix.Managed.Handlers.Build
-import qualified Hix.Managed.Handlers.LowerInit
-import qualified Hix.Managed.Handlers.LowerInit.Prod as LowerInit
-import qualified Hix.Managed.Handlers.LowerOptimize
-import qualified Hix.Managed.Handlers.LowerOptimize.Prod as LowerOptimize
+import Hix.Managed.Handlers.Build (ghcDb)
+import qualified Hix.Managed.Handlers.Build.Prod as Build
+import qualified Hix.Managed.Handlers.Lower
+import qualified Hix.Managed.Handlers.Lower.Prod as Lower
 import Hix.Managed.Lower.App (lowerInit, lowerOptimize)
 import Hix.Managed.Project (updateProject)
-import Hix.Managed.State (envWithOverrides)
+import Hix.Managed.State (envWithState)
 import qualified Hix.Monad
-import Hix.Monad (Env (Env), M, runMWith)
+import Hix.Monad (Env (Env), M)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Utils (UnitTest)
+import Hix.Test.Utils (UnitTest, runMTest)
 
 -- TODO when aeson's lower bound is set to 2.2 here, the build of 2.1.0.0 fails with an infinite recursion in nix when
 -- reaching optimize.
@@ -75,6 +76,7 @@ flake hixRoot =
       lower.enable = true;
     };
     compat.enable = false;
+    ghcVersions = [];
     packages = {
       root = {
         src = ./.;
@@ -237,43 +239,44 @@ test_lowerNative :: UnitTest
 test_lowerNative = do
   deps <- leftA fail depsConf
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
-    runMWith True True False OutputNone [absdir|/invalid/cwd|] do
-      handlersInit <- LowerInit.handlersProd Nothing False
-      handlersOptimize <- LowerOptimize.handlersProd Nothing False
+    runMTest True do
+      build <- liftIO (Build.handlersProd Nothing) <&> \ h -> h {ghcDb = \ _ _ -> (pure Nothing)}
+      handlersInit <- Lower.handlersProdWith build False
+      handlersOptimize <- Lower.handlersProdWith build False
       root <- setupProject
       let
         env =
           ManagedEnv {
             deps = deps,
-            state = ManagedEnvState mempty mempty True,
+            state = ManagedEnvState mempty mempty False,
             lower = ManagedLowerEnv {solverBounds = []},
-            targets = ["root"]
+            envs = [("lower", EnvConfig {targets = ["root"], ghc = Nothing})],
+            buildOutputsPrefix = Nothing
           }
         conf =
           ManagedConfig {
             stateFile = StateFileConfig {
               file = [relfile|ops/managed.nix|],
               updateProject = True,
-              projectRoot = Just root,
-              latestOverrides = True
+              projectRoot = Just root
             },
+            operation = OpLower,
             ghc = Nothing,
-            env = "lower",
+            envs = ["lower"],
             targetBound = TargetLower
           }
         lowerInitConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = mempty}
-        removable = RemovableBounds {targetBound = TargetLower, deps = mempty}
 
       let stateFile = root </> [relfile|ops/managed.nix|]
       env1 <- managedApp handlersInit.build env conf \ app -> do
         result <- lowerInit handlersInit lowerInitConf app
-        updateProject handlersInit.build.stateFile handlersInit.report conf.stateFile app.job removable env.state result
-        pure (envWithOverrides conf.env app.job.targetDeps result.managed env)
+        updateProject handlersInit.build.stateFile handlersInit.report conf.stateFile result
+        pure (envWithState result.managed env)
       stateFileContentInit <- liftIO (Text.readFile (toFilePath stateFile))
       let lowerOptimizeConf = LowerOptimizeConfig {oldest = False, initialBounds = []}
       managedApp handlersInit.build env1 conf \ app -> do
         result <- lowerOptimize handlersOptimize lowerOptimizeConf app
-        updateProject handlersInit.build.stateFile handlersOptimize.report conf.stateFile app.job removable env.state result
+        updateProject handlersInit.build.stateFile handlersOptimize.report conf.stateFile result
       stateFileContentOptimize <- liftIO (Text.readFile (toFilePath stateFile))
       pure (stateFileContentInit, stateFileContentOptimize)
   eqLines targetStateFileInit stateFileContentInit

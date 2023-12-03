@@ -19,7 +19,9 @@ latestVersion = \case
   where
     found = pure . Just . mkVersion
 
-handlersTest :: IO BumpHandlers
-handlersTest = do
-  h <- handlersProd
+handlersTest ::
+  Maybe Text ->
+  IO BumpHandlers
+handlersTest buildOutputsPrefix = do
+  h <- handlersProd buildOutputsPrefix
   pure h {latestVersion}

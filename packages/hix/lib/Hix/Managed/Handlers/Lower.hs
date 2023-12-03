@@ -1,30 +1,35 @@
-module Hix.Managed.Handlers.LowerOptimize where
+module Hix.Managed.Handlers.Lower where
 
 import Distribution.Version (Version)
+import Path (Abs, Dir, Path)
 
+import Hix.Data.EnvName (EnvName)
+import Hix.Data.Monad (M)
 import Hix.Data.Package (PackageName)
 import qualified Hix.Managed.Handlers.Build as Build
 import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Report as Report
 import Hix.Managed.Handlers.Report (ReportHandlers)
-import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
-import Hix.Data.Monad (M)
+import qualified Hix.Managed.Handlers.Solve as Solve
+import Hix.Managed.Handlers.Solve (SolveHandlers)
 
-data LowerOptimizeHandlers =
-  LowerOptimizeHandlers {
+data LowerHandlers a =
+  LowerHandlers {
     build :: BuildHandlers,
-    report :: ReportHandlers LowerOptimize,
+    solve :: Path Abs Dir -> EnvName -> M SolveHandlers,
+    report :: ReportHandlers a,
     versions :: PackageName -> M [Version]
   }
 
-data SpecialLowerOptimizeHandlers =
-  TestLowerOptimizeHandlers
+data SpecialLowerHandlers =
+  TestLowerHandlers
   deriving stock (Eq, Show)
 
-handlersNull :: LowerOptimizeHandlers
+handlersNull :: LowerHandlers a
 handlersNull =
-  LowerOptimizeHandlers {
+  LowerHandlers {
     build = Build.handlersNull,
+    solve = \ _ _ -> pure Solve.handlersNull,
     report = Report.handlersNull,
     versions = \ _ -> pure []
   }

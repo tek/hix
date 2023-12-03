@@ -17,24 +17,28 @@ import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
+  EnvConfig (EnvConfig),
   ManagedEnv (ManagedEnv),
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
 import Hix.Data.NixExpr (Expr)
-import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpLower),
+  StateFileConfig (StateFileConfig),
+  )
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Hackage (fetchHash)
-import Hix.Managed.Handlers.LowerInit (LowerInitHandlers (..), versions)
-import qualified Hix.Managed.Handlers.LowerInit.Test as LowerInitHandlers
+import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
+import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
@@ -165,17 +169,15 @@ buildProjectTest _ _ target newVersion =
     "direct4" -> pure True
     pkg -> throwM (Fatal [exon|Unexpected dep for building ##{target}: ##{pkg}|])
 
-handlersTest :: IO (LowerInitHandlers, IORef [Expr], IORef [DepMutation LowerInit])
+handlersTest :: IO (LowerHandlers LowerInit, IORef [Expr], IORef [DepMutation LowerInit])
 handlersTest = do
   (build, stateFileRef) <- BuildHandlers.handlersUnitTest tmpRoot
-  (handlers, bumpsRef) <- LowerInitHandlers.handlersUnitTest
+  (handlers, bumpsRef) <- LowerHandlers.handlersUnitTest
   let handlers' = handlers {
+    solve = \ _ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
     build = build {
       buildProject = buildProjectTest,
-      solve = SolveHandlers {solveForVersion = testSolver testDeps},
-      hackage = build.hackage {
-        fetchHash = fetchHashTest
-      }
+      hackage = build.hackage {fetchHash = fetchHashTest}
     },
     versions = fetchVersions
   }
@@ -267,7 +269,8 @@ stateFileTarget =
 
 logTarget :: [Text]
 logTarget =
-  Text.lines [exon|[35m[1m>>>[0m Updated dependency versions:
+  Text.lines [exon|[35m[1m>>>[0m Processed environment 'lower-main':
+[35m[1m>>>[0m Updated dependency versions:
     📦 direct1 1.0.5 [>=1.0.5]
     📦 direct2 5.0 [>=5.0 && <5.1]
     📦 direct3 1.0.1 [>=1.0.1 && <1.5]
@@ -320,24 +323,24 @@ test_lowerInitMutation = do
         deps,
         state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, resolving = False},
         lower = ManagedLowerEnv {solverBounds = mempty},
-        targets = ["local1", "local2", "local3", "local4"]
+        envs = [("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4"], ghc = Nothing})],
+        buildOutputsPrefix = Nothing
       }
     conf =
       ManagedConfig {
+        operation = OpLower,
         ghc = Nothing,
         stateFile = StateFileConfig {
           file = [relfile|ops/managed.nix|],
           updateProject = True,
-          projectRoot = Just root,
-          latestOverrides = True
+          projectRoot = Just root
         },
-        env = "lower-main",
-        targetBound = TargetLower,
-        batchLog = Nothing
+        envs = ["lower-main"],
+        targetBound = TargetLower
       }
     lowerConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = []}
   (log, result) <- liftIO do
-    runMLog False False False OutputNone root $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
+    runMLog root $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
       Right <$> lowerInit handlers lowerConf app
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)

@@ -43,6 +43,7 @@ library
       Hix.Data.Error
       Hix.Data.GhciConfig
       Hix.Data.GhciTest
+      Hix.Data.GlobalOptions
       Hix.Data.Json
       Hix.Data.LowerConfig
       Hix.Data.ManagedEnv
@@ -51,6 +52,7 @@ library
       Hix.Data.NixExpr
       Hix.Data.Options
       Hix.Data.OutputFormat
+      Hix.Data.OutputTarget
       Hix.Data.Overrides
       Hix.Data.Package
       Hix.Data.PreprocConfig
@@ -70,9 +72,10 @@ library
       Hix.Managed.Build.Solve
       Hix.Managed.Build.UpdateState
       Hix.Managed.BuildOutput
+      Hix.Managed.BuildOutput.CommitMsg
+      Hix.Managed.BuildOutput.GithubActionsPr
       Hix.Managed.Bump.App
       Hix.Managed.Bump.Candidates
-      Hix.Managed.CommitMsg.App
       Hix.Managed.Data.Build
       Hix.Managed.Data.Candidate
       Hix.Managed.Data.CurrentBuild
@@ -88,12 +91,9 @@ library
       Hix.Managed.Handlers.Bump.Test
       Hix.Managed.Handlers.Hackage
       Hix.Managed.Handlers.Hackage.Prod
-      Hix.Managed.Handlers.LowerInit
-      Hix.Managed.Handlers.LowerInit.Prod
-      Hix.Managed.Handlers.LowerInit.Test
-      Hix.Managed.Handlers.LowerOptimize
-      Hix.Managed.Handlers.LowerOptimize.Prod
-      Hix.Managed.Handlers.LowerOptimize.Test
+      Hix.Managed.Handlers.Lower
+      Hix.Managed.Handlers.Lower.Prod
+      Hix.Managed.Handlers.Lower.Test
       Hix.Managed.Handlers.Mutation
       Hix.Managed.Handlers.Mutation.Bump
       Hix.Managed.Handlers.Mutation.LowerInit
@@ -127,6 +127,7 @@ library
       Hix.Options
       Hix.Optparse
       Hix.Orphans.Version
+      Hix.OutputWriter
       Hix.Path
       Hix.Prelude
       Hix.Preproc
@@ -274,6 +275,7 @@ test-suite hix-test
       Hix.Test.Managed.LowerOptimize.CandidatesTest
       Hix.Test.Managed.LowerOptimize.MutationTest
       Hix.Test.Managed.Solver
+      Hix.Test.ManagedTest
       Hix.Test.NewTest
       Hix.Test.PreprocTest
       Hix.Test.Utils

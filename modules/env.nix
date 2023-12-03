@@ -18,12 +18,6 @@ let
     then def config.ghc.pkgs
     else def;
 
-  ghcWithPackages =
-    config.ghc.ghc.ghcWithPackages.override (
-      { withHoogle = config.hoogle; } //
-      config.ghcWithPackagesArgs
-    ) (util.ghc.packageDb config);
-
   buildInputs =
     mkBuildInputs config.buildInputs ++
     mkBuildInputs global.buildInputs ++
@@ -31,7 +25,7 @@ let
     global.haskellTools config.ghc.vanillaGhc ++
     optional config.hls.enable config.hls.package ++
     optional config.ghcid.enable config.ghcid.package ++
-    [ghcWithPackages]
+    [config.ghcWithPackages]
     ;
 
   exportShellVars = vars: let
@@ -222,7 +216,6 @@ in {
       description = mdDoc "The fully configured GHC package exposing this environment's dependencies.";
       type = package;
       readOnly = true;
-      default = ghcWithPackages;
     };
 
     ghcWithPackagesArgs = mkOption {
@@ -449,8 +442,7 @@ in {
 
     managedOverrides = mkOption {
       description = mdDoc ''
-      Whether to create overrides with the latest version of each package for this env when performing
-      [](#managed).
+      Whether to create overrides with the latest version of each package for this env when performing [](#managed).
       '';
       type = bool;
       default = false;
@@ -587,6 +579,9 @@ in {
       ${config.code}
       '';
     });
+
+    ghcWithPackages =
+      util.ghc.packageDbFull config ({ withHoogle = config.hoogle; } // config.ghcWithPackagesArgs);
 
     vm = {
 

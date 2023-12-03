@@ -35,7 +35,7 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Hackage
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
-import Hix.Managed.StateFile (writeBuildState)
+import Hix.Managed.StateFile (writeBuildState, writeInitialBuildState)
 import Hix.Pretty (prettyL, showP, showPL)
 import Hix.Version (setLowerBound, setUpperBound)
 
@@ -82,18 +82,19 @@ buildBounds =
     UpperBoundExtension version -> setUpperBound version
 
 buildMutation ::
-  BuildEnv a s ->
+  BuildEnv ->
+  ManagedJob ->
   ManagedState ->
   BuildMutation ->
   M (Maybe ManagedState)
-buildMutation env managed BuildMutation {candidate, newVersions, accOverrides, newBounds} = do
+buildMutation env job managed BuildMutation {candidate, newVersions, accOverrides, newBounds} = do
   newOverrides <- newVersionOverrides env.build (candidate.version : newVersions)
   let overrides = newOverrides <> accOverrides
       bounds = buildBounds newBounds managed.bounds
   logBuildInputs managed candidate newVersions newOverrides accOverrides
-  newManaged <- writeBuildState env.build.stateFile env.job bounds env.stateFile candidate overrides
-  success <- flip allM (getTargets env.job.targets) \ target ->
-    env.build.buildProject env.root env.job.env target candidate.version
+  newManaged <- writeBuildState env.build.stateFile job bounds env.stateFile candidate overrides
+  success <- flip allM (getTargets job.targets) \ target ->
+    env.build.buildProject env.root job.env target candidate.version
   logCandidateResult candidate success
   pure (if success then Just newManaged else Nothing)
 
@@ -112,30 +113,48 @@ logMutationResult package = \case
     Log.verbose [exon|Could not find a buildable version of '##{package}'|]
 
 validateMutation ::
-  BuildEnv a s ->
+  BuildEnv ->
+  ManagedJob ->
+  MutationHandlers a s ->
   BuildState a s ->
   DepMutation a ->
   M (BuildState a s)
-validateMutation env state mutation = do
-  result <- env.mutation.process state.ext mutation build
+validateMutation env job handlers state mutation = do
+  result <- handlers.process state.ext mutation build
   logMutationResult mutation.package result
   pure (updateState state mutation result)
   where
-    build mut = buildMutation env state.managed mut
+    build = buildMutation env job state.managed
 
 buildMutations ::
   Pretty a =>
-  BuildHandlers ->
+  BuildEnv ->
   MutationHandlers a s ->
-  StateFileConfig ->
   ManagedJob ->
   ManagedState ->
   [DepMutation a] ->
   s ->
   M (BuildResult a)
-buildMutations build mutation conf job managed mutations ext = do
+buildMutations env handlers job managed mutations ext = do
   Log.debug [exon|Building targets with mutations: #{showPL mutations}|]
-  withBuildEnv build mutation job conf \ env ->
-    buildResult <$> foldM (validateMutation env) initialState mutations
+  writeInitialBuildState env.build.stateFile job managed env.stateFile
+  buildResult job.removable <$> foldM (validateMutation env job handlers) initialState mutations
   where
     initialState = BuildState {success = [], failed = [], managed, ext}
+
+-- TODO actually, we don't need to create a new temp project for each env, right? we only ever write to the managed
+-- state anyway, so we can reuse it
+buildJobInTemp ::
+  Pretty a =>
+  BuildHandlers ->
+  StateFileConfig ->
+  ManagedJob ->
+  ManagedState ->
+  [DepMutation a] ->
+  s ->
+  (BuildEnv -> M (MutationHandlers a s)) ->
+  M (BuildResult a)
+buildJobInTemp build conf job managed mutations ext mutationHandlers = do
+  withBuildEnv build conf \ env -> do
+    handlers <- mutationHandlers env
+    buildMutations env handlers job managed mutations ext

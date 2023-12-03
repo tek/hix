@@ -2,16 +2,17 @@ module Hix.Managed.Handlers.Build.Prod where
 
 import Control.Monad.Catch (catch)
 import Control.Monad.Trans.Reader (asks)
-import Distribution.Client.Dependency (DepResolverParams)
 import Exon (exon)
-import Path (Abs, Dir, Path, toFilePath)
+import Path (Abs, Dir, Path, parseAbsDir, toFilePath)
 import Path.IO (copyDirRecur', getCurrentDir)
 import System.IO.Error (IOError)
 import System.Process.Typed (
   ExitCode (ExitFailure, ExitSuccess),
+  ProcessConfig,
   inherit,
   nullStream,
   proc,
+  readProcessStdout,
   runProcess,
   setStderr,
   setStdout,
@@ -20,7 +21,7 @@ import System.Process.Typed (
 
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
-import qualified Hix.Data.Monad (Env (debug, verbose))
+import qualified Hix.Data.Monad (Env (verbose))
 import Hix.Data.Package (LocalPackage)
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion (NewVersion))
@@ -28,10 +29,8 @@ import Hix.Error (pathText)
 import qualified Hix.Log as Log
 import Hix.Managed.Handlers.Build (BuildHandlers (..), TempProjectBracket (TempProjectBracket))
 import qualified Hix.Managed.Handlers.Hackage.Prod as HackageHandlers
-import qualified Hix.Managed.Handlers.Solve as SolveHandlers
-import qualified Hix.Managed.Handlers.Solve.Prod as SolveHandlers
 import qualified Hix.Managed.Handlers.StateFile.Prod as StateFileHandlers
-import Hix.Monad (M, throwM, tryIOM, withTempDir)
+import Hix.Monad (M, noteFatal, throwM, tryIOM, withTempDir)
 import Hix.Pretty (showP)
 
 rootOrCwd ::
@@ -53,6 +52,24 @@ withTempProject rootOverride use = do
         use tmpRoot
     \ (err :: IOError) -> throwM (Fatal (show err))
 
+nixProc ::
+  Path Abs Dir ->
+  [Text] ->
+  Text ->
+  [Text] ->
+  M (ProcessConfig () () ())
+nixProc root cmd installable extra = do
+  Log.debug [exon|Running nix at '#{pathText root}' with args #{show args}|]
+  conf <$> asks (.verbose)
+  where
+    conf verbose = err verbose (setWorkingDir (toFilePath root) (proc "nix" args))
+
+    err = \case
+      True -> setStderr inherit
+      False -> setStderr nullStream
+
+    args = toString <$> cmd ++ [exon|path:#{".#"}#{installable}|] : extra
+
 buildProject ::
   Path Abs Dir ->
   EnvName ->
@@ -61,41 +78,39 @@ buildProject ::
   M Bool
 buildProject root env target NewVersion {package, version} = do
   verbose <- asks (.verbose)
-  ifM (asks (.debug)) logFull logBasic
-  tryIOM (runProcess (conf verbose)) <&> \case
+  Log.info [exon|Building '##{target}' with '#{pv}'...|]
+  conf <- nixProc root ["-L", "build"] [exon|env.##{env}.##{target}|] []
+  tryIOM (runProcess (err verbose conf)) <&> \case
     ExitSuccess -> True
     ExitFailure _ -> False
   where
-    conf verbose = err verbose (setWorkingDir (toFilePath root) (proc "nix" args))
-
     err = \case
-      True -> setStderr inherit . setStdout inherit
-      False -> setStderr nullStream
-
-    logBasic = Log.info [exon|Building '##{target}' with '#{pv}'...|]
-
-    logFull = Log.debug [exon|Building '##{target}' for '#{pv}' at #{pathText root} with args #{show args}|]
+      True -> setStdout inherit
+      False -> id
 
     pv = [exon|##{package}-#{showP version}|]
 
-    args = ["-L", "build", [exon|path:#{".#"}env.##{env}.##{target}|]]
+ghcDb ::
+  Maybe Text ->
+  Path Abs Dir ->
+  EnvName ->
+  M (Maybe (Path Abs Dir))
+ghcDb buildOutputsPrefix root env = do
+  conf <- nixProc root ["eval", "--raw"] [exon|#{prefix}.env.##{env}.ghc-local|] []
+  tryIOM (readProcessStdout conf) >>= \case
+    (ExitSuccess, decodeUtf8 -> out) -> Just <$> noteFatal (parseError out) (parseAbsDir out)
+    (ExitFailure _, _) -> throwM (Fatal "Evaluation failed for vanilla GHC path")
+  where
+    prefix = fromMaybe "build" buildOutputsPrefix
+    parseError out = [exon|Parse error for vanilla GHC path: #{toText out}|]
 
-handlersProdNoSolver :: IO BuildHandlers
-handlersProdNoSolver = do
+handlersProd :: Maybe Text -> IO BuildHandlers
+handlersProd buildOutputsPrefix = do
   hackage <- HackageHandlers.handlersProd
   pure BuildHandlers {
     stateFile = StateFileHandlers.handlersProd,
-    solve = SolveHandlers.handlersNull,
     hackage,
     withTempProject = TempProjectBracket withTempProject,
-    buildProject
+    buildProject,
+    ghcDb = ghcDb buildOutputsPrefix
   }
-
-handlersProd ::
-  (DepResolverParams -> DepResolverParams) ->
-  Maybe (Path Abs Dir) ->
-  M BuildHandlers
-handlersProd solverParams ghc = do
-  handlers <- liftIO handlersProdNoSolver
-  solve <- SolveHandlers.handlersProd solverParams ghc
-  pure handlers {solve}

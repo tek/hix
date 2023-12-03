@@ -16,37 +16,38 @@ import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerOptimizeConfig (LowerOptimizeConfig))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
+  EnvConfig (EnvConfig),
   ManagedEnv (ManagedEnv),
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
 import Hix.Data.NixExpr (Expr)
-import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.Overrides (EnvOverrides)
 import Hix.Data.Package (LocalPackage, PackageName (PackageName))
 import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig (ManagedConfig),
+  ManagedOp (OpLower),
+  StateFileConfig (StateFileConfig),
+  )
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Hackage (fetchHash)
-import Hix.Managed.Handlers.LowerOptimize (LowerOptimizeHandlers (..), versions)
-import qualified Hix.Managed.Handlers.LowerOptimize.Test as LowerOptimizeHandlers
+import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
+import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
 import Hix.Managed.Lower.App (lowerOptimize)
 import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
-import Hix.Monad (M, runMWith, throwM)
+import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Test.Hedgehog (eqLines)
 import qualified Hix.Test.Managed.Solver
 import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)
-import Hix.Test.Utils (UnitTest)
-
-root :: Path Abs Dir
-root = [absdir|/project|]
+import Hix.Test.Utils (UnitTest, runMTest, testRoot)
 
 tmpRoot :: Path Abs Dir
 tmpRoot = [absdir|/tmp/project|]
@@ -89,14 +90,14 @@ buildProjectTest _ _ target newVersion =
     "direct3" -> pure True
     pkg -> throwM (Fatal [exon|Unexpected dep for building ##{target}: ##{pkg}|])
 
-handlersTest :: IO (LowerOptimizeHandlers, IORef [Expr], IORef [DepMutation LowerOptimize])
+handlersTest :: IO (LowerHandlers LowerOptimize, IORef [Expr], IORef [DepMutation LowerOptimize])
 handlersTest = do
   (build, stateFileRef) <- BuildHandlers.handlersUnitTest tmpRoot
-  (handlers, bumpsRef) <- LowerOptimizeHandlers.handlersUnitTest
+  (handlers, bumpsRef) <- LowerHandlers.handlersUnitTest
   let handlers' = handlers {
+    solve = \ _ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
     build = build {
       buildProject = buildProjectTest,
-      solve = SolveHandlers {solveForVersion = testSolver testDeps},
       hackage = build.hackage {fetchHash}
     },
     versions = fetchVersions
@@ -196,23 +197,24 @@ test_lowerOptimizeMutation = do
         deps,
         state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, resolving = False},
         lower = ManagedLowerEnv {solverBounds = mempty},
-        targets = ["local1"]
+        envs = [("lower", EnvConfig {targets = ["local1"], ghc = Nothing})],
+        buildOutputsPrefix = Nothing
       }
     conf =
       ManagedConfig {
+        operation = OpLower,
         ghc = Nothing,
         stateFile = StateFileConfig {
           file = [relfile|ops/managed.nix|],
           updateProject = True,
-          projectRoot = Just root,
-          latestOverrides = True
+          projectRoot = Just testRoot
         },
-        env = "lower",
+        envs = ["lower"],
         targetBound = TargetLower
       }
     lowerConf = LowerOptimizeConfig {oldest = False, initialBounds = []}
   evalEither =<< liftIO do
-    runMWith False False True OutputNone root $ runManagedApp handlers.build handlers.report env conf \ app ->
+    runMTest False $ runManagedApp handlers.build handlers.report env conf \ app ->
       Right <$> lowerOptimize handlers lowerConf app
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)

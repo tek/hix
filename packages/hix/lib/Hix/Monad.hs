@@ -18,11 +18,11 @@ import System.IO (hClose)
 import System.IO.Error (tryIOError)
 
 import qualified Hix.Console as Console
-import qualified Hix.Data.Error as Error
 import Hix.Data.Error (Error (BootstrapError, Client, EnvError, GhciError, NewError))
+import qualified Hix.Data.GlobalOptions as GlobalOptions
+import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions), defaultGlobalOptions)
 import Hix.Data.Monad (Env (..), LogLevel, M)
-import Hix.Data.OutputFormat (OutputFormat (OutputNone))
-import Hix.Error (tryIO, tryIOWith)
+import Hix.Error (Error (Fatal), tryIO, tryIOWith)
 import qualified Hix.Log as Log
 import Hix.Log (logWith)
 
@@ -30,37 +30,41 @@ throwM :: Error -> M a
 throwM =
   lift . throwE
 
+note :: Error -> Maybe a -> M a
+note err =
+  maybe (throwM err) pure
+
 noteEnv :: Text -> Maybe a -> M a
 noteEnv err =
-  maybe (throwM (EnvError err)) pure
+  note (EnvError err)
 
 noteGhci :: Text -> Maybe a -> M a
 noteGhci err =
-  maybe (throwM (GhciError err)) pure
+  note (GhciError err)
 
 noteNew :: Text -> Maybe a -> M a
 noteNew err =
-  maybe (throwM (NewError err)) pure
+  note (NewError err)
 
 noteBootstrap :: Text -> Maybe a -> M a
 noteBootstrap err =
-  maybe (throwM (BootstrapError err)) pure
+  note (BootstrapError err)
 
 noteClient :: Text -> Maybe a -> M a
 noteClient err =
-  maybe (throwM (Client err)) pure
+  note (Client err)
 
 noteFatal :: Text -> Maybe a -> M a
 noteFatal err =
-  maybe (throwM (Error.Fatal err)) pure
+  note (Fatal err)
 
 eitherClient :: Text -> Either Text a -> M a
 eitherClient msg =
-  leftA \ err -> throwM (Error.Client [exon|#{msg}: #{err}|])
+  leftA \ err -> throwM (Client [exon|#{msg}: #{err}|])
 
 eitherFatal :: Text -> Either Text a -> M a
 eitherFatal msg =
-  leftA \ err -> throwM (Error.Fatal [exon|#{msg}: #{err}|])
+  leftA \ err -> throwM (Fatal [exon|#{msg}: #{err}|])
 
 eitherFatalShow ::
   Show b =>
@@ -79,39 +83,55 @@ logIORef :: IORef [Text] -> LogLevel -> Text -> IO ()
 logIORef ref _ msg =
   modifyIORef' ref (msg :)
 
-runMLog :: Bool -> Bool -> Bool -> OutputFormat -> Path Abs Dir -> M a -> IO ([Text], Either Error a)
-runMLog verbose debug quiet output cwd ma = do
+runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
+runMLogWith GlobalOptions {..} ma = do
   logRef <- newIORef []
   withSystemTempDir "hix-cli" \ tmp -> do
     result <- runExceptT (runReaderT ma Env {logger = logWith (logIORef logRef), ..})
     log <- readIORef logRef
     pure (log, result)
 
-runMWith :: Bool -> Bool -> Bool -> OutputFormat -> Path Abs Dir -> M a -> IO (Either Error a)
-runMWith verbose debug quiet output cwd ma =
+runMLog :: Path Abs Dir -> M a -> IO ([Text], Either Error a)
+runMLog = runMLogWith . defaultGlobalOptions
+
+runMWith :: GlobalOptions -> M a -> IO (Either Error a)
+runMWith GlobalOptions {..} ma =
   withSystemTempDir "hix-cli" \ tmp ->
     runExceptT (runReaderT ma Env {logger = logWith (const Console.err), ..})
 
 runM :: Path Abs Dir -> M a -> IO (Either Error a)
-runM = runMWith False False False OutputNone
+runM = runMWith . defaultGlobalOptions
 
 runMDebug :: Path Abs Dir -> M a -> IO (Either Error a)
-runMDebug = runMWith True True False OutputNone
+runMDebug cwd =
+  runMWith (defaultGlobalOptions cwd) {GlobalOptions.verbose = True, GlobalOptions.debug = True}
 
-tryIOMWith :: (Text -> Text) -> IO a -> M a
+tryIOMWithM :: (Text -> M a) -> IO a -> M a
+tryIOMWithM handleError ma =
+  liftIO (tryIOError ma) >>= \case
+    Right a -> pure a
+    Left err -> handleError (show err)
+
+tryIOMWith :: (Text -> Error) -> IO a -> M a
 tryIOMWith mkErr ma = lift (tryIOWith mkErr ma)
 
-tryIOMAs :: Text -> IO a -> M a
+tryIOMAs :: Error -> IO a -> M a
 tryIOMAs err ma = do
   liftIO (tryIOError ma) >>= \case
     Right a -> pure a
     Left exc -> do
       whenDebug do
         Log.error [exon|Replaced exception: #{show exc}|]
-      throwM (Error.Fatal err)
+      throwM err
 
 tryIOM :: IO a -> M a
 tryIOM ma = lift (tryIO ma)
+
+catchIOM :: IO a -> (Text -> M a) -> M a
+catchIOM ma handle =
+  liftIO (tryIOError ma) >>= \case
+    Right a -> pure a
+    Left err -> handle (show err)
 
 withTempDir :: String -> (Path Abs Dir -> M a) -> M a
 withTempDir name use = do

@@ -1,21 +1,19 @@
 module Hix.Data.Options where
 
 import Path (Abs, Dir, File, Path, SomeBase)
-import Prelude hiding (Mod, mod)
 
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
 import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
+import Hix.Data.GlobalOptions (GlobalOptions)
 import Hix.Data.LowerConfig (LowerInitConfig, LowerOptimizeConfig)
 import Hix.Data.ManagedEnv (ManagedEnv)
 import Hix.Data.NewProjectConfig (NewProjectConfig)
-import Hix.Data.OutputFormat (OutputFormat)
 import Hix.Data.Package (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Managed.Data.ManagedConfig (ManagedConfig)
 import Hix.Managed.Handlers.Bump (SpecialBumpHandlers)
-import Hix.Managed.Handlers.LowerInit (SpecialLowerInitHandlers)
-import Hix.Managed.Handlers.LowerOptimize (SpecialLowerOptimizeHandlers)
+import Hix.Managed.Handlers.Lower (SpecialLowerHandlers)
 import Hix.Optparse (JsonConfig)
 
 data PreprocOptions =
@@ -133,7 +131,7 @@ data LowerInitOptions =
     env :: Either ManagedEnv JsonConfig,
     config :: ManagedConfig,
     lowerInit :: LowerInitConfig,
-    handlers :: Maybe SpecialLowerInitHandlers
+    handlers :: Maybe SpecialLowerHandlers
   }
   deriving stock (Show)
 
@@ -142,7 +140,7 @@ data LowerOptimizeOptions =
     env :: Either ManagedEnv JsonConfig,
     config :: ManagedConfig,
     lowerOptimize :: LowerOptimizeConfig,
-    handlers :: Maybe SpecialLowerOptimizeHandlers
+    handlers :: Maybe SpecialLowerHandlers
   }
   deriving stock (Show)
 
@@ -150,10 +148,6 @@ data LowerCommand =
   LowerInitCmd LowerInitOptions
   |
   LowerOptimizeCmd LowerOptimizeOptions
-  deriving stock (Show)
-
-data ManagedCommand =
-  ManagedCommitMsg (Path Abs File)
   deriving stock (Show)
 
 data Command =
@@ -172,20 +166,7 @@ data Command =
   BumpCmd BumpOptions
   |
   LowerCmd LowerCommand
-  |
-  ManagedCmd ManagedCommand
   deriving stock (Show)
-
-data GlobalOptions =
-  GlobalOptions {
-    -- TODO why is this Maybe? we're always using @fromMaybe False@ for it
-    verbose :: Maybe Bool,
-    debug :: Bool,
-    quiet :: Bool,
-    cwd :: Path Abs Dir,
-    output :: OutputFormat
-  }
-  deriving stock (Eq, Show, Generic)
 
 data Options =
   Options {
