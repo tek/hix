@@ -172,6 +172,47 @@ let
     else managedMulti (lib.attrNames config.managed.sets)
     ;
 
+  managedGaWorkflow = sort: config.pkgs.writeText "${sort}.yaml" ''
+    name: ${sort}
+    on: workflow_dispatch
+    permissions:
+      contents: write
+      pull-requests: write
+    jobs:
+      bump-pr:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v4
+        - uses: DeterminateSystems/nix-installer-action@main
+          with:
+            extra-conf: |
+              access-tokens = github.com=''${{ secrets.GITHUB_TOKEN }}
+        - uses: DeterminateSystems/magic-nix-cache-action@main
+        - id: bump
+          run: nix run .#${sort} -- --output=ga-pr
+        - name: pr
+          if: steps.bump.outputs.commit-message
+          uses: peter-evans/create-pull-request@v5
+          with: ''${{ steps.bump.outputs }}
+  '';
+
+  genManagedGaWorkflow = sort: let
+    script = config.pkgs.writeScript "gen-managed-ga-workflow" ''
+    dir=$PWD/.github/workflows
+    mkdir -p $dir
+    cp ${managedGaWorkflow sort} $dir/${sort}.yaml
+    '';
+  in app script;
+
+  genManaged = {
+    managed = {
+      gen.ga = {
+        bump = genManagedGaWorkflow "bump";
+        lower = genManagedGaWorkflow "lower.optimize";
+      };
+    };
+  };
+
 in {
   inherit
   prefixedInEnvs
@@ -188,5 +229,6 @@ in {
   managedChecks
   managedApps
   managedEnvGhcs
+  genManaged
   ;
 }

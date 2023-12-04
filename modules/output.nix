@@ -146,7 +146,9 @@ in {
         libOutput.managedApps //
         libOutput.mainAppimageApp //
         { cmd = lib.mkIf config.output.commandApps (libOutput.commandApps config.commands); } //
-        basicEnvApps;
+        basicEnvApps //
+        libOutput.genManaged
+        ;
 
       };
 
