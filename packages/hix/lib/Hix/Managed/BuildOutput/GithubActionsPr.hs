@@ -54,7 +54,7 @@ modifiedOutputs op date msg body =
   where
     opslug = case op of
       OpBump -> "bump"
-      OpLower -> "lower"
+      _ -> "lower"
 
 githubActionsPr :: BuildOutput -> OutputTarget -> M ()
 githubActionsPr output target =

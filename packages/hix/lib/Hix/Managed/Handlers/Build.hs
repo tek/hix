@@ -1,38 +1,51 @@
 module Hix.Managed.Handlers.Build where
 
-import Path (Abs, Dir, Path)
-
+import Hix.Class.Map (convert)
+import Hix.Data.Deps (TargetDeps)
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.Error (Error (Fatal))
-import Hix.Data.Package (LocalPackage)
-import Hix.Data.Version (NewVersion)
+import qualified Hix.Data.ManagedEnv
+import Hix.Data.ManagedEnv (ManagedState)
+import Hix.Data.Monad (M)
+import qualified Hix.Data.Overrides
+import Hix.Data.Version (Versions)
+import Hix.Managed.Data.Build (BuildStatus (Failure))
+import Hix.Managed.Data.Targets (Targets)
 import qualified Hix.Managed.Handlers.Hackage as HackageHandlers
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.StateFile as StateFileHandlers
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
-import Hix.Monad (M, throwM)
+import Hix.Managed.Solve.Config (GhcDb)
 
-newtype TempProjectBracket =
-  TempProjectBracket (∀ a . Maybe (Path Abs Dir) -> (Path Abs Dir -> M a) -> M a)
+data EnvBuilder =
+  EnvBuilder {
+    buildWithState :: ManagedState -> M BuildStatus,
+    ghcDb :: M (Maybe GhcDb)
+  }
 
-tempProjectBracket :: ∀ a . TempProjectBracket -> Maybe (Path Abs Dir) -> (Path Abs Dir -> M a) -> M a
-tempProjectBracket (TempProjectBracket f) = f
+data Builder =
+  Builder {
+    withEnvBuilder :: ∀ a . EnvName -> Targets -> TargetDeps -> ManagedState -> (EnvBuilder -> M a) -> M a
+  }
 
 data BuildHandlers =
   BuildHandlers {
     stateFile :: StateFileHandlers,
     hackage :: HackageHandlers,
-    withTempProject :: TempProjectBracket,
-    buildProject :: Path Abs Dir -> EnvName -> LocalPackage -> NewVersion -> M Bool,
-    ghcDb :: Path Abs Dir -> EnvName -> M (Maybe (Path Abs Dir))
+    withBuilder :: ∀ a . (Builder -> M a) -> M a
   }
+
+testBuilder :: (ManagedState -> M BuildStatus) -> (Builder -> M a) -> M a
+testBuilder buildWithState use =
+  use Builder {withEnvBuilder = \ _ _ _ _ useE -> useE EnvBuilder {buildWithState, ghcDb = pure Nothing}}
+
+versionsBuilder :: (Versions -> M BuildStatus) -> (Builder -> M a) -> M a
+versionsBuilder build =
+  testBuilder \ state -> build (convert (.version) state.overrides)
 
 handlersNull :: BuildHandlers
 handlersNull =
   BuildHandlers {
     stateFile = StateFileHandlers.handlersNull,
     hackage = HackageHandlers.handlersNull,
-    withTempProject = TempProjectBracket \ _ _ -> throwM (Fatal "not implemented: withTempProject"),
-    buildProject = \ _ _ _ _ -> pure False,
-    ghcDb = \ _ _ -> throwM (Fatal "not implemented: ghcDb")
+    withBuilder = testBuilder (const (pure Failure))
   }

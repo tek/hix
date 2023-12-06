@@ -38,6 +38,7 @@ instance Lookup LookupMaybe v (Maybe v) where
 (!!) m k = lookup @sort @v @l (coerce m !? k)
 
 ntInsert ::
+  ∀ map k v sort .
   NtMap map k v sort =>
   k ->
   v ->
@@ -56,6 +57,17 @@ ntUpdate ::
   map
 ntUpdate k m f =
   ntInsert k (f (m !! k)) m
+
+ntUpdating ::
+  ∀ map k v sort l .
+  NtMap map k v sort =>
+  Lookup sort v l =>
+  k ->
+  (l -> v) ->
+  map ->
+  map
+ntUpdating k =
+  flip (ntUpdate k)
 
 via ::
   NtMap map k v sort =>
@@ -107,6 +119,18 @@ convertMaybe ::
   map2
 convertMaybe f =
   coerce . Map.mapMaybeWithKey (const f) . ntMap
+
+convertMaybe1 ::
+  ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
+  NtMap map1 k map1' s1 =>
+  NtMap map2 k map2' s2 =>
+  NtMap map1' k' v1 s1' =>
+  NtMap map2' k' v2 s2' =>
+  (v1 -> Maybe v2) ->
+  map1 ->
+  map2
+convertMaybe1 =
+  convert . convertMaybe
 
 convertWithKeyMaybe ::
   NtMap map1 k1 v1 sort1 =>
@@ -252,6 +276,14 @@ ntList ::
 ntList =
   Map.toList . coerce
 
+ntTo ::
+  NtMap map k v sort =>
+  map ->
+  (k -> v -> a) ->
+  [a]
+ntTo m f =
+  fmap (uncurry f) (ntList m)
+
 ntFromKeys ::
   NtMap map k v sort =>
   [k] ->
@@ -294,3 +326,11 @@ ntElems1 ::
   [v]
 ntElems1 =
   Map.elems . ntMap <=< Map.elems . ntMap
+
+ntFlatten ::
+  Monoid map2 =>
+  NtMap map1 k1 map2 LookupMonoid =>
+  map1 ->
+  map2
+ntFlatten =
+  mconcat . Map.elems . ntMap

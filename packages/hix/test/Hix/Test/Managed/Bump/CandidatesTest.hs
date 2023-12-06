@@ -4,7 +4,6 @@ import Data.Aeson (eitherDecodeStrict')
 import Distribution.Version (Version, earlierVersion, intersectVersionRanges, orLaterVersion, unionVersionRanges)
 import Exon (exon)
 import Hedgehog (evalEither, (===))
-import Path (Abs, Dir, Path, absdir)
 
 import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.Error (Error (Client))
@@ -14,19 +13,11 @@ import Hix.Deps (allDeps, depsFromConfig, forTargets)
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
 import Hix.Managed.Bump.Candidates (candidatesBump)
-import Hix.Managed.Handlers.Build (BuildHandlers (..), withTempProject)
-import Hix.Managed.Handlers.Build.Test (withTempProjectAt)
 import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
 import qualified Hix.Managed.Lower.Data.Bump
 import Hix.Managed.Lower.Data.Bump (Bump (Bump))
-import Hix.Monad (M, runM, throwM)
-import Hix.Test.Utils (UnitTest)
-
-root :: Path Abs Dir
-root = [absdir|/project|]
-
-tmpRoot :: Path Abs Dir
-tmpRoot = [absdir|/tmp/project|]
+import Hix.Monad (M, throwM)
+import Hix.Test.Utils (UnitTest, runMTest)
 
 depsConfig :: Either String ConfigDeps
 depsConfig =
@@ -84,11 +75,7 @@ latestVersion =
 
 handlersTest :: BumpHandlers
 handlersTest =
-  h {
-    build = h.build {withTempProject = withTempProjectAt tmpRoot}
-  }
-  where
-    h = handlersNull {latestVersion}
+  handlersNull {latestVersion}
 
 target :: [DepMutation Bump]
 target =
@@ -134,7 +121,7 @@ test_candidatesBump :: UnitTest
 test_candidatesBump = do
   cdeps <- leftA fail depsConfig
   bumps <- evalEither =<< liftIO do
-    runM root do
+    runMTest False do
       configDeps <- depsFromConfig cdeps ["panda"]
       let targetDeps = forTargets "panda" configDeps
       let deps = allDeps targetDeps

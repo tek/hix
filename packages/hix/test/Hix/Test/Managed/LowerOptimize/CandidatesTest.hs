@@ -6,6 +6,7 @@ import Hedgehog (evalEither, (===))
 
 import Hix.Data.Dep (mainDep)
 import Hix.Data.Error (Error (Client))
+import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
 import Hix.Data.Package (PackageName)
@@ -13,14 +14,13 @@ import Hix.Data.Version (NewRange (NewRange), NewVersion (..))
 import Hix.Managed.Build.Mutation (MutationResult (MutationSuccess))
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
-import Hix.Managed.Data.SolverBounds (SolverBound (ExtendedBound, NoBounds))
-import qualified Hix.Managed.Handlers.Build as BuildHandlers
-import Hix.Managed.Handlers.Build (BuildHandlers (..))
-import Hix.Managed.Handlers.Mutation.LowerOptimize (processMutationLowerOptimize)
+import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerOptimize))
+import Hix.Managed.Data.SolverParams (SolverBound (ExtendedBound, NoBounds))
+import Hix.Managed.Handlers.Mutation.Lower (processMutationLower)
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
 import Hix.Managed.Lower.Candidates (candidatesOptimize)
-import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimizeState (..))
+import Hix.Managed.Lower.Data.Lower (LowerState (..))
 import Hix.Managed.Solve.Changes (SolverPlan (..))
 import Hix.Monad (M, throwM)
 import Hix.Test.Utils (UnitTest, runMTest)
@@ -49,14 +49,13 @@ test_candidatesOptimize = do
     solveForVersion _ nv = do
       liftIO (modifyIORef' buildRef (nv.version :))
       pure case nv.version of
-        [1, 9, 2] -> Just SolverPlan {configured = [nv], preexisting = []}
+        [1, 9, 2] -> Just SolverPlan {overrides = [nv], matching = []}
         _ -> Nothing
-    handlers = BuildHandlers.handlersNull -- {solve = SolveHandlers {solveForVersion}}
     solve = SolveHandlers {solveForVersion}
   result <- liftIO $ runMTest False do
     majors <- candidatesOptimize availableVersions dep
     for majors \ mut ->
-      processMutationLowerOptimize solve handlers.hackage state mut build
+      processMutationLower solve OpLowerOptimize lowerConfigOptimize state mut build
   mutationResults <- evalEither result
   Just (MutationSuccess candidate mstate newState) === mutationResults
   triedVersions <- liftIO (readIORef buildRef)
@@ -70,9 +69,9 @@ test_candidatesOptimize = do
 
     mstate = ManagedState {bounds = mempty, overrides = mempty}
 
-    newState = LowerOptimizeState {solverBounds = [("dep", ExtendedBound candidateVersion)]}
+    newState = LowerState {solverBounds = [("dep", ExtendedBound candidateVersion)]}
 
-    state = LowerOptimizeState {solverBounds = [("dep", NoBounds)]}
+    state = LowerState {solverBounds = [("dep", NoBounds)]}
 
     candidate =
       Candidate {

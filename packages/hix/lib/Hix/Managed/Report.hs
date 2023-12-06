@@ -8,8 +8,7 @@ import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
 import qualified Hix.Managed.Lower.Data.Bump
 import Hix.Managed.Lower.Data.Bump (Bump (Bump))
-import Hix.Managed.Lower.Data.LowerInit (LowerInit)
-import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
+import Hix.Managed.Lower.Data.Lower (Lower)
 import Hix.Data.Monad (M)
 import Hix.Pretty (showP)
 
@@ -22,10 +21,7 @@ instance ReportMutation Bump where
     forNewRange range \ r ->
       Log.info [exon|    New bounds: #{showP r}|]
 
-instance ReportMutation LowerInit where
-  reportMutation _ = unit
-
-instance ReportMutation LowerOptimize where
+instance ReportMutation Lower where
   reportMutation _ = unit
 
 reportMutations ::

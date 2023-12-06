@@ -5,6 +5,7 @@ import Hix.Data.Dep (Dep)
 import Hix.Data.Deps (TargetDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.ManagedEnv (ManagedState)
+import Hix.Data.Version (Versions)
 import Hix.Managed.Data.Targets (Targets)
 
 data ManagedJob =
@@ -22,6 +23,7 @@ data ManagedJob =
     -- | The flake deps with their ranges replaced by the managed bounds, if they exist.
     -- Invariant: keys are exactly the 'targets'.
     targetDeps :: TargetDeps,
+    lowerInit :: Versions,
     deps :: [Dep],
     state :: ManagedState,
     -- | The deps in each target that had a 'targetBound' in the flake config, but not in the managed state.

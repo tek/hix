@@ -2,7 +2,7 @@ module Hix.Data.Package where
 
 import Data.Aeson (FromJSON, FromJSONKey, ToJSON)
 import qualified Distribution.Package as Cabal
-import Distribution.Package (depPkgName)
+import Distribution.Package (depPkgName, mkPackageName)
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Types.Dependency (Dependency)
 import Text.PrettyPrint (text)
@@ -20,6 +20,10 @@ instance Pretty PackageName where
 packageNameFromCabal :: Cabal.PackageName -> PackageName
 packageNameFromCabal =
   fromString . Cabal.unPackageName
+
+packageNameToCabal :: PackageName -> Cabal.PackageName
+packageNameToCabal (PackageName name) =
+  mkPackageName (toString name)
 
 depPackageName :: Dependency -> PackageName
 depPackageName =

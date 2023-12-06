@@ -10,10 +10,8 @@ import Path (Abs, Dir, Path, absdir, relfile)
 
 import Hix.Data.Bounds (TargetBound (TargetLower), TargetBounds)
 import Hix.Data.ConfigDeps (ConfigDeps)
-import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Client, Fatal))
-import qualified Hix.Data.LowerConfig
-import Hix.Data.LowerConfig (LowerOptimizeConfig (LowerOptimizeConfig))
+import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
   EnvConfig (EnvConfig),
@@ -23,27 +21,29 @@ import Hix.Data.ManagedEnv (
   )
 import Hix.Data.NixExpr (Expr)
 import Hix.Data.Overrides (EnvOverrides)
-import Hix.Data.Package (LocalPackage, PackageName (PackageName))
-import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
+import Hix.Data.Package (PackageName (PackageName))
+import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
+import Hix.Managed.Data.Build (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),
-  ManagedOp (OpLower),
+  ManagedOp (OpLowerOptimize),
   StateFileConfig (StateFileConfig),
   )
-import Hix.Managed.Handlers.Build (BuildHandlers (..))
+import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Hackage (fetchHash)
 import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
-import Hix.Managed.Lower.App (lowerOptimize)
-import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize)
+import Hix.Managed.Lower.Optimize (lowerOptimize)
+import Hix.Managed.Lower.Data.Lower (Lower)
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
+import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
 import qualified Hix.Test.Managed.Solver
 import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)
@@ -79,25 +79,22 @@ byPackage =
 testDeps :: TestDeps
 testDeps = TestDeps {fetchVersions, byPackage, byVersion = []}
 
-buildProjectTest :: Path Abs Dir -> EnvName -> LocalPackage -> NewVersion -> M Bool
-buildProjectTest _ _ target newVersion =
-  case newVersion.package of
-    "direct1" -> pure True
-    "direct2" -> case newVersion.version of
-      [1, 8, 1] -> pure False
-      [1, 9, 1] -> pure False
-      _ -> pure True
-    "direct3" -> pure True
-    pkg -> throwM (Fatal [exon|Unexpected dep for building ##{target}: ##{pkg}|])
+buildWithState :: Versions -> M BuildStatus
+buildWithState = \case
+  [("direct1", [1, 9, 1]), ("direct2", [1, 9, 2]), ("transitive1", [1, 0, 1])] -> pure Success
+  [("direct1", [1, 8, 1]), ("direct2", [1, 9, 2]), ("transitive1", [1, 0, 1])] -> pure Success
+  [("direct1", [1, 8, 1]), ("direct2", [1, 9, 1]), ("transitive1", [1, 0, 1])] -> pure Failure
+  [("direct1", [1, 8, 1]), ("direct2", [1, 8, 1]), ("transitive1", [1, 0, 1])] -> pure Failure
+  versions -> throwM (Fatal [exon|Unexpected overrides: #{showP versions}|])
 
-handlersTest :: IO (LowerHandlers LowerOptimize, IORef [Expr], IORef [DepMutation LowerOptimize])
+handlersTest :: IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
 handlersTest = do
-  (build, stateFileRef) <- BuildHandlers.handlersUnitTest tmpRoot
+  (build, stateFileRef) <- BuildHandlers.handlersUnitTest
   (handlers, bumpsRef) <- LowerHandlers.handlersUnitTest
   let handlers' = handlers {
-    solve = \ _ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
+    solve = \ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
     build = build {
-      buildProject = buildProjectTest,
+      withBuilder = versionsBuilder buildWithState,
       hackage = build.hackage {fetchHash}
     },
     versions = fetchVersions
@@ -172,6 +169,7 @@ stateFileTarget =
       };
     };
   };
+  lowerInit = {};
   resolving = false;
 }
 |]
@@ -195,14 +193,14 @@ test_lowerOptimizeMutation = do
     env =
       ManagedEnv {
         deps,
-        state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, resolving = False},
+        state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, lowerInit = [], resolving = False},
         lower = ManagedLowerEnv {solverBounds = mempty},
-        envs = [("lower", EnvConfig {targets = ["local1"], ghc = Nothing})],
+        envs = [("lower", EnvConfig {targets = ["local1"]})],
         buildOutputsPrefix = Nothing
       }
     conf =
       ManagedConfig {
-        operation = OpLower,
+        operation = OpLowerOptimize,
         ghc = Nothing,
         stateFile = StateFileConfig {
           file = [relfile|ops/managed.nix|],
@@ -212,9 +210,8 @@ test_lowerOptimizeMutation = do
         envs = ["lower"],
         targetBound = TargetLower
       }
-    lowerConf = LowerOptimizeConfig {oldest = False, initialBounds = []}
   evalEither =<< liftIO do
     runMTest False $ runManagedApp handlers.build handlers.report env conf \ app ->
-      Right <$> lowerOptimize handlers lowerConf app
+      Right <$> lowerOptimize handlers lowerConfigOptimize app
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)

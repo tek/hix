@@ -4,14 +4,14 @@ import Data.Aeson (FromJSON (parseJSON), Value (Object, String), (.:))
 import Data.Aeson.Types (Parser, parseEither)
 import Distribution.Compat.NonEmptySet (NonEmptySet)
 import Distribution.Package (mainLibSet)
-import Distribution.PackageDescription (LibraryName, mkPackageName)
+import Distribution.PackageDescription (LibraryName)
 import Distribution.Pretty (Pretty, pretty)
 import Distribution.Types.Dependency (Dependency (Dependency))
 import Distribution.Version (Version, VersionRange, thisVersion)
 import Exon (exon)
 
 import Hix.Data.Json (aesonParsec, jsonParsec)
-import Hix.Data.Package (PackageName (PackageName), packageNameFromCabal)
+import Hix.Data.Package (PackageName, packageNameFromCabal, packageNameToCabal)
 import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion (NewVersion))
 import Hix.Version (unsafeRange)
@@ -25,8 +25,8 @@ data Dep =
   deriving stock (Eq, Show)
 
 toCabal :: Dep -> Dependency
-toCabal Dep {package = PackageName package, ..} =
-  Dependency (mkPackageName (toString package)) version libs
+toCabal Dep {..} =
+  Dependency (packageNameToCabal package) version libs
 
 instance Pretty Dep where
   pretty = pretty . toCabal

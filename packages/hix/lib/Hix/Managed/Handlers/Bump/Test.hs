@@ -4,7 +4,9 @@ import Distribution.Version (Version, mkVersion)
 import Exon (exon)
 
 import Hix.Data.Error (Error (Client))
+import Hix.Data.ManagedEnv (BuildOutputsPrefix)
 import Hix.Data.Package (PackageName)
+import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import Hix.Managed.Handlers.Bump (BumpHandlers (..))
 import Hix.Managed.Handlers.Bump.Prod (handlersProd)
 import Hix.Monad (M, throwM)
@@ -20,8 +22,9 @@ latestVersion = \case
     found = pure . Just . mkVersion
 
 handlersTest ::
-  Maybe Text ->
+  StateFileConfig ->
+  Maybe BuildOutputsPrefix ->
   IO BumpHandlers
-handlersTest buildOutputsPrefix = do
-  h <- handlersProd buildOutputsPrefix
+handlersTest conf buildOutputsPrefix = do
+  h <- handlersProd conf buildOutputsPrefix
   pure h {latestVersion}

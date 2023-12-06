@@ -134,6 +134,7 @@ let
     lower = {
       init = app (libManaged.lowerInit [lower]);
       optimize = app (libManaged.lowerOptimize [lower]);
+      stabilize = app (libManaged.lowerStabilize [lower]);
     };
   };
 
@@ -217,7 +218,7 @@ let
     managed = {
       gen.ga = {
         bump = genManagedGaWorkflow "bump";
-        lower = genManagedGaWorkflow "lower.optimize";
+        lower.optimize = genManagedGaWorkflow "lower.optimize";
       };
     };
   };

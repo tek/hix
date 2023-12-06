@@ -7,7 +7,7 @@ import qualified Data.Set as Set
 import Distribution.Version (orLaterVersion, version0)
 import Exon (exon)
 
-import Hix.Class.Map (convert, convert1, ntAmend1, ntElems1, ntFromList, ntMap, via, (!!))
+import Hix.Class.Map (NtMap, convert, convert1, ntAmend1, ntElems1, ntFromList, ntMap, via, (!!))
 import Hix.Data.Bounds (Bounds, TargetBounds)
 import Hix.Data.ConfigDeps (
   ConfigComponentDeps (ConfigComponentDeps),
@@ -54,7 +54,11 @@ withManagedRanges ::
 withManagedRanges =
   ntAmend1 withVersion
 
-forTargets :: Targets -> TargetDeps -> TargetDeps
+forTargets ::
+  NtMap map LocalPackage v sort =>
+  Targets ->
+  map ->
+  map
 forTargets targets =
   via (flip Map.restrictKeys (Set.fromList (getTargets targets)))
 

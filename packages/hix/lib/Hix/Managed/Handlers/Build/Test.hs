@@ -1,20 +1,21 @@
 module Hix.Managed.Handlers.Build.Test where
 
 import Data.IORef (IORef)
-import Path (Abs, Dir, Path)
 
+import Hix.Data.ManagedEnv (BuildOutputsPrefix)
 import Hix.Data.NixExpr (Expr)
-import Hix.Managed.Handlers.Build (BuildHandlers (..), TempProjectBracket (TempProjectBracket), handlersNull)
+import Hix.Managed.Data.ManagedConfig (StateFileConfig)
+import Hix.Managed.Handlers.Build (BuildHandlers (..), handlersNull)
 import Hix.Managed.Handlers.Build.Prod (handlersProd)
 import qualified Hix.Managed.Handlers.StateFile.Test as StateFileHandlers
 
-withTempProjectAt :: Path Abs Dir -> TempProjectBracket
-withTempProjectAt tmpRoot = TempProjectBracket \ _ use -> use tmpRoot
-
-handlersUnitTest :: Path Abs Dir -> IO (BuildHandlers, IORef [Expr])
-handlersUnitTest tmpRoot = do
+handlersUnitTest ::  IO (BuildHandlers, IORef [Expr])
+handlersUnitTest = do
   (stateFile, stateFileRef) <- StateFileHandlers.handlersUnitTest
-  pure (handlersNull {stateFile, withTempProject = withTempProjectAt tmpRoot}, stateFileRef)
+  pure (handlersNull {stateFile}, stateFileRef)
 
-handlersTest :: Maybe Text -> IO BuildHandlers
+handlersTest ::
+  StateFileConfig ->
+  Maybe BuildOutputsPrefix ->
+  IO BuildHandlers
 handlersTest = handlersProd

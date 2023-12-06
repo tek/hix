@@ -11,27 +11,19 @@ updateState ::
   DepMutation a ->
   MutationResult s ->
   BuildState a s
-updateState state mutation = \case
+updateState old mutation = \case
   MutationSuccess candidate managed ext ->
-    BuildState {
-      success = CandidateBuilt candidate : state.success,
-      failed = state.failed,
-      managed,
+    old {
+      success = CandidateBuilt candidate : old.success,
+      state = managed,
       ext
     }
   MutationUpdateBounds newVersion range ->
-    state {
-      success = RangeUpdated newVersion range : state.success,
-      managed = state.managed {bounds = ntInsert mutation.package range state.managed.bounds}
+    old {
+      success = RangeUpdated newVersion range : old.success,
+      state = old.state {bounds = ntInsert mutation.package range old.state.bounds}
     }
   MutationKeep ->
-    state {
-      success = Unmodified mutation.package : state.success
-    }
+    old {success = Unmodified mutation.package : old.success}
   MutationFailed ->
-    BuildState {
-      success = state.success,
-      failed = mutation : state.failed,
-      managed = state.managed,
-      ext = state.ext
-    }
+    old {failed = mutation : old.failed}

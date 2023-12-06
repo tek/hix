@@ -2,9 +2,10 @@ module Hix.Managed.Handlers.Build.Prod where
 
 import Control.Monad.Catch (catch)
 import Control.Monad.Trans.Reader (asks)
+import Data.Foldable.Extra (allM)
 import Exon (exon)
-import Path (Abs, Dir, Path, parseAbsDir, toFilePath)
-import Path.IO (copyDirRecur', getCurrentDir)
+import Path (Abs, Dir, File, Path, parseAbsDir, toFilePath)
+import Path.IO (copyDirRecur')
 import System.IO.Error (IOError)
 import System.Process.Typed (
   ExitCode (ExitFailure, ExitSuccess),
@@ -19,25 +20,45 @@ import System.Process.Typed (
   setWorkingDir,
   )
 
+import Hix.Data.Deps (TargetDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
+import Hix.Data.ManagedEnv (BuildOutputsPrefix (BuildOutputsPrefix), ManagedState)
 import qualified Hix.Data.Monad (Env (verbose))
 import Hix.Data.Package (LocalPackage)
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewVersion (NewVersion))
 import Hix.Error (pathText)
 import qualified Hix.Log as Log
-import Hix.Managed.Handlers.Build (BuildHandlers (..), TempProjectBracket (TempProjectBracket))
+import Hix.Managed.Data.Build (BuildStatus, buildStatus)
+import qualified Hix.Managed.Data.ManagedConfig
+import Hix.Managed.Data.ManagedConfig (StateFileConfig)
+import Hix.Managed.Data.Targets (Targets (Targets))
+import qualified Hix.Managed.Handlers.Build
+import Hix.Managed.Handlers.Build (BuildHandlers (..), Builder (Builder), EnvBuilder (EnvBuilder))
 import qualified Hix.Managed.Handlers.Hackage.Prod as HackageHandlers
+import qualified Hix.Managed.Handlers.StateFile
+import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import qualified Hix.Managed.Handlers.StateFile.Prod as StateFileHandlers
+import Hix.Managed.Path (rootOrCwd)
+import Hix.Managed.Solve.Config (GhcDb (GhcDb))
+import Hix.Managed.StateFile (writeBuildStateFor)
 import Hix.Monad (M, noteFatal, throwM, tryIOM, withTempDir)
-import Hix.Pretty (showP)
 
-rootOrCwd ::
-  Maybe (Path Abs Dir) ->
-  M (Path Abs Dir)
-rootOrCwd =
-  maybe (tryIOM getCurrentDir) pure
+data BuilderResources =
+  BuilderResources {
+    handlers :: StateFileHandlers,
+    conf :: StateFileConfig,
+    buildOutputsPrefix :: Maybe BuildOutputsPrefix,
+    root :: Path Abs Dir,
+    stateFile :: Path Abs File
+  }
+
+data EnvBuilderResources =
+  EnvBuilderResources {
+    global :: BuilderResources,
+    env :: EnvName,
+    targets :: Targets,
+    deps :: TargetDeps
+  }
 
 withTempProject ::
   Maybe (Path Abs Dir) ->
@@ -70,15 +91,13 @@ nixProc root cmd installable extra = do
 
     args = toString <$> cmd ++ [exon|path:#{".#"}#{installable}|] : extra
 
-buildProject ::
+buildPackage ::
   Path Abs Dir ->
   EnvName ->
   LocalPackage ->
-  NewVersion ->
   M Bool
-buildProject root env target NewVersion {package, version} = do
+buildPackage root env target = do
   verbose <- asks (.verbose)
-  Log.info [exon|Building '##{target}' with '#{pv}'...|]
   conf <- nixProc root ["-L", "build"] [exon|env.##{env}.##{target}|] []
   tryIOM (runProcess (err verbose conf)) <&> \case
     ExitSuccess -> True
@@ -88,29 +107,68 @@ buildProject root env target NewVersion {package, version} = do
       True -> setStdout inherit
       False -> id
 
-    pv = [exon|##{package}-#{showP version}|]
+buildWithState ::
+  EnvBuilderResources ->
+  ManagedState ->
+  M BuildStatus
+buildWithState EnvBuilderResources {targets = Targets targets, ..} state = do
+  writeBuildStateFor "current build" global.handlers deps env state global.stateFile
+  buildStatus <$> allM (buildPackage global.root env) targets
 
 ghcDb ::
-  Maybe Text ->
-  Path Abs Dir ->
-  EnvName ->
-  M (Maybe (Path Abs Dir))
-ghcDb buildOutputsPrefix root env = do
-  conf <- nixProc root ["eval", "--raw"] [exon|#{prefix}.env.##{env}.ghc-local|] []
+  EnvBuilderResources ->
+  M (Maybe GhcDb)
+ghcDb EnvBuilderResources {global, env} = do
+  conf <- nixProc global.root ["eval", "--raw"] [exon|#{prefix}.env.##{env}.ghc-local|] []
   tryIOM (readProcessStdout conf) >>= \case
-    (ExitSuccess, decodeUtf8 -> out) -> Just <$> noteFatal (parseError out) (parseAbsDir out)
+    (ExitSuccess, decodeUtf8 -> out) -> Just . GhcDb <$> noteFatal (parseError out) (parseAbsDir out)
     (ExitFailure _, _) -> throwM (Fatal "Evaluation failed for vanilla GHC path")
   where
-    prefix = fromMaybe "build" buildOutputsPrefix
+    BuildOutputsPrefix prefix = fromMaybe "build" global.buildOutputsPrefix
     parseError out = [exon|Parse error for vanilla GHC path: #{toText out}|]
 
-handlersProd :: Maybe Text -> IO BuildHandlers
-handlersProd buildOutputsPrefix = do
+-- | This writes the initial state separate from the individual builds because we want to load the GHC package db for
+-- the Cabal solver at the start of @use@.
+-- Since we allow multiple envs to be processed in sequence, the state will be updated between runs, which influences
+-- the package db (due to local packages getting new dependency bounds).
+--
+-- TODO should EnvBuilder provide a solver constructor?
+withEnvBuilder ::
+  ∀ a .
+  BuilderResources ->
+  EnvName ->
+  Targets ->
+  TargetDeps ->
+  ManagedState ->
+  (EnvBuilder -> M a) ->
+  M a
+withEnvBuilder global env targets deps initialState use = do
+  writeBuildStateFor "env initialization" global.handlers deps env initialState global.stateFile
+  let resources = EnvBuilderResources {..}
+  use EnvBuilder {buildWithState = buildWithState resources, ghcDb = ghcDb resources}
+
+withBuilder ::
+  StateFileHandlers ->
+  StateFileConfig ->
+  Maybe BuildOutputsPrefix ->
+  (Builder -> M a) ->
+  M a
+withBuilder handlers conf buildOutputsPrefix use =
+  withTempProject conf.projectRoot \ root -> do
+    stateFile <- handlers.initFile root conf.file
+    let resources = BuilderResources {..}
+    use Builder {withEnvBuilder = withEnvBuilder resources}
+
+handlersProd ::
+  StateFileConfig ->
+  Maybe BuildOutputsPrefix ->
+  IO BuildHandlers
+handlersProd conf buildOutputsPrefix = do
   hackage <- HackageHandlers.handlersProd
+  let stateFile = StateFileHandlers.handlersProd
   pure BuildHandlers {
-    stateFile = StateFileHandlers.handlersProd,
+    -- TODO remove
+    stateFile,
     hackage,
-    withTempProject = TempProjectBracket withTempProject,
-    buildProject,
-    ghcDb = ghcDb buildOutputsPrefix
+    withBuilder = withBuilder stateFile conf buildOutputsPrefix
   }

@@ -5,18 +5,20 @@ import qualified Data.Map.Strict as Map
 import Exon (exon)
 
 import Hix.Class.Map (ntMap, (!!))
-import Hix.Data.Bounds (Bounds, removableBounds)
+import Hix.Data.Bounds (removableBounds)
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (EnvConfig, ManagedEnv, ManagedEnvState, ManagedState (ManagedState))
+import Hix.Data.ManagedEnv (EnvConfig, ManagedEnv, ManagedState (ManagedState))
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M)
 import Hix.Deps (allDeps, depsFromConfig, forTargets, mergeBounds, withManagedRanges)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.BuildOutput (outputResult)
 import Hix.Managed.Data.Build (BuildResults, buildOutput)
+import qualified Hix.Managed.Data.ManagedApp
+import Hix.Managed.Data.ManagedApp (ManagedApp (ManagedApp))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig, StateFileConfig)
+import Hix.Managed.Data.ManagedConfig (ManagedConfig)
 import qualified Hix.Managed.Data.ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob (ManagedJob))
 import Hix.Managed.Data.Targets (sortTargets)
@@ -27,20 +29,11 @@ import Hix.Managed.Project (updateProject)
 import Hix.Managed.Report (ReportMutation, reportMutations)
 import Hix.Monad (Env (Env), noteClient)
 
-data ManagedApp =
-  ManagedApp {
-    build :: BuildHandlers,
-    conf :: StateFileConfig,
-    state :: ManagedEnvState,
-    jobs :: NonEmpty ManagedJob,
-    solverBounds :: Bounds
-  }
-
 noEnvs :: Text
 noEnvs =
   [exon|The flake config contains no managed envs.
-Most likely, this means that you ran the CLI directly.
-Please use one of the flake apps '.#bump', .#lower.init' or '.#lower.optimize'.|]
+Most likely this means that you ran the CLI directly.
+Please use one of the flake apps '.#bump', .#lower.init', '.#lower.optimize' or '.#lower.stabilize'.|]
 
 unknownEnv :: EnvName -> Text
 unknownEnv name =
@@ -61,11 +54,12 @@ managedJob ::
   ManagedConfig ->
   EnvName ->
   EnvConfig ->
-  M (ManagedJob)
+  M ManagedJob
 managedJob env conf name envConfig = do
   configDeps <- depsFromConfig env.deps envConfig.targets
   let targets = sortTargets configDeps envConfig.targets
       targetDeps = forTargets targets (withManagedRanges env.state.bounds configDeps)
+      lowerInit = env.state.lowerInit !! name
       removable = removableBounds conf.targetBound targetDeps env.state.bounds
       deps = allDeps targetDeps
       state = ManagedState {bounds = mergeBounds targetDeps, overrides}
@@ -94,7 +88,8 @@ managedApp build env conf use = do
     conf = conf.stateFile,
     state = env.state,
     jobs,
-    solverBounds = env.lower.solverBounds
+    solverBounds = env.lower.solverBounds,
+    operation = conf.operation
   }
 
 processAppResult ::

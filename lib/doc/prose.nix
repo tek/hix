@@ -1103,6 +1103,14 @@ in {
   After the lower bounds have been initialized, you can run `nix run .#lower.optimize` to find the lowest possible
   bounds with which the project builds successfully.
 
+  The longterm workflow for this environment should usually be that you want to verify that the bounds are still
+  accurate after making changes to the project, and adjust them if they aren't.
+  For example, when you introduce the import of a name that had been added to its library in a version that's newer than
+  the current lower bound, the build in the `lower` environment will fail.
+  In order to rectify this, you can run `nix run .#lower.stabilize` as a pre-commit hook or a pre-release CI job.
+  This app builds the project with the initial lower bounds (from `lower.init`) and the current lower bound of each
+  dependency, and if it fails, it will search upwards for a working version.
+
   Since older versions require boot packages from older GHCs, it is advisable to use the oldest GHC available.
   See the option [](#opt-managed-managed.lower.compiler) for more information.
 

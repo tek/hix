@@ -3,7 +3,6 @@ module Hix.Data.ManagedEnv where
 import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Distribution.Pretty (Pretty (pretty))
 import GHC.Exts (IsList)
-import Path
 import Text.PrettyPrint (hang, ($+$))
 
 import Hix.Class.EncodeNix (EncodeNix)
@@ -13,6 +12,7 @@ import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Overrides (EnvOverrides, Overrides)
 import Hix.Data.Package (LocalPackage)
+import Hix.Data.Version (EnvVersions)
 
 data ManagedState =
   ManagedState {
@@ -29,6 +29,7 @@ data ManagedEnvState =
   ManagedEnvState {
     bounds :: TargetBounds,
     overrides :: EnvOverrides,
+    lowerInit :: EnvVersions,
     resolving :: Bool
   }
   deriving stock (Eq, Show, Generic)
@@ -40,9 +41,11 @@ instance Pretty ManagedEnvState where
 
 instance FromJSON ManagedEnvState where
   parseJSON = withObject "ManagedEnvState" \ o -> do
-    deps <- o .: "bounds" <|> pure mempty
+    bounds <- o .: "bounds" <|> pure mempty
     overrides <- o .: "overrides" <|> pure mempty
-    pure (ManagedEnvState deps overrides False)
+    lowerInit <- o .: "lowerInit" <|> pure mempty
+    resolving <- o .: "resolving" <|> pure False
+    pure ManagedEnvState {..}
 
 data ManagedLowerEnv =
   ManagedLowerEnv {
@@ -53,7 +56,6 @@ data ManagedLowerEnv =
 
 data EnvConfig =
   EnvConfig {
-    ghc :: Maybe (Path Abs Dir),
     targets :: [LocalPackage]
   }
   deriving stock (Eq, Show, Generic)
@@ -66,13 +68,18 @@ newtype EnvsConfig =
 
 instance NtMap EnvsConfig EnvName EnvConfig LookupMaybe where
 
+newtype BuildOutputsPrefix =
+  BuildOutputsPrefix Text
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString, Ord, FromJSON)
+
 data ManagedEnv =
   ManagedEnv {
     deps :: ConfigDeps,
     state :: ManagedEnvState,
     lower :: ManagedLowerEnv,
     envs :: EnvsConfig,
-    buildOutputsPrefix :: Maybe Text
+    buildOutputsPrefix :: Maybe BuildOutputsPrefix
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

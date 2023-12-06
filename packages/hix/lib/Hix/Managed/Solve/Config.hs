@@ -11,11 +11,15 @@ newtype HackageRepoName =
 instance Default HackageRepoName where
   def = "hackage.haskell.org"
 
+newtype GhcDb =
+  GhcDb (Path Abs Dir)
+  deriving stock (Eq, Show, Generic)
+
 data SolveConfig =
   SolveConfig {
     hackageRepoName :: HackageRepoName,
     verbosity :: Verbosity,
-    ghc :: Maybe (Path Abs Dir),
+    ghc :: Maybe GhcDb,
     allowBoot :: Bool
   }
   deriving stock (Eq, Show, Generic)

@@ -16,5 +16,5 @@ updateProject ::
   BuildResults a ->
   M ()
 updateProject stateFile report conf results = do
-  writeProjectState stateFile conf results.managed
+  writeProjectState stateFile conf results.state
   report.mutations results

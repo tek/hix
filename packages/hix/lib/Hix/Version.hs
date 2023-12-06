@@ -12,7 +12,6 @@ import Distribution.Version (
   Version,
   VersionInterval (VersionInterval),
   VersionRange,
-  VersionRangeF (..),
   alterVersion,
   asVersionIntervals,
   earlierVersion,
@@ -109,12 +108,12 @@ setLowerBound bound =
         | VersionInterval _ upper <- interval
         -> VersionInterval (LowerBound bound InclusiveBound) upper : rest
 
-setUpperBound :: Version -> VersionRange -> VersionRange
-setUpperBound bound =
+setUpperBoundAs :: Bound -> Version -> VersionRange -> VersionRange
+setUpperBoundAs boundSort bound =
   withIntervals (reverse . spin . reverse)
   where
     spin = \case
-      [] -> [VersionInterval (LowerBound version0 InclusiveBound) (UpperBound bound ExclusiveBound)]
+      [] -> [VersionInterval (LowerBound version0 InclusiveBound) (UpperBound bound boundSort)]
 
       interval : rest
         | VersionInterval (LowerBound lower ExclusiveBound) _ <- interval
@@ -126,7 +125,10 @@ setUpperBound bound =
         -> interval : spin rest
 
         | VersionInterval lower _ <- interval
-        -> VersionInterval lower (UpperBound bound ExclusiveBound) : rest
+        -> VersionInterval lower (UpperBound bound boundSort) : rest
+
+setUpperBound :: Version -> VersionRange -> VersionRange
+setUpperBound = setUpperBoundAs ExclusiveBound
 
 requireUpperBound :: Version -> VersionRange -> VersionRange
 requireUpperBound bound =
@@ -273,17 +275,10 @@ onlyMajor :: Int -> Int -> [Version] -> Maybe Major
 onlyMajor s m =
   find (isMajor s m) . allMajors
 
-secondMajorBefore :: Int -> Int -> [Version] -> [Version]
-secondMajorBefore s m allVersions =
-  case take 2 (reverse (majorsBefore s m allVersions)) of
-    [Major {versions}] -> toList versions
-    [_, Major {versions}] -> toList versions
-    _ -> []
+versionsFrom :: Version -> [Version] -> [Major]
+versionsFrom start =
+  allMajors . dropWhile (< start)
 
-lowerRangeF :: VersionRangeF VersionRange -> VersionRange
-lowerRangeF = \case
-  ThisVersionF v -> orLaterVersion v
-  OrLaterVersionF v -> orLaterVersion v
-  LaterVersionF v -> laterVersion v
-  IntersectVersionRangesF l _ -> l
-  _ -> orLaterVersion version0
+versionsBetween :: Version -> Version -> [Version] -> [Major]
+versionsBetween l u =
+  allMajors . takeWhile (< u) . dropWhile (< l)

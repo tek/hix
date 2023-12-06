@@ -6,7 +6,6 @@ import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
 import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions)
-import Hix.Data.LowerConfig (LowerInitConfig, LowerOptimizeConfig)
 import Hix.Data.ManagedEnv (ManagedEnv)
 import Hix.Data.NewProjectConfig (NewProjectConfig)
 import Hix.Data.Package (PackageName)
@@ -126,28 +125,29 @@ data BumpOptions =
   }
   deriving stock (Show, Generic)
 
-data LowerInitOptions =
-  LowerInitOptions {
+data LowerOptions =
+  LowerOptions {
     env :: Either ManagedEnv JsonConfig,
-    config :: ManagedConfig,
-    lowerInit :: LowerInitConfig,
+    managed :: ManagedConfig,
+    maxFailedPre :: Int,
+    maxFailedPost :: Int,
     handlers :: Maybe SpecialLowerHandlers
   }
   deriving stock (Show)
 
-data LowerOptimizeOptions =
-  LowerOptimizeOptions {
-    env :: Either ManagedEnv JsonConfig,
-    config :: ManagedConfig,
-    lowerOptimize :: LowerOptimizeConfig,
-    handlers :: Maybe SpecialLowerHandlers
+data LowerInitOptions =
+  LowerInitOptions {
+    common :: LowerOptions,
+    reset :: Bool
   }
   deriving stock (Show)
 
 data LowerCommand =
   LowerInitCmd LowerInitOptions
   |
-  LowerOptimizeCmd LowerOptimizeOptions
+  LowerOptimizeCmd LowerOptions
+  |
+  LowerStabilizeCmd LowerOptions
   deriving stock (Show)
 
 data Command =

@@ -18,7 +18,7 @@ commitMessage op num names
   where
     action = case op of
       OpBump -> "Bump"
-      OpLower -> "Adjust lower bounds of"
+      _ -> "Adjust lower bounds of"
 
 candidateList :: [Candidate] -> [Text]
 candidateList = fmap \ c -> [exon|* #{showP c}|]

@@ -22,7 +22,7 @@ import Hix.Data.Error (Error (Fatal))
 import Hix.Error (pathText)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Solve.Config
-import Hix.Managed.Solve.Config (HackageRepoName (HackageRepoName), SolveConfig (SolveConfig))
+import Hix.Managed.Solve.Config (GhcDb (GhcDb), HackageRepoName (HackageRepoName), SolveConfig (SolveConfig))
 import Hix.Monad (M, eitherFatalShow, noteFatal, throwM, tryIOM, tryIOMWith)
 
 data SolveFlags =
@@ -93,7 +93,7 @@ mainFlags conf =
 
     pathFlag exe = maybeToFlag (ghcPath exe <$> conf.ghc)
 
-    ghcPath exe dir = toFilePath (dir </> [reldir|bin|] </> exe)
+    ghcPath exe (GhcDb dir) = toFilePath (dir </> [reldir|bin|] </> exe)
 
 initialize ::
   SolveConfig ->

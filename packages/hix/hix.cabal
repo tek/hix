@@ -66,8 +66,8 @@ library
       Hix.Json
       Hix.Log
       Hix.Managed.App
+      Hix.Managed.Bounds
       Hix.Managed.Build
-      Hix.Managed.Build.Env
       Hix.Managed.Build.Mutation
       Hix.Managed.Build.Solve
       Hix.Managed.Build.UpdateState
@@ -77,11 +77,13 @@ library
       Hix.Managed.Bump.App
       Hix.Managed.Bump.Candidates
       Hix.Managed.Data.Build
+      Hix.Managed.Data.CabalTarget
       Hix.Managed.Data.Candidate
       Hix.Managed.Data.CurrentBuild
+      Hix.Managed.Data.ManagedApp
       Hix.Managed.Data.ManagedConfig
       Hix.Managed.Data.ManagedJob
-      Hix.Managed.Data.SolverBounds
+      Hix.Managed.Data.SolverParams
       Hix.Managed.Data.Targets
       Hix.Managed.Handlers.Build
       Hix.Managed.Handlers.Build.Prod
@@ -96,8 +98,7 @@ library
       Hix.Managed.Handlers.Lower.Test
       Hix.Managed.Handlers.Mutation
       Hix.Managed.Handlers.Mutation.Bump
-      Hix.Managed.Handlers.Mutation.LowerInit
-      Hix.Managed.Handlers.Mutation.LowerOptimize
+      Hix.Managed.Handlers.Mutation.Lower
       Hix.Managed.Handlers.Report
       Hix.Managed.Handlers.Report.Prod
       Hix.Managed.Handlers.Report.Test
@@ -106,11 +107,17 @@ library
       Hix.Managed.Handlers.StateFile
       Hix.Managed.Handlers.StateFile.Prod
       Hix.Managed.Handlers.StateFile.Test
+      Hix.Managed.Job
       Hix.Managed.Lower.App
+      Hix.Managed.Lower.Build
       Hix.Managed.Lower.Candidates
       Hix.Managed.Lower.Data.Bump
-      Hix.Managed.Lower.Data.LowerInit
-      Hix.Managed.Lower.Data.LowerOptimize
+      Hix.Managed.Lower.Data.Lower
+      Hix.Managed.Lower.Init
+      Hix.Managed.Lower.Optimize
+      Hix.Managed.Lower.Stabilize
+      Hix.Managed.Overrides
+      Hix.Managed.Path
       Hix.Managed.Project
       Hix.Managed.Report
       Hix.Managed.Solve
@@ -274,6 +281,7 @@ test-suite hix-test
       Hix.Test.Managed.LowerNativeTest
       Hix.Test.Managed.LowerOptimize.CandidatesTest
       Hix.Test.Managed.LowerOptimize.MutationTest
+      Hix.Test.Managed.LowerStabilize.MutationTest
       Hix.Test.Managed.Solver
       Hix.Test.ManagedTest
       Hix.Test.NewTest

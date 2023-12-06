@@ -1,9 +1,11 @@
 module Hix.Options where
 
+import Exon (exon)
 import Options.Applicative (
   CommandFields,
   Mod,
   Parser,
+  auto,
   bashCompleter,
   command,
   completer,
@@ -20,6 +22,7 @@ import Options.Applicative (
   prefs,
   progDesc,
   short,
+  showDefault,
   showHelpOnEmpty,
   showHelpOnError,
   strOption,
@@ -38,10 +41,9 @@ import Hix.Data.ComponentConfig (ComponentName (ComponentName), ModuleName, Sour
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir (ChangeDir), RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions (..))
-import qualified Hix.Data.LowerConfig
-import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), LowerOptimizeConfig (LowerOptimizeConfig))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
+import qualified Hix.Data.Options
 import Hix.Data.Options (
   BootstrapOptions (..),
   BumpOptions (..),
@@ -56,7 +58,7 @@ import Hix.Data.Options (
   GhcidOptions (..),
   LowerCommand (..),
   LowerInitOptions (..),
-  LowerOptimizeOptions (..),
+  LowerOptions (LowerOptions),
   NewOptions (..),
   Options (Options),
   PackageSpec (..),
@@ -70,7 +72,7 @@ import Hix.Data.Package (PackageName (PackageName))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),
-  ManagedOp (OpBump, OpLower),
+  ManagedOp (OpBump, OpLowerInit),
   StateFileConfig (StateFileConfig),
   )
 import Hix.Optparse (
@@ -245,27 +247,34 @@ bumpParser = do
   handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure BumpOptions {..}
 
+-- TODO setting @firstSuccess@ and @noSuccess@ here rather than in @Lower.App@ is not right
+lowerParser :: Parser LowerOptions
+lowerParser = do
+  env <- Right <$> jsonConfigParser
+  managed <- managedConfigParser OpLowerInit TargetLower
+  handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  maxFailedPre <- option auto (long "max-failed-majors-pre" <> help maxFailedPreHelp <> value 99 <> showDefault)
+  maxFailedPost <- option auto (long "max-failed-majors-post" <> help maxFailedPostHelp <> value 0 <> showDefault)
+  pure LowerOptions {..}
+  where
+    maxFailedPreHelp = maxFailedHelp "prior to the first"
+    maxFailedPostHelp = maxFailedHelp "after the last"
+    maxFailedHelp variant =
+      [exon|Number of majors that may fail before aborting, #{variant} success|]
+
 lowerInitParser :: Parser LowerInitOptions
 lowerInitParser = do
-  env <- Right <$> jsonConfigParser
-  config <- managedConfigParser OpLower TargetLower
-  stabilize <- switch (long "stabilize" <> help "Try all versions in range if the build fails for a dep")
-  lowerMajor <- switch (long "lower-major" <> help "Only pick versions from the lower bound's major if it exists")
-  handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
-  pure LowerInitOptions {lowerInit = LowerInitConfig {oldest = False, initialBounds = mempty, ..}, ..}
-
-lowerOptimizeParser :: Parser LowerOptimizeOptions
-lowerOptimizeParser = do
-  env <- Right <$> jsonConfigParser
-  config <- managedConfigParser OpLower TargetLower
-  handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
-  pure LowerOptimizeOptions {lowerOptimize = LowerOptimizeConfig {oldest = False, initialBounds = mempty}, ..}
+  common <- lowerParser
+  reset <- switch (long "reset" <> help "Reinitialize bounds of all deps rather than just new ones")
+  pure LowerInitOptions {..}
 
 lowerCommands :: Mod CommandFields LowerCommand
 lowerCommands =
   command "init" (LowerInitCmd <$> info lowerInitParser (progDesc "Initialize the lower bounds"))
   <>
-  command "optimize" (LowerOptimizeCmd <$> info lowerOptimizeParser (progDesc "Optimize the lower bounds"))
+  command "optimize" (LowerOptimizeCmd <$> info lowerParser (progDesc "Optimize the lower bounds"))
+  <>
+  command "stabilize" (LowerStabilizeCmd <$> info lowerParser (progDesc "Stabilize the lower bounds"))
 
 managedCommitMsgParser :: Parser (Path Abs File)
 managedCommitMsgParser =

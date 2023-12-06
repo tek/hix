@@ -20,7 +20,23 @@ import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import Hix.Managed.Data.ManagedConfig (ManagedOp)
-import Hix.Managed.State (envStateWithOverrides)
+import Hix.Managed.State (envStateWithMutations)
+
+data BuildStatus =
+  Success
+  |
+  Failure
+  deriving stock (Eq, Show, Generic)
+
+justSuccess :: a -> BuildStatus -> Maybe a
+justSuccess a = \case
+  Success -> Just a
+  Failure -> Nothing
+
+buildStatus :: Bool -> BuildStatus
+buildStatus = \case
+  True -> Success
+  False -> Failure
 
 data BuildSuccess =
   CandidateBuilt Candidate
@@ -41,15 +57,30 @@ data BuildResult a =
   BuildResult {
     success :: [BuildSuccess],
     failed :: [DepMutation a],
-    managed :: ManagedState,
-    removable :: RemovableBounds
+    state :: ManagedState,
+    removable :: Maybe RemovableBounds,
+    fatal :: Maybe Text
   }
   deriving stock (Eq, Show)
+
+emptyBuildResult :: ManagedState -> BuildResult a
+emptyBuildResult state =
+  BuildResult {
+    success = [],
+    failed = [],
+    state,
+    removable = Nothing,
+    fatal = Nothing
+  }
+
+buildResultEmpty :: BuildResult a -> Bool
+buildResultEmpty BuildResult {success, failed, fatal} =
+  null success && null failed && isNothing fatal
 
 data BuildResults a =
   BuildResults {
     envs :: Map EnvName (BuildResult a),
-    managed :: ManagedEnvState
+    state :: ManagedEnvState
   }
   deriving stock (Eq, Show, Generic)
 
@@ -57,7 +88,7 @@ data BuildState a s =
   BuildState {
     success :: [BuildSuccess],
     failed :: [DepMutation a],
-    managed :: ManagedState,
+    state :: ManagedState,
     ext :: s
   }
   deriving stock (Eq, Show)
@@ -67,9 +98,9 @@ buildResult ::
   BuildState a s ->
   BuildResult a
 buildResult RemovableBounds {targetBound, deps} BuildState {..} =
-  BuildResult {..}
+  BuildResult {fatal = Nothing, ..}
   where
-    removable = RemovableBounds {targetBound, deps = filterRemovable deps}
+    removable = Just RemovableBounds {targetBound, deps = filterRemovable deps}
     filterRemovable =
       Map.mapMaybe \ targetDeps ->
         case Set.intersection targetDeps successNames of
@@ -90,20 +121,21 @@ unchanged BuildResult {success} =
     Unmodified package -> Just package
 
 initBuildResults :: ManagedEnvState -> BuildResults a
-initBuildResults managed =
-  BuildResults {envs = mempty, managed}
+initBuildResults state =
+  BuildResults {envs = mempty, state}
 
 -- TODO EnvName in BuildResult?
 updateBuildResults ::
+  ManagedOp ->
   EnvName ->
   TargetDeps ->
   BuildResults a ->
   BuildResult a ->
   BuildResults a
-updateBuildResults env targetDeps pre result =
+updateBuildResults op env targetDeps pre result =
   BuildResults {
     envs = Map.insert env result pre.envs,
-    managed = envStateWithOverrides env targetDeps result.managed pre.managed
+    state = envStateWithMutations op env targetDeps result.state pre.state
   }
 
 data BuildOutput =

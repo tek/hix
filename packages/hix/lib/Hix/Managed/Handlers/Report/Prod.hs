@@ -13,7 +13,7 @@ import Hix.Data.Version (NewVersion (NewVersion), renderNewRange)
 import qualified Hix.Log as Log
 import Hix.Managed.Build.Mutation (RenderMutation (renderMutation))
 import qualified Hix.Managed.Data.Build as BuildResults
-import Hix.Managed.Data.Build (BuildResult, BuildResults)
+import Hix.Managed.Data.Build (BuildResult, BuildResults, buildResultEmpty)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import qualified Hix.Managed.Handlers.Report
@@ -26,18 +26,24 @@ envMutations ::
   EnvName ->
   BuildResult a ->
   M ()
-envMutations env result = do
-  Log.info [exon|Processed environment '##{env}':|]
-  for_ (nonEmpty changed) \ success -> do
-    Log.info "Updated dependency versions:"
-    for_ (NonEmpty.reverse success) \ p ->
-      Log.infoCont (listSuccess p)
-  for_ (nonEmpty result.failed) \ failed -> do
-    Log.info "Failed to find working versions for some dependencies:"
-    for_ (NonEmpty.reverse failed) \ mut ->
-      Log.infoCont (listFailed mut)
-  for_ (Map.toList result.removable.deps) \ (target, deps) -> do
-      Log.info [exon|You can remove the #{showP result.removable.targetBound} bounds from these deps of '##{target}':|]
+envMutations env result
+  | buildResultEmpty result
+  = Log.info [exon|No action required for environment '##{env}'.|]
+  | Just message <- result.fatal
+  = Log.error message
+  | otherwise
+  = do
+    Log.info [exon|Processed environment '##{env}':|]
+    for_ (nonEmpty changed) \ success -> do
+      Log.info "Updated dependency versions:"
+      for_ (NonEmpty.reverse success) \ p ->
+        Log.infoCont (listSuccess p)
+    for_ (nonEmpty result.failed) \ failed -> do
+      Log.info "Failed to find working versions for some dependencies:"
+      for_ (NonEmpty.reverse failed) \ mut ->
+        Log.infoCont (listFailed mut)
+    for_ result.removable \ removable -> for_ (Map.toList removable.deps) \ (target, deps) -> do
+      Log.info [exon|You can remove the #{showP removable.targetBound} bounds from these deps of '##{target}':|]
       for_ deps \ dep ->
         Log.infoCont [exon|📦 ##{dep}|]
   where

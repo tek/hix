@@ -35,10 +35,10 @@ import Hix.Version (
   majorsBefore,
   rangeFromIntervals,
   requireUpperBound,
-  secondMajorBefore,
   setLowerBound,
   setUpperBound,
   upperBound,
+  versionsFrom,
   )
 
 test_versionList :: UnitTest
@@ -56,13 +56,20 @@ test_rangeBounds = do
 test_majors :: UnitTest
 test_majors = do
   [[2, 2]] === lastMajorBefore 2 3 versions
-  [[2, 1, 1], [2, 1, 2]] === secondMajorBefore 2 3 versions
-  target === majorsBefore 2 3 versions
+  target1 === majorsBefore 2 3 versions
+  target2 === versionsFrom [2, 1, 2] versions
+  drop 1 target2 === versionsFrom [2, 1, 3] versions
   where
-    target =
+    target1 =
       [
         Major {prefix = [2, 1], versions = [[2, 1, 1], [2, 1, 2]]},
         Major {prefix = [2, 2], versions = [[2, 2]]}
+      ]
+    target2 =
+      [
+        Major {prefix = [2, 1], versions = [[2, 1, 2]]},
+        Major {prefix = [2, 2], versions = [[2, 2]]},
+        Major {prefix = [2, 3], versions = [[2, 3]]}
       ]
 
     versions = [[2, 1, 1], [2, 1, 2], [2, 2], [2, 3]]

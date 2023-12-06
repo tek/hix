@@ -11,7 +11,7 @@ import Path.IO (createDirIfMissing, getCurrentDir)
 import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ConfigDeps (ConfigDeps)
 import qualified Hix.Data.LowerConfig
-import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), LowerOptimizeConfig (LowerOptimizeConfig))
+import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), defaultLowerConfig)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
   EnvConfig (EnvConfig),
@@ -22,19 +22,27 @@ import Hix.Data.ManagedEnv (
   )
 import Hix.Error (pathText)
 import Hix.Managed.App (managedApp)
+import Hix.Managed.Build.Mutation (MutationResult (MutationFailed, MutationKeep))
 import qualified Hix.Managed.Data.Build
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
-  ManagedConfig (ManagedConfig),
-  ManagedOp (OpLower),
+  ManagedConfig (ManagedConfig, operation),
+  ManagedOp (OpLowerInit, OpLowerOptimize),
   StateFileConfig (StateFileConfig),
   )
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (ghcDb)
+import Hix.Managed.Handlers.Build (
+  BuildHandlers (BuildHandlers),
+  Builder (Builder),
+  EnvBuilder (EnvBuilder),
+  ghcDb,
+  withBuilder,
+  )
 import qualified Hix.Managed.Handlers.Build.Prod as Build
 import qualified Hix.Managed.Handlers.Lower
 import qualified Hix.Managed.Handlers.Lower.Prod as Lower
-import Hix.Managed.Lower.App (lowerInit, lowerOptimize)
+import Hix.Managed.Lower.Init (lowerInit)
+import Hix.Managed.Lower.Optimize (lowerOptimize)
 import Hix.Managed.Project (updateProject)
 import Hix.Managed.State (envWithState)
 import qualified Hix.Monad
@@ -162,6 +170,12 @@ targetStateFileInit =
       };
     };
   };
+  lowerInit = {
+    lower = {
+      aeson = "2.2.0.0";
+      extra = "1.7.7";
+    };
+  };
   resolving = false;
 }
 |]
@@ -231,6 +245,12 @@ targetStateFileOptimize =
       };
     };
   };
+  lowerInit = {
+    lower = {
+      aeson = "2.2.0.0";
+      extra = "1.7.7";
+    };
+  };
   resolving = false;
 }
 |]
@@ -240,43 +260,50 @@ test_lowerNative = do
   deps <- leftA fail depsConf
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
     runMTest True do
-      build <- liftIO (Build.handlersProd Nothing) <&> \ h -> h {ghcDb = \ _ _ -> (pure Nothing)}
+      root <- setupProject
+      let
+        stateFileConf = StateFileConfig {
+          file = [relfile|ops/managed.nix|],
+          updateProject = True,
+          projectRoot = Just root
+        }
+      build <- liftIO (Build.handlersProd stateFileConf Nothing) <&> \ BuildHandlers {withBuilder, ..} ->
+        BuildHandlers {withBuilder = \ f -> withBuilder \ Builder {withEnvBuilder} -> f Builder {withEnvBuilder = \ e t d s g -> withEnvBuilder e t d s \ eb -> g EnvBuilder {buildWithState = eb.buildWithState, ghcDb = pure Nothing}}, ..}
       handlersInit <- Lower.handlersProdWith build False
       handlersOptimize <- Lower.handlersProdWith build False
-      root <- setupProject
       let
         env =
           ManagedEnv {
-            deps = deps,
-            state = ManagedEnvState mempty mempty False,
+            deps,
+            state = ManagedEnvState mempty mempty mempty False,
             lower = ManagedLowerEnv {solverBounds = []},
-            envs = [("lower", EnvConfig {targets = ["root"], ghc = Nothing})],
+            envs = [("lower", EnvConfig {targets = ["root"]})],
             buildOutputsPrefix = Nothing
           }
-        conf =
+        confInit =
           ManagedConfig {
-            stateFile = StateFileConfig {
-              file = [relfile|ops/managed.nix|],
-              updateProject = True,
-              projectRoot = Just root
-            },
-            operation = OpLower,
+            stateFile = stateFileConf,
+            operation = OpLowerInit,
             ghc = Nothing,
             envs = ["lower"],
             targetBound = TargetLower
           }
-        lowerInitConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = mempty}
+        confOptimize = confInit {operation = OpLowerOptimize}
+        lowerInitConf = LowerInitConfig {reset = False}
+        lowerConfInit =
+          defaultLowerConfig True MutationFailed
+        lowerConfOptimize =
+          defaultLowerConfig False MutationKeep
 
       let stateFile = root </> [relfile|ops/managed.nix|]
-      env1 <- managedApp handlersInit.build env conf \ app -> do
-        result <- lowerInit handlersInit lowerInitConf app
-        updateProject handlersInit.build.stateFile handlersInit.report conf.stateFile result
-        pure (envWithState result.managed env)
+      env1 <- managedApp handlersInit.build env confInit \ app -> do
+        result <- lowerInit handlersInit lowerConfInit lowerInitConf app
+        updateProject handlersInit.build.stateFile handlersInit.report confInit.stateFile result
+        pure (envWithState result.state env)
       stateFileContentInit <- liftIO (Text.readFile (toFilePath stateFile))
-      let lowerOptimizeConf = LowerOptimizeConfig {oldest = False, initialBounds = []}
-      managedApp handlersInit.build env1 conf \ app -> do
-        result <- lowerOptimize handlersOptimize lowerOptimizeConf app
-        updateProject handlersInit.build.stateFile handlersOptimize.report conf.stateFile result
+      managedApp handlersInit.build env1 confOptimize \ app -> do
+        result <- lowerOptimize handlersOptimize lowerConfOptimize app
+        updateProject handlersInit.build.stateFile handlersOptimize.report confOptimize.stateFile result
       stateFileContentOptimize <- liftIO (Text.readFile (toFilePath stateFile))
       pure (stateFileContentInit, stateFileContentOptimize)
   eqLines targetStateFileInit stateFileContentInit

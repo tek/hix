@@ -1,8 +1,6 @@
 module Hix.Managed.Build where
 
 import Control.Monad (foldM)
-import Data.Foldable.Extra (allM)
-import qualified Data.Map.Strict as Map
 import Distribution.Pretty (Pretty, pretty)
 import Exon (exon)
 import Text.PrettyPrint (hang, vcat)
@@ -12,47 +10,35 @@ import Hix.Data.Bounds (BoundExtension (LowerBoundExtension, UpperBoundExtension
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
-import Hix.Data.Overrides (Override (..), Overrides (Overrides))
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.Package (PackageName)
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewVersion (NewVersion))
+import Hix.Data.Version (NewVersion)
 import qualified Hix.Log as Log
-import qualified Hix.Managed.Build.Env
-import Hix.Managed.Build.Env (BuildEnv, withBuildEnv)
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation), DepMutation, MutationResult (..))
 import Hix.Managed.Build.UpdateState (updateState)
 import qualified Hix.Managed.Data.Build
-import Hix.Managed.Data.Build (BuildResult, BuildState (BuildState), buildResult)
+import Hix.Managed.Data.Build (
+  BuildResult,
+  BuildState (BuildState),
+  BuildStatus (Failure, Success),
+  buildResult,
+  justSuccess,
+  )
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate)
-import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import qualified Hix.Managed.Data.ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob)
-import Hix.Managed.Data.Targets (getTargets)
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (BuildHandlers)
-import qualified Hix.Managed.Handlers.Hackage
+import Hix.Managed.Handlers.Build (Builder, EnvBuilder)
+import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
-import Hix.Managed.StateFile (writeBuildState, writeInitialBuildState)
+import Hix.Managed.Job (withJobBuilder)
+import Hix.Managed.Overrides (newVersionOverrides)
+import Hix.Managed.State (stateWithCandidate)
 import Hix.Pretty (prettyL, showP, showPL)
 import Hix.Version (setLowerBound, setUpperBound)
-
-newVersionOverride ::
-  BuildHandlers ->
-  NewVersion ->
-  M (PackageName, Override)
-newVersionOverride handlers NewVersion {..} = do
-  hash <- handlers.hackage.fetchHash package version
-  pure (package, Override {..})
-
-newVersionOverrides ::
-  BuildHandlers ->
-  [NewVersion] ->
-  M Overrides
-newVersionOverrides handlers versions =
-  Overrides . Map.fromList <$> traverse (newVersionOverride handlers) versions
 
 logBuildInputs ::
   ManagedState ->
@@ -68,12 +54,13 @@ logBuildInputs managed candidate newVersions newOverrides accOverrides = do
   Log.debug (show (hang "New overrides:" 2 (pretty newOverrides)))
   Log.debug (show (hang "Overrides retained from previous runs:" 2 (pretty accOverrides)))
 
-logCandidateResult :: Candidate -> Bool -> M ()
-logCandidateResult candidate success =
-  Log.debug [exon|Build for candidate '##{showP candidate}' #{result}|]
+logCandidateResult :: Candidate -> BuildStatus -> M ()
+logCandidateResult candidate status =
+  Log.debug [exon|Build for candidate '##{showP candidate}' #{result status}|]
   where
-    result | success = "succeeded"
-           | otherwise = "failed"
+    result = \case
+      Success -> "succeeded"
+      Failure -> "failed"
 
 buildBounds :: BoundExtensions -> Bounds -> Bounds
 buildBounds =
@@ -82,21 +69,24 @@ buildBounds =
     UpperBoundExtension version -> setUpperBound version
 
 buildMutation ::
-  BuildEnv ->
+  HackageHandlers ->
+  EnvBuilder ->
   ManagedJob ->
   ManagedState ->
   BuildMutation ->
   M (Maybe ManagedState)
-buildMutation env job managed BuildMutation {candidate, newVersions, accOverrides, newBounds} = do
-  newOverrides <- newVersionOverrides env.build (candidate.version : newVersions)
+buildMutation handlers builder job state BuildMutation {candidate, newVersions, accOverrides, newBounds} = do
+  newOverrides <- newVersionOverrides handlers (candidate.version : newVersions)
   let overrides = newOverrides <> accOverrides
-      bounds = buildBounds newBounds managed.bounds
-  logBuildInputs managed candidate newVersions newOverrides accOverrides
-  newManaged <- writeBuildState env.build.stateFile job bounds env.stateFile candidate overrides
-  success <- flip allM (getTargets job.targets) \ target ->
-    env.build.buildProject env.root job.env target candidate.version
-  logCandidateResult candidate success
-  pure (if success then Just newManaged else Nothing)
+      bounds = buildBounds newBounds state.bounds
+      newState = stateWithCandidate bounds candidate overrides
+  logBuildInputs state candidate newVersions newOverrides accOverrides
+  Log.info [exon|Building targets in '##{env}' with '#{showP candidate}'...|]
+  status <- builder.buildWithState newState
+  logCandidateResult candidate status
+  pure (justSuccess newState status)
+  where
+    env = job.env
 
 logMutationResult ::
   PackageName ->
@@ -113,48 +103,34 @@ logMutationResult package = \case
     Log.verbose [exon|Could not find a buildable version of '##{package}'|]
 
 validateMutation ::
-  BuildEnv ->
+  HackageHandlers ->
+  EnvBuilder ->
   ManagedJob ->
   MutationHandlers a s ->
   BuildState a s ->
   DepMutation a ->
   M (BuildState a s)
-validateMutation env job handlers state mutation = do
-  result <- handlers.process state.ext mutation build
+validateMutation hackage env job handlers buildState mutation = do
+  result <- handlers.process buildState.ext mutation build
   logMutationResult mutation.package result
-  pure (updateState state mutation result)
+  pure (updateState buildState mutation result)
   where
-    build = buildMutation env job state.managed
+    build = buildMutation hackage env job buildState.state
 
 buildMutations ::
   Pretty a =>
-  BuildEnv ->
-  MutationHandlers a s ->
+  HackageHandlers ->
+  Builder ->
+  (EnvBuilder -> M (MutationHandlers a s)) ->
   ManagedJob ->
   ManagedState ->
   [DepMutation a] ->
   s ->
   M (BuildResult a)
-buildMutations env handlers job managed mutations ext = do
+buildMutations hackage builder mkHandlers job state mutations ext = do
   Log.debug [exon|Building targets with mutations: #{showPL mutations}|]
-  writeInitialBuildState env.build.stateFile job managed env.stateFile
-  buildResult job.removable <$> foldM (validateMutation env job handlers) initialState mutations
+  withJobBuilder builder job state \ envBuilder -> do
+    handlers <- mkHandlers envBuilder
+    buildResult job.removable <$> foldM (validateMutation hackage envBuilder job handlers) initialState mutations
   where
-    initialState = BuildState {success = [], failed = [], managed, ext}
-
--- TODO actually, we don't need to create a new temp project for each env, right? we only ever write to the managed
--- state anyway, so we can reuse it
-buildJobInTemp ::
-  Pretty a =>
-  BuildHandlers ->
-  StateFileConfig ->
-  ManagedJob ->
-  ManagedState ->
-  [DepMutation a] ->
-  s ->
-  (BuildEnv -> M (MutationHandlers a s)) ->
-  M (BuildResult a)
-buildJobInTemp build conf job managed mutations ext mutationHandlers = do
-  withBuildEnv build conf \ env -> do
-    handlers <- mutationHandlers env
-    buildMutations env handlers job managed mutations ext
+    initialState = BuildState {success = [], failed = [], state, ext}

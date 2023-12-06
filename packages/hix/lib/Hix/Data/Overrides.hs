@@ -6,12 +6,12 @@ import Distribution.Types.Version (Version)
 import GHC.Exts (IsList)
 import Text.PrettyPrint (brackets, (<+>))
 
+import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, ntPretty, ntPretty1, (!!))
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Json (JsonParsec (JsonParsec))
 import Hix.Data.Package (PackageName)
 import Hix.Data.Version (SourceHash)
-import Hix.Class.EncodeNix (EncodeNix)
 
 data Override =
   Override {
@@ -50,10 +50,6 @@ instance NtMap EnvOverrides EnvName Overrides LookupMonoid where
 
 instance Pretty EnvOverrides where
   pretty = ntPretty1
-
-overrideVersionsFor :: Overrides -> Map PackageName Version
-overrideVersionsFor (Overrides o) =
-  o <&> \ Override {version} -> version
 
 latestVersionNewer :: Overrides -> PackageName -> Version -> Bool
 latestVersionNewer overrides package version =

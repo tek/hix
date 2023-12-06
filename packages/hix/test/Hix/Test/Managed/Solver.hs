@@ -54,10 +54,11 @@ testSolver testDeps bounds candidate
   = do
     direct <- (candidate :) <$> solve (ntList bounds)
     let
+      -- TODO should this not be <> instead of <|>?
       transitiveRanges =
         [v | d <- direct, v <- fold (testDeps.byVersion !? (d.package, d.version) <|> testDeps.byPackage !? d.package)]
     transitive <- solve transitiveRanges
-    let configured = nubOrdOn (.package) (transitive ++ direct)
-    pure (Just SolverPlan {configured, preexisting = []})
+    let overrides = nubOrdOn (.package) (transitive ++ direct)
+    pure (Just SolverPlan {overrides, matching = []})
   where
     solve = traverse (uncurry (solvedVersion testDeps.fetchVersions))

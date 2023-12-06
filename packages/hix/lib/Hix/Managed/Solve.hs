@@ -1,16 +1,17 @@
 module Hix.Managed.Solve where
 
-import Data.List.Extra (nubOrdOn)
-import qualified Data.Text as Text
+import qualified Data.Map.Strict as Map
 import Distribution.Client.Dependency (
+  PackagePreference,
   PackageSpecifier,
+  addPreferences,
   foldProgress,
   resolveDependencies,
   setAllowBootLibInstalls,
   standardInstallPolicy,
   )
 import Distribution.Client.Dependency.Types (Solver (Modular))
-import Distribution.Client.GlobalFlags (RepoContext, withRepoContext)
+import Distribution.Client.GlobalFlags (RepoContext)
 import Distribution.Client.SolverInstallPlan (SolverInstallPlan)
 import Distribution.Client.Targets (readUserTargets, resolveUserTargets)
 import Distribution.Client.Types (UnresolvedSourcePackage, packageIndex)
@@ -19,19 +20,21 @@ import Distribution.Solver.Types.Settings (AllowBootLibInstalls (AllowBootLibIns
 import Distribution.Verbosity (Verbosity)
 import Exon (exon)
 
-import Hix.Class.Map (ntList)
-import Hix.Data.Bounds (Bounds)
-import qualified Hix.Data.Dep
-import Hix.Data.Dep (Dep, mainDep, newVersionDep, renderDep)
+import Hix.Class.Map (via)
+import Hix.Data.Dep (Dep, renderDep)
+import Hix.Data.Error (Error (Fatal))
+import qualified Hix.Data.Version
 import Hix.Data.Version (NewVersion)
-import Hix.Error (Error (Fatal))
 import qualified Hix.Log as Log
+import qualified Hix.Managed.Data.CabalTarget
+import Hix.Managed.Data.CabalTarget (CabalTarget, cabalTargets, candidateTarget)
+import Hix.Managed.Data.ManagedConfig (ManagedOp)
+import Hix.Managed.Data.SolverParams (SolverParams)
 import Hix.Managed.Solve.Changes (SolverPlan, solverPlan)
 import qualified Hix.Managed.Solve.Config
-import qualified Hix.Managed.Solve.Init
 import qualified Hix.Managed.Solve.Resources
 import Hix.Managed.Solve.Resources (SolveResources (SolveResources))
-import Hix.Monad (M, tryIOM, tryIOMAs)
+import Hix.Monad (M, tryIOMAs)
 import Hix.Pretty (showP)
 
 newtype Unresolvable =
@@ -57,34 +60,36 @@ specifiers res targets repoContext = do
 solveSpecifiers ::
   SolveResources ->
   [PackageSpecifier UnresolvedSourcePackage] ->
+  [PackagePreference] ->
   IO (Either String SolverInstallPlan)
-solveSpecifiers SolveResources {..} pkgSpecifiers =
+solveSpecifiers SolveResources {..} pkgSpecifiers prefs =
   foldProgress (logMsg conf.verbosity) (pure . Left) (pure . Right) $
   resolveDependencies platform compiler pkgConfigDb Modular params
   where
     params =
       solverParams $
       setAllowBootLibInstalls (AllowBootLibInstalls conf.allowBoot) $
+      addPreferences prefs $
       standardInstallPolicy installedPkgIndex sourcePkgDb pkgSpecifiers
 
 solveTargets ::
   SolveResources ->
-  [Dep] ->
+  [CabalTarget] ->
   M (Either Unresolvable SolverInstallPlan)
-solveTargets res targets = do
-  pkgSpecifiers <- tryIOM (withRepoContext res.conf.verbosity res.flags.global (specifiers res uniqueTargets))
-  Log.debug [exon|Running solver for: #{Text.intercalate ", " (renderDep <$> uniqueTargets)}|]
-  first fromString <$> tryIOMAs (Fatal "Cabal solver crashed.") (solveSpecifiers res pkgSpecifiers)
+solveTargets res targets =
+  first fromString <$> tryIOMAs (Fatal "Cabal solver crashed.") (solveSpecifiers res pkgSpecifiers prefs)
   where
-    uniqueTargets = nubOrdOn (.package) targets
+    pkgSpecifiers = (.dep) <$> targets
+    prefs = mapMaybe (.pref) targets
 
 solveWithCabal ::
   SolveResources ->
-  Bounds ->
+  ManagedOp ->
+  SolverParams ->
   NewVersion ->
   M (Maybe SolverPlan)
-solveWithCabal solveResources solverBounds newVersion =
-  solveTargets solveResources solveDeps >>= \case
+solveWithCabal solveResources op solverParams newVersion =
+  solveTargets solveResources targets >>= \case
     Right plan -> do
       Log.debug [exon|Solver found a plan for #{showP newVersion}|]
       pure (Just (solverPlan plan))
@@ -92,4 +97,4 @@ solveWithCabal solveResources solverBounds newVersion =
       Log.debug [exon|Solver found no plan for #{showP newVersion}: ##{err}|]
       pure Nothing
   where
-    solveDeps = newVersionDep newVersion : (uncurry mainDep <$> ntList solverBounds)
+    targets = candidateTarget newVersion : cabalTargets op (via (Map.delete newVersion.package) solverParams)

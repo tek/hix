@@ -7,14 +7,12 @@ import Distribution.Pretty (pretty)
 import Distribution.Version (Version, VersionRange, orLaterVersion, thisVersion)
 import Exon (exon)
 import Hedgehog (evalEither, evalMaybe, (===))
-import Path (Abs, Dir, Path, absdir, relfile)
+import Path (relfile)
 
-import Hix.Data.Bounds (TargetBound (TargetLower), TargetBounds)
+import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ConfigDeps (ConfigDeps)
-import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Client, Fatal))
-import qualified Hix.Data.LowerConfig
-import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig))
+import Hix.Data.LowerConfig (lowerConfigInit)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
   EnvConfig (EnvConfig),
@@ -23,18 +21,20 @@ import Hix.Data.ManagedEnv (
   ManagedLowerEnv (ManagedLowerEnv),
   )
 import Hix.Data.NixExpr (Expr)
-import Hix.Data.Overrides (EnvOverrides)
-import Hix.Data.Package (LocalPackage, PackageName (PackageName))
-import Hix.Data.Version (NewVersion (..), SourceHash (SourceHash))
+import qualified Hix.Data.Overrides
+import Hix.Data.Overrides (Override (Override))
+import Hix.Data.Package (PackageName (PackageName))
+import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
+import Hix.Managed.Data.Build (BuildStatus (Failure, Success), buildStatus)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),
-  ManagedOp (OpLower),
+  ManagedOp (OpLowerInit),
   StateFileConfig (StateFileConfig),
   )
-import Hix.Managed.Handlers.Build (BuildHandlers (..))
+import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Hackage (fetchHash)
 import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
@@ -42,20 +42,15 @@ import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
-import Hix.Managed.Lower.App (lowerInit)
-import Hix.Managed.Lower.Data.LowerInit (LowerInit)
-import Hix.Monad (M, runMLog, throwM)
+import Hix.Managed.Lower.Data.Lower (Lower)
+import Hix.Managed.Lower.Init (lowerInit)
+import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
+import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
 import qualified Hix.Test.Managed.Solver
 import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)
-import Hix.Test.Utils (UnitTest)
-
-root :: Path Abs Dir
-root = [absdir|/project|]
-
-tmpRoot :: Path Abs Dir
-tmpRoot = [absdir|/tmp/project|]
+import Hix.Test.Utils (UnitTest, runMLogTest, testRoot)
 
 depsConfig :: Either String ConfigDeps
 depsConfig =
@@ -134,8 +129,7 @@ byPackage =
   [
     ("direct1", [td 3]),
     ("direct2", [td 5]),
-    ("direct3", [direct2AsDep]),
-    ("direct4", [td 6])
+    ("direct4", [direct2AsDep, td 6])
   ]
 
 byVersion :: Map (PackageName, Version) [(PackageName, VersionRange)]
@@ -152,57 +146,43 @@ testDeps =
     byVersion
   }
 
-buildProjectTest :: Path Abs Dir -> EnvName -> LocalPackage -> NewVersion -> M Bool
-buildProjectTest _ _ target newVersion =
-  case newVersion.package of
-    "direct1" -> case newVersion.version of
-      [1, 0, 5] -> pure True
-      _ -> pure False
-    "direct2" -> pure True
-    "direct3" -> pure True
-    "direct4" | target == "local1" -> case newVersion.version of
-      [1, 0, 3] -> pure True
-      _ -> pure False
-    "direct4" | target == "local4" -> case newVersion.version of
-      [1, 0, 1] -> pure False
-      _ -> pure True
-    "direct4" -> pure True
-    pkg -> throwM (Fatal [exon|Unexpected dep for building ##{target}: ##{pkg}|])
+buildWithState :: Versions -> M BuildStatus
+buildWithState = \case
+  [("direct1", [1, 0, 3]), ("direct3", [1, 0, 1]), ("transitive3", [1, 0, 1])] -> pure Failure
+  [("direct1", [1, 0, 4]), ("direct3", [1, 0, 1]), ("transitive3", [1, 0, 1])] -> pure Failure
+  [("direct1", [1, 0, 5]), ("direct3", [1, 0, 1]), ("transitive2", [1, 0, 1])] -> pure Success
+  [("direct1", [1, 0, 5]), ("direct2", [5, 0]), ("direct3", [1, 0, 1]), ("transitive2", [1, 0, 1]), ("transitive5", [1, 0, 1])] -> pure Success
+  [("direct1", [1, 0, 5]), ("direct2", [5, 0, 5]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, n]), ("transitive2", [1, 0, 1]), ("transitive5", [1, 0, 1]), ("transitive6", [1, 0, 1])] -> pure (buildStatus (n == 3))
+  versions -> throwM (Fatal [exon|Unexpected overrides: #{showP versions}|])
 
-handlersTest :: IO (LowerHandlers LowerInit, IORef [Expr], IORef [DepMutation LowerInit])
+handlersTest :: IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
 handlersTest = do
-  (build, stateFileRef) <- BuildHandlers.handlersUnitTest tmpRoot
+  (build, stateFileRef) <- BuildHandlers.handlersUnitTest
   (handlers, bumpsRef) <- LowerHandlers.handlersUnitTest
   let handlers' = handlers {
-    solve = \ _ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
+    solve = \ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
     build = build {
-      buildProject = buildProjectTest,
+      withBuilder = versionsBuilder buildWithState,
       hackage = build.hackage {fetchHash = fetchHashTest}
     },
     versions = fetchVersions
   }
   pure (handlers', stateFileRef, bumpsRef)
 
-managedBoundsFile :: Either String TargetBounds
-managedBoundsFile =
-  eitherDecodeStrict' [exon|{
-    "local1": {
-    },
-    "local5": {
-      "direct5": "^>= 1.5"
-    }
-  }|]
-
-managedOverridesFile :: Either String EnvOverrides
-managedOverridesFile =
-  eitherDecodeStrict' [exon|{
-    "latest": {
-      "direct2": {
-        "version": "5.0",
-        "hash": "direct2-5.0"
-      }
-    }
-  }|]
+initialState :: ManagedEnvState
+initialState =
+  ManagedEnvState {
+    bounds = [
+      ("local1", [("direct3", [[1, 0, 1], [1, 5]])]),
+      ("local5", [("direct5", [[1, 5], [1, 6]])])
+    ],
+    overrides = [
+      ("latest", [("direct2", Override {version = [5, 0], hash = SourceHash "direct2-5.0"})]),
+      ("lower-main", [("direct3", Override {version = [1, 0, 1], hash = SourceHash "direct3-1.0.1"})])
+    ],
+    lowerInit = [("lower-main", [("direct3", [1, 0, 1])])],
+    resolving = False
+  }
 
 stateFileTarget :: Text
 stateFileTarget =
@@ -263,6 +243,14 @@ stateFileTarget =
       };
     };
   };
+  lowerInit = {
+    lower-main = {
+      direct1 = "1.0.5";
+      direct2 = "5.0.5";
+      direct3 = "1.0.1";
+      direct4 = "1.0.3";
+    };
+  };
   resolving = false;
 }
 |]
@@ -273,23 +261,16 @@ logTarget =
 [35m[1m>>>[0m Updated dependency versions:
     📦 direct1 1.0.5 [>=1.0.5]
     📦 direct2 5.0 [>=5.0 && <5.1]
-    📦 direct3 1.0.1 [>=1.0.1 && <1.5]
     📦 direct4 1.0.3 [>=1.0.3]
 [35m[1m>>>[0m You can remove the lower bounds from these deps of 'local1':
     📦 direct1
     📦 direct2
-    📦 direct3
     📦 direct4
 [35m[1m>>>[0m You can remove the lower bounds from these deps of 'local3':
     📦 direct1
 [35m[1m>>>[0m You can remove the lower bounds from these deps of 'local4':
     📦 direct4
 |]
-
-failedMutationsTarget :: [DepMutation LowerInit]
-failedMutationsTarget =
-  [
-  ]
 
 -- | Goals for these deps:
 --
@@ -298,11 +279,11 @@ failedMutationsTarget =
 --
 -- - @direct2@ builds successfully with its lower bound version 5.0, but @direct3@ restricts its version to 5.0.5, which
 --   will be in the final state as lower bound and override.
+--   Its upper bound from the user config will be retained.
 --   It also has a preexisting entry in the overrides of another env, @latest@, which will be retained.
 --
--- - @direct3@ has a preexisting lower bound, so the first version greater than that, 1.0.1, will be added to the
---   overrides.
---   Its bounds will be adapted to @>=1.0.1 && <1.5@, retaining the upper bound.
+-- - @direct3@ has a preexisting entry in `lowerInit`, so it will be ignored completely, since we want to be able to run
+--   @lower.init@ after @lower.optimize@ without resetting all lower bounds to the initial states.
 --
 -- - @direct4@ is a dependency of two targets that have no dependency on each other, but one of them has a stricter
 --   version requirement, so that the build fails for @<= direct4-1.0.2@ in @local1@ but only for @direct4-1.0.1@ in
@@ -314,35 +295,32 @@ failedMutationsTarget =
 test_lowerInitMutation :: UnitTest
 test_lowerInitMutation = do
   deps <- leftA fail depsConfig
-  managedBounds <- leftA fail managedBoundsFile
-  managedOverrides <- leftA fail managedOverridesFile
   (handlers, stateFileRef, _) <- liftIO handlersTest
   let
     env =
       ManagedEnv {
         deps,
-        state = ManagedEnvState {bounds = managedBounds, overrides = managedOverrides, resolving = False},
+        state = initialState,
         lower = ManagedLowerEnv {solverBounds = mempty},
-        envs = [("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4"], ghc = Nothing})],
+        envs = [("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4"]})],
         buildOutputsPrefix = Nothing
       }
     conf =
       ManagedConfig {
-        operation = OpLower,
+        operation = OpLowerInit,
         ghc = Nothing,
         stateFile = StateFileConfig {
           file = [relfile|ops/managed.nix|],
           updateProject = True,
-          projectRoot = Just root
+          projectRoot = Just testRoot
         },
         envs = ["lower-main"],
         targetBound = TargetLower
       }
-    lowerConf = LowerInitConfig {stabilize = True, lowerMajor = False, oldest = False, initialBounds = []}
   (log, result) <- liftIO do
-    runMLog root $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
-      Right <$> lowerInit handlers lowerConf app
+    runMLogTest False $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
+      Right <$> lowerInit handlers lowerConfigInit def app
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)
-  logTarget === reverse log
+  logTarget === drop 7 (reverse log)

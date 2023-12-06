@@ -15,23 +15,32 @@ data StateFileConfig =
   }
   deriving stock (Eq, Show, Generic)
 
+-- TODO replace this with proper abstraction
 data ManagedOp =
   OpBump
   |
-  OpLower
+  OpLowerInit
+  |
+  OpLowerOptimize
+  |
+  OpLowerStabilize
   deriving stock (Eq, Show, Generic)
 
 instance ToJSON ManagedOp where
   toJSON =
     toJSON @Text . \case
       OpBump -> "bump"
-      OpLower -> "lower"
+      OpLowerInit -> "lower-init"
+      OpLowerOptimize -> "lower-optimize"
+      OpLowerStabilize -> "lower-stabilize"
 
 instance FromJSON ManagedOp where
   parseJSON =
     parseJSON @Text >=> \case
       "bump" -> pure OpBump
-      "lower" -> pure OpLower
+      "lower-init" -> pure OpLowerInit
+      "lower-optimize" -> pure OpLowerOptimize
+      "lower-stabilize" -> pure OpLowerStabilize
       v -> fail [exon|Invalid value for ManagedOp: #{toString v}|]
 
 data ManagedConfig =

@@ -1,16 +1,22 @@
-module Hix.Data.Version where
+module Hix.Data.Version (
+  module Hix.Data.Version,
+  Version,
+) where
 
 import Data.Aeson (FromJSON (parseJSON), ToJSON (toJSON))
 import qualified Data.List.NonEmpty as NonEmpty
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Version (Version, VersionRange)
 import Exon (exon)
+import GHC.Exts (IsList)
 import qualified Text.PrettyPrint as PrettyPrint
 import qualified Text.PrettyPrint as Pretty
 
 import Hix.Class.EncodeNix (EncodeNix)
+import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, ntPretty, ntPretty1)
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.Json (jsonParsec)
-import Hix.Data.Package (PackageName)
+import Hix.Data.Package (LocalPackage, PackageName)
 import Hix.Orphans.Version ()
 import Hix.Pretty (showP)
 
@@ -89,3 +95,37 @@ showMajors :: NonEmpty Major -> Text
 showMajors = \case
   [Major {prefix}] -> showP prefix
   majors -> [exon|#{showP (NonEmpty.head majors).prefix}-#{showP (NonEmpty.last majors).prefix}|]
+
+newtype Versions =
+  Versions (Map PackageName Version)
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (Semigroup, Monoid, IsList, EncodeNix)
+
+instance NtMap Versions PackageName Version LookupMaybe where
+
+instance Pretty Versions where
+  pretty = ntPretty
+
+instance FromJSON Versions where
+  parseJSON v =
+    Versions . fmap jsonParsec <$> parseJSON v
+
+newtype TargetVersions =
+  TargetVersions (Map LocalPackage Versions)
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (FromJSON, Semigroup, Monoid, IsList, EncodeNix)
+
+instance NtMap TargetVersions LocalPackage Versions LookupMonoid where
+
+instance Pretty TargetVersions where
+  pretty = ntPretty1
+
+newtype EnvVersions =
+  EnvVersions (Map EnvName Versions)
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (FromJSON, Semigroup, Monoid, IsList, EncodeNix)
+
+instance NtMap EnvVersions EnvName Versions LookupMonoid where
+
+instance Pretty EnvVersions where
+  pretty = ntPretty1

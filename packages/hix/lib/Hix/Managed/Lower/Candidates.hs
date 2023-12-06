@@ -1,22 +1,25 @@
 module Hix.Managed.Lower.Candidates where
 
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import Distribution.Pretty (pretty)
 import Distribution.Version (Version, VersionRange)
 import Exon (exon)
 
+import Hix.Class.Map (ntMap)
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep)
 import Hix.Data.Monad (M)
 import Hix.Data.Package (PackageName)
+import qualified Hix.Data.Version
+import Hix.Data.Version (Major, Versions)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
-import qualified Hix.Managed.Lower.Data.LowerInit
-import Hix.Managed.Lower.Data.LowerInit (LowerInit (LowerInit))
-import qualified Hix.Managed.Lower.Data.LowerOptimize
-import Hix.Managed.Lower.Data.LowerOptimize (LowerOptimize (LowerOptimize))
-import Hix.Version (allMajors, lowerBound, majorParts, majorsBefore, majorsFrom, onlyMajor)
+import qualified Hix.Managed.Lower.Data.Lower
+import Hix.Managed.Lower.Data.Lower (Lower (Lower))
+import Hix.Pretty (showP)
+import Hix.Version (allMajors, lowerBound, majorParts, majorsBefore, upperBound, versionsBetween, versionsFrom)
 
 logNoVersions ::
   PackageName ->
@@ -29,76 +32,42 @@ logNoVersions package allVersions mutation = do
     Log.warn [exon|No suitable version found for '##{package}'.|]
   pure mutation
 
-toDepMutation ::
-  PackageName ->
-  [Version] ->
-  Maybe a ->
-  M (Maybe (DepMutation a))
-toDepMutation package allVersions result =
-  logNoVersions package allVersions (result <&> \ mutation -> DepMutation {package, mutation})
-
-data InitConfig =
-  InitLowerMajor Int Int
-  |
-  InitFromLowerMajor Int Int
-  |
-  InitAll
-  deriving stock (Eq, Show, Generic)
-
-initConfig ::
-  Bool ->
-  VersionRange ->
-  InitConfig
-initConfig onlyLowerMajor version =
-  case specifiedLower of
-    Just (s, m) | onlyLowerMajor -> InitLowerMajor s m
-                | otherwise -> InitFromLowerMajor s m
-    _ -> InitAll
-  where
-    specifiedLower = majorParts =<< lowerBound version
+specifiedLower :: VersionRange -> Maybe (Int, Int)
+specifiedLower = majorParts <=< lowerBound
 
 prefix :: Int -> Int -> Text
 prefix s m = [exon|#{show s}.#{show m}|]
 
-logInitConfig :: PackageName -> InitConfig -> M ()
-logInitConfig package conf =
-  Log.verbose [exon|Choosing versions for '##{package}' from #{desc}|]
-  where
-    desc = case conf of
-      InitLowerMajor s m ->
-        [exon|the major #{prefix s m} of the specified lower bound|]
-      InitFromLowerMajor s m ->
-        [exon|the major #{prefix s m} of the specified lower bound and later, then all lower versions|]
-      InitAll ->
-        "all versions"
-
-chooseInit ::
-  [Version] ->
-  InitConfig ->
+candidates ::
+  (PackageName -> M [Version]) ->
   Dep ->
-  Maybe LowerInit
-chooseInit allVersions conf dep = do
-  majors <- selection (sort allVersions)
-  pure LowerInit {majors, range = dep.version}
+  ([Version] -> Maybe (NonEmpty Major)) ->
+  M (Maybe (DepMutation Lower))
+candidates fetchVersions dep selection = do
+  allVersions <- fetchVersions dep.package
+  let
+    result = do
+      majors <- selection (sort allVersions)
+      pure DepMutation {package, mutation = Lower {majors, range = dep.version}}
+  logNoVersions package allVersions result
+  pure result
   where
-    selection = case conf of
-      InitLowerMajor s m -> fmap pure . onlyMajor s m
-      InitFromLowerMajor s m -> \ vs -> nonEmpty (majorsFrom s m vs ++ reverse (majorsBefore s m vs))
-      InitAll -> nonEmpty . reverse . allMajors
+    package = dep.package
+
+selectionInit :: [Version] -> Maybe (NonEmpty Major)
+selectionInit =
+  nonEmpty . reverse . allMajors
 
 candidatesInit ::
   (PackageName -> M [Version]) ->
-  Bool ->
+  Versions ->
   Dep ->
-  M (Maybe (DepMutation LowerInit))
-candidatesInit fetchVersions onlyLowerMajor dep = do
-  logInitConfig package conf
-  allVersions <- fetchVersions dep.package
-  let chosen = chooseInit allVersions conf dep
-  toDepMutation package allVersions chosen
-  where
-    conf = initConfig onlyLowerMajor dep.version
-    package = dep.package
+  M (Maybe (DepMutation Lower))
+candidatesInit fetchVersions pre dep
+  | Map.member dep.package (ntMap pre)
+  = pure Nothing
+  | otherwise
+  = candidates fetchVersions dep selectionInit
 
 data OptimizeConfig =
   OptimizeMajorsBefore Int Int
@@ -108,8 +77,8 @@ data OptimizeConfig =
 
 optimizeConfig :: VersionRange -> OptimizeConfig
 optimizeConfig version =
-  case lowerBound version of
-    Just (majorParts -> Just (s, m)) -> OptimizeMajorsBefore s m
+  case specifiedLower version of
+    Just (s, m) -> OptimizeMajorsBefore s m
     _ -> OptimizeNoBound
 
 logOptimizeConfig :: PackageName -> OptimizeConfig -> M ()
@@ -119,27 +88,60 @@ logOptimizeConfig package = \case
   OptimizeNoBound ->
     Log.warn [exon|Skipping '##{package}' since it has no configured lower bound. Please run '.#lower.init' first.|]
 
-chooseOptimize ::
-  [Version] ->
-  Dep ->
-  OptimizeConfig ->
-  Maybe LowerOptimize
-chooseOptimize allVersions dep = \case
+selectionOptimize :: OptimizeConfig -> [Version] -> Maybe (NonEmpty Major)
+selectionOptimize = \case
   OptimizeMajorsBefore s m -> do
-    majors <- nonEmpty (majorsBefore s m (sort allVersions))
-    pure LowerOptimize {majors, range = dep.version}
+    nonEmpty . sortOn (Down . (.prefix)) . majorsBefore s m
   OptimizeNoBound ->
-    Nothing
+    const Nothing
 
 candidatesOptimize ::
   (PackageName -> M [Version]) ->
   Dep ->
-  M (Maybe (DepMutation LowerOptimize))
+  M (Maybe (DepMutation Lower))
 candidatesOptimize fetchVersions dep = do
-  logOptimizeConfig package conf
-  allVersions <- fetchVersions dep.package
-  let chosen = chooseOptimize allVersions dep conf
-  toDepMutation package allVersions chosen
+  logOptimizeConfig dep.package conf
+  candidates fetchVersions dep (selectionOptimize conf)
   where
     conf = optimizeConfig dep.version
-    package = dep.package
+
+data StabilizeConfig =
+  StabilizeFromVersion Version (Maybe Version)
+  |
+  StabilizeNoBound
+  deriving stock (Eq, Show, Generic)
+
+stabilizeConfig :: VersionRange -> Maybe Version -> StabilizeConfig
+stabilizeConfig version initialBound =
+  case lowerBound version of
+    Just v -> StabilizeFromVersion v (initialBound <|> upperBound version)
+    _ -> StabilizeNoBound
+
+logStabilizeConfig :: PackageName -> StabilizeConfig -> M ()
+logStabilizeConfig package = \case
+  StabilizeFromVersion v Nothing ->
+    Log.verbose [exon|Choosing versions for '##{package}' after the current version #{showP v}, if it doesn't build.|]
+  StabilizeFromVersion l (Just u) ->
+    Log.verbose [exon|Choosing versions for '##{package}' between the current version #{showP l} and the initial version #{showP u}, if it doesn't build.|]
+  StabilizeNoBound ->
+    Log.warn [exon|Skipping '##{package}' since it has no configured lower bound. Please run '.#lower.init' first.|]
+
+selectionStabilize :: StabilizeConfig -> [Version] -> Maybe (NonEmpty Major)
+selectionStabilize = \case
+  StabilizeFromVersion l Nothing ->
+    nonEmpty . versionsFrom l
+  StabilizeFromVersion l (Just u) ->
+    nonEmpty . versionsBetween l u
+  StabilizeNoBound ->
+    const Nothing
+
+candidatesStabilize ::
+  (PackageName -> M [Version]) ->
+  Dep ->
+  Maybe Version ->
+  M (Maybe (DepMutation Lower))
+candidatesStabilize fetchVersions dep initialBound = do
+  logStabilizeConfig dep.package conf
+  candidates fetchVersions dep (selectionStabilize conf)
+  where
+    conf = stabilizeConfig dep.version initialBound

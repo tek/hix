@@ -12,13 +12,12 @@ import Distribution.Simple.PackageIndex (InstalledPackageIndex)
 import Distribution.Solver.Types.PkgConfigDb (PkgConfigDb, readPkgConfigDb)
 import Distribution.System (Platform)
 import Distribution.Verbosity (silent, verbose)
-import Path (Abs, Dir, Path)
 
+import qualified Hix.Data.Monad
 import qualified Hix.Log as Log
-import Hix.Managed.Solve.Config (SolveConfig (..))
+import Hix.Managed.Solve.Config (GhcDb, SolveConfig (..))
 import qualified Hix.Managed.Solve.Init
 import Hix.Managed.Solve.Init (SolveFlags, initialize)
-import qualified Hix.Monad
 import Hix.Monad (M, tryIOM)
 
 data SolveResources =
@@ -50,7 +49,7 @@ resources conf = do
     pure SolveResources {compiler = compilerInfo compiler, solverParams = id, ..}
 
 acquire ::
-  Maybe (Path Abs Dir) ->
+  Maybe GhcDb ->
   M SolveResources
 acquire ghc = do
   verbosity <- asks (.debug) <&> \case

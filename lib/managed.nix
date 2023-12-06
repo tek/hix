@@ -60,8 +60,9 @@
   lib.foldl (z: flag: lib.foldl (z': env: withCheckFor flag env z') z envs) (mainScript cmd envs) flags;
 
   bump = checkedScript [["enable"]] "bump";
-  lowerInit = checkedScript [["lower" "enable"] ["enable"]] "lower init --stabilize";
+  lowerInit = checkedScript [["lower" "enable"] ["enable"]] "lower init";
   lowerOptimize = checkedScript [["lower" "enable"] ["enable"]] "lower optimize";
+  lowerStabilize = checkedScript [["lower" "enable"] ["enable"]] "lower stabilize";
 
   envModules = let
 
@@ -108,5 +109,5 @@
   lib.optionalAttrs (config.managed.enable && lib.pathExists file) (import file);
 
 in {
-  inherit bump lowerInit lowerOptimize envModules envs envState;
+  inherit bump lowerInit lowerOptimize lowerStabilize envModules envs envState;
 }

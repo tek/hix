@@ -5,20 +5,18 @@ import Exon (exon)
 import Path (Abs, File, Path)
 
 import Hix.Class.EncodeNix (encodeNix)
-import Hix.Data.Bounds (Bounds)
+import Hix.Data.Deps (TargetDeps)
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.ManagedEnv (ManagedEnvState, ManagedState)
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr (..), ExprAttr (..))
-import Hix.Data.Overrides (Overrides)
 import qualified Hix.Log as Log
-import Hix.Managed.Data.Candidate (Candidate)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
-import Hix.Managed.Data.ManagedJob (ManagedJob)
-import Hix.Managed.Handlers.Build.Prod (rootOrCwd)
 import qualified Hix.Managed.Handlers.StateFile
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
-import Hix.Managed.State (managedEnvForBuild, managedWithCandidate)
+import Hix.Managed.Path (rootOrCwd)
+import Hix.Managed.State (envStateForBuild)
 import Hix.NixExpr (renderRootExpr)
 
 renderMap ::
@@ -55,27 +53,15 @@ writeProjectState handlers conf newState = do
   stateFile <- handlers.initFile root conf.file
   writeStateFile "final result persistence" handlers stateFile newState
 
-writeInitialBuildState ::
+writeBuildStateFor ::
+  Text ->
   StateFileHandlers ->
-  ManagedJob ->
+  TargetDeps ->
+  EnvName ->
   ManagedState ->
   Path Abs File ->
-  M ManagedState
-writeInitialBuildState handlers job state stateFile =
-  state <$ writeStateFile "initial build" handlers stateFile envState
+  M ()
+writeBuildStateFor purpose handlers targetDeps env state stateFile =
+  writeStateFile purpose handlers stateFile envState
   where
-    envState = managedEnvForBuild job state
-
-writeBuildState ::
-  StateFileHandlers ->
-  ManagedJob ->
-  Bounds ->
-  Path Abs File ->
-  Candidate ->
-  Overrides ->
-  M ManagedState
-writeBuildState handlers job bounds stateFile candidate overrides =
-  state <$ writeStateFile "current build" handlers stateFile envState
-  where
-    envState = managedEnvForBuild job state
-    state = managedWithCandidate bounds candidate overrides
+    envState = envStateForBuild targetDeps env state

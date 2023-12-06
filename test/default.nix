@@ -28,6 +28,7 @@ let
     direnv = test "direnv";
     bump = test "bump";
     lower = test "lower";
+    lower-stabilize = test "lower-stabilize";
   };
 
   testA = n: t: "${n} ${t}";
