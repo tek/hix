@@ -118,4 +118,12 @@ in {
     descriptionClass = "noun";
   };
 
+  multiEnable = mkOptionType {
+    name = "multi-enable";
+    description = "boolean flag that uses conjunction for merging";
+    descriptionClass = "noun";
+    check = isBool;
+    merge = _: defs: all id (map (a: a.value) defs);
+  };
+
 }

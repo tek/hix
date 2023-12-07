@@ -5,7 +5,7 @@ let
 
   envConfig = config;
 
-  serviceModule = import ./service.nix { inherit lib global; };
+  serviceModule = import ./service.nix { inherit lib global util; };
 
   envServiceModule = import ./env-service.nix { inherit lib global; };
 
@@ -118,8 +118,7 @@ let
   serviceConfig = service:
   [service.nixos-base service.nixos (servicePorts service.ports)];
 
-  resolved =
-  mapAttrsToList (_: s: s.resolve) config.internal.resolvedServices;
+  resolved = filter (conf: conf.enable) (mapAttrsToList (_: s: s.resolve) config.internal.resolvedServices);
 
   combinedConfig =
     [vmConfig] ++
@@ -405,7 +404,7 @@ in {
       type = bool;
       default = true;
       description = mdDoc ''
-        Whether to build local packages and dependency overrides with profiling enabled.
+        Whether to build local libraries and dependency overrides with profiling enabled.
       '';
     };
 
@@ -587,7 +586,7 @@ in {
 
       enable = let
         builtInCount = (if config.wait > 0 then 1 else 0) + (if config.defaults then 1 else 0);
-      in mkDefault (length (attrNames config.services) > builtInCount);
+      in mkDefault (length resolved > builtInCount);
 
       derivation = mkDefault (
         let nixosArgs = {

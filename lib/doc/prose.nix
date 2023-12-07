@@ -773,7 +773,7 @@ in {
 
   ## Services {#services}
 
-  Services use in environments and commands can be user-defined in a flake:
+  Services used in environments and commands can be user-defined in a flake:
 
   ```
   {
@@ -787,7 +787,7 @@ in {
 
     envs.test = {
       basePort = 10000;
-      services = ["http"];
+      services = { http = { enable = true; }; };
     };
   }
   ```

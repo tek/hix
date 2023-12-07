@@ -1,4 +1,4 @@
-{global, lib, ...}:
+{global, lib, util, ...}:
 {config, ...}:
 with lib;
 let
@@ -35,7 +35,11 @@ let
 in {
   options = with types; {
 
-    enable = mkEnableOption (mdDoc "this service");
+    enable = mkOption {
+      description = mdDoc "Enable this service";
+      type = util.types.multiEnable;
+      default = true;
+    };
 
     nixos = mkOption {
       description = mdDoc "NixOS config used for the service VM.";

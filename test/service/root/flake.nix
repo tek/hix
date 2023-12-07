@@ -18,9 +18,27 @@
       };
     };
 
+    services.disabled-global = {
+      enable = false;
+      nixos = throw "nixos config of disabled service should not be evaluated";
+    };
+
+    services.disabled-local = {
+      enable = true;
+      nixos = throw "nixos config of disabled service should not be evaluated";
+    };
+
     envs.test = {
       basePort = 15000;
       services.test.enable = true;
+    };
+
+    envs.disabled-global = {
+      services.disabled-global.enable = true;
+    };
+
+    envs.disabled-local = {
+      services.disabled-local.enable = false;
     };
 
     commands.test = {
@@ -28,6 +46,16 @@
       command = ''
       ${config.pkgs.socat}/bin/socat -T 1 - TCP:localhost:${toString (config.envs.test.hostPorts.test)} <<< 'ping'
       '';
+    };
+
+    commands.disabled-global = {
+      env = "disabled-global";
+      command = "echo done";
+    };
+
+    commands.disabled-local = {
+      env = "disabled-local";
+      command = "echo done";
     };
 
     envs.db = {
