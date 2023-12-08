@@ -572,10 +572,10 @@ in {
   - `nodoc` – Disable Haddock
   - `bench` – Enable benchmarks
   - `nobench` – Disable benchmarks
-  - `minimal` – Disable profiling, Haddock, benchmarks and tests
+  - `minimal` – Disable profiling libraries, Haddock, benchmarks and tests
   - `fast` – Disable profiling and Haddock
-  - `noprofiling` – Disable profiling for the package
-  - `profiling` – Enable profiling for the package (when disabling it globally)
+  - `noprofiling` – Disable profiling libraries for the package
+  - `profiling` – Enable executable profiling for the package
   - `configure` – Add a Cabal configure flag
   - `configures` – Add multiple Cabal configure flags (in a list)
   - `override` – Call `overrideCabal` on the derivation, allowing arbitrary Cabal manipulation

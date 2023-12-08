@@ -65,6 +65,11 @@ in {
         localPackage = api: api.minimal;
       };
 
+      profiled = {
+        hide = true;
+        profiling = true;
+      };
+
       hls = {
         hls.enable = true;
         hls.package = mkDefault config.envs.hls.ghc.ghc.haskell-language-server;

@@ -1,5 +1,4 @@
 { pkgs, }:
-with pkgs.lib;
 let
 
   hl = pkgs.haskell.lib;
@@ -10,7 +9,7 @@ let
 
   noprofiling = hl.disableLibraryProfiling;
 
-  profiling = hl.enableLibraryProfiling;
+  profiling = hl.enableExecutableProfiling;
 
   notest = hl.dontCheck;
 

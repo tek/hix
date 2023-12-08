@@ -2,6 +2,7 @@
   config,
   lib,
   ifd,
+  libraryProfiling,
   profiling,
   localPackage,
 }:
@@ -9,7 +10,13 @@ with lib;
 let
   cabalDrv = import ../cabal-drv.nix { inherit config lib; };
 
-  localProfiling = api: if profiling then id else api.noprofiling;
+  localProfiling = api:
+  if profiling
+  then api.profiling
+  else
+  if libraryProfiling
+  then id
+  else api.noprofiling;
 
   buildInputs = api: opt:
   if isFunction opt

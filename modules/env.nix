@@ -400,11 +400,20 @@ in {
       default = api: id;
     };
 
-    profiling = mkOption {
+    libraryProfiling = mkOption {
       type = bool;
       default = true;
       description = mdDoc ''
-        Whether to build local libraries and dependency overrides with profiling enabled.
+        Whether to build local libraries with profiling enabled.
+        This is the default mode for Haskell derivations.
+      '';
+    };
+
+    profiling = mkOption {
+      type = bool;
+      default = false;
+      description = mdDoc ''
+        Whether to build local libraries and executables with profiling enabled.
       '';
     };
 
@@ -614,7 +623,7 @@ in {
         overridesLocal = import ../lib/deps/local.nix {
           config = global;
           inherit lib;
-          inherit (config) ifd localPackage profiling;
+          inherit (config) ifd localPackage libraryProfiling profiling;
         };
 
         overridesEnv = util.concatOverrides ([config.overrides] ++ optional config.managedOverrides managedOverrides);

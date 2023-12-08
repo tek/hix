@@ -43,16 +43,18 @@ let
 
   staticPackageExe = env: pkg: exe: staticDrv (env.ghc.ghc.${pkg.name}.overrideAttrs (_: { pname = exe; }));
 
-  staticPackageExeFor = env: pkgName: let
+  envPackageExeFor = cons: env: pkgName: let
     pkg = config.packages.${pkgName};
     exe = pkgMainExe pkg;
-  in lib.optionalAttrs (exe != null) { ${pkgName} = staticPackageExe env pkg exe.name; };
+  in lib.optionalAttrs (exe != null) { ${pkgName} = cons env pkg exe.name; };
 
-  staticExes = env:
+  envPackageExes = cons: env:
+    foldExes (cons env) //
+    util.attrsetMain (envPackageExeFor cons env);
+
+  envExes = env:
   {
-    executables.static =
-      foldExes (staticPackageExe env) //
-      util.attrsetMain (staticPackageExeFor env);
+    executables.static = envPackageExes staticPackageExe env;
   };
 
   cross = ghc: name: let
@@ -71,7 +73,7 @@ let
     env = config.envs.${v};
   in envOutputs v // util.attrsetMain (main: {
     static = staticDrv env.derivations.${main};
-  }) // staticExes env;
+  }) // envExes env;
 
   prefixedInEnv = v: lib.mapAttrs' (n: d: { name = "${v}-${n}"; value = d; }) (envOutputs v);
 
@@ -84,14 +86,17 @@ let
     env = config.envs.dev;
     ghc = env.ghc.ghc;
     minGhc = config.envs.min.ghc.ghc;
+    profiledGhc = config.envs.profiled.ghc.ghc;
     extra = name: pkg: withCross env name // {
       release = releaseDrv ghc.${name};
       min = minGhc.${name};
+      profiled = profiledGhc.${name};
     };
     local = lib.mapAttrs extra config.envs.dev.derivations;
   in local // util.attrsetMain (main: {
     default = local.${main};
     min = local.${main}.min;
+    profiled = local.${main}.profiled;
     static = staticDrv local.${main};
   });
 

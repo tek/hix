@@ -9,6 +9,10 @@
 * Add an app, `lower.optimize`, that attempts to find the lowest possible bounds for the project starting with the state
   created by `lower.init`.
 * Add the option `envs.<name>.hoogle` to pass `withHoogle` to `ghcWithPackages`.
+* Change the semantics of the option `profiled` to enable executable profiling.
+  The old behavior has been moved to the option `libraryProfiling`.
+* Add an environment `profiled` whose executables, with profiling enabled, are exposed as flake outputs like
+  `.#hix.profiled` and `.#env.profiled.hix`.
 
 # 0.6.9
 

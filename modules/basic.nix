@@ -202,16 +202,6 @@ in {
       '';
     };
 
-    depsProf = mkOption {
-      type = listOf path;
-      default = [];
-      description = mdDoc ''
-        Flake inputs containing hix projects whose overrides are merged into this project's.
-        Unlike `deps`, this includes the `local` overrides.
-        Unlike `depsFull`, the local packages are forced to be built with profiling enabled.
-      '';
-    };
-
     haskellTools = mkOption {
       description = mdDoc ''
       Function returning a list of names of Haskell packages that should be included in every environment's `$PATH`.
