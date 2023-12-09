@@ -131,8 +131,10 @@ let
 
   managedAll = latest: lower: {
     bump = app (libManaged.bump [latest]);
-    lower.init = app (libManaged.lowerInit [lower]);
-    lower.optimize = app (libManaged.lowerOptimize [lower]);
+    lower = {
+      init = app (libManaged.lowerInit [lower]);
+      optimize = app (libManaged.lowerOptimize [lower]);
+    };
   };
 
   envApps = env: {
@@ -163,8 +165,10 @@ let
 
   managedMulti = sets: {
     bump = managedCmdMulti "bump" "latest" libManaged.bump sets;
-    lower.init = managedCmdMulti "lower.init" "lower" libManaged.lowerInit sets;
-    lower.optimize = managedCmdMulti "lower.optimize" "lower" libManaged.lowerOptimize sets;
+    lower = {
+      init = managedCmdMulti "lower.init" "lower" libManaged.lowerInit sets;
+      optimize = managedCmdMulti "lower.optimize" "lower" libManaged.lowerOptimize sets;
+    };
   };
 
   # We're not guarding this with a `optionalAttrs` so that we can print an error when the user executes an app.
@@ -218,6 +222,24 @@ let
     };
   };
 
+  # We have lots of nested attrsets in the apps output, and since Nix requires all top-level apps attrs to implement the
+  # app interface, we add a dummy app to each attr (and recursively, though not strictly necessary).
+  addDummyApps = let
+    isAppAttr = n: n == "type" || n == "program";
+    add = pre: name: a: let
+      newPre = pre ++ [name];
+      sub = lib.filter (n: !isAppAttr n) (lib.attrNames a);
+    in
+    if isAppAttr name
+    then a
+    else
+    if a ? program
+    then spin newPre a
+    else util.dummyApp newPre sub // spin newPre a;
+    spin = pre: lib.mapAttrs (add pre);
+  in
+    spin [];
+
 in {
   inherit
   prefixedInEnvs
@@ -235,5 +257,6 @@ in {
   managedApps
   managedEnvGhcs
   genManaged
+  addDummyApps
   ;
 }

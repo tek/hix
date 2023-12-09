@@ -145,7 +145,7 @@ in {
         basicApps //
         libOutput.managedApps //
         libOutput.mainAppimageApp //
-        { cmd = lib.mkIf config.output.commandApps (libOutput.commandApps config.commands); } //
+        optionalAttrs config.output.commandApps { cmd = libOutput.commandApps config.commands; } //
         basicEnvApps //
         libOutput.genManaged
         ;
@@ -192,7 +192,7 @@ in {
       checks = merge "checks";
       legacyPackages = merge "legacyPackages";
       devShells = merge "devShells";
-      apps = merge "apps";
+      apps = libOutput.addDummyApps (merge "apps");
     };
 
   };
