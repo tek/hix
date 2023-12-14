@@ -11,8 +11,8 @@ import Hix.Data.Error (Error (Client, Fatal))
 import Hix.Data.Monad (M)
 import Hix.Data.OutputTarget (OutputTarget)
 import Hix.Managed.BuildOutput.CommitMsg (commit)
-import qualified Hix.Managed.Data.Build
-import Hix.Managed.Data.Build (BuildOutput)
+import qualified Hix.Managed.Data.BuildOutput
+import Hix.Managed.Data.BuildOutput (BuildOutput)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
 import Hix.Monad (note, throwM, tryIOMAs)
 import qualified Hix.OutputWriter

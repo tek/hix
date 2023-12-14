@@ -9,8 +9,10 @@ import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerConfig)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package (Package))
 import qualified Hix.Data.Version
-import Hix.Data.Version (Major (Major), NewRange (NewRange), NewVersion (NewVersion))
+import Hix.Data.Version (Major (Major), NewRange (NewRange))
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation, DepMutation (DepMutation), MutationResult (MutationSuccess))
@@ -71,7 +73,7 @@ processMutationLower solve op conf state mutation build = do
 
     buildCandidate version = do
       let candidate = Candidate {
-        version = NewVersion {package, version},
+        package = Package {name = package, version},
         range = NewRange (setLowerBound version range)
       }
       buildWithSolver solve build op state.solverParams candidate

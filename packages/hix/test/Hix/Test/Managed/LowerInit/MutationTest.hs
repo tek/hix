@@ -9,6 +9,7 @@ import Exon (exon)
 import Hedgehog (evalEither, evalMaybe, (===))
 import Path (relfile)
 
+import Hix.Class.Map ((!!))
 import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.Error (Error (Client, Fatal))
@@ -27,7 +28,7 @@ import Hix.Data.Package (PackageName (PackageName))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
-import Hix.Managed.Data.Build (BuildStatus (Failure, Success), buildStatus)
+import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),
@@ -148,11 +149,15 @@ testDeps =
 
 buildWithState :: Versions -> M BuildStatus
 buildWithState = \case
-  [("direct1", [1, 0, 3]), ("direct3", [1, 0, 1]), ("transitive3", [1, 0, 1])] -> pure Failure
-  [("direct1", [1, 0, 4]), ("direct3", [1, 0, 1]), ("transitive3", [1, 0, 1])] -> pure Failure
-  [("direct1", [1, 0, 5]), ("direct3", [1, 0, 1]), ("transitive2", [1, 0, 1])] -> pure Success
-  [("direct1", [1, 0, 5]), ("direct2", [5, 0]), ("direct3", [1, 0, 1]), ("transitive2", [1, 0, 1]), ("transitive5", [1, 0, 1])] -> pure Success
-  [("direct1", [1, 0, 5]), ("direct2", [5, 0, 5]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, n]), ("transitive2", [1, 0, 1]), ("transitive5", [1, 0, 1]), ("transitive6", [1, 0, 1])] -> pure (buildStatus (n == 3))
+  versions
+    | Just [1, 0, n] <- versions !! "direct1"
+    , n /= 5
+    -> pure Failure
+  versions
+    | Just [1, 0, n] <- versions !! "direct4"
+    , n /= 3
+    -> pure Failure
+  [("direct1", [1, 0, 5]), ("direct2", [5, 0, 5]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, 3]), ("transitive2", [1, 0, 1]), ("transitive5", [1, 0, 1]), ("transitive6", [1, 0, 1])] -> pure Success
   versions -> throwM (Fatal [exon|Unexpected overrides: #{showP versions}|])
 
 handlersTest :: IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
@@ -257,10 +262,10 @@ stateFileTarget =
 
 logTarget :: [Text]
 logTarget =
-  Text.lines [exon|[35m[1m>>>[0m Processed environment 'lower-main':
+  Text.lines [exon|[35m[1m>>>[0m Result for 'lower-main': All dependencies were processed successfully.
 [35m[1m>>>[0m Updated dependency versions:
     📦 direct1 1.0.5 [>=1.0.5]
-    📦 direct2 5.0 [>=5.0 && <5.1]
+    📦 direct2 5.0.5 [>=5.0.5 && <5.1]
     📦 direct4 1.0.3 [>=1.0.3]
 [35m[1m>>>[0m You can remove the lower bounds from these deps of 'local1':
     📦 direct1
@@ -323,4 +328,4 @@ test_lowerInitMutation = do
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)
-  logTarget === drop 7 (reverse log)
+  logTarget === drop 11 (reverse log)

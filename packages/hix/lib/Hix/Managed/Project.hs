@@ -1,8 +1,8 @@
 module Hix.Managed.Project where
 
 import Hix.Data.Monad (M)
-import qualified Hix.Managed.Data.Build
-import Hix.Managed.Data.Build (BuildResults)
+import qualified Hix.Managed.Data.BuildResults
+import Hix.Managed.Data.BuildResults (BuildResults)
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import qualified Hix.Managed.Handlers.Report
 import Hix.Managed.Handlers.Report (ReportHandlers)

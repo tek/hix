@@ -11,7 +11,7 @@ import Hix.Data.OutputTarget (OutputTarget (..))
 import Hix.Error (pathText)
 import Hix.Managed.BuildOutput.CommitMsg (formatCommit)
 import Hix.Managed.BuildOutput.GithubActionsPr (githubActionsPr)
-import Hix.Managed.Data.Build (BuildOutput, combineBuildOutputs)
+import Hix.Managed.Data.BuildOutput (BuildOutput, combineBuildOutputs)
 import qualified Hix.Monad as Monad
 import Hix.Monad (catchIOM, noteClient)
 import qualified Hix.OutputWriter

@@ -9,15 +9,16 @@ import Exon (exon)
 import Hix.Class.Map (ntMap)
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep)
+import Hix.Data.Error (Error (Client))
 import Hix.Data.Monad (M)
 import Hix.Data.Package (PackageName)
-import qualified Hix.Data.Version
 import Hix.Data.Version (Major, Versions)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
 import qualified Hix.Managed.Lower.Data.Lower
 import Hix.Managed.Lower.Data.Lower (Lower (Lower))
+import Hix.Monad (throwM)
 import Hix.Pretty (showP)
 import Hix.Version (allMajors, lowerBound, majorParts, majorsBefore, upperBound, versionsBetween, versionsFrom)
 
@@ -34,6 +35,9 @@ logNoVersions package allVersions mutation = do
 
 specifiedLower :: VersionRange -> Maybe (Int, Int)
 specifiedLower = majorParts <=< lowerBound
+
+specifiedUpper :: VersionRange -> Maybe (Int, Int)
+specifiedUpper = majorParts <=< upperBound
 
 prefix :: Int -> Int -> Text
 prefix s m = [exon|#{show s}.#{show m}|]
@@ -54,9 +58,34 @@ candidates fetchVersions dep selection = do
   where
     package = dep.package
 
-selectionInit :: [Version] -> Maybe (NonEmpty Major)
-selectionInit =
-  nonEmpty . reverse . allMajors
+data InitConfig =
+  InitBeforeUpper Int Int
+  |
+  InitAll
+  deriving stock (Eq, Show, Generic)
+
+initConfig :: VersionRange -> InitConfig
+initConfig version =
+  case specifiedUpper version of
+    Just (s, m) -> InitBeforeUpper s m
+    _ -> InitAll
+
+logInitConfig :: PackageName -> InitConfig -> M ()
+logInitConfig package conf =
+  Log.verbose [exon|Choosing versions for '##{package}' from #{msg conf}.|]
+  where
+    msg = \case
+      InitBeforeUpper s m ->
+        [exon|all majors before the specified upper bound #{prefix s m}|]
+      InitAll ->
+        "all majors."
+
+selectionInit :: InitConfig -> [Version] -> Maybe (NonEmpty Major)
+selectionInit = \case
+  InitBeforeUpper s m ->
+    nonEmpty . reverse . majorsBefore s m
+  InitAll ->
+    nonEmpty . reverse . allMajors
 
 candidatesInit ::
   (PackageName -> M [Version]) ->
@@ -67,7 +96,11 @@ candidatesInit fetchVersions pre dep
   | Map.member dep.package (ntMap pre)
   = pure Nothing
   | otherwise
-  = candidates fetchVersions dep selectionInit
+  = do
+    logInitConfig dep.package conf
+    candidates fetchVersions dep (selectionInit conf)
+  where
+    conf = initConfig dep.version
 
 data OptimizeConfig =
   OptimizeMajorsBefore Int Int
@@ -86,12 +119,12 @@ logOptimizeConfig package = \case
   OptimizeMajorsBefore s m ->
     Log.verbose [exon|Choosing versions for '##{package}' from all majors before #{prefix s m}.|]
   OptimizeNoBound ->
-    Log.warn [exon|Skipping '##{package}' since it has no configured lower bound. Please run '.#lower.init' first.|]
+    throwM (Client [exon|'##{package}' has no lower bound. Please run '.#lower.init' first.|])
 
 selectionOptimize :: OptimizeConfig -> [Version] -> Maybe (NonEmpty Major)
 selectionOptimize = \case
   OptimizeMajorsBefore s m -> do
-    nonEmpty . sortOn (Down . (.prefix)) . majorsBefore s m
+    nonEmpty . reverse . majorsBefore s m
   OptimizeNoBound ->
     const Nothing
 
@@ -124,7 +157,7 @@ logStabilizeConfig package = \case
   StabilizeFromVersion l (Just u) ->
     Log.verbose [exon|Choosing versions for '##{package}' between the current version #{showP l} and the initial version #{showP u}, if it doesn't build.|]
   StabilizeNoBound ->
-    Log.warn [exon|Skipping '##{package}' since it has no configured lower bound. Please run '.#lower.init' first.|]
+    throwM (Client [exon|'##{package}' has no lower bound. Please run '.#lower.init' first.|])
 
 selectionStabilize :: StabilizeConfig -> [Version] -> Maybe (NonEmpty Major)
 selectionStabilize = \case

@@ -1,37 +1,38 @@
 module Hix.Managed.Data.Candidate where
 
-import Data.Aeson (ToJSON (toJSON), object, (.=), FromJSON (parseJSON), withObject, (.:))
+import Data.Aeson (FromJSON (parseJSON), ToJSON (toJSON), object, withObject, (.:), (.=))
 import Distribution.Pretty (Pretty (pretty))
 import Text.PrettyPrint (brackets, (<+>))
 
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewRange, NewVersion (NewVersion), renderNewRange)
-import Hix.Pretty (showP)
 import Hix.Data.Json (jsonParsec)
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package (Package))
+import Hix.Data.Version (NewRange, renderNewRange)
+import Hix.Pretty (showP)
 
 data Candidate =
   Candidate {
-    version :: NewVersion,
+    package :: Package,
     range :: NewRange
   }
   deriving stock (Eq, Show, Generic)
 
 instance Pretty Candidate where
   pretty Candidate {..} =
-    pretty version <+> brackets (renderNewRange range)
+    pretty package <+> brackets (renderNewRange range)
 
 instance ToJSON Candidate where
   toJSON Candidate {..} =
     object [
-      "package" .= toJSON version.package,
-      "version" .= toJSON (showP @Text version.version),
+      "name" .= toJSON package.name,
+      "version" .= toJSON (showP @Text package.version),
       "range" .= toJSON range
     ]
 
 instance FromJSON Candidate where
   parseJSON =
     withObject "Candidate" \ o -> do
-      package <- o .: "package"
+      name <- o .: "name"
       version <- jsonParsec <$> o .: "version"
       range <- o .: "range"
-      pure Candidate {version = NewVersion {package, version}, range}
+      pure Candidate {package = Package {name, version}, range}

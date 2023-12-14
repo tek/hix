@@ -76,7 +76,10 @@ library
       Hix.Managed.BuildOutput.GithubActionsPr
       Hix.Managed.Bump.App
       Hix.Managed.Bump.Candidates
-      Hix.Managed.Data.Build
+      Hix.Managed.Data.BuildOutput
+      Hix.Managed.Data.BuildResult
+      Hix.Managed.Data.BuildResults
+      Hix.Managed.Data.BuildState
       Hix.Managed.Data.CabalTarget
       Hix.Managed.Data.Candidate
       Hix.Managed.Data.CurrentBuild

@@ -33,5 +33,11 @@
       };
     };
   };
+  lowerInit = {
+    lower-main = {
+      aeson = "1.5.6.0";
+      extra = "1.7.7";
+    };
+  };
   resolving = false;
 }

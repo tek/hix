@@ -21,9 +21,9 @@ import System.Exit (ExitCode (ExitFailure, ExitSuccess))
 import System.Process.Typed (proc, readProcess)
 
 import Hix.Data.Error (Error (Fatal))
-import Hix.Data.Package (PackageName)
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewVersion (NewVersion), SourceHash (SourceHash), renderNewVersion)
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package (Package), PackageName, renderPackage)
+import Hix.Data.Version (SourceHash (SourceHash))
 import qualified Hix.Log as Log
 import Hix.Monad (M, throwM, tryIOM)
 import Hix.Pretty (showP)
@@ -112,14 +112,14 @@ fetchHashHackageCached ::
   PackageName ->
   Version ->
   M SourceHash
-fetchHashHackageCached cacheRef package version =
+fetchHashHackageCached cacheRef name version =
   liftIO (readIORef cacheRef) >>= \ cache ->
     fromMaybeM fetch (pure (cache !? cacheKey))
   where
     fetch = do
-      hash <- fetchHashHackage package version
+      hash <- fetchHashHackage name version
       hash <$ addToCache hash
 
     addToCache hash = liftIO (modifyIORef' cacheRef (Map.insert cacheKey hash))
 
-    cacheKey = renderNewVersion NewVersion {..}
+    cacheKey = renderPackage Package {..}

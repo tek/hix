@@ -25,7 +25,7 @@ import Hix.Data.Package (PackageName (PackageName))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
-import Hix.Managed.Data.Build (BuildStatus (Failure, Success))
+import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),
@@ -56,7 +56,6 @@ fetchVersions :: PackageName -> M [Version]
 fetchVersions = \case
   "direct1" -> pure basic
   "direct2" -> pure [[1, 7, 1], [1, 8, 1], [1, 9, 1], [1, 9, 2], [2, 0, 1]]
-  "direct3" -> pure basic
   "transitive1" -> pure [[1, 0, 1]]
   package -> throwM (Client [exon|No such package: ##{package}|])
   where
@@ -79,6 +78,7 @@ byPackage =
 testDeps :: TestDeps
 testDeps = TestDeps {fetchVersions, byPackage, byVersion = []}
 
+-- TODO make missing initial lower bounds fatal
 buildWithState :: Versions -> M BuildStatus
 buildWithState = \case
   [("direct1", [1, 9, 1]), ("direct2", [1, 9, 2]), ("transitive1", [1, 0, 1])] -> pure Success
@@ -108,8 +108,7 @@ depsConfig =
       "library": {
         "dependencies": [
           "direct1",
-          "direct2",
-          "direct3"
+          "direct2"
         ]
       }
     }
@@ -135,10 +134,6 @@ managedOverridesFile =
       "direct2": {
         "version": "2.0.1",
         "hash": "direct2-2.0.1"
-      },
-      "direct3": {
-        "version": "2.0.1",
-        "hash": "direct3-2.0.1"
       }
     }
   }|]
@@ -150,7 +145,6 @@ stateFileTarget =
     local1 = {
       direct1 = ">=1.8.1 && <2.1";
       direct2 = ">=1.9.2 && <2.1";
-      direct3 = ">=0";
     };
   };
   overrides = {
@@ -181,8 +175,6 @@ stateFileTarget =
 -- - @direct2@ has three lower majors, the second of which fails, resulting in the highest major 1.9 to be the last one
 --   tested.
 --   The first version 1.9.1 also fails, resulting in 1.9.2 to become the bound.
---
--- - @direct3@ has no managed bounds, resulting in it being skipped, and getting a trivial bound in the state file.
 test_lowerOptimizeMutation :: UnitTest
 test_lowerOptimizeMutation = do
   deps <- leftA fail depsConfig

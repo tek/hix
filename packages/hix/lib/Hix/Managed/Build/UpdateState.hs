@@ -4,7 +4,7 @@ import Hix.Class.Map (ntInsert)
 import Hix.Data.ManagedEnv (ManagedState (..))
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation, MutationResult (..))
-import Hix.Managed.Data.Build (BuildState (..), BuildSuccess (CandidateBuilt, RangeUpdated, Unmodified))
+import Hix.Managed.Data.BuildState (BuildState (..), BuildSuccess (CandidateBuilt, RangeUpdated, Unmodified))
 
 updateState ::
   BuildState a s ->

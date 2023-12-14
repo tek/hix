@@ -9,7 +9,7 @@ import Hix.Data.Bounds (BoundExtensions)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.Package (PackageName)
-import Hix.Data.Version (NewVersion)
+import Hix.Data.Package (Package)
 import Hix.Managed.Data.Candidate (Candidate)
 
 data DepMutation a =
@@ -25,7 +25,7 @@ instance Pretty a => Pretty (DepMutation a) where
 data BuildMutation =
   BuildMutation {
     candidate :: Candidate,
-    newVersions :: [NewVersion],
+    newVersions :: [Package],
     accOverrides :: Overrides,
     newBounds :: BoundExtensions
   }
@@ -34,7 +34,7 @@ data BuildMutation =
 data MutationResult s =
   MutationSuccess Candidate ManagedState s
   |
-  MutationUpdateBounds NewVersion VersionRange
+  MutationUpdateBounds Package VersionRange
   |
   MutationKeep
   |

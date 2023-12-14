@@ -6,7 +6,7 @@ import Distribution.Pretty (pretty)
 import Distribution.Version (Version)
 import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
-import Path (Abs, Dir, Path, absdir, relfile)
+import Path (relfile)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.ConfigDeps (ConfigDeps)
@@ -26,7 +26,7 @@ import Hix.Data.Package (PackageName (PackageName))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (DepMutation)
-import Hix.Managed.Data.Build (BuildStatus (Failure, Success))
+import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),
@@ -40,8 +40,8 @@ import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
-import Hix.Managed.Lower.Stabilize (lowerStabilize)
 import Hix.Managed.Lower.Data.Lower (Lower)
+import Hix.Managed.Lower.Stabilize (lowerStabilize)
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
@@ -50,14 +50,10 @@ import qualified Hix.Test.Managed.Solver
 import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)
 import Hix.Test.Utils (UnitTest, runMTest, testRoot)
 
-tmpRoot :: Path Abs Dir
-tmpRoot = [absdir|/tmp/project|]
-
 fetchVersions :: PackageName -> M [Version]
 fetchVersions = \case
   "direct1" -> pure basic
   "direct2" -> pure basic
-  "direct3" -> pure basic
   package -> throwM (Client [exon|No such package: ##{package}|])
   where
     basic = [[1, 8, 1], [1, 9, 1], [2, 0, 1]]
@@ -101,8 +97,7 @@ depsConfig =
       "library": {
         "dependencies": [
           "direct1",
-          "direct2",
-          "direct3"
+          "direct2"
         ]
       }
     }
@@ -139,7 +134,6 @@ stateFileTarget =
     local1 = {
       direct1 = ">=1.9.1 && <2.1";
       direct2 = ">=1.9.1 && <2.1";
-      direct3 = ">=0";
     };
   };
   overrides = {

@@ -3,6 +3,7 @@ module Hix.Data.ManagedEnv where
 import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
 import Distribution.Pretty (Pretty (pretty))
 import GHC.Exts (IsList)
+import GHC.Generics (Generically (Generically))
 import Text.PrettyPrint (hang, ($+$))
 
 import Hix.Class.EncodeNix (EncodeNix)
@@ -20,6 +21,7 @@ data ManagedState =
     overrides :: Overrides
   }
   deriving stock (Eq, Show, Generic)
+  deriving (Semigroup, Monoid) via (Generically ManagedState)
 
 instance Pretty ManagedState where
   pretty ManagedState {..} =

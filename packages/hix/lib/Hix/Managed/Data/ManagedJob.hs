@@ -4,8 +4,11 @@ import Hix.Data.Bounds (RemovableBounds)
 import Hix.Data.Dep (Dep)
 import Hix.Data.Deps (TargetDeps)
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.ManagedEnv (ManagedState)
+import qualified Hix.Data.ManagedEnv
+import Hix.Data.ManagedEnv (ManagedState (ManagedState))
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
+import Hix.Deps (mergeBounds)
 import Hix.Managed.Data.Targets (Targets)
 
 data ManagedJob =
@@ -13,7 +16,7 @@ data ManagedJob =
     -- | The name of the hix env used to build this job.
     env :: EnvName,
     -- | The set of packages this job operates on.
-    -- By construction sorted topologically.
+    -- Sorted topologically by smart constructor.
     targets :: Targets,
 
     -- TODO remove? also fix doc of 'removable' then
@@ -25,9 +28,13 @@ data ManagedJob =
     targetDeps :: TargetDeps,
     lowerInit :: Versions,
     deps :: [Dep],
-    state :: ManagedState,
+    overrides :: Overrides,
     -- | The deps in each target that had a 'targetBound' in the flake config, but not in the managed state.
     -- For the purpose of informing the user that they can be removed.
     removable :: RemovableBounds
   }
   deriving stock (Eq, Show, Generic)
+
+initialState :: ManagedJob -> ManagedState
+initialState ManagedJob {targetDeps, overrides} =
+  ManagedState {bounds = mergeBounds targetDeps, overrides}

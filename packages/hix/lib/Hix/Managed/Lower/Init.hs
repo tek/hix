@@ -3,7 +3,8 @@ module Hix.Managed.Lower.Init where
 import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerConfig, LowerInitConfig (LowerInitConfig))
 import Hix.Data.Monad (M)
-import Hix.Managed.Data.Build (BuildResult, BuildResults)
+import Hix.Managed.Data.BuildResult (BuildResult)
+import Hix.Managed.Data.BuildResults (BuildResults)
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerInit))
 import qualified Hix.Managed.Data.ManagedJob
@@ -16,7 +17,7 @@ import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Job (buildJobs)
 import Hix.Managed.Lower.Build (lowerJob)
 import Hix.Managed.Lower.Candidates (candidatesInit)
-import Hix.Managed.Lower.Data.Lower (Lower, LowerState (LowerState))
+import Hix.Managed.Lower.Data.Lower (Lower)
 
 lowerInitJob ::
   LowerHandlers ->
@@ -27,7 +28,7 @@ lowerInitJob ::
   ManagedJob ->
   M (BuildResult Lower)
 lowerInitJob handlers lowerConf LowerInitConfig {reset} app builder job =
-  lowerJob initialBounds LowerState candidates mutationHandlers app builder job
+  lowerJob initialBounds candidates mutationHandlers app lowerConf builder job
   where
     initialBounds deps = lowerConf.initialSolverParams <> keepBounds keep deps
     candidates = candidatesInit handlers.versions keep

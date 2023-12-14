@@ -9,7 +9,7 @@ import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedEnv (ManagedEnv), ManagedEnvState (ManagedEnvState), ManagedState (..))
 import Hix.Data.Overrides (Overrides)
-import qualified Hix.Data.Version
+import qualified Hix.Data.Package
 import Hix.Data.Version (NewRange (NewRange, OldRange))
 import Hix.Deps (distributeBounds)
 import qualified Hix.Managed.Data.Candidate
@@ -89,5 +89,5 @@ stateWithCandidate accBounds candidate overrides =
     bounds = withCandidate accBounds
 
     withCandidate = case candidate.range of
-      NewRange r -> ntInsert candidate.version.package r
+      NewRange r -> ntInsert candidate.package.name r
       OldRange -> id

@@ -247,7 +247,6 @@ bumpParser = do
   handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure BumpOptions {..}
 
--- TODO setting @firstSuccess@ and @noSuccess@ here rather than in @Lower.App@ is not right
 lowerParser :: Parser LowerOptions
 lowerParser = do
   env <- Right <$> jsonConfigParser
@@ -255,12 +254,13 @@ lowerParser = do
   handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   maxFailedPre <- option auto (long "max-failed-majors-pre" <> help maxFailedPreHelp <> value 99 <> showDefault)
   maxFailedPost <- option auto (long "max-failed-majors-post" <> help maxFailedPostHelp <> value 0 <> showDefault)
+  maxIterations <- option auto (long "max-iterations" <> help maxIterationsHelp <> value 3 <> showDefault)
   pure LowerOptions {..}
   where
     maxFailedPreHelp = maxFailedHelp "prior to the first"
     maxFailedPostHelp = maxFailedHelp "after the last"
-    maxFailedHelp variant =
-      [exon|Number of majors that may fail before aborting, #{variant} success|]
+    maxFailedHelp variant = [exon|Number of majors that may fail before aborting, #{variant} success|]
+    maxIterationsHelp = "Number of restarts when some dependencies fail"
 
 lowerInitParser :: Parser LowerInitOptions
 lowerInitParser = do

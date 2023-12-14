@@ -1080,8 +1080,8 @@ in {
   so that the `dev` environment (and all others) will still use the default versions from nixpkgs (plus regular
   overrides), making the `latest` environment the testing ground for bleeding-edge dependency versions.
 
-  You can change this behavior to apply to other environments by setting [](#opt-env-managedOverrides) to `true` and
-  running `nix run .#env.<name>.bump` instead.
+  You can change this behavior to apply to other environments by setting [](#opt-env-managed) to `true` and running `nix
+  run .#env.<name>.bump` instead.
 
   If [](#opt-managed-managed.check) is `true` (the default), the derivations with latest versions will be added
   to the `checks` output, so your CI may depend on them.
@@ -1089,19 +1089,19 @@ in {
   ### Lower bounds {#lower}
 
   If the option [](#opt-managed-managed.lower.enable) is enabled, the flake will expose an environment named `lower` and
-  two apps named `lower.init` and `lower.optimize`.
+  three apps named `lower.init`, `lower.optimize` and `lower.stabilize`.
 
   Running `nix run .#lower.init` will update the dependency bounds and build the project for each update, like the
-  `bump` app – with the difference that the chosen versions will be the lowest that match the specified bounds, and that
-  the overrides will be written for the environment `lower`.
+  `bump` app – with the difference that the chosen versions will be the lowest that match the dependency bounds, and
+  that the overrides will be written for the environment `lower`.
 
-  If the specified dependencies have no lower bounds, a conservative choice will be made: the first version in the major
-  range of the upper bound (or the latest version if none was specified).
-  For example, if the upper bound is `<1.5`, it will choose `1.4.0.0` if that version exists, or `1.4.1.0` and so on.
-  If no version in the `1.4` major range exists, it will choose `1.3` and so on.
+  If the specified dependencies have lower bounds configured in the flake, they will be ignored.
+  The purpose of this step is preparation for the other two apps: The initial bounds will be sufficiently recent that
+  the project won't break with these versions after changes with a high probability.
 
   After the lower bounds have been initialized, you can run `nix run .#lower.optimize` to find the lowest possible
   bounds with which the project builds successfully.
+  The initial bounds will be retained in the managed state file separately, for `.#lower.stabilize`.
 
   The longterm workflow for this environment should usually be that you want to verify that the bounds are still
   accurate after making changes to the project, and adjust them if they aren't.

@@ -7,24 +7,19 @@ import Text.PrettyPrint (hang, vcat)
 
 import Hix.Class.Map (ntAmend)
 import Hix.Data.Bounds (BoundExtension (LowerBoundExtension, UpperBoundExtension), BoundExtensions, Bounds)
+import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.Package (PackageName)
-import Hix.Data.Version (NewVersion)
+import Hix.Data.Package (Package)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation), DepMutation, MutationResult (..))
 import Hix.Managed.Build.UpdateState (updateState)
-import qualified Hix.Managed.Data.Build
-import Hix.Managed.Data.Build (
-  BuildResult,
-  BuildState (BuildState),
-  BuildStatus (Failure, Success),
-  buildResult,
-  justSuccess,
-  )
+import qualified Hix.Managed.Data.BuildState
+import Hix.Managed.Data.BuildState (BuildState, BuildStatus (Failure, Success), justSuccess)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate)
 import qualified Hix.Managed.Data.ManagedJob
@@ -43,7 +38,7 @@ import Hix.Version (setLowerBound, setUpperBound)
 logBuildInputs ::
   ManagedState ->
   Candidate ->
-  [NewVersion] ->
+  [Package] ->
   Overrides ->
   Overrides ->
   M ()
@@ -71,12 +66,12 @@ buildBounds =
 buildMutation ::
   HackageHandlers ->
   EnvBuilder ->
-  ManagedJob ->
+  EnvName ->
   ManagedState ->
   BuildMutation ->
   M (Maybe ManagedState)
-buildMutation handlers builder job state BuildMutation {candidate, newVersions, accOverrides, newBounds} = do
-  newOverrides <- newVersionOverrides handlers (candidate.version : newVersions)
+buildMutation handlers builder env state BuildMutation {candidate, newVersions, accOverrides, newBounds} = do
+  newOverrides <- newVersionOverrides handlers (candidate.package : newVersions)
   let overrides = newOverrides <> accOverrides
       bounds = buildBounds newBounds state.bounds
       newState = stateWithCandidate bounds candidate overrides
@@ -85,8 +80,6 @@ buildMutation handlers builder job state BuildMutation {candidate, newVersions, 
   status <- builder.buildWithState newState
   logCandidateResult candidate status
   pure (justSuccess newState status)
-  where
-    env = job.env
 
 logMutationResult ::
   PackageName ->
@@ -105,17 +98,17 @@ logMutationResult package = \case
 validateMutation ::
   HackageHandlers ->
   EnvBuilder ->
-  ManagedJob ->
+  EnvName ->
   MutationHandlers a s ->
   BuildState a s ->
   DepMutation a ->
   M (BuildState a s)
-validateMutation hackage env job handlers buildState mutation = do
+validateMutation hackage envBuilder env handlers buildState mutation = do
   result <- handlers.process buildState.ext mutation build
   logMutationResult mutation.package result
   pure (updateState buildState mutation result)
   where
-    build = buildMutation hackage env job buildState.state
+    build = buildMutation hackage envBuilder env buildState.state
 
 buildMutations ::
   Pretty a =>
@@ -123,14 +116,11 @@ buildMutations ::
   Builder ->
   (EnvBuilder -> M (MutationHandlers a s)) ->
   ManagedJob ->
-  ManagedState ->
   [DepMutation a] ->
-  s ->
-  M (BuildResult a)
-buildMutations hackage builder mkHandlers job state mutations ext = do
+  BuildState a s ->
+  M (BuildState a s)
+buildMutations hackage builder mkHandlers job mutations state = do
   Log.debug [exon|Building targets with mutations: #{showPL mutations}|]
-  withJobBuilder builder job state \ envBuilder -> do
+  withJobBuilder builder job state.state \ envBuilder -> do
     handlers <- mkHandlers envBuilder
-    buildResult job.removable <$> foldM (validateMutation hackage envBuilder job handlers) initialState mutations
-  where
-    initialState = BuildState {success = [], failed = [], state, ext}
+    foldM (validateMutation hackage envBuilder job.env handlers) state mutations

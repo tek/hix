@@ -8,7 +8,7 @@ import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Overrides
 import Hix.Data.Version (Versions)
-import Hix.Managed.Data.Build (BuildStatus (Failure))
+import Hix.Managed.Data.BuildState (BuildStatus (Failure))
 import Hix.Managed.Data.Targets (Targets)
 import qualified Hix.Managed.Handlers.Hackage as HackageHandlers
 import Hix.Managed.Handlers.Hackage (HackageHandlers)

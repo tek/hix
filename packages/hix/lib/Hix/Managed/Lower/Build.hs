@@ -1,42 +1,78 @@
 module Hix.Managed.Lower.Build where
 
 import Distribution.Pretty (Pretty)
+import Exon (exon)
 
 import Hix.Data.Dep (Dep)
+import Hix.Data.EnvName (EnvName)
+import qualified Hix.Data.LowerConfig
+import Hix.Data.LowerConfig (LowerConfig)
+import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
+import qualified Hix.Log as Log
 import Hix.Managed.Build (buildMutations)
 import Hix.Managed.Build.Mutation (DepMutation)
-import Hix.Managed.Data.Build (BuildResult)
+import Hix.Managed.Data.BuildResult (BuildResult, buildResult)
+import qualified Hix.Managed.Data.BuildState
+import Hix.Managed.Data.BuildState (BuildState (BuildState), failed)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
-import qualified Hix.Managed.Data.ManagedJob
+import qualified Hix.Managed.Data.ManagedJob as ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob, deps)
 import qualified Hix.Managed.Data.SolverParams as SolverParams
 import Hix.Managed.Data.SolverParams (SolverParams)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (Builder, EnvBuilder)
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
+import Hix.Managed.Lower.Data.Lower (LowerState (LowerState))
+
+convergeMutations ::
+  Pretty a =>
+  (EnvBuilder -> M (MutationHandlers a s)) ->
+  ManagedApp ->
+  LowerConfig ->
+  Builder ->
+  ManagedJob ->
+  ManagedState ->
+  s ->
+  [DepMutation a] ->
+  M (BuildState a s)
+convergeMutations mkMutationHandlers app conf builder job initialState initExt initialMutations =
+  spin (BuildState {success = [], failed = initialMutations, state = initialState, ext = initExt}) 1
+  where
+    spin acc iteration
+
+      | [] <- acc.failed
+      = pure acc
+
+      | iteration > conf.maxIterations
+      = pure acc
+
+      | otherwise
+      = do
+        Log.debug [exon|Iteration #{show iteration} for '##{job.env :: EnvName}'|]
+        BuildState {success, ..} <- build acc
+        spin BuildState {failed = reverse failed, ..} (iteration + 1)
+
+    build BuildState {failed = mutations, ..} =
+      buildMutations app.build.hackage builder mkMutationHandlers job mutations BuildState {failed = [], ..}
 
 -- TODO refactor the concept from lowerInit that restricts processing to a subset of deps, since we might want to make
 -- it possible to control that via CLI for all commands.
--- Right now we omit skipped deps from the final overrides (not bounds I think) (which happens when there are no
--- candidates available).
--- WAIT this is not true, the overrides should be decided by the solver.
--- As long as the skipped candidates are in the deps, they should be included.
--- The versions of the skipped ones need to be copied to the initial solver bounds.
 lowerJob ::
   Pretty a =>
   ([Dep] -> SolverParams) ->
-  (SolverParams -> s) ->
   (Dep -> M (Maybe (DepMutation a))) ->
-  (EnvBuilder -> M (MutationHandlers a s)) ->
+  (EnvBuilder -> M (MutationHandlers a LowerState)) ->
   ManagedApp ->
+  LowerConfig ->
   Builder ->
   ManagedJob ->
   M (BuildResult a)
-lowerJob initialBounds consState candidates mkMutationHandlers app builder job = do
+lowerJob initialBounds candidates mkMutationHandlers app conf builder job = do
   mutations <- catMaybes <$> traverse candidates job.deps
-  buildMutations app.build.hackage builder mkMutationHandlers job job.state mutations ext
+  buildResult job.removable <$> convergeMutations mkMutationHandlers app conf builder job initialState ext mutations
   where
-    ext = consState solverBounds
+    ext = LowerState solverBounds
     solverBounds = SolverParams.fromConfig app.solverBounds <> initialBounds job.deps
+    initialState = ManagedJob.initialState job

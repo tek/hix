@@ -11,9 +11,8 @@ import Distribution.Version (Version, VersionRange, thisVersion)
 import Exon (exon)
 
 import Hix.Data.Json (aesonParsec, jsonParsec)
-import Hix.Data.Package (PackageName, packageNameFromCabal, packageNameToCabal)
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewVersion (NewVersion))
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package (Package), PackageName, packageNameFromCabal, packageNameToCabal)
 import Hix.Version (unsafeRange)
 
 data Dep =
@@ -68,9 +67,9 @@ instance FromJSON Dep where
     v ->
       fail [exon|Invalid dependency format: #{show v}|]
 
-newVersionDep :: NewVersion -> Dep
-newVersionDep NewVersion {..} =
-  thisVersionDep package version
+newVersionDep :: Package -> Dep
+newVersionDep Package {..} =
+  thisVersionDep name version
 
 withVersion :: VersionRange -> Dep -> Dep
 withVersion version dep = dep {version}

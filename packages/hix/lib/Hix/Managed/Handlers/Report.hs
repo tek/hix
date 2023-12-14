@@ -1,7 +1,7 @@
 module Hix.Managed.Handlers.Report where
 
 import Hix.Data.Monad (M)
-import Hix.Managed.Data.Build (BuildResults)
+import Hix.Managed.Data.BuildResults (BuildResults)
 
 data ReportHandlers a =
   ReportHandlers {

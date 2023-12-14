@@ -3,8 +3,8 @@ module Hix.Managed.BuildOutput.CommitMsg where
 import qualified Data.Text as Text
 import Exon (exon)
 
-import qualified Hix.Managed.Data.Build
-import Hix.Managed.Data.Build (BuildOutput)
+import qualified Hix.Managed.Data.BuildOutput
+import Hix.Managed.Data.BuildOutput (BuildOutput)
 import Hix.Managed.Data.Candidate (Candidate)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
 import Hix.Pretty (showP)

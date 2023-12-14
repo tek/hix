@@ -9,8 +9,8 @@ import Hix.Class.Map (ntFromList, ntMap, ntUpdating)
 import Hix.Data.Bounds (BoundExtension (LowerBoundExtension, UpperBoundExtension), BoundExtensions)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewVersion (NewVersion))
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package (Package))
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation))
@@ -33,10 +33,10 @@ import Hix.Pretty (showP)
 --
 -- TODO this would be easier for stabilize if we'd toposort the dependencies.
 -- Does Cabal have an interface for that?
-updateSolverParams :: ManagedOp -> Candidate -> NewVersion -> SolverParams -> SolverParams
-updateSolverParams op Candidate {version = NewVersion {package = candidate}} NewVersion {package, version} =
+updateSolverParams :: ManagedOp -> Candidate -> Package -> SolverParams -> SolverParams
+updateSolverParams op Candidate {package = Package {name = candidate}} Package {name, version} =
   -- TODO ntAmend
-  ntUpdating package \ old -> newParams <> old
+  ntUpdating name \ old -> newParams <> old
   where
     -- TODO unclear whether only candidates should be retracted.
     -- Assume dep A is first and resolves version V1 for dep C, and then dep B gets version V2 for dep C.
@@ -49,18 +49,18 @@ updateSolverParams op Candidate {version = NewVersion {package = candidate}} New
       | otherwise
       = PackageParams {oldest = False, mutation = ExtendedBound version, bounds = Nothing}
 
-    isCandidate = candidate == package
+    isCandidate = candidate == name
 
-logStart :: NewVersion -> SolverParams -> M ()
+logStart :: Package -> SolverParams -> M ()
 logStart version params = do
   Log.debug [exon|Starting solver build for '#{showP version}'|]
   Log.debug [exon|Solver params: #{showP params}|]
 
-directBounds :: ManagedOp -> [NewVersion] -> BoundExtensions
+directBounds :: ManagedOp -> [Package] -> BoundExtensions
 directBounds op versions =
   ntFromList (extension <$> versions)
   where
-    extension NewVersion {package, version} = (package, cons version)
+    extension Package {name, version} = (name, cons version)
     cons | OpBump <- op = UpperBoundExtension
          | otherwise = LowerBoundExtension
 
@@ -74,6 +74,9 @@ directBounds op versions =
 -- Otherwise, update the solver bounds with the new versions for _all_ direct dependencies (@projectDeps@)
 -- to pin them down for the ultimate result, and to avoid that the solver picks a later version (for @lower@ runs) when
 -- examining subsequent mutations (since Cabal may prefer installed or later versions if given the freedeom).
+--
+-- TODO abort early when the candidate is already in the solver bounds and doesn't match the range.
+-- not necessary if we topsort the candidates before running the build
 buildWithSolver ::
   SolveHandlers ->
   (BuildMutation -> M (Maybe ManagedState)) ->
@@ -82,10 +85,10 @@ buildWithSolver ::
   Candidate ->
   M (Maybe (Candidate, ManagedState, SolverParams))
 buildWithSolver solve build op bounds candidate = do
-  logStart candidate.version bounds
+  logStart candidate.package bounds
   runMaybeT do
-    newVersions <- MaybeT (solve.solveForVersion op bounds candidate.version)
-    solverChanges <- lift (processSolverPlan allDeps newVersions)
+    plan <- MaybeT (solve.solveForVersion op bounds candidate.package)
+    solverChanges <- lift (processSolverPlan allDeps plan)
     new <- MaybeT (build (mutation solverChanges))
     let newBounds = foldr (updateSolverParams op candidate) bounds solverChanges.projectDeps
     lift (Log.debug [exon|New solver bounds: #{showP newBounds}|])
@@ -96,7 +99,7 @@ buildWithSolver solve build op bounds candidate = do
     mutation changes =
       BuildMutation {
         candidate,
-        newVersions = changes.versions,
+        newVersions = changes.overrides,
         accOverrides = [],
         newBounds = directBounds op changes.projectDeps
       }

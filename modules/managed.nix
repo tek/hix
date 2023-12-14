@@ -98,7 +98,7 @@ with lib;
         '';
         type = unspecified;
         default = {
-          managedOverrides = mkDefault true;
+          managed = mkDefault true;
           hide = mkDefault true;
         };
       };

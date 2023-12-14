@@ -448,9 +448,11 @@ in {
       default = null;
     };
 
-    managedOverrides = mkOption {
+    managed = mkOption {
       description = mdDoc ''
-      Whether to create overrides with the latest version of each package for this env when performing [](#managed).
+      Whether this env's dependencies are [](#managed).
+      This has the effect that its bounds and overrides are read from the managed state in
+      [](#opt-managed-managed.file).
       '';
       type = bool;
       default = false;
@@ -626,7 +628,7 @@ in {
           inherit (config) ifd localPackage libraryProfiling profiling;
         };
 
-        overridesEnv = util.concatOverrides ([config.overrides] ++ optional config.managedOverrides managedOverrides);
+        overridesEnv = util.concatOverrides ([config.overrides] ++ optional config.managed managedOverrides);
 
         overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
 

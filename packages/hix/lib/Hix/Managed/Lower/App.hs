@@ -1,6 +1,5 @@
 module Hix.Managed.Lower.App where
 
-
 import Hix.Data.Bounds (TargetBound)
 import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.LowerConfig
@@ -13,7 +12,7 @@ import Hix.Data.Options (LowerInitOptions, LowerOptions)
 import Hix.Json (jsonConfigE)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build.Mutation (MutationResult (MutationFailed, MutationKeep))
-import Hix.Managed.Data.Build (BuildResults)
+import Hix.Managed.Data.BuildResults (BuildResults)
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import qualified Hix.Managed.Data.ManagedConfig
 import qualified Hix.Managed.Handlers.Lower
@@ -38,7 +37,7 @@ chooseHandlers opts conf buildOutputsPrefix =
     stateFileConf = opts.managed.stateFile
     oldest = conf.oldest
 
--- TODO move all the specific config from LowerConfig here
+-- TODO move all the fields from LowerConfig here that have a static mapping from the modes
 data LowerMode =
   LowerMode {
     targetBound :: TargetBound

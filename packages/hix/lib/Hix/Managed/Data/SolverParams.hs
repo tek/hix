@@ -2,17 +2,25 @@ module Hix.Managed.Data.SolverParams where
 
 import qualified Data.Map.Strict as Map
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Version (Version, VersionRange)
+import Distribution.Version (
+  Version,
+  VersionRange,
+  anyVersion,
+  intersectVersionRanges,
+  orEarlierVersion,
+  orLaterVersion,
+  )
 import GHC.Exts (IsList)
 import Text.PrettyPrint (parens, (<+>))
 
 import qualified Hix.Class.Map as NtMap
-import Hix.Class.Map (LookupMonoid, NtMap, ntFromList, ntPretty, (!!))
+import Hix.Class.Map (LookupMonoid, NtMap, convert, ntFromList, ntPretty, (!!))
 import Hix.Data.Bounds (Bounds)
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep)
 import Hix.Data.Package (PackageName)
 import Hix.Data.Version (Versions)
+import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
 import Hix.Version (lowerBound, upperVersion)
 
 -- | Left-biased semigroup op.
@@ -111,3 +119,30 @@ lowerBounds = depBounds lowerBound
 
 upperBounds :: [Dep] -> SolverParams
 upperBounds = depBounds upperVersion
+
+packageParamsRange :: ManagedOp -> PackageParams -> VersionRange
+packageParamsRange op PackageParams {mutation, bounds} =
+  intersectVersionRanges (mutationRange mutation) userRange
+  where
+    mutationRange = \case
+      ExtendedBound v -> extended op v
+      RetractedBound v -> retracted op v
+      NoBounds -> anyVersion
+
+    userRange | Just r <- bounds = r
+              | otherwise = anyVersion
+
+    extended = \case
+      OpBump -> orLaterVersion
+      OpLowerStabilize -> orEarlierVersion
+      OpLowerInit -> orEarlierVersion
+      OpLowerOptimize -> orEarlierVersion
+
+    retracted = \case
+      OpBump -> orEarlierVersion
+      OpLowerStabilize -> orLaterVersion
+      OpLowerInit -> orLaterVersion
+      OpLowerOptimize -> orLaterVersion
+
+toBounds :: ManagedOp -> SolverParams -> Bounds
+toBounds op = convert (packageParamsRange op)

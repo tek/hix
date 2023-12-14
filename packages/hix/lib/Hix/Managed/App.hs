@@ -8,13 +8,14 @@ import Hix.Class.Map (ntMap, (!!))
 import Hix.Data.Bounds (removableBounds)
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (EnvConfig, ManagedEnv, ManagedState (ManagedState))
+import Hix.Data.ManagedEnv (EnvConfig, ManagedEnv)
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M)
-import Hix.Deps (allDeps, depsFromConfig, forTargets, mergeBounds, withManagedRanges)
+import Hix.Deps (allDeps, depsFromConfig, forTargets, withManagedRanges)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.BuildOutput (outputResult)
-import Hix.Managed.Data.Build (BuildResults, buildOutput)
+import Hix.Managed.Data.BuildOutput (buildOutput)
+import Hix.Managed.Data.BuildResults (BuildResults)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp (ManagedApp))
 import qualified Hix.Managed.Data.ManagedConfig
@@ -62,7 +63,6 @@ managedJob env conf name envConfig = do
       lowerInit = env.state.lowerInit !! name
       removable = removableBounds conf.targetBound targetDeps env.state.bounds
       deps = allDeps targetDeps
-      state = ManagedState {bounds = mergeBounds targetDeps, overrides}
   pure ManagedJob {env = name, ..}
   where
     overrides = env.state.overrides !! name

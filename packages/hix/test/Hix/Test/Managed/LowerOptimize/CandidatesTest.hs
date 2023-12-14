@@ -9,13 +9,14 @@ import Hix.Data.Error (Error (Client))
 import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
-import Hix.Data.Package (PackageName)
-import Hix.Data.Version (NewRange (NewRange), NewVersion (..))
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package (Package), PackageName)
+import Hix.Data.Version (NewRange (NewRange))
 import Hix.Managed.Build.Mutation (MutationResult (MutationSuccess))
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerOptimize))
-import Hix.Managed.Data.SolverParams (SolverBound (ExtendedBound, NoBounds))
+import Hix.Managed.Data.SolverParams (BoundMutation (ExtendedBound), mutation)
 import Hix.Managed.Handlers.Mutation.Lower (processMutationLower)
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
@@ -46,7 +47,7 @@ test_candidatesOptimize :: UnitTest
 test_candidatesOptimize = do
   buildRef <- liftIO (newIORef [])
   let
-    solveForVersion _ nv = do
+    solveForVersion _ _ nv = do
       liftIO (modifyIORef' buildRef (nv.version :))
       pure case nv.version of
         [1, 9, 2] -> Just SolverPlan {overrides = [nv], matching = []}
@@ -69,13 +70,13 @@ test_candidatesOptimize = do
 
     mstate = ManagedState {bounds = mempty, overrides = mempty}
 
-    newState = LowerState {solverBounds = [("dep", ExtendedBound candidateVersion)]}
+    newState = LowerState {solverParams = [("dep", mempty {mutation = ExtendedBound candidateVersion})]}
 
-    state = LowerState {solverBounds = [("dep", NoBounds)]}
+    state = LowerState {solverParams = [("dep", mempty)]}
 
     candidate =
       Candidate {
-        version = NewVersion {package, version = candidateVersion},
+        package = Package {name = package, version = candidateVersion},
         range = NewRange (orLaterVersion candidateVersion)
       }
 

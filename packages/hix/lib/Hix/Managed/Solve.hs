@@ -23,8 +23,8 @@ import Exon (exon)
 import Hix.Class.Map (via)
 import Hix.Data.Dep (Dep, renderDep)
 import Hix.Data.Error (Error (Fatal))
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewVersion)
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Data.CabalTarget
 import Hix.Managed.Data.CabalTarget (CabalTarget, cabalTargets, candidateTarget)
@@ -86,7 +86,7 @@ solveWithCabal ::
   SolveResources ->
   ManagedOp ->
   SolverParams ->
-  NewVersion ->
+  Package ->
   M (Maybe SolverPlan)
 solveWithCabal solveResources op solverParams newVersion =
   solveTargets solveResources targets >>= \case
@@ -97,4 +97,4 @@ solveWithCabal solveResources op solverParams newVersion =
       Log.debug [exon|Solver found no plan for #{showP newVersion}: ##{err}|]
       pure Nothing
   where
-    targets = candidateTarget newVersion : cabalTargets op (via (Map.delete newVersion.package) solverParams)
+    targets = candidateTarget newVersion : cabalTargets op (via (Map.delete newVersion.name) solverParams)

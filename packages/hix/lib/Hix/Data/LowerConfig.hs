@@ -10,8 +10,9 @@ data LowerConfig =
   LowerConfig {
     firstSuccess :: Bool,
     noSuccess :: MutationResult LowerState,
-    maxFailedPre :: Int,
-    maxFailedPost :: Int,
+    maxFailedPre :: Natural,
+    maxFailedPost :: Natural,
+    maxIterations :: Natural,
     oldest :: Bool,
     initialSolverParams :: SolverParams
   }
@@ -28,6 +29,7 @@ defaultLowerConfig firstSuccess noSuccess =
     noSuccess,
     maxFailedPre = 99,
     maxFailedPost = 0,
+    maxIterations = 3,
     oldest = False,
     initialSolverParams = mempty
   }

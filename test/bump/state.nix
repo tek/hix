@@ -31,5 +31,6 @@
       };
     };
   };
+  lowerInit = {};
   resolving = false;
 }

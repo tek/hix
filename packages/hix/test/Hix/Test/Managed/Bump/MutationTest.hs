@@ -23,7 +23,7 @@ import Hix.Data.Package (PackageName (PackageName))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Bump.App (bump)
-import Hix.Managed.Data.Build (BuildStatus (Failure, Success))
+import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),

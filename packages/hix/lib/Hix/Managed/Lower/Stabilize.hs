@@ -1,7 +1,5 @@
 module Hix.Managed.Lower.Stabilize where
 
-import Exon (exon)
-
 import Hix.Class.Map (ntTo, (!!))
 import qualified Hix.Data.Dep
 import qualified Hix.Data.LowerConfig
@@ -9,13 +7,16 @@ import Hix.Data.LowerConfig (LowerConfig)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
 import Hix.Data.Monad (M)
-import qualified Hix.Data.Version
-import Hix.Data.Version (NewVersion (NewVersion))
-import Hix.Managed.Data.Build (BuildResult, BuildResults, BuildStatus (Failure, Success), emptyBuildResult, fatal)
+import qualified Hix.Data.Package
+import Hix.Data.Package (Package (Package))
+import Hix.Managed.Data.BuildResult (BuildResult (FatalBuildFailure, NoActionRequired))
+import Hix.Managed.Data.BuildResults (BuildResults)
+import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerStabilize))
 import qualified Hix.Managed.Data.ManagedJob
+import qualified Hix.Managed.Data.ManagedJob as ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob)
 import Hix.Managed.Data.SolverParams (upperBounds)
 import qualified Hix.Managed.Handlers.Build
@@ -26,18 +27,19 @@ import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Job (buildJob, buildJobs)
 import Hix.Managed.Lower.Build (lowerJob)
 import Hix.Managed.Lower.Candidates (candidatesStabilize)
-import Hix.Managed.Lower.Data.Lower (Lower, LowerState (LowerState))
+import Hix.Managed.Lower.Data.Lower (Lower)
 import Hix.Managed.Overrides (newVersionOverrides)
 
 lowerInitState ::
   ManagedApp ->
   ManagedJob ->
+  ManagedState ->
   M ManagedState
-lowerInitState app job = do
+lowerInitState app job state = do
   overrides <- newVersionOverrides app.build.hackage newVersions
-  pure ManagedState {bounds = job.state.bounds, overrides}
+  pure ManagedState {bounds = state.bounds, overrides}
   where
-    newVersions = ntTo job.lowerInit \ package version -> NewVersion {..}
+    newVersions = ntTo job.lowerInit \ name version -> Package {..}
 
 lowerStabilizeEnv ::
   LowerHandlers ->
@@ -47,28 +49,25 @@ lowerStabilizeEnv ::
   ManagedJob ->
   M (BuildResult Lower)
 lowerStabilizeEnv handlers conf app builder job =
-  buildJob builder job job.state >>= \case
-    Success -> pure initResult
+  buildJob builder job managed0 >>= \case
+    Success -> pure NoActionRequired
     Failure -> stabilize
   where
     stabilize = do
-      initialState <- lowerInitState app job
-      buildJob builder job initialState >>= \case
+      state <- lowerInitState app job managed0
+      buildJob builder job state >>= \case
         Success ->
-          lowerJob initialBounds LowerState (candidates job.lowerInit) mutationHandlers app builder job
+          lowerJob initialBounds (candidates job.lowerInit) mutationHandlers app conf builder job
         Failure ->
-          pure initResult {fatal = Just initLowerFailed}
+          pure (FatalBuildFailure initLowerFailed)
 
+    managed0 = ManagedJob.initialState job
     initialBounds deps = conf.initialSolverParams <> upperBounds deps
     candidates initialVersions dep = candidatesStabilize handlers.versions dep (initialVersions !! dep.package)
     mutationHandlers = Mutation.handlersLower OpLowerStabilize conf handlers.solve
 
-    initResult = emptyBuildResult job.state
-
     -- TODO Be helpful about what to do
-    initLowerFailed = [exon|Build with initial lower bounds for '##{env}' failed.|]
-
-    env = job.env
+    initLowerFailed = "Build with initial lower bounds failed."
 
 lowerStabilize ::
   LowerHandlers ->

@@ -53,29 +53,6 @@ forNewRange ::
 forNewRange r f =
   traverse_ f (newRange r)
 
-data NewVersion =
-  NewVersion {
-    package :: PackageName,
-    version :: Version
-  }
-  deriving stock (Eq, Show, Generic)
-
-renderNewVersion :: NewVersion -> Text
-renderNewVersion NewVersion {..} =
-  [exon|##{package}-#{showP version}|]
-
-instance Pretty NewVersion where
-  pretty = PrettyPrint.text . toString . renderNewVersion
-
-renderNewVersionAsRange :: NewVersion -> Text
-renderNewVersionAsRange NewVersion {..} =
-  [exon|##{package} ==#{showP version}|]
-
-showVersions :: NonEmpty Version -> Text
-showVersions = \case
-  [v] -> show (pretty v)
-  versions -> [exon|#{show (pretty (NonEmpty.head versions))}-#{show (pretty (NonEmpty.last versions))}|]
-
 newtype SourceHash =
   SourceHash Text
   deriving stock (Eq, Show, Generic)

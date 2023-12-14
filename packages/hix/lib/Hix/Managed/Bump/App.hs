@@ -11,12 +11,15 @@ import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build (buildMutations)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.Bump.Candidates (candidatesBump)
-import Hix.Managed.Data.Build (BuildResult, BuildResults)
+import Hix.Managed.Data.BuildResult (BuildResult, buildResult)
+import Hix.Managed.Data.BuildResults (BuildResults)
+import Hix.Managed.Data.BuildState (initBuildState)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import qualified Hix.Managed.Data.ManagedJob
+import qualified Hix.Managed.Data.ManagedJob as ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (Builder)
@@ -36,9 +39,12 @@ bumpJob ::
   M (BuildResult Bump)
 bumpJob handlers builder job = do
   mutations <- candidatesBump handlers job.deps
-  buildMutations handlers.build.hackage builder (const (pure handlersBump)) job job.state mutations initialState
+  result <- buildMutations handlers.build.hackage builder mutationHandlers job mutations state
+  pure (buildResult job.removable result)
   where
-    initialState = BumpState {overrides = job.state.overrides}
+    mutationHandlers _ = pure handlersBump
+    state = initBuildState (ManagedJob.initialState job) ext
+    ext = BumpState {overrides = job.overrides}
 
 bumpReport ::
   BumpHandlers ->

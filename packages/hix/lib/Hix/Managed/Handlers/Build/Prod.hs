@@ -28,7 +28,7 @@ import qualified Hix.Data.Monad (Env (verbose))
 import Hix.Data.Package (LocalPackage)
 import Hix.Error (pathText)
 import qualified Hix.Log as Log
-import Hix.Managed.Data.Build (BuildStatus, buildStatus)
+import Hix.Managed.Data.BuildState (BuildStatus, buildStatus)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import Hix.Managed.Data.Targets (Targets (Targets))

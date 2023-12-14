@@ -4,8 +4,9 @@ import Data.IORef (IORef, modifyIORef, newIORef)
 
 import Hix.Data.Monad (M)
 import Hix.Managed.Build.Mutation (DepMutation)
-import qualified Hix.Managed.Data.Build
-import Hix.Managed.Data.Build (BuildResults)
+import Hix.Managed.Data.BuildResult (failedMutations)
+import qualified Hix.Managed.Data.BuildResults
+import Hix.Managed.Data.BuildResults (BuildResults)
 import Hix.Managed.Handlers.Report (ReportHandlers (..), handlersNull)
 
 reportMutationsIORef ::
@@ -13,7 +14,7 @@ reportMutationsIORef ::
   BuildResults a ->
   M ()
 reportMutationsIORef out results =
-  liftIO $ modifyIORef out \ old -> foldl' (\ z res -> res.failed ++ z) old (toList results.envs)
+  liftIO $ modifyIORef out \ old -> foldl' (\ z res -> failedMutations res ++ z) old (toList results.envs)
 
 handlersUnitTest :: IO (ReportHandlers a, IORef [DepMutation a])
 handlersUnitTest = do

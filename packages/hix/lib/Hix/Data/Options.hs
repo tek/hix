@@ -129,8 +129,9 @@ data LowerOptions =
   LowerOptions {
     env :: Either ManagedEnv JsonConfig,
     managed :: ManagedConfig,
-    maxFailedPre :: Int,
-    maxFailedPost :: Int,
+    maxFailedPre :: Natural,
+    maxFailedPost :: Natural,
+    maxIterations :: Natural,
     handlers :: Maybe SpecialLowerHandlers
   }
   deriving stock (Show)

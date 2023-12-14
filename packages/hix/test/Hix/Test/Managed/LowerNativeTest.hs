@@ -20,10 +20,12 @@ import Hix.Data.ManagedEnv (
   ManagedLowerEnv (ManagedLowerEnv),
   state,
   )
+import qualified Hix.Data.Monad
+import Hix.Data.Monad (Env (Env), M)
 import Hix.Error (pathText)
 import Hix.Managed.App (managedApp)
 import Hix.Managed.Build.Mutation (MutationResult (MutationFailed, MutationKeep))
-import qualified Hix.Managed.Data.Build
+import qualified Hix.Managed.Data.BuildResults
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig, operation),
@@ -45,8 +47,6 @@ import Hix.Managed.Lower.Init (lowerInit)
 import Hix.Managed.Lower.Optimize (lowerOptimize)
 import Hix.Managed.Project (updateProject)
 import Hix.Managed.State (envWithState)
-import qualified Hix.Monad
-import Hix.Monad (Env (Env), M)
 import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Utils (UnitTest, runMTest)
 
