@@ -29,7 +29,7 @@ import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import qualified Hix.Data.Monad (Env (cwd))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NixExpr (Expr (ExprAttrs, ExprLit, ExprPrefix, ExprString), ExprAttr (ExprAttr, ExprAttrNil))
-import Hix.Data.Package (PackageName (PackageName))
+import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Error (pathText, tryIO)

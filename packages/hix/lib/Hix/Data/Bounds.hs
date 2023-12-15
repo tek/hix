@@ -12,7 +12,7 @@ import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, convert1, ntAmend1, ntIn
 import qualified Hix.Data.Dep
 import Hix.Data.Deps (TargetDeps)
 import Hix.Data.Json (jsonParsec)
-import Hix.Data.Package (LocalPackage, PackageName)
+import Hix.Data.PackageName ( LocalPackage, PackageName )
 
 newtype Bounds =
   Bounds (Map PackageName VersionRange)

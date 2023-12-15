@@ -27,6 +27,7 @@ library
       Hix
       Hix.Bootstrap
       Hix.Cabal
+      Hix.CabalParsec
       Hix.Class.EncodeNix
       Hix.Class.Map
       Hix.Class.SOP
@@ -54,7 +55,8 @@ library
       Hix.Data.OutputFormat
       Hix.Data.OutputTarget
       Hix.Data.Overrides
-      Hix.Data.Package
+      Hix.Data.PackageId
+      Hix.Data.PackageName
       Hix.Data.PreprocConfig
       Hix.Data.ProjectFile
       Hix.Data.Version
@@ -107,6 +109,7 @@ library
       Hix.Managed.Handlers.Report.Test
       Hix.Managed.Handlers.Solve
       Hix.Managed.Handlers.Solve.Prod
+      Hix.Managed.Handlers.Solve.Test
       Hix.Managed.Handlers.StateFile
       Hix.Managed.Handlers.StateFile.Prod
       Hix.Managed.Handlers.StateFile.Test
@@ -127,6 +130,9 @@ library
       Hix.Managed.Solve.Changes
       Hix.Managed.Solve.Config
       Hix.Managed.Solve.Init
+      Hix.Managed.Solve.Mock
+      Hix.Managed.Solve.Mock.InstalledPackage
+      Hix.Managed.Solve.Mock.SourcePackage
       Hix.Managed.Solve.Print
       Hix.Managed.Solve.Resources
       Hix.Managed.State
@@ -280,12 +286,16 @@ test-suite hix-test
       Hix.Test.Hedgehog
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
+      Hix.Test.Managed.Config
+      Hix.Test.Managed.ConfigDepsTest
       Hix.Test.Managed.LowerInit.MutationTest
       Hix.Test.Managed.LowerNativeTest
       Hix.Test.Managed.LowerOptimize.CandidatesTest
       Hix.Test.Managed.LowerOptimize.MutationTest
       Hix.Test.Managed.LowerStabilize.MutationTest
       Hix.Test.Managed.Solver
+      Hix.Test.Managed.SolverTest
+      Hix.Test.Managed.UnsafeIsString
       Hix.Test.ManagedTest
       Hix.Test.NewTest
       Hix.Test.PreprocTest

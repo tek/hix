@@ -1,16 +1,12 @@
 module Hix.Test.Managed.LowerStabilize.MutationTest where
 
-import Data.Aeson (eitherDecodeStrict')
-import Data.IORef (IORef, readIORef)
-import Distribution.Pretty (pretty)
-import Distribution.Version (Version)
+import Data.IORef (readIORef)
 import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
-import Path (relfile)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Data.ConfigDeps (ConfigDeps)
-import Hix.Data.Error (Error (Client, Fatal))
+import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
+import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigStabilize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
@@ -19,54 +15,41 @@ import Hix.Data.ManagedEnv (
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
-import Hix.Data.NixExpr (Expr)
 import qualified Hix.Data.Overrides
 import Hix.Data.Overrides (Override (Override))
-import Hix.Data.Package (PackageName (PackageName))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
-import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (
-  ManagedConfig (ManagedConfig),
-  ManagedOp (OpLowerStabilize),
-  StateFileConfig (StateFileConfig),
-  )
-import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
-import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
-import Hix.Managed.Handlers.Hackage (fetchHash)
-import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
+import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpLowerStabilize))
+import Hix.Managed.Handlers.Lower (LowerHandlers (..))
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
-import qualified Hix.Managed.Handlers.Solve
-import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
-import Hix.Managed.Lower.Data.Lower (Lower)
 import Hix.Managed.Lower.Stabilize (lowerStabilize)
+import Hix.Managed.Solve.Mock.SourcePackage (SourcePackages)
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import qualified Hix.Test.Managed.Solver
-import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)
-import Hix.Test.Utils (UnitTest, runMTest, testRoot)
+import Hix.Test.Managed.Config (stateFileConfig)
+import Hix.Test.Utils (UnitTest, runMTest)
 
-fetchVersions :: PackageName -> M [Version]
-fetchVersions = \case
-  "direct1" -> pure basic
-  "direct2" -> pure basic
-  package -> throwM (Client [exon|No such package: ##{package}|])
-  where
-    basic = [[1, 8, 1], [1, 9, 1], [2, 0, 1]]
+packages :: SourcePackages
+packages =
+  [
+    ("direct1", [
+      ([1, 8, 1], []),
+      ([1, 9, 1], []),
+      ([2, 0, 1], [])
+    ]),
+    ("direct2", [
+      ([1, 8, 1], []),
+      ([1, 9, 1], []),
+      ([2, 0, 1], [])
+    ])
+  ]
 
-fetchHash :: PackageName -> Version -> M SourceHash
-fetchHash (PackageName name) v =
-  pure (SourceHash [exon|#{name}-#{show (pretty v)}|])
-
-testDeps :: TestDeps
-testDeps = TestDeps {fetchVersions, byPackage = [], byVersion = []}
-
-buildWithState :: Versions -> M BuildStatus
-buildWithState = \case
+buildVersions :: Versions -> M BuildStatus
+buildVersions = \case
   [("direct1", [2, 0, 1]), ("direct2", [2, 0, 1])] -> pure Success
   [("direct1", [1, 8, 1]), ("direct2", [1, 8, 1])] -> pure Failure
   [("direct1", [1, 8, 1]), ("direct2", [2, 0, 1])] -> pure Failure
@@ -74,34 +57,10 @@ buildWithState = \case
   [("direct1", [1, 9, 1]), ("direct2", [1, 8, 1])] -> pure Failure
   [("direct1", [1, 9, 1]), ("direct2", [1, 9, 1])] -> pure Success
   [] -> throwM (Fatal "Build with no overrides")
-  versions -> throwM (Fatal [exon|Unexpected overrides: #{showP versions}|])
+  versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
 
-handlersTest :: IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
-handlersTest = do
-  (build, stateFileRef) <- BuildHandlers.handlersUnitTest
-  (handlers, bumpsRef) <- LowerHandlers.handlersUnitTest
-  let handlers' = handlers {
-    solve = \ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
-    build = build {
-      withBuilder = versionsBuilder buildWithState,
-      hackage = build.hackage {fetchHash}
-    },
-    versions = fetchVersions
-  }
-  pure (handlers', stateFileRef, bumpsRef)
-
-depsConfig :: Either String ConfigDeps
-depsConfig =
-  eitherDecodeStrict' [exon|{
-    "local1": {
-      "library": {
-        "dependencies": [
-          "direct1",
-          "direct2"
-        ]
-      }
-    }
-  }|]
+deps :: ConfigDeps
+deps = configLibDeps [("local1", ["direct1", "direct2"])]
 
 initialState :: ManagedEnvState
 initialState =
@@ -160,8 +119,7 @@ stateFileTarget =
 
 test_lowerStabilizeMutation :: UnitTest
 test_lowerStabilizeMutation = do
-  deps <- leftA fail depsConfig
-  (handlers, stateFileRef, _) <- liftIO handlersTest
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packages)
   let
     env =
       ManagedEnv {
@@ -175,11 +133,7 @@ test_lowerStabilizeMutation = do
       ManagedConfig {
         operation = OpLowerStabilize,
         ghc = Nothing,
-        stateFile = StateFileConfig {
-          file = [relfile|ops/managed.nix|],
-          updateProject = True,
-          projectRoot = Just testRoot
-        },
+        stateFile = stateFileConfig,
         envs = ["lower"],
         targetBound = TargetLower
       }

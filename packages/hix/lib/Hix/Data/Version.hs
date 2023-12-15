@@ -6,7 +6,7 @@ module Hix.Data.Version (
 import Data.Aeson (FromJSON (parseJSON), ToJSON (toJSON))
 import qualified Data.List.NonEmpty as NonEmpty
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Version (Version, VersionRange)
+import Distribution.Version (Version, VersionRange, orLaterVersion, version0)
 import Exon (exon)
 import GHC.Exts (IsList)
 import qualified Text.PrettyPrint as PrettyPrint
@@ -16,9 +16,12 @@ import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, ntPretty, ntPretty1)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Json (jsonParsec)
-import Hix.Data.Package (LocalPackage, PackageName)
+import Hix.Data.PackageName (LocalPackage, PackageName)
 import Hix.Orphans.Version ()
 import Hix.Pretty (showP)
+
+range0 :: VersionRange
+range0 = orLaterVersion version0
 
 data NewRange =
   NewRange VersionRange

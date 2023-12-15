@@ -25,7 +25,7 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.ManagedEnv (BuildOutputsPrefix (BuildOutputsPrefix), ManagedState)
 import qualified Hix.Data.Monad (Env (verbose))
-import Hix.Data.Package (LocalPackage)
+import Hix.Data.PackageName (LocalPackage)
 import Hix.Error (pathText)
 import qualified Hix.Log as Log
 import Hix.Managed.Data.BuildState (BuildStatus, buildStatus)

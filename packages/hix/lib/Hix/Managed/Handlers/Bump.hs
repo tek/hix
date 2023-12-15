@@ -1,8 +1,8 @@
 module Hix.Managed.Handlers.Bump where
 
-import Distribution.Version (Version)
+import Hix.Data.Version (Version)
 
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import qualified Hix.Managed.Handlers.Build as Build
 import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Report as Report

@@ -11,7 +11,7 @@ import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep)
 import Hix.Data.Error (Error (Client))
 import Hix.Data.Monad (M)
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Major, Versions)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation

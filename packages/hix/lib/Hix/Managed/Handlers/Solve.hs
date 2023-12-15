@@ -1,14 +1,14 @@
 module Hix.Managed.Handlers.Solve where
 
 import Hix.Data.Monad (M)
-import Hix.Data.Package (Package)
+import Hix.Data.PackageId (PackageId)
 import Hix.Managed.Data.ManagedConfig (ManagedOp)
 import Hix.Managed.Data.SolverParams (SolverParams)
 import Hix.Managed.Solve.Changes (SolverPlan)
 
 data SolveHandlers =
   SolveHandlers {
-    solveForVersion :: ManagedOp -> SolverParams -> Package -> M (Maybe SolverPlan)
+    solveForVersion :: ManagedOp -> SolverParams -> PackageId -> M (Maybe SolverPlan)
   }
 
 handlersNull :: SolveHandlers

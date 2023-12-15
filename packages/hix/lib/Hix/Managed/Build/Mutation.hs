@@ -8,8 +8,8 @@ import Text.PrettyPrint ((<+>))
 import Hix.Data.Bounds (BoundExtensions)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Overrides (Overrides)
-import Hix.Data.Package (PackageName)
-import Hix.Data.Package (Package)
+import Hix.Data.PackageName (PackageName)
+import Hix.Data.PackageId (PackageId)
 import Hix.Managed.Data.Candidate (Candidate)
 
 data DepMutation a =
@@ -25,7 +25,7 @@ instance Pretty a => Pretty (DepMutation a) where
 data BuildMutation =
   BuildMutation {
     candidate :: Candidate,
-    newVersions :: [Package],
+    newVersions :: [PackageId],
     accOverrides :: Overrides,
     newBounds :: BoundExtensions
   }
@@ -34,7 +34,7 @@ data BuildMutation =
 data MutationResult s =
   MutationSuccess Candidate ManagedState s
   |
-  MutationUpdateBounds Package VersionRange
+  MutationUpdateBounds PackageId VersionRange
   |
   MutationKeep
   |

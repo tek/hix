@@ -68,7 +68,7 @@ import Hix.Data.Options (
   )
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
-import Hix.Data.Package (PackageName (PackageName))
+import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (
   ManagedConfig (ManagedConfig),

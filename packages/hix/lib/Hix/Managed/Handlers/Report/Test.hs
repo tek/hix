@@ -18,5 +18,5 @@ reportMutationsIORef out results =
 
 handlersUnitTest :: IO (ReportHandlers a, IORef [DepMutation a])
 handlersUnitTest = do
-  bumpsRef <- newIORef []
-  pure (handlersNull {mutations = reportMutationsIORef bumpsRef}, bumpsRef)
+  mutationsRef <- newIORef []
+  pure (handlersNull {mutations = reportMutationsIORef mutationsRef}, mutationsRef)

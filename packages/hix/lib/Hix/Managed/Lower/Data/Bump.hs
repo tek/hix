@@ -1,7 +1,7 @@
 module Hix.Managed.Lower.Data.Bump where
 
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Version (Version)
+import Hix.Data.Version (Version)
 import Exon (exon)
 import qualified Text.PrettyPrint as PrettyPrint
 import Text.PrettyPrint (brackets, (<+>))

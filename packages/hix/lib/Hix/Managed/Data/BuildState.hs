@@ -3,8 +3,9 @@ module Hix.Managed.Data.BuildState where
 import Distribution.Version (VersionRange)
 
 import Hix.Data.ManagedEnv (ManagedState)
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package), PackageName)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (NewRange (NewRange))
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.Candidate
@@ -29,15 +30,15 @@ buildStatus = \case
 data BuildSuccess =
   CandidateBuilt Candidate
   |
-  RangeUpdated Package VersionRange
+  RangeUpdated PackageId VersionRange
   |
   Unmodified PackageName
   deriving stock (Eq, Show, Generic)
 
 buildSuccessPackage :: BuildSuccess -> PackageName
 buildSuccessPackage = \case
-  CandidateBuilt Candidate {package = Package {name}} -> name
-  RangeUpdated Package {name} _ -> name
+  CandidateBuilt Candidate {package = PackageId {name}} -> name
+  RangeUpdated PackageId {name} _ -> name
   Unmodified name -> name
 
 modifiedCandidates :: [BuildSuccess] -> [Candidate]

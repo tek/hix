@@ -55,6 +55,5 @@ candidatesBump ::
   BumpHandlers ->
   [Dep] ->
   M [DepMutation Bump]
-candidatesBump handlers deps = do
-  bumps <- traverse (bumpDep handlers) deps
-  pure (catMaybes bumps)
+candidatesBump handlers deps =
+  catMaybes <$> traverse (bumpDep handlers) deps

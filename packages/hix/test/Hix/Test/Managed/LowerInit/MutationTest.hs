@@ -1,18 +1,14 @@
 module Hix.Test.Managed.LowerInit.MutationTest where
 
-import Data.Aeson (eitherDecodeStrict')
-import Data.IORef (IORef, readIORef)
+import Data.IORef (readIORef)
 import qualified Data.Text as Text
-import Distribution.Pretty (pretty)
-import Distribution.Version (Version, VersionRange, orLaterVersion, thisVersion)
 import Exon (exon)
 import Hedgehog (evalEither, evalMaybe, (===))
-import Path (relfile)
 
 import Hix.Class.Map ((!!))
 import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Data.ConfigDeps (ConfigDeps)
-import Hix.Data.Error (Error (Client, Fatal))
+import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
+import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigInit)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
@@ -21,134 +17,73 @@ import Hix.Data.ManagedEnv (
   ManagedEnvState (ManagedEnvState),
   ManagedLowerEnv (ManagedLowerEnv),
   )
-import Hix.Data.NixExpr (Expr)
 import qualified Hix.Data.Overrides
 import Hix.Data.Overrides (Override (Override))
-import Hix.Data.Package (PackageName (PackageName))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
-import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (
-  ManagedConfig (ManagedConfig),
-  ManagedOp (OpLowerInit),
-  StateFileConfig (StateFileConfig),
-  )
-import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
-import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
-import Hix.Managed.Handlers.Hackage (fetchHash)
-import Hix.Managed.Handlers.Lower (LowerHandlers (..), versions)
+import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpLowerInit))
+import Hix.Managed.Handlers.Lower (LowerHandlers (..))
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
-import qualified Hix.Managed.Handlers.Solve
-import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
-import Hix.Managed.Lower.Data.Lower (Lower)
 import Hix.Managed.Lower.Init (lowerInit)
+import Hix.Managed.Solve.Mock.SourcePackage (SourcePackages, allDep, allDeps)
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import qualified Hix.Test.Managed.Solver
-import Hix.Test.Managed.Solver (TestDeps (TestDeps), testSolver)
-import Hix.Test.Utils (UnitTest, runMLogTest, testRoot)
+import Hix.Test.Managed.Config (stateFileConfig)
+import Hix.Test.Utils (UnitTest, runMLogTest)
 
-depsConfig :: Either String ConfigDeps
-depsConfig =
-  eitherDecodeStrict' [exon|{
-    "local1": {
-      "library": {
-        "dependencies": [
-          "direct1",
-          "direct2 ^>=5.0",
-          "direct3 >=1.0 && < 1.5",
-          "direct4"
-        ]
-      }
-    },
-    "local2": {
-      "library": {
-        "dependencies": [
-          "local1",
-          "local3"
-        ]
-      }
-    },
-    "local3": {
-      "library": {
-        "dependencies": [
-          "direct1",
-          "local1"
-        ]
-      }
-    },
-    "local4": {
-      "library": {
-        "dependencies": [
-          "direct4"
-        ]
-      }
-    },
-    "local5": {
-      "library": {
-        "dependencies": [
-          "direct5"
-        ]
-      }
-    }
-  }|]
-
-fetchVersions :: PackageName -> M [Version]
-fetchVersions = \case
-  "direct1" -> pure [[1, 0, 3], [1, 0, 4], [1, 0, 5]]
-  "direct2" -> pure [[5, 0], [5, 0, 5]]
-  "direct3" -> pure [[0, 8], [1, 0, 1], [1, 3], [1, 4], [1, 5]]
-  "direct4" -> pure [[1, 0, 1], [1, 0, 2], [1, 0, 3], [1, 0, 4]]
-  "transitive1" -> pure [[1, 0, 1]]
-  "transitive2" -> pure [[1, 0, 1]]
-  "transitive3" -> pure [[1, 0, 1]]
-  "transitive4" -> pure [[1, 0, 1]]
-  "transitive5" -> pure [[1, 0, 1]]
-  "transitive6" -> pure [[1, 0, 1]]
-  "transitive7" -> pure [[1, 0, 1]]
-  package -> throwM (Client [exon|No such package: ##{package}|])
-
-fetchHashTest :: PackageName -> Version -> M SourceHash
-fetchHashTest (PackageName name) v =
-  pure (SourceHash [exon|#{name}-#{show (pretty v)}|])
-
-td :: Int -> (PackageName, VersionRange)
-td n =
-  ([exon|transitive#{show n}|], orLaterVersion [1, 0])
-
-direct2AsDep :: (PackageName, VersionRange)
-direct2AsDep =
-  ("direct2", thisVersion [5, 0, 5])
-
-byPackage :: Map PackageName [(PackageName, VersionRange)]
-byPackage =
-  [
-    ("direct1", [td 3]),
-    ("direct2", [td 5]),
-    ("direct4", [direct2AsDep, td 6])
+deps :: ConfigDeps
+deps =
+  configLibDeps [
+    ("local1", [
+      "direct1",
+      "direct2 ^>=5.0",
+      "direct3 >=1.0 && < 1.5",
+      "direct4"
+    ]),
+    ("local2", ["local1", "local3"]),
+    ("local3", ["direct1", "local1"]),
+    ("local4", ["direct4"]),
+    ("local5", ["direct5"])
   ]
 
-byVersion :: Map (PackageName, Version) [(PackageName, VersionRange)]
-byVersion =
+packages :: SourcePackages
+packages =
   [
-    (("direct1", [1, 0, 5]), [td 2])
+    ("direct1", [
+      ([1, 0, 3], ["transitive1 >=1"]),
+      ([1, 0, 4], ["transitive1 >=1"]),
+      ([1, 0, 5], ["transitive2 >=1"])
+    ]),
+    ("direct2", allDep "transitive3 >=1" [
+      ([5, 0], []),
+      ([5, 0, 5], [])
+    ]),
+    ("direct3", [
+      ([0, 8], []),
+      ([1, 0, 1], []),
+      ([1, 3], []),
+      ([1, 4], []),
+      ([1, 5], [])
+    ]),
+    ("direct4", allDeps ["direct2 ==5.0.5", "transitive4 >=1"] [
+      ([1, 0, 1], []),
+      ([1, 0, 2], []),
+      ([1, 0, 3], []),
+      ([1, 0, 4], [])
+    ]),
+    ("transitive1", [([1, 0, 1], [])]),
+    ("transitive2", [([1, 0, 1], [])]),
+    ("transitive3", [([1, 0, 1], [])]),
+    ("transitive4", [([1, 0, 1], [])])
   ]
 
-testDeps :: TestDeps
-testDeps =
-  TestDeps {
-    fetchVersions,
-    byPackage,
-    byVersion
-  }
-
-buildWithState :: Versions -> M BuildStatus
-buildWithState = \case
+buildVersions :: Versions -> M BuildStatus
+buildVersions = \case
   versions
     | Just [1, 0, n] <- versions !! "direct1"
     , n /= 5
@@ -157,22 +92,8 @@ buildWithState = \case
     | Just [1, 0, n] <- versions !! "direct4"
     , n /= 3
     -> pure Failure
-  [("direct1", [1, 0, 5]), ("direct2", [5, 0, 5]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, 3]), ("transitive2", [1, 0, 1]), ("transitive5", [1, 0, 1]), ("transitive6", [1, 0, 1])] -> pure Success
-  versions -> throwM (Fatal [exon|Unexpected overrides: #{showP versions}|])
-
-handlersTest :: IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
-handlersTest = do
-  (build, stateFileRef) <- BuildHandlers.handlersUnitTest
-  (handlers, bumpsRef) <- LowerHandlers.handlersUnitTest
-  let handlers' = handlers {
-    solve = \ _ -> pure SolveHandlers {solveForVersion = testSolver testDeps},
-    build = build {
-      withBuilder = versionsBuilder buildWithState,
-      hackage = build.hackage {fetchHash = fetchHashTest}
-    },
-    versions = fetchVersions
-  }
-  pure (handlers', stateFileRef, bumpsRef)
+  [("direct1", [1, 0, 5]), ("direct2", [5, 0, 5]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, 3]), ("transitive2", [1, 0, 1]), ("transitive3", [1, 0, 1]), ("transitive4", [1, 0, 1])] -> pure Success
+  versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
 
 initialState :: ManagedEnvState
 initialState =
@@ -238,13 +159,13 @@ stateFileTarget =
         version = "1.0.1";
         hash = "transitive2-1.0.1";
       };
-      transitive5 = {
+      transitive3 = {
         version = "1.0.1";
-        hash = "transitive5-1.0.1";
+        hash = "transitive3-1.0.1";
       };
-      transitive6 = {
+      transitive4 = {
         version = "1.0.1";
-        hash = "transitive6-1.0.1";
+        hash = "transitive4-1.0.1";
       };
     };
   };
@@ -299,8 +220,7 @@ logTarget =
 --   normalization), and @direct5@ should never appear int the solver and build deps.
 test_lowerInitMutation :: UnitTest
 test_lowerInitMutation = do
-  deps <- leftA fail depsConfig
-  (handlers, stateFileRef, _) <- liftIO handlersTest
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packages)
   let
     env =
       ManagedEnv {
@@ -314,16 +234,12 @@ test_lowerInitMutation = do
       ManagedConfig {
         operation = OpLowerInit,
         ghc = Nothing,
-        stateFile = StateFileConfig {
-          file = [relfile|ops/managed.nix|],
-          updateProject = True,
-          projectRoot = Just testRoot
-        },
+        stateFile = stateFileConfig,
         envs = ["lower-main"],
         targetBound = TargetLower
       }
   (log, result) <- liftIO do
-    runMLogTest False $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
+    runMLogTest False True $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
       Right <$> lowerInit handlers lowerConfigInit def app
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)

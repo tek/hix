@@ -4,8 +4,8 @@ import Data.Aeson (FromJSON, ToJSON)
 import Data.List.Extra (nubOrd, nubOrdOn)
 import qualified Data.Text as Text
 
-import qualified Hix.Data.Package
-import Hix.Data.Package (PackageName (PackageName))
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Data.BuildResult (failedMutations, successCandidates, unmodifiedDeps)
 import qualified Hix.Managed.Data.BuildResults

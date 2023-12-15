@@ -6,8 +6,8 @@ import qualified Data.Set as Set
 import qualified Hix.Data.Bounds
 import Hix.Data.Bounds (RemovableBounds (RemovableBounds))
 import Hix.Data.ManagedEnv (ManagedState)
-import qualified Hix.Data.Package
-import Hix.Data.Package (PackageName)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageName (PackageName)
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation)
 import qualified Hix.Managed.Data.BuildState

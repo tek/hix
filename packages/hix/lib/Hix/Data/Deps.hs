@@ -4,7 +4,7 @@ import Distribution.Pretty (Pretty (pretty))
 
 import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, ntPretty, ntPretty1)
 import Hix.Data.Dep (Dep)
-import Hix.Data.Package (LocalPackage, PackageName)
+import Hix.Data.PackageName (LocalPackage, PackageName)
 
 newtype Deps =
   Deps (Map PackageName Dep)

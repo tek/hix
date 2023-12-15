@@ -37,6 +37,8 @@ instance Lookup LookupMaybe v (Maybe v) where
   l
 (!!) m k = lookup @sort @v @l (coerce m !? k)
 
+infixl !!
+
 ntInsert ::
   ∀ map k v sort .
   NtMap map k v sort =>
@@ -145,16 +147,25 @@ convertWithKeyMaybe f =
   Map.toList .
   ntMap
 
+ntPrettyWith ::
+  Pretty k =>
+  NtMap map k v sort =>
+  (v -> Doc) ->
+  map ->
+  Doc
+ntPrettyWith prettyV (ntMap -> m) =
+  sep (punctuate comma (assoc <$> Map.toList m))
+  where
+    assoc (k, v) = pretty k <+> "->" <+> prettyV v
+
 ntPretty ::
   Pretty k =>
   Pretty v =>
   NtMap map k v sort =>
   map ->
   Doc
-ntPretty (ntMap -> m) =
-  sep (punctuate comma (assoc <$> Map.toList m))
-  where
-    assoc (k, v) = pretty k <+> "->" <+> pretty v
+ntPretty =
+  ntPrettyWith pretty
 
 ntPretty1 ::
   Pretty k =>
@@ -284,6 +295,49 @@ ntTo ::
 ntTo m f =
   fmap (uncurry f) (ntList m)
 
+ntToWith ::
+  NtMap map k v sort =>
+  (k -> v -> a) ->
+  map ->
+  [a]
+ntToWith = flip ntTo
+
+ntConcat ::
+  NtMap map k v sort =>
+  map ->
+  (k -> v -> [a]) ->
+  [a]
+ntConcat m f =
+  uncurry f =<< ntList m
+
+ntConcatWith ::
+  NtMap map k v sort =>
+  (k -> v -> [a]) ->
+  map ->
+  [a]
+ntConcatWith =
+  flip ntConcat
+
+ntTo1 ::
+  ∀ map1 map2 k1 k2 v s1 s2 a .
+  NtMap map1 k1 map2 s1 =>
+  NtMap map2 k2 v s2 =>
+  map1 ->
+  (k1 -> k2 -> v -> a) ->
+  [a]
+ntTo1 m1 f =
+  ntConcat m1 (ntToWith . f)
+
+ntToWith1 ::
+  ∀ map1 map2 k1 k2 v s1 s2 a .
+  NtMap map1 k1 map2 s1 =>
+  NtMap map2 k2 v s2 =>
+  (k1 -> k2 -> v -> a) ->
+  map1 ->
+  [a]
+ntToWith1 f =
+  ntConcatWith (ntToWith . f)
+
 ntFromKeys ::
   NtMap map k v sort =>
   [k] ->
@@ -334,3 +388,10 @@ ntFlatten ::
   map2
 ntFlatten =
   mconcat . Map.elems . ntMap
+
+ntKeys ::
+  NtMap map k v sort =>
+  map ->
+  [k]
+ntKeys =
+  Map.keys . ntMap

@@ -10,8 +10,10 @@ import Distribution.Solver.Types.InstalledPreference (InstalledPreference (Prefe
 import Distribution.Version (thisVersion)
 
 import Hix.Class.Map (ntTo)
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package), PackageName, packageNameToCabal)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
+import qualified Hix.Data.PackageName as PackageName
+import Hix.Data.PackageName (PackageName)
 import Hix.Managed.Data.ManagedConfig (ManagedOp)
 import qualified Hix.Managed.Data.SolverParams
 import Hix.Managed.Data.SolverParams (PackageParams, SolverParams, packageParamsRange)
@@ -35,14 +37,14 @@ cabalTarget op package params =
     pref | params.oldest = Just (PackageInstalledPreference cabalName PreferOldest)
          | otherwise = Nothing
 
-    cabalName = packageNameToCabal package
+    cabalName = PackageName.toCabal package
 
 cabalTargets :: ManagedOp -> SolverParams -> [CabalTarget]
 cabalTargets op params =
   ntTo params (cabalTarget op)
 
-candidateTarget :: Package -> CabalTarget
-candidateTarget Package {name, version} =
+candidateTarget :: PackageId -> CabalTarget
+candidateTarget PackageId {name, version} =
   CabalTarget {dep = NamedPackage cabalName [PackagePropertyVersion (thisVersion version)], pref = Nothing}
   where
-    cabalName = packageNameToCabal name
+    cabalName = PackageName.toCabal name

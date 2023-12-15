@@ -5,7 +5,6 @@ import qualified Data.Set as Set
 import qualified Distribution.Client.SolverInstallPlan as SolverInstallPlan
 import Distribution.Client.SolverInstallPlan (ResolverPackage (Configured, PreExisting), SolverInstallPlan)
 import Distribution.InstalledPackageInfo (InstalledPackageInfo (..))
-import Distribution.Package (PackageIdentifier (PackageIdentifier))
 import Distribution.Pretty (pretty)
 import Distribution.Solver.Types.InstSolverPackage (InstSolverPackage (..))
 import Distribution.Solver.Types.SolverPackage (SolverPackage (..))
@@ -14,8 +13,9 @@ import Exon (exon)
 import Text.PrettyPrint (hsep)
 
 import Hix.Data.Monad (M)
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package), PackageName, packageNameFromCabal)
+import qualified Hix.Data.PackageId as PackageId
+import Hix.Data.PackageId (PackageId)
+import Hix.Data.PackageName (PackageName)
 import qualified Hix.Log as Log
 import Hix.Pretty (showPL)
 
@@ -24,10 +24,10 @@ data SolverPlan =
     -- | Deps whose versions differ from those in the package db, i.e. where the GHC set from nixpkgs has a different
     -- version.
     -- We need to add Nix overrides for these.
-    overrides :: [Package],
+    overrides :: [PackageId],
     -- | Versions that match those in the package db.
     -- We don't need to add Nix overrides for these.
-    matching :: [Package]
+    matching :: [PackageId]
   }
   deriving stock (Eq, Show, Generic)
 
@@ -40,24 +40,22 @@ solverPlan plan =
     (overrides, matching) = partitionEithers (mkVersion <$> SolverInstallPlan.toList plan)
 
     mkVersion = \case
-      Configured SolverPackage {solverPkgSource = SourcePackage {srcpkgPackageId = PackageIdentifier name version}} ->
-        Left Package {name = packageNameFromCabal name, version}
-      PreExisting InstSolverPackage {
-        instSolverPkgIPI = InstalledPackageInfo {sourcePackageId = PackageIdentifier name version}
-      } ->
-        Right Package {name = packageNameFromCabal name, version}
+      Configured SolverPackage {solverPkgSource = SourcePackage {srcpkgPackageId}} ->
+        Left (PackageId.fromCabal srcpkgPackageId)
+      PreExisting InstSolverPackage {instSolverPkgIPI = InstalledPackageInfo {sourcePackageId}} ->
+        Right (PackageId.fromCabal sourcePackageId)
 
 data SolverChanges =
   SolverChanges {
-    overrides :: [Package],
-    projectDeps :: [Package]
+    overrides :: [PackageId],
+    projectDeps :: [PackageId]
   }
   deriving stock (Eq, Show, Generic)
 
 changedDeps ::
   Set PackageName ->
   SolverPlan ->
-  ([Package], [Package])
+  ([PackageId], [PackageId])
 changedDeps allDeps SolverPlan {..} =
   (overrides, filter isDep allVersions)
   where

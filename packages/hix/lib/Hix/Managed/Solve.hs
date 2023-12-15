@@ -23,8 +23,8 @@ import Exon (exon)
 import Hix.Class.Map (via)
 import Hix.Data.Dep (Dep, renderDep)
 import Hix.Data.Error (Error (Fatal))
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Data.CabalTarget
 import Hix.Managed.Data.CabalTarget (CabalTarget, cabalTargets, candidateTarget)
@@ -33,7 +33,7 @@ import Hix.Managed.Data.SolverParams (SolverParams)
 import Hix.Managed.Solve.Changes (SolverPlan, solverPlan)
 import qualified Hix.Managed.Solve.Config
 import qualified Hix.Managed.Solve.Resources
-import Hix.Managed.Solve.Resources (SolveResources (SolveResources))
+import Hix.Managed.Solve.Resources (SolveResources)
 import Hix.Monad (M, tryIOMAs)
 import Hix.Pretty (showP)
 
@@ -62,15 +62,15 @@ solveSpecifiers ::
   [PackageSpecifier UnresolvedSourcePackage] ->
   [PackagePreference] ->
   IO (Either String SolverInstallPlan)
-solveSpecifiers SolveResources {..} pkgSpecifiers prefs =
-  foldProgress (logMsg conf.verbosity) (pure . Left) (pure . Right) $
-  resolveDependencies platform compiler pkgConfigDb Modular params
+solveSpecifiers res pkgSpecifiers prefs =
+  foldProgress (logMsg res.conf.verbosity) (pure . Left) (pure . Right) $
+  resolveDependencies res.platform res.compiler res.pkgConfigDb Modular params
   where
     params =
-      solverParams $
-      setAllowBootLibInstalls (AllowBootLibInstalls conf.allowBoot) $
+      res.solverParams $
+      setAllowBootLibInstalls (AllowBootLibInstalls res.conf.allowBoot) $
       addPreferences prefs $
-      standardInstallPolicy installedPkgIndex sourcePkgDb pkgSpecifiers
+      standardInstallPolicy res.installedPkgIndex res.sourcePkgDb pkgSpecifiers
 
 solveTargets ::
   SolveResources ->
@@ -86,7 +86,7 @@ solveWithCabal ::
   SolveResources ->
   ManagedOp ->
   SolverParams ->
-  Package ->
+  PackageId ->
   M (Maybe SolverPlan)
 solveWithCabal solveResources op solverParams newVersion =
   solveTargets solveResources targets >>= \case

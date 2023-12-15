@@ -1,7 +1,6 @@
 module Hix.Test.Managed.LowerNativeTest where
 
 import Control.Monad.Trans.Reader (ask)
-import Data.Aeson (eitherDecodeStrict')
 import qualified Data.Text.IO as Text
 import Exon (exon)
 import Hedgehog (evalEither)
@@ -9,7 +8,7 @@ import Path (Abs, Dir, File, Path, Rel, parent, reldir, relfile, toFilePath, (</
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Data.ConfigDeps (ConfigDeps)
+import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
 import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), defaultLowerConfig)
 import qualified Hix.Data.ManagedEnv
@@ -54,24 +53,11 @@ import Hix.Test.Utils (UnitTest, runMTest)
 -- reaching optimize.
 -- But when it is set to 2.1, the build succeeds during init.
 -- in the former case, there are a few more overrides added from the solver plan.
-depsConf :: Either String ConfigDeps
-depsConf =
-  eitherDecodeStrict' [exon|{
-    "root": {
-      "library": {
-        "dependencies": [
-          {
-            "name": "aeson",
-            "version": ">=2.2 && <2.3"
-          },
-          {
-            "name": "extra",
-            "version": ">=1.6 && <1.8"
-          }
-        ]
-      }
-    }
-  }|]
+deps :: ConfigDeps
+deps =
+  configLibDeps [
+    ("root", ["aeson >=2.2 && <2.3", "extra >=1.6 && <1.8"])
+  ]
 
 flake :: Path Abs Dir -> Text
 flake hixRoot =
@@ -257,7 +243,6 @@ targetStateFileOptimize =
 
 test_lowerNative :: UnitTest
 test_lowerNative = do
-  deps <- leftA fail depsConf
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
     runMTest True do
       root <- setupProject
@@ -290,10 +275,8 @@ test_lowerNative = do
           }
         confOptimize = confInit {operation = OpLowerOptimize}
         lowerInitConf = LowerInitConfig {reset = False}
-        lowerConfInit =
-          defaultLowerConfig True MutationFailed
-        lowerConfOptimize =
-          defaultLowerConfig False MutationKeep
+        lowerConfInit = defaultLowerConfig True MutationFailed
+        lowerConfOptimize = defaultLowerConfig False MutationKeep
 
       let stateFile = root </> [relfile|ops/managed.nix|]
       env1 <- managedApp handlersInit.build env confInit \ app -> do

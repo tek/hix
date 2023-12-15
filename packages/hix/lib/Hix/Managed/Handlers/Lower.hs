@@ -1,9 +1,9 @@
 module Hix.Managed.Handlers.Lower where
 
-import Distribution.Version (Version)
+import Hix.Data.Version (Version)
 
 import Hix.Data.Monad (M)
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import qualified Hix.Managed.Handlers.Build as Build
 import Hix.Managed.Handlers.Build (BuildHandlers, EnvBuilder)
 import qualified Hix.Managed.Handlers.Report as Report

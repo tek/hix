@@ -5,7 +5,7 @@ import Exon (exon)
 
 import Hix.Data.Error (Error (Client))
 import Hix.Data.ManagedEnv (BuildOutputsPrefix)
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import Hix.Managed.Handlers.Bump (BumpHandlers (..))
 import Hix.Managed.Handlers.Bump.Prod (handlersProd)

@@ -10,7 +10,7 @@ import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, ntPretty, ntPretty1, (!!))
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Json (JsonParsec (JsonParsec))
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (SourceHash)
 
 data Override =

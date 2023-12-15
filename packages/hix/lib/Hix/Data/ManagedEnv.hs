@@ -12,7 +12,7 @@ import Hix.Data.Bounds (Bounds, TargetBounds)
 import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Overrides (EnvOverrides, Overrides)
-import Hix.Data.Package (LocalPackage)
+import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (EnvVersions)
 
 data ManagedState =

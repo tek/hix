@@ -1,9 +1,10 @@
 module Hix.Data.ComponentConfig where
 
 import Data.Aeson (FromJSON (parseJSON), FromJSONKey, withObject, (.:))
+import Distribution.Pretty (Pretty (pretty))
 import Path (Abs, Dir, File, Path, Rel)
 
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 
 newtype PackagePath =
   PackagePath { unPackagePath :: Path Rel Dir }
@@ -34,6 +35,9 @@ newtype ComponentName =
   ComponentName { unComponentName :: Text }
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
+
+instance Pretty ComponentName where
+  pretty (ComponentName n) = fromString (toString n)
 
 newtype EnvRunner =
   EnvRunner (Path Abs File)

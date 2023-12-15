@@ -31,6 +31,13 @@ data SolveFlags =
     main :: NixStyleFlags ()
   }
 
+emptySolveFlags :: SolveFlags
+emptySolveFlags =
+  SolveFlags {
+    global = defaultGlobalFlags {globalConfigFile = toFlag "/dev/null"},
+    main = defaultNixStyleFlags ()
+  }
+
 hackageRepo ::
   HackageRepoName ->
   M RemoteRepo

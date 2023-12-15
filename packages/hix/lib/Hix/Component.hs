@@ -19,7 +19,7 @@ import Hix.Data.ComponentConfig (
 import Hix.Data.Error (Error (EnvError))
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (ComponentCoords, ComponentSpec (ComponentSpec), PackageSpec (PackageSpec), TargetSpec (..))
-import Hix.Data.Package (PackageName (PackageName))
+import Hix.Data.PackageName (PackageName (PackageName))
 import Hix.Error (pathText)
 import Hix.Monad (M, noteEnv, throwM)
 import Hix.Path (rootDir)

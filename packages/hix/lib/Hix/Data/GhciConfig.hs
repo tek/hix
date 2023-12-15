@@ -4,7 +4,7 @@ import Data.Aeson (FromJSON, FromJSONKey)
 import GHC.Exts (IsList)
 
 import Hix.Data.ComponentConfig (EnvRunner, PackagesConfig)
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 
 newtype RunnerName =
   RunnerName { unRunnerName :: Text }

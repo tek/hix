@@ -17,7 +17,7 @@ import Hix.Data.ConfigDeps (
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep, withVersion)
 import Hix.Data.Deps (TargetDeps)
-import Hix.Data.Package (LocalPackage, PackageName, localPackageName)
+import Hix.Data.PackageName (LocalPackage, PackageName, localPackageNames)
 import Hix.Managed.Data.Targets (Targets, getTargets)
 import Hix.Monad (M, noteClient)
 
@@ -40,12 +40,12 @@ depsFromConfig confDeps targets = do
     notLocal dep = not (Set.member dep.package localNames)
 
     localNames :: Set PackageName
-    localNames = Set.fromList (localPackageName <$> Map.keys confDeps)
+    localNames = Set.fromList (localPackageNames (Map.keys confDeps))
 
     targetsSet = Set.fromList targets
 
     notFound :: LocalPackage -> Text
-    notFound pkg = [exon|Package '##{pkg}' not found in the flake config|]
+    notFound pkg = [exon|PackageId '##{pkg}' not found in the flake config|]
 
 withManagedRanges ::
   TargetBounds ->

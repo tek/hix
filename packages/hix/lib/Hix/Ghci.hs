@@ -36,7 +36,7 @@ import Hix.Data.Options (
   TargetSpec (TargetForFile),
   TestOptions (TestOptions),
   )
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import Hix.Json (jsonConfigE)
 import Hix.Monad (M, noteGhci)
 import Hix.Path (rootDir)

@@ -11,7 +11,7 @@ import qualified Data.Set as Set
 
 import qualified Hix.Data.Dep
 import Hix.Data.Deps (Deps (Deps), TargetDeps (TargetDeps))
-import Hix.Data.Package (LocalPackage (LocalPackage))
+import Hix.Data.PackageName (LocalPackage (LocalPackage))
 
 newtype Targets =
   UnsafeTargets [LocalPackage]

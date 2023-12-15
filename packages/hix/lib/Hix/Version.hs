@@ -4,7 +4,6 @@ module Hix.Version where
 
 import Data.List.Extra (groupOnKey)
 import Data.List.NonEmpty.Extra (foldl1')
-import Distribution.Parsec (eitherParsec)
 import Distribution.Version (
   Bound (ExclusiveBound, InclusiveBound),
   LowerBound (LowerBound),
@@ -24,16 +23,9 @@ import Distribution.Version (
   version0,
   versionNumbers,
   )
-import Exon (exon)
 
 import qualified Hix.Data.Version
-import Hix.Data.Version (Major (Major))
-
-unsafeRange :: Text -> VersionRange
-unsafeRange spec =
-  either crash id (eitherParsec (toString spec))
-  where
-    crash err = error ([exon|Version range parse error for #{toString spec}: #{err}|])
+import Hix.Data.Version (Major (Major), range0)
 
 rangeFromInterval :: VersionInterval -> VersionRange
 rangeFromInterval (VersionInterval (LowerBound lowerV lowerB) upper) =
@@ -53,7 +45,7 @@ rangeFromInterval (VersionInterval (LowerBound lowerV lowerB) upper) =
 
 rangeFromIntervals :: [VersionInterval] -> VersionRange
 rangeFromIntervals = \case
-  [] -> laterVersion version0
+  [] -> range0
   h : t -> foldl1' unionVersionRanges (rangeFromInterval <$> (h :| t))
 
 -- TODO check what to do with exclusivity

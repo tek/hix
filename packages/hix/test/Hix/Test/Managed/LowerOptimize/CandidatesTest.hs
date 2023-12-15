@@ -9,8 +9,9 @@ import Hix.Data.Error (Error (Client))
 import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package), PackageName)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (NewRange (NewRange))
 import Hix.Managed.Build.Mutation (MutationResult (MutationSuccess))
 import qualified Hix.Managed.Data.Candidate
@@ -76,7 +77,7 @@ test_candidatesOptimize = do
 
     candidate =
       Candidate {
-        package = Package {name = package, version = candidateVersion},
+        package = PackageId {name = package, version = candidateVersion},
         range = NewRange (orLaterVersion candidateVersion)
       }
 

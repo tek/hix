@@ -20,7 +20,6 @@
 
     nix run .#lower.optimize.main -- --root $PWD || fail 'lower.optimize failed'
 
-    cat ops/managed.nix
     check_diff ${./state-optimize.nix} 'ops/managed.nix' 'ops/managed.nix is wrong after optimize'
   '';
 }

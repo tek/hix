@@ -83,21 +83,27 @@ logIORef :: IORef [Text] -> LogLevel -> Text -> IO ()
 logIORef ref _ msg =
   modifyIORef' ref (msg :)
 
-runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
-runMLogWith GlobalOptions {..} ma = do
+withLogIORef :: ((LogLevel -> Text -> IO ()) -> IO a) -> IO ([Text], a)
+withLogIORef use = do
   logRef <- newIORef []
-  withSystemTempDir "hix-cli" \ tmp -> do
-    result <- runExceptT (runReaderT ma Env {logger = logWith (logIORef logRef), ..})
-    log <- readIORef logRef
-    pure (log, result)
+  result <- use (logIORef logRef)
+  log <- readIORef logRef
+  pure (log, result)
+
+runMLoggerWith :: (LogLevel -> Text -> IO ()) -> GlobalOptions -> M a -> IO (Either Error a)
+runMLoggerWith logger GlobalOptions {..} ma =
+  withSystemTempDir "hix-cli" \ tmp ->
+    runExceptT (runReaderT ma Env {logger = logWith logger, ..})
+
+runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
+runMLogWith opts ma =
+  withLogIORef \ logger -> runMLoggerWith logger opts ma
 
 runMLog :: Path Abs Dir -> M a -> IO ([Text], Either Error a)
 runMLog = runMLogWith . defaultGlobalOptions
 
 runMWith :: GlobalOptions -> M a -> IO (Either Error a)
-runMWith GlobalOptions {..} ma =
-  withSystemTempDir "hix-cli" \ tmp ->
-    runExceptT (runReaderT ma Env {logger = logWith (const Console.err), ..})
+runMWith = runMLoggerWith (const Console.err)
 
 runM :: Path Abs Dir -> M a -> IO (Either Error a)
 runM = runMWith . defaultGlobalOptions

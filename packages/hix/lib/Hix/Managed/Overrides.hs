@@ -4,22 +4,23 @@ import qualified Data.Map.Strict as Map
 
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Override (..), Overrides (Overrides))
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package), PackageName)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
+import Hix.Data.PackageName (PackageName)
 import qualified Hix.Managed.Handlers.Hackage
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
 
 newVersionOverride ::
   HackageHandlers ->
-  Package ->
+  PackageId ->
   M (PackageName, Override)
-newVersionOverride handlers Package {..} = do
-  hash <- handlers.fetchHash name version
+newVersionOverride handlers package@PackageId {name, version} = do
+  hash <- handlers.fetchHash package
   pure (name, Override {..})
 
 newVersionOverrides ::
   HackageHandlers ->
-  [Package] ->
+  [PackageId] ->
   M Overrides
 newVersionOverrides handlers versions =
   Overrides . Map.fromList <$> traverse (newVersionOverride handlers) versions

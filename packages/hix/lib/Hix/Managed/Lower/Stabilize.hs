@@ -7,8 +7,8 @@ import Hix.Data.LowerConfig (LowerConfig)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
 import Hix.Data.Monad (M)
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package))
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
 import Hix.Managed.Data.BuildResult (BuildResult (FatalBuildFailure, NoActionRequired))
 import Hix.Managed.Data.BuildResults (BuildResults)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
@@ -39,7 +39,7 @@ lowerInitState app job state = do
   overrides <- newVersionOverrides app.build.hackage newVersions
   pure ManagedState {bounds = state.bounds, overrides}
   where
-    newVersions = ntTo job.lowerInit \ name version -> Package {..}
+    newVersions = ntTo job.lowerInit \ name version -> PackageId {..}
 
 lowerStabilizeEnv ::
   LowerHandlers ->

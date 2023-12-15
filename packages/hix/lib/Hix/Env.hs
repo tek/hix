@@ -10,7 +10,7 @@ import Hix.Error (Error (EnvError), pathText)
 import qualified Hix.Data.GhciConfig
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (EnvRunnerOptions, TargetSpec)
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import Hix.Json (jsonConfigE)
 import Hix.Data.Monad (M)
 

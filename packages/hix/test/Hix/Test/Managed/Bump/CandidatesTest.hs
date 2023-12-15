@@ -7,7 +7,7 @@ import Hedgehog (evalEither, (===))
 
 import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.Error (Error (Client))
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (NewRange (NewRange, OldRange))
 import Hix.Deps (allDeps, depsFromConfig, forTargets)
 import qualified Hix.Managed.Build.Mutation
@@ -120,10 +120,10 @@ target =
 test_candidatesBump :: UnitTest
 test_candidatesBump = do
   cdeps <- leftA fail depsConfig
-  bumps <- evalEither =<< liftIO do
+  mutations <- evalEither =<< liftIO do
     runMTest False do
       configDeps <- depsFromConfig cdeps ["panda"]
       let targetDeps = forTargets "panda" configDeps
       let deps = allDeps targetDeps
       candidatesBump handlersTest deps
-  sortOn (.package) target === sortOn (.package) (toList bumps)
+  sortOn (.package) target === sortOn (.package) (toList mutations)

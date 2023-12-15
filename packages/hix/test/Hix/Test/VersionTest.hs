@@ -25,7 +25,7 @@ import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 
 import qualified Hix.Data.Version
-import Hix.Data.Version (Major (Major))
+import Hix.Data.Version (Major (Major), range0)
 import Hix.Pretty (showP)
 import Hix.Test.Utils (UnitTest, unitTest)
 import Hix.Version (
@@ -81,7 +81,7 @@ test_setLowerBound = do
   range3 === setLowerBound [2, 1] (thisVersion [2, 3])
   [[2, 1]] === setLowerBound [2, 1] (laterVersion [2, 2])
   range2 === setLowerBound [2, 1] (earlierVersion [2, 3])
-  [[2, 1]] === setLowerBound [2, 1] (laterVersion version0)
+  [[2, 1]] === setLowerBound [2, 1] range0
   [[2, 1], [2, 3], [2, 4], [3, 5]] === setLowerBound [2, 1] [[2, 2], [2, 3], [2, 4], [3, 5]]
   [[1, 4], [1, 5], [2, 1], [2, 4]] === setLowerBound [2, 1] [[1, 4], [1, 5], [2, 2], [2, 4]]
   [[1, 4], [2, 4]] === setLowerBound [2, 1] [[1, 4], [2, 1], [2, 3], [2, 4]]

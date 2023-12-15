@@ -1,6 +1,6 @@
 module Hix.Managed.Data.CurrentBuild where
 
-import Hix.Data.Package (LocalPackage)
+import Hix.Data.PackageName (LocalPackage)
 
 data CurrentBuild =
   CurrentBuild {

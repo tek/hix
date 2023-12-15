@@ -28,7 +28,7 @@ import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec))
 import Hix.Data.Monad (M)
 import Hix.Data.Options (PreprocOptions (..), TargetSpec (TargetForFile))
-import Hix.Data.Package (PackageName (PackageName))
+import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Error (Error (..), sourceError, tryIO)

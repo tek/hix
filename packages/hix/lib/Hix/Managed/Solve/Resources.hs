@@ -2,12 +2,11 @@ module Hix.Managed.Solve.Resources where
 
 import Control.Monad.Trans.Reader (asks)
 import Distribution.Client.Dependency (DepResolverParams)
-import Distribution.Client.IndexUtils (getSourcePackages)
+import Distribution.Client.IndexUtils (getInstalledPackages, getSourcePackages)
 import qualified Distribution.Client.NixStyleOptions
 import Distribution.Client.Setup (configCompilerAux', withRepoContext)
 import Distribution.Client.Types (SourcePackageDb)
 import Distribution.Simple (CompilerInfo, PackageDB (GlobalPackageDB), PackageDBStack, compilerInfo)
-import Distribution.Simple.GHC (getInstalledPackages)
 import Distribution.Simple.PackageIndex (InstalledPackageIndex)
 import Distribution.Solver.Types.PkgConfigDb (PkgConfigDb, readPkgConfigDb)
 import Distribution.System (Platform)

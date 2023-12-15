@@ -9,8 +9,8 @@ import Hix.Class.Map (ntFromList, ntMap, ntUpdating)
 import Hix.Data.Bounds (BoundExtension (LowerBoundExtension, UpperBoundExtension), BoundExtensions)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package))
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation))
@@ -33,8 +33,8 @@ import Hix.Pretty (showP)
 --
 -- TODO this would be easier for stabilize if we'd toposort the dependencies.
 -- Does Cabal have an interface for that?
-updateSolverParams :: ManagedOp -> Candidate -> Package -> SolverParams -> SolverParams
-updateSolverParams op Candidate {package = Package {name = candidate}} Package {name, version} =
+updateSolverParams :: ManagedOp -> Candidate -> PackageId -> SolverParams -> SolverParams
+updateSolverParams op Candidate {package = PackageId {name = candidate}} PackageId {name, version} =
   -- TODO ntAmend
   ntUpdating name \ old -> newParams <> old
   where
@@ -51,16 +51,16 @@ updateSolverParams op Candidate {package = Package {name = candidate}} Package {
 
     isCandidate = candidate == name
 
-logStart :: Package -> SolverParams -> M ()
+logStart :: PackageId -> SolverParams -> M ()
 logStart version params = do
   Log.debug [exon|Starting solver build for '#{showP version}'|]
   Log.debug [exon|Solver params: #{showP params}|]
 
-directBounds :: ManagedOp -> [Package] -> BoundExtensions
+directBounds :: ManagedOp -> [PackageId] -> BoundExtensions
 directBounds op versions =
   ntFromList (extension <$> versions)
   where
-    extension Package {name, version} = (name, cons version)
+    extension PackageId {name, version} = (name, cons version)
     cons | OpBump <- op = UpperBoundExtension
          | otherwise = LowerBoundExtension
 

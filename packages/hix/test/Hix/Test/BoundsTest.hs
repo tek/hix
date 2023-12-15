@@ -11,7 +11,7 @@ import Hix.Data.Bounds (Bounds, TargetBounds)
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (mainDep)
 import Hix.Data.Deps (Deps, TargetDeps)
-import Hix.Data.Package (LocalPackage, PackageName)
+import Hix.Data.PackageName (LocalPackage, PackageName)
 import Hix.Deps (depsToTargetBounds, withManagedRanges)
 
 packages :: [PackageName]

@@ -7,8 +7,9 @@ import qualified Hix.Data.Bounds
 import Hix.Data.Bounds (RemovableBounds)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package), PackageName)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (NewRange, renderNewRange)
 import qualified Hix.Log as Log
 import Hix.Managed.Build.Mutation (DepMutation, RenderMutation (renderMutation))
@@ -28,7 +29,7 @@ listPkg package version range =
   [exon|📦 ##{package} #{version} [#{renderNewRange range}]|]
 
 listSuccess :: Candidate -> Text
-listSuccess Candidate {package = Package {name, version}, range} =
+listSuccess Candidate {package = PackageId {name, version}, range} =
   listPkg name (showP version) range
 
 listFailed ::

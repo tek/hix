@@ -18,7 +18,7 @@ import Hix.Class.Map (LookupMonoid, NtMap, convert, ntFromList, ntPretty, (!!))
 import Hix.Data.Bounds (Bounds)
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep)
-import Hix.Data.Package (PackageName)
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
 import Hix.Version (lowerBound, upperVersion)

@@ -5,14 +5,14 @@ import Distribution.Pretty (Pretty (pretty))
 import Text.PrettyPrint (brackets, (<+>))
 
 import Hix.Data.Json (jsonParsec)
-import qualified Hix.Data.Package
-import Hix.Data.Package (Package (Package))
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
 import Hix.Data.Version (NewRange, renderNewRange)
 import Hix.Pretty (showP)
 
 data Candidate =
   Candidate {
-    package :: Package,
+    package :: PackageId,
     range :: NewRange
   }
   deriving stock (Eq, Show, Generic)
@@ -35,4 +35,4 @@ instance FromJSON Candidate where
       name <- o .: "name"
       version <- jsonParsec <$> o .: "version"
       range <- o .: "range"
-      pure Candidate {package = Package {name, version}, range}
+      pure Candidate {package = PackageId {name, version}, range}
