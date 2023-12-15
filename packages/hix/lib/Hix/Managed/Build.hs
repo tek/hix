@@ -51,7 +51,7 @@ logBuildInputs managed candidate newVersions newOverrides accOverrides = do
 
 logCandidateResult :: Candidate -> BuildStatus -> M ()
 logCandidateResult candidate status =
-  Log.debug [exon|Build for candidate '##{showP candidate}' #{result status}|]
+  Log.info [exon|Build for candidate '##{showP candidate}' #{result status}|]
   where
     result = \case
       Success -> "succeeded"

@@ -244,4 +244,4 @@ test_lowerInitMutation = do
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)
-  logTarget === drop 11 (reverse log)
+  logTarget === drop 22 (reverse log)
