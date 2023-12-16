@@ -38,9 +38,12 @@ convergeMutations ::
   [DepMutation a] ->
   M (BuildState a s)
 convergeMutations mkMutationHandlers app conf builder job initialState initExt initialMutations =
-  spin (BuildState {success = [], failed = initialMutations, state = initialState, ext = initExt}) 1
+  spin False (BuildState {success = [], failed = initialMutations, state = initialState, ext = initExt}) 1
   where
-    spin acc iteration
+    spin noNewSuccess acc iteration
+
+      | noNewSuccess
+      = pure acc
 
       | [] <- acc.failed
       = pure acc
@@ -52,7 +55,7 @@ convergeMutations mkMutationHandlers app conf builder job initialState initExt i
       = do
         Log.debug [exon|Iteration #{show iteration} for '##{job.env :: EnvName}'|]
         BuildState {success, ..} <- build acc
-        spin BuildState {failed = reverse failed, ..} (iteration + 1)
+        spin (length success == length acc.success) BuildState {failed = reverse failed, ..} (iteration + 1)
 
     build BuildState {failed = mutations, ..} =
       buildMutations app.build.hackage builder mkMutationHandlers job mutations BuildState {failed = [], ..}
