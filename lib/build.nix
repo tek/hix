@@ -7,9 +7,11 @@
 let
   libBase = import ./default.nix { inherit lib; };
 
-  compat = import ./compat.nix { inherit lib; };
+  # compat = import ./compat.nix { inherit lib; };
 
-  userModules = extraModules ++ map compat.check (lib.toList projectModules);
+  # userModules = extraModules ++ map compat.check (lib.toList projectModules);
+
+  userModules = extraModules ++ lib.toList projectModules;
 
   allModules = hixModules ++ userModules;
 

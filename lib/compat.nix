@@ -48,20 +48,20 @@ let
 
   checkDeprecated = args:
   pipe args [
-    (deprecatedPathRename true ["output" "systems"] "systems")
-    (deprecatedPathRename true ["devGhc"] "envs.dev.ghc")
-    (deprecatedPathRename true ["compat" "projects"] "compat.versions")
-    (deprecatedPathRename true ["ghci" "extraArgs"] "ghci.args")
-    (deprecatedPathRename true ["versionFile"] "hackage.versionFile")
-    (deprecatedPath true ["ghci" "extensions"]
-      "Extensions are now read from cabal files for ghci and can be set in 'packages.cabal.extensions'")
-    (deprecatedPath true ["ghci" "preludePackage"] preludeError)
-    (deprecatedPath true ["ghci" "preludeModule"] preludeError)
-    (actIf isBool ["compat"] (deprecatedRename false "compat" "compat.enable"))
-    (actIf isFunction ["ghcid" "commands"] (throw "The option 'ghcid.commands' must be a module."))
-    (actIfAny isPath ["packages"] (throw packagesError))
-    (deprecatedPath true ["hpack" "packages"] "Cabal config has been moved to the top-level option 'packages'")
-    normalizeCompat
+    # (deprecatedPathRename true ["output" "systems"] "systems")
+    # (deprecatedPathRename true ["devGhc"] "envs.dev.ghc")
+    # (deprecatedPathRename true ["compat" "projects"] "compat.versions")
+    # (deprecatedPathRename true ["ghci" "extraArgs"] "ghci.args")
+    # (deprecatedPathRename true ["versionFile"] "hackage.versionFile")
+    # (deprecatedPath true ["ghci" "extensions"]
+    #   "Extensions are now read from cabal files for ghci and can be set in 'packages.cabal.extensions'")
+    # (deprecatedPath true ["ghci" "preludePackage"] preludeError)
+    # (deprecatedPath true ["ghci" "preludeModule"] preludeError)
+    # (actIf isBool ["compat"] (deprecatedRename false "compat" "compat.enable"))
+    # (actIf isFunction ["ghcid" "commands"] (throw "The option 'ghcid.commands' must be a module."))
+    # (actIfAny isPath ["packages"] (throw packagesError))
+    # (deprecatedPath true ["hpack" "packages"] "Cabal config has been moved to the top-level option 'packages'")
+    # normalizeCompat
   ];
 
   checkDeprecated' = mod:
