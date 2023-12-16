@@ -227,7 +227,7 @@ test_lowerInitMutation = do
         deps,
         state = initialState,
         lower = ManagedLowerEnv {solverBounds = mempty},
-        envs = [("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4"]})],
+        envs = [("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4"], ghc = Nothing})],
         buildOutputsPrefix = Nothing
       }
     conf =

@@ -4,7 +4,7 @@ import Distribution.Client.Dependency (PackagesPreferenceDefault (PreferAllOldes
 import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 
-import Hix.Data.ManagedEnv (BuildOutputsPrefix)
+import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import Hix.Hackage (versionsHackage)
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
@@ -40,9 +40,10 @@ handlersProdWith build oldest = do
 
 handlersProd ::
   StateFileConfig ->
+  EnvsConfig ->
   Maybe BuildOutputsPrefix ->
   Bool ->
   M LowerHandlers
-handlersProd conf buildOutputsPrefix oldest = do
-  build <- liftIO (Build.handlersProd conf buildOutputsPrefix)
+handlersProd stateFileConf envsConf buildOutputsPrefix oldest = do
+  build <- liftIO (Build.handlersProd stateFileConf envsConf buildOutputsPrefix)
   handlersProdWith build oldest

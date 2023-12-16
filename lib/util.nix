@@ -89,7 +89,8 @@ let
       # bounds after each run, which would not be reflected in a multi-env batch run if all package dbs are evaluated
       # ahead of execution.
       # But: this only matters for sets with dependencies on each other.
-      envs = mapAttrs (_: env: { targets = util.env.targets env; }) util.managed.envs;
+      # Also `eval` doesn't build the derivation, so if we haven't done so before, the store path will be absent.
+      envs = mapAttrs (_: env: { ghc = util.ghc.packageDbLocal env; targets = util.env.targets env; }) util.managed.envs;
       inherit (config) buildOutputsPrefix;
     };
 

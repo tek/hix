@@ -2,7 +2,7 @@ module Hix.Managed.Bump.App where
 
 import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (BuildOutputsPrefix)
+import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (BumpOptions)
@@ -66,16 +66,17 @@ bump handlers app
 
 chooseHandlers ::
   StateFileConfig ->
+  EnvsConfig ->
   Maybe BuildOutputsPrefix ->
   Maybe SpecialBumpHandlers ->
   IO (BumpHandlers)
-chooseHandlers conf buildOutputsPrefix = \case
-  Just TestBumpHandlers -> handlersTest conf buildOutputsPrefix
-  Nothing -> handlersProd conf buildOutputsPrefix
+chooseHandlers stateFileConf envsConf buildOutputsPrefix = \case
+  Just TestBumpHandlers -> handlersTest stateFileConf envsConf buildOutputsPrefix
+  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix
 
 bumpCli :: BumpOptions -> M ()
 bumpCli opts = do
   env <- jsonConfigE Client opts.env
-  handlers <- liftIO (chooseHandlers opts.config.stateFile env.buildOutputsPrefix opts.handlers)
+  handlers <- liftIO (chooseHandlers opts.config.stateFile env.envs env.buildOutputsPrefix opts.handlers)
   runManagedApp handlers.build handlers.report env opts.config \ app ->
     bump handlers app

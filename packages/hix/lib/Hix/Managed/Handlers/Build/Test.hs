@@ -2,7 +2,7 @@ module Hix.Managed.Handlers.Build.Test where
 
 import Data.IORef (IORef)
 
-import Hix.Data.ManagedEnv (BuildOutputsPrefix)
+import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr)
 import Hix.Data.Version (Versions)
@@ -21,6 +21,7 @@ handlersUnitTest builder = do
 
 handlersTest ::
   StateFileConfig ->
+  EnvsConfig ->
   Maybe BuildOutputsPrefix ->
   IO BuildHandlers
 handlersTest = handlersProd

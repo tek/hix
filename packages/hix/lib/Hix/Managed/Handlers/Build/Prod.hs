@@ -20,10 +20,12 @@ import System.Process.Typed (
   setWorkingDir,
   )
 
+import Hix.Class.Map ((!!))
 import Hix.Data.Deps (TargetDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
-import Hix.Data.ManagedEnv (BuildOutputsPrefix (BuildOutputsPrefix), ManagedState)
+import qualified Hix.Data.ManagedEnv
+import Hix.Data.ManagedEnv (BuildOutputsPrefix (BuildOutputsPrefix), EnvsConfig, ManagedState)
 import qualified Hix.Data.Monad (Env (verbose))
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Error (pathText)
@@ -46,7 +48,8 @@ import Hix.Monad (M, noteFatal, throwM, tryIOM, withTempDir)
 data BuilderResources =
   BuilderResources {
     handlers :: StateFileHandlers,
-    conf :: StateFileConfig,
+    stateFileConf :: StateFileConfig,
+    envsConf :: EnvsConfig,
     buildOutputsPrefix :: Maybe BuildOutputsPrefix,
     root :: Path Abs Dir,
     stateFile :: Path Abs File
@@ -145,30 +148,36 @@ withEnvBuilder ::
 withEnvBuilder global env targets deps initialState use = do
   writeBuildStateFor "env initialization" global.handlers deps env initialState global.stateFile
   let resources = EnvBuilderResources {..}
-  use EnvBuilder {buildWithState = buildWithState resources, ghcDb = ghcDb resources}
+  use EnvBuilder {buildWithState = buildWithState resources, ghcDb = db resources}
+  where
+    db _ = case (.ghc) =<< global.envsConf !! env of
+      Just path -> pure (Just path)
+      Nothing -> throwM (Fatal "No GHC package db in the config")
 
 withBuilder ::
   StateFileHandlers ->
   StateFileConfig ->
+  EnvsConfig ->
   Maybe BuildOutputsPrefix ->
   (Builder -> M a) ->
   M a
-withBuilder handlers conf buildOutputsPrefix use =
-  withTempProject conf.projectRoot \ root -> do
-    stateFile <- handlers.initFile root conf.file
+withBuilder handlers stateFileConf envsConf buildOutputsPrefix use =
+  withTempProject stateFileConf.projectRoot \ root -> do
+    stateFile <- handlers.initFile root stateFileConf.file
     let resources = BuilderResources {..}
     use Builder {withEnvBuilder = withEnvBuilder resources}
 
 handlersProd ::
   StateFileConfig ->
+  EnvsConfig ->
   Maybe BuildOutputsPrefix ->
   IO BuildHandlers
-handlersProd conf buildOutputsPrefix = do
+handlersProd stateFileConf envsConf buildOutputsPrefix = do
   hackage <- HackageHandlers.handlersProd
   let stateFile = StateFileHandlers.handlersProd
   pure BuildHandlers {
     -- TODO remove
     stateFile,
     hackage,
-    withBuilder = withBuilder stateFile conf buildOutputsPrefix
+    withBuilder = withBuilder stateFile stateFileConf envsConf buildOutputsPrefix
   }

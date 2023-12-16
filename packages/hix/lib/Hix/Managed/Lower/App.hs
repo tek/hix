@@ -5,7 +5,7 @@ import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerConfig, LowerInitConfig (LowerInitConfig), lowerConfig)
 import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (BuildOutputsPrefix)
+import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (LowerInitOptions, LowerOptions)
@@ -26,13 +26,14 @@ import Hix.Managed.Lower.Stabilize (lowerStabilize)
 
 chooseHandlers ::
   LowerOptions ->
+  EnvsConfig ->
   LowerConfig ->
   Maybe BuildOutputsPrefix ->
   M LowerHandlers
-chooseHandlers opts conf buildOutputsPrefix =
+chooseHandlers opts envsConf conf buildOutputsPrefix =
   case opts.handlers of
-    Just TestLowerHandlers -> Lower.handlersTest stateFileConf buildOutputsPrefix oldest
-    Nothing -> Lower.handlersProd stateFileConf buildOutputsPrefix oldest
+    Just TestLowerHandlers -> Lower.handlersTest stateFileConf envsConf buildOutputsPrefix oldest
+    Nothing -> Lower.handlersProd stateFileConf envsConf buildOutputsPrefix oldest
   where
     stateFileConf = opts.managed.stateFile
     oldest = conf.oldest
@@ -52,7 +53,7 @@ lowerCli ::
   M ()
 lowerCli _ opts lowerConf main = do
   env <- jsonConfigE Client opts.env
-  handlers <- chooseHandlers opts lowerConf env.buildOutputsPrefix
+  handlers <- chooseHandlers opts env.envs lowerConf env.buildOutputsPrefix
   runManagedApp handlers.build handlers.report env opts.managed \ app ->
     Right <$> main handlers app
 

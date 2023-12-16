@@ -3,7 +3,7 @@ module Hix.Managed.Handlers.Lower.Test where
 import Control.Lens (_1, (%~))
 import Data.IORef (IORef)
 
-import Hix.Data.ManagedEnv (BuildOutputsPrefix)
+import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr)
 import Hix.Data.PackageId (PackageId)
@@ -21,6 +21,7 @@ import Hix.Managed.Solve.Mock.SourcePackage (SourcePackages, queryVersions, sour
 
 handlersTest ::
   StateFileConfig ->
+  EnvsConfig ->
   Maybe BuildOutputsPrefix ->
   Bool ->
   M LowerHandlers

@@ -126,7 +126,7 @@ test_lowerStabilizeMutation = do
         deps,
         state = initialState,
         lower = ManagedLowerEnv {solverBounds = mempty},
-        envs = [("lower", EnvConfig {targets = ["local1"]})],
+        envs = [("lower", EnvConfig {targets = ["local1"], ghc = Nothing})],
         buildOutputsPrefix = Nothing
       }
     conf =

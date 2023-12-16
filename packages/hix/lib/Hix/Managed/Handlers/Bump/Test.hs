@@ -4,7 +4,7 @@ import Distribution.Version (Version, mkVersion)
 import Exon (exon)
 
 import Hix.Data.Error (Error (Client))
-import Hix.Data.ManagedEnv (BuildOutputsPrefix)
+import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.PackageName (PackageName)
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import Hix.Managed.Handlers.Bump (BumpHandlers (..))
@@ -23,8 +23,9 @@ latestVersion = \case
 
 handlersTest ::
   StateFileConfig ->
+  EnvsConfig ->
   Maybe BuildOutputsPrefix ->
   IO BumpHandlers
-handlersTest conf buildOutputsPrefix = do
-  h <- handlersProd conf buildOutputsPrefix
+handlersTest stateFileConf envsConf buildOutputsPrefix = do
+  h <- handlersProd stateFileConf envsConf buildOutputsPrefix
   pure h {latestVersion}

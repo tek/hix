@@ -14,6 +14,7 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.Overrides (EnvOverrides, Overrides)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (EnvVersions)
+import Hix.Managed.Solve.Config (GhcDb)
 
 data ManagedState =
   ManagedState {
@@ -58,7 +59,8 @@ data ManagedLowerEnv =
 
 data EnvConfig =
   EnvConfig {
-    targets :: [LocalPackage]
+    targets :: [LocalPackage],
+    ghc :: Maybe GhcDb
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

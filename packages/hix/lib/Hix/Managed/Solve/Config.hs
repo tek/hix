@@ -1,5 +1,6 @@
 module Hix.Managed.Solve.Config where
 
+import Data.Aeson (FromJSON, ToJSON)
 import Distribution.Verbosity (Verbosity, verbose)
 import Path (Abs, Dir, Path)
 
@@ -14,6 +15,7 @@ instance Default HackageRepoName where
 newtype GhcDb =
   GhcDb (Path Abs Dir)
   deriving stock (Eq, Show, Generic)
+  deriving newtype (FromJSON, ToJSON)
 
 data SolveConfig =
   SolveConfig {

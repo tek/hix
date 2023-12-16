@@ -144,7 +144,7 @@ test_bumpMutation = do
         deps,
         state = initialState,
         lower = ManagedLowerEnv mempty,
-        envs = [("fancy", EnvConfig {targets = ["panda"]})],
+        envs = [("fancy", EnvConfig {targets = ["panda"], ghc = Nothing})],
         buildOutputsPrefix = Nothing
       }
     conf =
