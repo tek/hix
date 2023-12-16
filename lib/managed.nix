@@ -49,7 +49,7 @@
   ${cli} ${verbose} ${debug} ${quiet} ${cmd} $@ ${args}
   ${lib.optionalString conf.generate (util.runBuildApp "gen${lib.optionalString conf.quiet "-quiet"}")}
   ${lib.optionalString conf.gitAdd ''
-    if ${config.pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]]
+    if ${config.pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]] && [[ -f ${conf.file} ]]
     then
       ${config.pkgs.git}/bin/git add ${conf.file}
     fi
