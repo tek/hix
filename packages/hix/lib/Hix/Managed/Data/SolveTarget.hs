@@ -1,4 +1,4 @@
-module Hix.Managed.Data.CabalTarget where
+module Hix.Managed.Data.SolveTarget where
 
 import Distribution.Client.Dependency (
   PackagePreference (PackageInstalledPreference),
@@ -18,17 +18,17 @@ import Hix.Managed.Data.ManagedConfig (ManagedOp)
 import qualified Hix.Managed.Data.SolverParams
 import Hix.Managed.Data.SolverParams (PackageParams, SolverParams, packageParamsRange)
 
-data CabalTarget =
-  CabalTarget {
+data SolveTarget =
+  SolveTarget {
     dep :: PackageSpecifier UnresolvedSourcePackage,
     pref :: Maybe PackagePreference
   }
 
 -- TODO better if this used TargetBound
 -- even better if it was abstracted out
-cabalTarget :: ManagedOp -> PackageName -> PackageParams -> CabalTarget
-cabalTarget op package params =
-  CabalTarget {dep, pref}
+solveTarget :: ManagedOp -> PackageName -> PackageParams -> SolveTarget
+solveTarget op package params =
+  SolveTarget {dep, pref}
   where
     dep = NamedPackage cabalName [PackagePropertyVersion range]
 
@@ -39,12 +39,12 @@ cabalTarget op package params =
 
     cabalName = PackageName.toCabal package
 
-cabalTargets :: ManagedOp -> SolverParams -> [CabalTarget]
-cabalTargets op params =
-  ntTo params (cabalTarget op)
+solveTargets :: ManagedOp -> SolverParams -> [SolveTarget]
+solveTargets op params =
+  ntTo params (solveTarget op)
 
-candidateTarget :: PackageId -> CabalTarget
+candidateTarget :: PackageId -> SolveTarget
 candidateTarget PackageId {name, version} =
-  CabalTarget {dep = NamedPackage cabalName [PackagePropertyVersion (thisVersion version)], pref = Nothing}
+  SolveTarget {dep = NamedPackage cabalName [PackagePropertyVersion (thisVersion version)], pref = Nothing}
   where
     cabalName = PackageName.toCabal name

@@ -4,7 +4,7 @@ import Hedgehog (evalEither)
 
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
-import Hix.Managed.Data.CabalTarget (CabalTarget, cabalTarget)
+import Hix.Managed.Data.SolveTarget (SolveTarget, solveTarget)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerInit))
 import Hix.Managed.Solve (solveTargets)
 import Hix.Managed.Solve.Mock (mockSolveResources)
@@ -13,11 +13,11 @@ import Hix.Managed.Solve.Print (printPlan)
 import Hix.Monad (eitherFatal)
 import Hix.Test.Utils (UnitTest, runMTest)
 
-targets :: [CabalTarget]
+targets :: [SolveTarget]
 targets =
   [
-    cabalTarget OpLowerInit "pack1" mempty,
-    cabalTarget OpLowerInit "pack2" mempty
+    solveTarget OpLowerInit "pack1" mempty,
+    solveTarget OpLowerInit "pack2" mempty
   ]
 
 installed :: [(PackageId, [PackageId])]

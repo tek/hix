@@ -81,7 +81,6 @@ library
       Hix.Managed.Data.BuildResult
       Hix.Managed.Data.BuildResults
       Hix.Managed.Data.BuildState
-      Hix.Managed.Data.CabalTarget
       Hix.Managed.Data.Candidate
       Hix.Managed.Data.CurrentBuild
       Hix.Managed.Data.ManagedApp
@@ -89,6 +88,7 @@ library
       Hix.Managed.Data.ManagedJob
       Hix.Managed.Data.ManagedPackage
       Hix.Managed.Data.SolverParams
+      Hix.Managed.Data.SolveTarget
       Hix.Managed.Data.Targets
       Hix.Managed.Handlers.Build
       Hix.Managed.Handlers.Build.Prod

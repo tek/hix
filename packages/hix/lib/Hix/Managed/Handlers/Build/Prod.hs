@@ -176,7 +176,6 @@ handlersProd stateFileConf envsConf buildOutputsPrefix = do
   hackage <- HackageHandlers.handlersProd
   let stateFile = StateFileHandlers.handlersProd
   pure BuildHandlers {
-    -- TODO remove
     stateFile,
     hackage,
     withBuilder = withBuilder stateFile stateFileConf envsConf buildOutputsPrefix

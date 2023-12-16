@@ -26,9 +26,9 @@ import Hix.Data.Error (Error (Fatal))
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId)
 import qualified Hix.Log as Log
-import qualified Hix.Managed.Data.CabalTarget
-import Hix.Managed.Data.CabalTarget (CabalTarget, cabalTargets, candidateTarget)
 import Hix.Managed.Data.ManagedConfig (ManagedOp)
+import qualified Hix.Managed.Data.SolveTarget
+import Hix.Managed.Data.SolveTarget (SolveTarget, candidateTarget, solveTargets)
 import Hix.Managed.Data.SolverParams (SolverParams)
 import Hix.Managed.Solve.Changes (SolverPlan, solverPlan)
 import qualified Hix.Managed.Solve.Config
@@ -72,11 +72,11 @@ solveSpecifiers res pkgSpecifiers prefs =
       addPreferences prefs $
       standardInstallPolicy res.installedPkgIndex res.sourcePkgDb pkgSpecifiers
 
-solveTargets ::
+solveForTargets ::
   SolveResources ->
-  [CabalTarget] ->
+  [SolveTarget] ->
   M (Either Unresolvable SolverInstallPlan)
-solveTargets res targets =
+solveForTargets res targets =
   first fromString <$> tryIOMAs (Fatal "Cabal solver crashed.") (solveSpecifiers res pkgSpecifiers prefs)
   where
     pkgSpecifiers = (.dep) <$> targets
@@ -89,7 +89,7 @@ solveWithCabal ::
   PackageId ->
   M (Maybe SolverPlan)
 solveWithCabal solveResources op solverParams newVersion =
-  solveTargets solveResources targets >>= \case
+  solveForTargets solveResources targets >>= \case
     Right plan -> do
       Log.debug [exon|Solver found a plan for #{showP newVersion}|]
       pure (Just (solverPlan plan))
@@ -97,4 +97,4 @@ solveWithCabal solveResources op solverParams newVersion =
       Log.debug [exon|Solver found no plan for #{showP newVersion}: ##{err}|]
       pure Nothing
   where
-    targets = candidateTarget newVersion : cabalTargets op (via (Map.delete newVersion.name) solverParams)
+    targets = candidateTarget newVersion : solveTargets op (via (Map.delete newVersion.name) solverParams)
