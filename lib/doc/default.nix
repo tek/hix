@@ -18,7 +18,7 @@ let
   options = import ./options.nix { inherit pkgs; };
   inherit (options) namePh;
 
-  util = import ../with-config.nix { inherit config lib; };
+  util = import ../util.nix { inherit config lib; };
 
   prose = import ./prose.nix { inherit hixUrl; };
 

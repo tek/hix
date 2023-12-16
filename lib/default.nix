@@ -8,7 +8,7 @@ let
   });
 
   utilWithConfig = config:
-  import ../lib/with-config.nix { inherit config lib; };
+  import ../lib/util.nix { inherit config lib; };
 
   utilModule = extra: {config, ...}: {
     _module.args = {
