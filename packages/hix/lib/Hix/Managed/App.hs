@@ -11,7 +11,7 @@ import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (EnvConfig, ManagedEnv)
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M)
-import Hix.Deps (allDeps, depsFromConfig, forTargets, withManagedRanges)
+import Hix.Deps (uniqueDeps, depsFromConfig, forTargets, withManagedRanges)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.BuildOutput (outputResult)
 import Hix.Managed.Data.BuildOutput (buildOutput)
@@ -48,7 +48,6 @@ selectEnvs managedEnv specified = do
     conf <- noteClient (unknownEnv env) (managedEnv.envs !! env)
     pure (env, conf)
 
--- TODO get rid of ConfigDeps – just flatten components in the parser
 -- TODO could the target bound be part of the EnvConfig, so we could run different jobs in one go?
 managedJob ::
   ManagedEnv ->
@@ -57,12 +56,12 @@ managedJob ::
   EnvConfig ->
   M ManagedJob
 managedJob env conf name envConfig = do
-  configDeps <- depsFromConfig env.deps envConfig.targets
-  let targets = sortTargets configDeps envConfig.targets
-      targetDeps = forTargets targets (withManagedRanges env.state.bounds configDeps)
+  projectDeps <- depsFromConfig env.packages envConfig.targets
+  let targets = sortTargets projectDeps envConfig.targets
+      targetDeps = forTargets targets (withManagedRanges env.state.bounds projectDeps)
       lowerInit = env.state.lowerInit !! name
       removable = removableBounds conf.targetBound targetDeps env.state.bounds
-      deps = allDeps targetDeps
+      deps = uniqueDeps targetDeps
   pure ManagedJob {env = name, ..}
   where
     overrides = env.state.overrides !! name

@@ -6,32 +6,40 @@
   outputs = {self, hix, ...}: hix.lib.flake ({config, lib, ...}: {
     managed = {
       enable = true;
+      verbose = false;
+      debug = false;
+      quiet = true;
+      sets = "each";
       lower = {
         enable = true;
         compiler = "ghc90";
       };
-      verbose = false;
-      debug = false;
-      quiet = true;
-      sets = { main = ["root"]; };
     };
     ghcVersions = [];
     compat.enable = false;
-    gen-overrides.enable = true;
     packages = {
-      root = {
-        src = ./.;
+      local1 = {
+        src = ./packages/local1;
         library = {
           enable = true;
           dependencies = [
-            "aeson >=2.0 && <2.3"
-            "extra >=1.7 && <1.8"
+            "semigroups"
+          ];
+        };
+      };
+      local2 = {
+        src = ./packages/local2;
+        library = {
+          enable = true;
+          dependencies = [
+            "local1"
           ];
         };
       };
     };
 
-    envs.lower-main.localPackage = api: api.minimal;
+    envs.lower-local1.localPackage = api: api.minimal;
+    envs.lower-local2.localPackage = api: api.minimal;
 
     # TODO remove
     internal.hixCli.dev = true;

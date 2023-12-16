@@ -37,7 +37,6 @@ library
       Hix.Data.BootstrapProjectConfig
       Hix.Data.Bounds
       Hix.Data.ComponentConfig
-      Hix.Data.ConfigDeps
       Hix.Data.Dep
       Hix.Data.Deps
       Hix.Data.EnvName
@@ -88,6 +87,7 @@ library
       Hix.Managed.Data.ManagedApp
       Hix.Managed.Data.ManagedConfig
       Hix.Managed.Data.ManagedJob
+      Hix.Managed.Data.ManagedPackage
       Hix.Managed.Data.SolverParams
       Hix.Managed.Data.Targets
       Hix.Managed.Handlers.Build
@@ -287,12 +287,12 @@ test-suite hix-test
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
       Hix.Test.Managed.Config
-      Hix.Test.Managed.ConfigDepsTest
       Hix.Test.Managed.LowerInit.MutationTest
       Hix.Test.Managed.LowerNativeTest
       Hix.Test.Managed.LowerOptimize.CandidatesTest
       Hix.Test.Managed.LowerOptimize.MutationTest
       Hix.Test.Managed.LowerStabilize.MutationTest
+      Hix.Test.Managed.ManagedEnvTest
       Hix.Test.Managed.Solver
       Hix.Test.Managed.SolverTest
       Hix.Test.Managed.UnsafeIsString

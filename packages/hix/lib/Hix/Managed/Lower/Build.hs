@@ -18,7 +18,7 @@ import Hix.Managed.Data.BuildState (BuildState (BuildState), failed)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import qualified Hix.Managed.Data.ManagedJob as ManagedJob
-import Hix.Managed.Data.ManagedJob (ManagedJob, deps)
+import Hix.Managed.Data.ManagedJob (ManagedJob)
 import qualified Hix.Managed.Data.SolverParams as SolverParams
 import Hix.Managed.Data.SolverParams (SolverParams)
 import qualified Hix.Managed.Handlers.Build

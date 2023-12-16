@@ -7,7 +7,6 @@ import Hedgehog (evalEither, evalMaybe, (===))
 
 import Hix.Class.Map ((!!))
 import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigInit)
 import qualified Hix.Data.ManagedEnv
@@ -24,6 +23,7 @@ import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpLowerInit))
+import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import Hix.Managed.Handlers.Lower (LowerHandlers (..))
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
@@ -36,23 +36,23 @@ import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Managed.Config (stateFileConfig)
 import Hix.Test.Utils (UnitTest, runMLogTest)
 
-deps :: ConfigDeps
-deps =
-  configLibDeps [
-    ("local1", [
+packages :: ManagedPackages
+packages =
+  managedPackages [
+    (("local1", "1.0"), [
       "direct1",
       "direct2 ^>=5.0",
       "direct3 >=1.0 && < 1.5",
       "direct4"
     ]),
-    ("local2", ["local1", "local3"]),
-    ("local3", ["direct1", "local1"]),
-    ("local4", ["direct4"]),
-    ("local5", ["direct5"])
+    (("local2", "1.0"), ["local1", "local3"]),
+    (("local3", "1.0"), ["direct1", "local1"]),
+    (("local4", "1.0"), ["direct4"]),
+    (("local5", "1.0"), ["direct5"])
   ]
 
-packages :: SourcePackages
-packages =
+packageDb :: SourcePackages
+packageDb =
   [
     ("direct1", [
       ([1, 0, 3], ["transitive1 >=1"]),
@@ -220,11 +220,11 @@ logTarget =
 --   normalization), and @direct5@ should never appear int the solver and build deps.
 test_lowerInitMutation :: UnitTest
 test_lowerInitMutation = do
-  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packages)
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packageDb)
   let
     env =
       ManagedEnv {
-        deps,
+        packages,
         state = initialState,
         lower = ManagedLowerEnv {solverBounds = mempty},
         envs = [("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4"], ghc = Nothing})],
@@ -233,7 +233,6 @@ test_lowerInitMutation = do
     conf =
       ManagedConfig {
         operation = OpLowerInit,
-        ghc = Nothing,
         stateFile = stateFileConfig,
         envs = ["lower-main"],
         targetBound = TargetLower

@@ -29,6 +29,7 @@ let
     bump = test "bump";
     lower = test "lower";
     lower-stabilize = test "lower-stabilize";
+    lower-local = test "lower-local";
   };
 
   testA = n: t: "${n} ${t}";

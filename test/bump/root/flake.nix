@@ -22,11 +22,13 @@
           enable = true;
           dependencies = [
             "aeson"
-            "extra"
             "th-abstraction ^>= 0.5"
           ];
         };
-        test.enable = true;
+        test = {
+          enable = true;
+          dependencies = ["extra"];
+        };
       };
       local2 = {
         src = ./packages/local2;

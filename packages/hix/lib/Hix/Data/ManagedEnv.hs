@@ -9,11 +9,12 @@ import Text.PrettyPrint (hang, ($+$))
 import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Class.Map (LookupMaybe, NtMap)
 import Hix.Data.Bounds (Bounds, TargetBounds)
-import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.EnvName (EnvName)
+import Hix.Data.Json (foldMissing)
 import Hix.Data.Overrides (EnvOverrides, Overrides)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (EnvVersions)
+import Hix.Managed.Data.ManagedPackage (ManagedPackages)
 import Hix.Managed.Solve.Config (GhcDb)
 
 data ManagedState =
@@ -40,15 +41,20 @@ data ManagedEnvState =
 
 instance Pretty ManagedEnvState where
   pretty ManagedEnvState {..} =
-    hang "bounds:" 2 (pretty bounds) $+$ hang "overrides:" 2 (pretty overrides)
+    hang "bounds:" 2 (pretty bounds) $+$
+    hang "overrides:" 2 (pretty overrides) $+$
+    hang "lowerInit:" 2 (pretty lowerInit)
 
 instance FromJSON ManagedEnvState where
   parseJSON = withObject "ManagedEnvState" \ o -> do
-    bounds <- o .: "bounds" <|> pure mempty
-    overrides <- o .: "overrides" <|> pure mempty
-    lowerInit <- o .: "lowerInit" <|> pure mempty
-    resolving <- o .: "resolving" <|> pure False
+    bounds <- foldMissing o "bounds"
+    overrides <- foldMissing o "overrides"
+    lowerInit <- foldMissing o "lowerInit"
+    resolving <- fromMaybe False <$> optional (o .: "resolving")
     pure ManagedEnvState {..}
+
+instance Default ManagedEnvState where
+  def = ManagedEnvState {bounds = mempty, overrides = mempty, lowerInit = mempty, resolving = False}
 
 data ManagedLowerEnv =
   ManagedLowerEnv {
@@ -56,6 +62,9 @@ data ManagedLowerEnv =
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
+
+instance Default ManagedLowerEnv where
+  def = ManagedLowerEnv {solverBounds = mempty}
 
 data EnvConfig =
   EnvConfig {
@@ -79,7 +88,7 @@ newtype BuildOutputsPrefix =
 
 data ManagedEnv =
   ManagedEnv {
-    deps :: ConfigDeps,
+    packages :: ManagedPackages,
     state :: ManagedEnvState,
     lower :: ManagedLowerEnv,
     envs :: EnvsConfig,

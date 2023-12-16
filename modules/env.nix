@@ -271,7 +271,7 @@ in {
     };
 
     localDeps = mkOption {
-      description = mdDoc "Whether to add the dependencies of the project's local packages to GHC's package db.";
+      description = mdDoc "Whether to add the dependencies of the env's local packages to GHC's package db.";
       type = bool;
       default = true;
     };

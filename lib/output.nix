@@ -146,7 +146,7 @@ let
       { dep-versions = app (depVersions env.name); };
   };
 
-  managedEnvGhcs = lib.mapAttrs (_: env: { ghc-local = util.ghc.packageDbLocal env; }) util.managed.envs;
+  managedEnvGhcs = lib.mapAttrs (_: env: { ghc-local = util.managed.managedEnvGhc env; }) util.managed.envs;
 
   commandApps = lib.mapAttrs (_: c: app c.path);
 

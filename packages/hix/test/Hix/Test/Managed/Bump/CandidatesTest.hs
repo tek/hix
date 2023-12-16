@@ -1,44 +1,37 @@
 module Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump) where
 
-import Data.Aeson (eitherDecodeStrict')
 import Distribution.Version (Version, earlierVersion, intersectVersionRanges, orLaterVersion, unionVersionRanges)
-import Exon (exon)
 import Hedgehog (evalEither, (===))
 
-import Hix.Data.ConfigDeps (ConfigDeps)
 import Hix.Data.Error (Error (Client))
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (NewRange (NewRange, OldRange))
-import Hix.Deps (allDeps, depsFromConfig, forTargets)
+import Hix.Deps (depsFromConfig, forTargets, uniqueDeps)
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
 import Hix.Managed.Bump.Candidates (candidatesBump)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (..), ManagedPackages (..))
 import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
 import qualified Hix.Managed.Lower.Data.Bump
 import Hix.Managed.Lower.Data.Bump (Bump (Bump))
 import Hix.Monad (M, throwM)
 import Hix.Test.Utils (UnitTest, runMTest)
 
-depsConfig :: Either String ConfigDeps
-depsConfig =
-  eitherDecodeStrict' [exon|{
-    "panda": {
-      "library": {
-        "dependencies": [
-          "dep1 ^>= 2.0",
-          {
-            "name": "dep2",
-            "version": "< 1.5"
-          },
-          "dep3",
-          "dep4 (>= 0.1 && < 0.3) || (>= 1.1 && < 1.2.3) || >= 2.3",
-          "dep5 ==1.0.1",
-          "dep6 < 8.4",
-          "dep7 ^>= 1.1"
-        ]
-      }
-    }
-  }|]
+packages :: ManagedPackages
+packages =
+  [("panda", ManagedPackage {
+    name = "panda",
+    version = "1.2.1",
+    deps = [
+      "dep1 ^>=2.0",
+      "dep2 <1.5",
+      "dep3",
+      "dep4 (>=0.1 && <0.3) || (>=1.1 && <1.2.3) || >=2.3",
+      "dep5 ==1.0.1",
+      "dep6 <8.4",
+      "dep7 ^>=1.1"
+    ]
+  })]
 
 dep1Version :: Version
 dep1Version = [2, 2, 0, 5]
@@ -119,11 +112,10 @@ target =
 
 test_candidatesBump :: UnitTest
 test_candidatesBump = do
-  cdeps <- leftA fail depsConfig
   mutations <- evalEither =<< liftIO do
     runMTest False do
-      configDeps <- depsFromConfig cdeps ["panda"]
-      let targetDeps = forTargets "panda" configDeps
-      let deps = allDeps targetDeps
+      allDeps <- depsFromConfig packages ["panda"]
+      let targetDeps = forTargets "panda" allDeps
+      let deps = uniqueDeps targetDeps
       candidatesBump handlersTest deps
   sortOn (.package) target === sortOn (.package) (toList mutations)

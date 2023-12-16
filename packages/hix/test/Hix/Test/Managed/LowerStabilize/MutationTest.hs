@@ -5,7 +5,6 @@ import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigStabilize)
 import qualified Hix.Data.ManagedEnv
@@ -22,6 +21,7 @@ import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpLowerStabilize))
+import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import Hix.Managed.Handlers.Lower (LowerHandlers (..))
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import Hix.Managed.Lower.Stabilize (lowerStabilize)
@@ -33,8 +33,8 @@ import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Managed.Config (stateFileConfig)
 import Hix.Test.Utils (UnitTest, runMTest)
 
-packages :: SourcePackages
-packages =
+packageDb :: SourcePackages
+packageDb =
   [
     ("direct1", [
       ([1, 8, 1], []),
@@ -59,8 +59,9 @@ buildVersions = \case
   [] -> throwM (Fatal "Build with no overrides")
   versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
 
-deps :: ConfigDeps
-deps = configLibDeps [("local1", ["direct1", "direct2"])]
+packages :: ManagedPackages
+packages =
+  managedPackages [(("local1", "1.0"), ["direct1", "direct2"])]
 
 initialState :: ManagedEnvState
 initialState =
@@ -119,11 +120,11 @@ stateFileTarget =
 
 test_lowerStabilizeMutation :: UnitTest
 test_lowerStabilizeMutation = do
-  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packages)
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packageDb)
   let
     env =
       ManagedEnv {
-        deps,
+        packages,
         state = initialState,
         lower = ManagedLowerEnv {solverBounds = mempty},
         envs = [("lower", EnvConfig {targets = ["local1"], ghc = Nothing})],
@@ -132,7 +133,6 @@ test_lowerStabilizeMutation = do
     conf =
       ManagedConfig {
         operation = OpLowerStabilize,
-        ghc = Nothing,
         stateFile = stateFileConfig,
         envs = ["lower"],
         targetBound = TargetLower

@@ -32,9 +32,9 @@ let
 
   attrsetMain = withMainOr {};
 
-  json = let
+  jsonFile = name: value: config.pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
 
-    inherit (config) pkgs;
+  json = let
 
     componentConf = c: {
       inherit (c) name language;
@@ -52,9 +52,6 @@ let
     };
 
     packages = mapAttrs (_: packageConf) config.packages;
-
-    packageDeps = _: pkg:
-    mapAttrs (_: c: { dependencies = map basic.version.normalize c.dependencies; }) pkg.internal.componentsSet;
 
     env = default: {
       mainPackage = config.main;
@@ -78,24 +75,6 @@ let
       packages = if config.manualCabal then null else packages;
     };
 
-    managed = {
-      deps = mapAttrs packageDeps config.packages;
-      state = util.managed.envState;
-      lower = {
-        inherit (config.managed.lower) solverBounds;
-      };
-      # TODO assess whether passing ghc here is feasible.
-      # Right now we're reading it via `nix eval .#build.env.foo.ghc-local`, since the local packages get different
-      # bounds after each run, which would not be reflected in a multi-env batch run if all package dbs are evaluated
-      # ahead of execution.
-      # But: this only matters for sets with dependencies on each other.
-      # Also `eval` doesn't build the derivation, so if we haven't done so before, the store path will be absent.
-      envs = mapAttrs (_: env: { ghc = util.ghc.packageDbLocal env; targets = util.env.targets env; }) util.managed.envs;
-      inherit (config) buildOutputsPrefix;
-    };
-
-    jsonFile = name: value: pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
-
   in {
     inherit packages ghci preproc;
 
@@ -104,8 +83,6 @@ let
     ghciFile = jsonFile "ghci-config" ghci;
 
     preprocFile = jsonFile "preproc-config" preproc;
-
-    managedFile = jsonFile "managed-config" managed;
 
   };
 
@@ -194,6 +171,7 @@ let
     projectHasPackages
     withMainOr
     attrsetMain
+    jsonFile
     json
     visibleEnvs
     visibleAppEnvs

@@ -1,5 +1,6 @@
 module Hix.Deps where
 
+import Control.Monad.Extra (mapMaybeM)
 import Data.List.Extra (nubOrdOn)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
@@ -7,40 +8,37 @@ import qualified Data.Set as Set
 import Distribution.Version (orLaterVersion, version0)
 import Exon (exon)
 
-import Hix.Class.Map (NtMap, convert, convert1, ntAmend1, ntElems1, ntFromList, ntMap, via, (!!))
+import Hix.Class.Map (NtMap, convert, convert1, ntAmend1, ntBy, ntElems1, ntFromList, ntMap, via, (!!))
 import Hix.Data.Bounds (Bounds, TargetBounds)
-import Hix.Data.ConfigDeps (
-  ConfigComponentDeps (ConfigComponentDeps),
-  ConfigDeps,
-  ConfigPackageDeps (ConfigPackageDeps),
-  )
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep, withVersion)
 import Hix.Data.Deps (TargetDeps)
 import Hix.Data.PackageName (LocalPackage, PackageName, localPackageNames)
+import qualified Hix.Managed.Data.ManagedPackage
+import Hix.Managed.Data.ManagedPackage (ManagedPackages (ManagedPackages))
 import Hix.Managed.Data.Targets (Targets, getTargets)
 import Hix.Monad (M, noteClient)
 
 -- | Validate the targets, requiring that they refer to entries in the dependencies read from the flake config.
-depsFromConfig :: ConfigDeps -> [LocalPackage] -> M TargetDeps
-depsFromConfig confDeps targets = do
-  ps <- traverse pkgDeps targets
-  pure (ntFromList (catMaybes ps))
+depsFromConfig :: ManagedPackages -> [LocalPackage] -> M TargetDeps
+depsFromConfig (ManagedPackages packages) targets = do
+  ps <- mapMaybeM pkgDeps targets
+  pure (ntFromList ps)
   where
     pkgDeps pkg
       | not (Set.member pkg targetsSet) =
         pure Nothing
 
       | otherwise = do
-        ConfigPackageDeps confPdeps <- noteClient (notFound pkg) (confDeps !? pkg)
-        pure (Just (pkg, ntFromList (nonlocal confPdeps)))
+        package <- noteClient (notFound pkg) (packages !? pkg)
+        pure (Just (pkg, nonlocal package.deps))
 
-    nonlocal confPdeps = filter notLocal (mconcat (Map.elems (coerce confPdeps))) <&> \ dep -> (dep.package, dep)
+    nonlocal deps = ntBy (filter notLocal deps) (.package)
 
     notLocal dep = not (Set.member dep.package localNames)
 
     localNames :: Set PackageName
-    localNames = Set.fromList (localPackageNames (Map.keys confDeps))
+    localNames = Set.fromList (localPackageNames (Map.keys packages))
 
     targetsSet = Set.fromList targets
 
@@ -73,6 +71,6 @@ distributeBounds :: Bounds -> TargetDeps -> TargetBounds
 distributeBounds bounds =
   convert1 \ dep -> fromMaybe (orLaterVersion version0) (bounds !! dep.package)
 
-allDeps :: TargetDeps -> [Dep]
-allDeps =
+uniqueDeps :: TargetDeps -> [Dep]
+uniqueDeps =
   nubOrdOn (.package) . ntElems1

@@ -11,8 +11,11 @@ import qualified Hix.Data.Overrides
 import Hix.Data.Overrides (Override (Override))
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId)
-import Hix.Data.Version (SourceHash (SourceHash))
+import Hix.Data.Version (SourceHash (SourceHash), Version)
 import Hix.Pretty (showP)
+
+instance IsString Version where
+  fromString = unsafeParsec
 
 instance IsString VersionRange where
   fromString = unsafeParsec

@@ -5,11 +5,16 @@ import Data.Map.Merge.Strict (dropMissing, mapMissing, preserveMissing, zipWithM
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
 import Distribution.Pretty (Pretty (pretty))
+import Exon (exon)
 import qualified Text.PrettyPrint as PrettyPrint
 import Text.PrettyPrint (Doc, comma, hang, punctuate, sep, vcat, (<+>))
 
+import Hix.Data.Monad (M)
+import Hix.Monad (noteFatal)
+
 data LookupMonoid
 data LookupMaybe
+data LookupFatal
 
 type NtMap :: Type -> Type -> Type -> Type -> Constraint
 class (Ord k, Coercible map (Map k v)) => NtMap map k v sort | map -> k v sort where
@@ -18,24 +23,27 @@ class (Ord k, Coercible map (Map k v)) => NtMap map k v sort | map -> k v sort w
 
 instance Ord k => NtMap (Map k v) k v LookupMaybe where
 
-type Lookup :: Type -> Type -> Type -> Constraint
-class Lookup sort v l | sort v -> l where
-  lookup :: Maybe v -> l
+type Lookup :: Type -> Type -> Type -> Type -> Constraint
+class Lookup sort k v l | sort v -> l where
+  lookup :: k -> Maybe v -> l
 
-instance Monoid v => Lookup LookupMonoid v v where
-  lookup = fold
+instance Monoid v => Lookup LookupMonoid k v v where
+  lookup _ = fold
 
-instance Lookup LookupMaybe v (Maybe v) where
-  lookup = id
+instance Lookup LookupMaybe k v (Maybe v) where
+  lookup _ = id
+
+instance Show k => Lookup LookupFatal k v (Text -> M v) where
+  lookup k v thing = noteFatal [exon|No such #{thing}: #{show k}|] v
 
 (!!) ::
   ∀ map k v sort l .
   NtMap map k v sort =>
-  Lookup sort v l =>
+  Lookup sort k v l =>
   map ->
   k ->
   l
-(!!) m k = lookup @sort @v @l (coerce m !? k)
+(!!) m k = lookup @sort @k @v @l k (coerce m !? k)
 
 infixl !!
 
@@ -52,7 +60,7 @@ ntInsert k v m =
 ntUpdate ::
   ∀ map k v sort l .
   NtMap map k v sort =>
-  Lookup sort v l =>
+  Lookup sort k v l =>
   k ->
   map ->
   (l -> v) ->
@@ -63,7 +71,7 @@ ntUpdate k m f =
 ntUpdating ::
   ∀ map k v sort l .
   NtMap map k v sort =>
-  Lookup sort v l =>
+  Lookup sort k v l =>
   k ->
   (l -> v) ->
   map ->
@@ -346,12 +354,12 @@ ntFromKeys ::
 ntFromKeys keys f =
   ntFromList (keys <&> \ k -> (k, f k))
 
-ntFrom ::
+ntBy ::
   NtMap map k v sort =>
   [v] ->
   (v -> k) ->
   map
-ntFrom values f =
+ntBy values f =
   ntFromList (values <&> \ v -> (f v, v))
 
 ntForKeys ::

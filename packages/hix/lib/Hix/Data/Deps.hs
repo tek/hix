@@ -16,6 +16,7 @@ instance NtMap Deps PackageName Dep LookupMaybe
 instance Pretty Deps where
   pretty = ntPretty
 
+-- TODO Maybe create a wrapper or alternative @Target@ that is abstract and use it here.
 newtype TargetDeps =
   TargetDeps (Map LocalPackage Deps)
   deriving stock (Eq, Show, Generic)

@@ -48,7 +48,6 @@ data ManagedConfig =
     stateFile :: StateFileConfig,
     operation :: ManagedOp,
     envs :: [EnvName],
-    ghc :: Maybe (Path Abs Dir),
     targetBound :: TargetBound
   }
   deriving stock (Eq, Show, Generic)

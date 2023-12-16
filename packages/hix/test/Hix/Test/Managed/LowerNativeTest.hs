@@ -8,7 +8,6 @@ import Path (Abs, Dir, File, Path, Rel, parent, reldir, relfile, toFilePath, (</
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
 import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), defaultLowerConfig)
 import qualified Hix.Data.ManagedEnv
@@ -31,6 +30,7 @@ import Hix.Managed.Data.ManagedConfig (
   ManagedOp (OpLowerInit, OpLowerOptimize),
   StateFileConfig (StateFileConfig),
   )
+import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (
   BuildHandlers (BuildHandlers),
@@ -53,10 +53,10 @@ import Hix.Test.Utils (UnitTest, runMTest)
 -- reaching optimize.
 -- But when it is set to 2.1, the build succeeds during init.
 -- in the former case, there are a few more overrides added from the solver plan.
-deps :: ConfigDeps
-deps =
-  configLibDeps [
-    ("root", ["aeson >=2.2 && <2.3", "extra >=1.6 && <1.8"])
+packages :: ManagedPackages
+packages =
+  managedPackages [
+    (("root", "1.0"), ["aeson >=2.2 && <2.3", "extra >=1.6 && <1.8"])
   ]
 
 flake :: Path Abs Dir -> Text
@@ -252,24 +252,24 @@ test_lowerNative = do
           updateProject = True,
           projectRoot = Just root
         }
-      build <- liftIO (Build.handlersProd stateFileConf Nothing) <&> \ BuildHandlers {withBuilder, ..} ->
+        envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = Nothing})]
+      build <- liftIO (Build.handlersProd stateFileConf envsConfig Nothing) <&> \ BuildHandlers {withBuilder, ..} ->
         BuildHandlers {withBuilder = \ f -> withBuilder \ Builder {withEnvBuilder} -> f Builder {withEnvBuilder = \ e t d s g -> withEnvBuilder e t d s \ eb -> g EnvBuilder {buildWithState = eb.buildWithState, ghcDb = pure Nothing}}, ..}
       handlersInit <- Lower.handlersProdWith build False
       handlersOptimize <- Lower.handlersProdWith build False
       let
         env =
           ManagedEnv {
-            deps,
+            packages,
             state = ManagedEnvState mempty mempty mempty False,
             lower = ManagedLowerEnv {solverBounds = []},
-            envs = [("lower", EnvConfig {targets = ["root"]})],
+            envs = envsConfig,
             buildOutputsPrefix = Nothing
           }
         confInit =
           ManagedConfig {
             stateFile = stateFileConf,
             operation = OpLowerInit,
-            ghc = Nothing,
             envs = ["lower"],
             targetBound = TargetLower
           }

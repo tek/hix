@@ -6,7 +6,6 @@ import Hedgehog (evalEither, evalMaybe)
 import Path (Abs, Dir, Path, absdir)
 
 import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
@@ -21,6 +20,7 @@ import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpLowerOptimize))
+import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import Hix.Managed.Handlers.Lower (LowerHandlers (..))
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
 import Hix.Managed.Lower.Optimize (lowerOptimize)
@@ -35,8 +35,8 @@ import Hix.Test.Utils (UnitTest, runMTest)
 tmpRoot :: Path Abs Dir
 tmpRoot = [absdir|/tmp/project|]
 
-packages :: SourcePackages
-packages =
+packageDb :: SourcePackages
+packageDb =
   [
     ("direct1", allDep "transitive1 >=1.0" [
       ([1, 8, 1], []),
@@ -63,9 +63,9 @@ buildVersions = \case
   [("direct1", [1, 8, 1]), ("direct2", [1, 8, 1]), ("transitive1", [1, 0, 1])] -> pure Failure
   versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
 
-deps :: ConfigDeps
-deps =
-  configLibDeps [("local1", ["direct1", "direct2"])]
+packages :: ManagedPackages
+packages =
+  managedPackages [(("local1", "1.0"), ["direct1", "direct2"])]
 
 initialState :: ManagedEnvState
 initialState =
@@ -125,11 +125,11 @@ stateFileTarget =
 --   The first version 1.9.1 also fails, resulting in 1.9.2 to become the bound.
 test_lowerOptimizeMutation :: UnitTest
 test_lowerOptimizeMutation = do
-  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packages)
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packageDb)
   let
     env =
       ManagedEnv {
-        deps,
+        packages,
         state = initialState,
         lower = ManagedLowerEnv {solverBounds = mempty},
         envs = [("lower", EnvConfig {targets = ["local1"], ghc = Nothing})],
@@ -138,7 +138,6 @@ test_lowerOptimizeMutation = do
     conf =
       ManagedConfig {
         operation = OpLowerOptimize,
-        ghc = Nothing,
         stateFile = stateFileConfig,
         envs = ["lower"],
         targetBound = TargetLower

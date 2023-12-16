@@ -16,6 +16,7 @@
   quiet = lib.optionalString conf.quiet "--quiet";
 
   # TODO change this to use only one script that loops over all the options
+  # TODO also generalize
   withCheckFor = flag: name: main:
     if lib.attrByPath flag false conf
     then main
@@ -24,9 +25,33 @@
     die "Set $(blue 'managed.${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
     '';
 
+  managedEnvGhc =
+    if config.managed.internal.localsInPackageDb
+    then util.ghc.packageDbLocal
+    else util.ghc.packageDbVanilla
+    ;
+
+  managedEnv = let
+    package = name: pkg: {
+      inherit name;
+      inherit (pkg.cabal-config) version;
+      deps = map util.version.normalize (lib.concatMap (c: c.dependencies) (lib.attrValues pkg.internal.componentsSet));
+    };
+  in {
+    packages = lib.mapAttrs package config.packages;
+    state = util.managed.envState;
+    lower = {
+      inherit (config.managed.lower) solverBounds;
+    };
+    envs = lib.mapAttrs (_: env: { ghc = managedEnvGhc env; targets = util.env.targets env; }) util.managed.envs;
+    inherit (config) buildOutputsPrefix;
+  };
+
+  envConfigJson = util.jsonFile "managed-config" managedEnv;
+
   mainScript = cmd: envs: let
     general = [
-      "--config ${util.json.managedFile}"
+      "--config ${envConfigJson}"
       "--file ${file}"
       update
     ];
@@ -109,5 +134,5 @@
   lib.optionalAttrs (config.managed.enable && lib.pathExists file) (import file);
 
 in {
-  inherit bump lowerInit lowerOptimize lowerStabilize envModules envs envState;
+  inherit bump lowerInit lowerOptimize lowerStabilize envModules envs managedEnvGhc envState;
 }

@@ -237,7 +237,6 @@ managedConfigParser operation targetBound = do
   file <- option relFileOption (long "file" <> short 'f' <> help "The relative path to the managed deps file")
   updateProject <- switch (long "update-project" <> short 'u' <> help "Build with new versions and write to config")
   projectRoot <- optional (option absDirOption (long "root" <> help "The root directory of the project"))
-  ghc <- optional (option absDirOption (long "ghc" <> help "The lower env's GHC store path"))
   pure ManagedConfig {stateFile = StateFileConfig {..}, ..}
 
 bumpParser :: Parser BumpOptions

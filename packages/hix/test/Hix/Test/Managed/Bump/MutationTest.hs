@@ -5,7 +5,6 @@ import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
 
 import Hix.Data.Bounds (TargetBound (TargetUpper))
-import Hix.Data.ConfigDeps (ConfigDeps, configLibDeps)
 import Hix.Data.Error (Error (Fatal))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
@@ -21,6 +20,7 @@ import Hix.Managed.Bump.App (bump)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpBump))
+import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
 import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
 import qualified Hix.Managed.Handlers.StateFile.Test as StateFileHandlers
@@ -32,20 +32,18 @@ import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Managed.Config (stateFileConfig)
 import Hix.Test.Utils (UnitTest, runMTest)
 
-deps :: ConfigDeps
-deps =
-  configLibDeps [
-    ("panda", [
-      "direct1 ^>=1.0",
-      "direct2 <1.0",
-      "direct3",
-      "direct4",
-      "direct5 >=1.0 && <1.1"
-    ])
-  ]
-
-packages :: SourcePackages
+packages :: ManagedPackages
 packages =
+  managedPackages [(("panda", "1.0"), [
+    "direct1 ^>=1.0",
+    "direct2 <1.0",
+    "direct3",
+    "direct4",
+    "direct5 >=1.0 && <1.1"
+  ])]
+
+packageDb :: SourcePackages
+packageDb =
   [
     ("direct1", [
       ([1, 2, 1], [])
@@ -81,7 +79,7 @@ handlersTest = do
         withBuilder = versionsBuilder buildVersions,
         stateFile
       },
-      latestVersion = queryPackagesLatest packages
+      latestVersion = queryPackagesLatest packageDb
     }
   pure (handlers, stateFileRef)
 
@@ -141,7 +139,7 @@ test_bumpMutation = do
   let
     env =
       ManagedEnv {
-        deps,
+        packages,
         state = initialState,
         lower = ManagedLowerEnv mempty,
         envs = [("fancy", EnvConfig {targets = ["panda"], ghc = Nothing})],
@@ -149,7 +147,6 @@ test_bumpMutation = do
       }
     conf =
       ManagedConfig {
-        ghc = Nothing,
         operation = OpBump,
         stateFile = stateFileConfig,
         envs = ["fancy"],

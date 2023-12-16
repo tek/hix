@@ -66,13 +66,6 @@ with lib;
         default = true;
       };
 
-      # TODO probably better to do this in CI
-      commit = mkOption {
-        description = mdDoc "";
-        type = bool;
-        default = false;
-      };
-
       verbose = mkOption {
         description = mdDoc "Print verbose messages when managing dependencies.";
         type = bool;
@@ -131,6 +124,17 @@ with lib;
           '';
           type = str;
           default = if config.ghcVersions == [] then config.compiler else head config.ghcVersions;
+        };
+
+      };
+
+      internal = {
+
+        localsInPackageDb = mkOption {
+          description =
+            mdDoc "Whether to include local packages as source derivations in the package db used for the solver";
+          type = bool;
+          default = false;
         };
 
       };

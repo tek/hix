@@ -1,6 +1,8 @@
 {config, lib, util, env}:
 with lib;
 let
+  # TODO use ghc-pkg to query versions so core library versions are accessible
+  # even better: use CLI
 
   console = import ./console.nix { inherit lib; };
   inherit (console) s indent;
@@ -16,7 +18,7 @@ let
     pkg = ghc.${name};
     actual =
       if pkg == null
-      then "[boot package or unknown]"
+      then "[core library or unknown]"
       else "${colors.green "->"} ${colors.red pkg.version}";
   in ["${desc} ${actual}"];
 
