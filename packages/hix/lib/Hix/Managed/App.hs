@@ -5,7 +5,7 @@ import qualified Data.Map.Strict as Map
 import Exon (exon)
 
 import Hix.Class.Map (ntMap, (!!))
-import Hix.Data.Bounds (removableBounds)
+import Hix.Data.Bounds (TargetBound (TargetLower, TargetUpper), removableBounds)
 import Hix.Data.Deps (targetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
@@ -20,7 +20,10 @@ import Hix.Managed.Data.BuildResults (BuildResults)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp (ManagedApp))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig)
+import Hix.Managed.Data.ManagedConfig (
+  ManagedConfig,
+  ManagedOp (OpBump, OpLowerInit, OpLowerOptimize, OpLowerStabilize),
+  )
 import qualified Hix.Managed.Data.ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob (ManagedJob))
 import Hix.Managed.Data.Targets (sortTargets)
@@ -49,20 +52,27 @@ selectEnvs managedEnv specified = do
     conf <- noteClient (unknownEnv env) (managedEnv.envs !! env)
     pure (env, conf)
 
+targetBound :: ManagedOp -> TargetBound
+targetBound = \case
+  OpBump -> TargetUpper
+  OpLowerInit -> TargetLower
+  OpLowerOptimize -> TargetLower
+  OpLowerStabilize -> TargetLower
+
 -- TODO could the target bound be part of the EnvConfig, so we could run different jobs in one go?
 managedJob ::
   ManagedEnv ->
-  ManagedConfig ->
+  ManagedOp ->
   EnvName ->
   EnvConfig ->
   M ManagedJob
-managedJob env conf name envConfig = do
+managedJob env op name envConfig = do
   projectDeps <- depsFromConfig env.packages envConfig.targets
   let targets = sortTargets projectDeps envConfig.targets
       targetDeps = forTargets targets (withManagedRanges env.state.bounds projectDeps)
       remoteDeps = targetRemoteDeps targetDeps
       lowerInit = env.state.lowerInit !! name
-      removable = removableBounds conf.targetBound remoteDeps env.state.bounds
+      removable = removableBounds (targetBound op) remoteDeps env.state.bounds
       query = uniqueRemoteDeps remoteDeps
   pure ManagedJob {env = name, ..}
   where
@@ -70,20 +80,22 @@ managedJob env conf name envConfig = do
 
 managedJobs ::
   ManagedEnv ->
+  ManagedOp ->
   ManagedConfig ->
   M (NonEmpty ManagedJob)
-managedJobs env conf = do
+managedJobs env op conf = do
   envs <- selectEnvs env conf.envs
-  traverse (uncurry (managedJob env conf)) envs
+  traverse (uncurry (managedJob env op)) envs
 
 managedApp ::
   BuildHandlers ->
   ManagedEnv ->
   ManagedConfig ->
+  ManagedOp ->
   (ManagedApp -> M a) ->
   M a
-managedApp build env conf use = do
-  jobs <- managedJobs env conf
+managedApp build env conf operation use = do
+  jobs <- managedJobs env operation conf
   use ManagedApp {
     build,
     conf = conf.stateFile,
@@ -91,7 +103,7 @@ managedApp build env conf use = do
     packages = env.packages,
     jobs,
     solverBounds = env.lower.solverBounds,
-    operation = conf.operation
+    operation
   }
 
 processAppResult ::
@@ -104,7 +116,7 @@ processAppResult ::
 processAppResult report conf app = \case
   Right results -> do
     updateProject app.build.stateFile report conf.stateFile results
-    let output = buildOutput conf.operation results
+    let output = buildOutput app.operation results
     Env {output = format, target} <- ask
     outputResult output target format
   Left mutations ->
@@ -116,9 +128,10 @@ runManagedApp ::
   ReportHandlers a ->
   ManagedEnv ->
   ManagedConfig ->
+  ManagedOp ->
   (ManagedApp -> M (Either [DepMutation a] (BuildResults a))) ->
   M ()
-runManagedApp build report env conf use =
-  managedApp build env conf \ app -> do
+runManagedApp build report env conf op use =
+  managedApp build env conf op \ app -> do
     result <- use app
     processAppResult report conf app result

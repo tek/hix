@@ -4,7 +4,6 @@ import Data.Aeson (FromJSON (parseJSON), ToJSON (toJSON))
 import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel)
 
-import Hix.Data.Bounds (TargetBound)
 import Hix.Data.EnvName (EnvName)
 
 data StateFileConfig =
@@ -46,8 +45,6 @@ instance FromJSON ManagedOp where
 data ManagedConfig =
   ManagedConfig {
     stateFile :: StateFileConfig,
-    operation :: ManagedOp,
-    envs :: [EnvName],
-    targetBound :: TargetBound
+    envs :: [EnvName]
   }
   deriving stock (Eq, Show, Generic)

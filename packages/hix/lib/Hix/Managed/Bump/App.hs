@@ -17,7 +17,7 @@ import Hix.Managed.Data.BuildState (initBuildState)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (StateFileConfig)
+import Hix.Managed.Data.ManagedConfig (ManagedOp (OpBump), StateFileConfig)
 import qualified Hix.Managed.Data.ManagedJob
 import qualified Hix.Managed.Data.ManagedJob as ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob)
@@ -78,5 +78,5 @@ bumpCli :: BumpOptions -> M ()
 bumpCli opts = do
   env <- jsonConfigE Client opts.env
   handlers <- liftIO (chooseHandlers opts.config.stateFile env.envs env.buildOutputsPrefix opts.handlers)
-  runManagedApp handlers.build handlers.report env opts.config \ app ->
+  runManagedApp handlers.build handlers.report env opts.config OpBump \ app ->
     bump handlers app

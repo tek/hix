@@ -4,7 +4,6 @@ import Data.IORef (readIORef)
 import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
 
-import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigStabilize)
 import qualified Hix.Data.ManagedEnv
@@ -132,13 +131,11 @@ test_lowerStabilizeMutation = do
       }
     conf =
       ManagedConfig {
-        operation = OpLowerStabilize,
         stateFile = stateFileConfig,
-        envs = ["lower"],
-        targetBound = TargetLower
+        envs = ["lower"]
       }
   evalEither =<< liftIO do
-    runMTest False $ runManagedApp handlers.build handlers.report env conf \ app ->
+    runMTest False $ runManagedApp handlers.build handlers.report env conf OpLowerStabilize \ app ->
       Right <$> lowerStabilize handlers lowerConfigStabilize app
   finalStateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr finalStateFile)

@@ -4,7 +4,6 @@ import Data.IORef (IORef, readIORef)
 import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
 
-import Hix.Data.Bounds (TargetBound (TargetUpper))
 import Hix.Data.Error (Error (Fatal))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
@@ -147,13 +146,11 @@ test_bumpMutation = do
       }
     conf =
       ManagedConfig {
-        operation = OpBump,
         stateFile = stateFileConfig,
-        envs = ["fancy"],
-        targetBound = TargetUpper
+        envs = ["fancy"]
       }
   evalEither =<< liftIO do
     runMTest False do
-      runManagedApp handlers.build handlers.report env conf (bump handlers)
+      runManagedApp handlers.build handlers.report env conf OpBump (bump handlers)
   files <- liftIO (readIORef stateFileRef)
   eqLines stateFileTarget . renderRootExpr =<< evalMaybe (head files)

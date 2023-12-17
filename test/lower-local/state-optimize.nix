@@ -30,7 +30,7 @@
       containers = "0.5.7.0";
     };
     lower-local2 = {
-      semigroups = "0.18.1";
+      semigroups = "0.20";
     };
   };
   resolving = false;

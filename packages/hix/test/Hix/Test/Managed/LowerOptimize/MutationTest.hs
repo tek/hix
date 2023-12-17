@@ -5,7 +5,6 @@ import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
 import Path (Abs, Dir, Path, absdir)
 
-import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
@@ -137,13 +136,11 @@ test_lowerOptimizeMutation = do
       }
     conf =
       ManagedConfig {
-        operation = OpLowerOptimize,
         stateFile = stateFileConfig,
-        envs = ["lower"],
-        targetBound = TargetLower
+        envs = ["lower"]
       }
   evalEither =<< liftIO do
-    runMTest False $ runManagedApp handlers.build handlers.report env conf \ app ->
+    runMTest False $ runManagedApp handlers.build handlers.report env conf OpLowerOptimize \ app ->
       Right <$> lowerOptimize handlers lowerConfigOptimize app
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)

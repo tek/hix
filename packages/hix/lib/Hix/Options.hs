@@ -36,7 +36,6 @@ import Prelude hiding (Mod, mod)
 
 import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (BootstrapProjectConfig))
-import Hix.Data.Bounds (TargetBound (TargetLower, TargetUpper))
 import Hix.Data.ComponentConfig (ComponentName (ComponentName), ModuleName, SourceDir (SourceDir))
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir (ChangeDir), RunnerName)
@@ -70,11 +69,7 @@ import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
 import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (
-  ManagedConfig (ManagedConfig),
-  ManagedOp (OpBump, OpLowerInit),
-  StateFileConfig (StateFileConfig),
-  )
+import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
 import Hix.Optparse (
   JsonConfig,
   absDirOption,
@@ -231,8 +226,8 @@ bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
-managedConfigParser :: ManagedOp -> TargetBound -> Parser ManagedConfig
-managedConfigParser operation targetBound = do
+managedConfigParser :: Parser ManagedConfig
+managedConfigParser = do
   envs <- some (strOption (long "env" <> short 'e' <> help "Environment for building and managed overrides"))
   file <- option relFileOption (long "file" <> short 'f' <> help "The relative path to the managed deps file")
   updateProject <- switch (long "update-project" <> short 'u' <> help "Build with new versions and write to config")
@@ -242,14 +237,14 @@ managedConfigParser operation targetBound = do
 bumpParser :: Parser BumpOptions
 bumpParser = do
   env <- Right <$> jsonConfigParser
-  config <- managedConfigParser OpBump TargetUpper
+  config <- managedConfigParser
   handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure BumpOptions {..}
 
 lowerParser :: Parser LowerOptions
 lowerParser = do
   env <- Right <$> jsonConfigParser
-  managed <- managedConfigParser OpLowerInit TargetLower
+  managed <- managedConfigParser
   handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   maxFailedPre <- option auto (long "max-failed-majors-pre" <> help maxFailedPreHelp <> value 99 <> showDefault)
   maxFailedPost <- option auto (long "max-failed-majors-post" <> help maxFailedPostHelp <> value 0 <> showDefault)

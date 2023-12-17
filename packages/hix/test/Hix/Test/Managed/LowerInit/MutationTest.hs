@@ -6,7 +6,6 @@ import Exon (exon)
 import Hedgehog (evalEither, evalMaybe, (===))
 
 import Hix.Class.Map ((!!))
-import Hix.Data.Bounds (TargetBound (TargetLower))
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.LowerConfig (lowerConfigInit)
 import qualified Hix.Data.ManagedEnv
@@ -287,13 +286,11 @@ test_lowerInitMutation = do
       }
     conf =
       ManagedConfig {
-        operation = OpLowerInit,
         stateFile = stateFileConfig,
-        envs = ["lower-main", "lower-special"],
-        targetBound = TargetLower
+        envs = ["lower-main", "lower-special"]
       }
   (log, result) <- liftIO do
-    runMLogTest False True $ runManagedApp handlers.build ReportHandlers.handlersProd env conf \ app ->
+    runMLogTest False True $ runManagedApp handlers.build ReportHandlers.handlersProd env conf OpLowerInit \ app ->
       Right <$> lowerInit handlers lowerConfigInit def app
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
