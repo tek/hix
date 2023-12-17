@@ -86,6 +86,7 @@ library
       Hix.Managed.Data.ManagedApp
       Hix.Managed.Data.ManagedConfig
       Hix.Managed.Data.ManagedJob
+      Hix.Managed.Data.ManagedOp
       Hix.Managed.Data.ManagedPackage
       Hix.Managed.Data.SolverParams
       Hix.Managed.Data.SolveTarget
@@ -119,6 +120,7 @@ library
       Hix.Managed.Lower.Candidates
       Hix.Managed.Lower.Data.Bump
       Hix.Managed.Lower.Data.Lower
+      Hix.Managed.Lower.Data.LowerMode
       Hix.Managed.Lower.Init
       Hix.Managed.Lower.Optimize
       Hix.Managed.Lower.Stabilize

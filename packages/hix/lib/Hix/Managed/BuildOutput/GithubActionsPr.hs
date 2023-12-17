@@ -13,7 +13,7 @@ import Hix.Data.OutputTarget (OutputTarget)
 import Hix.Managed.BuildOutput.CommitMsg (commit)
 import qualified Hix.Managed.Data.BuildOutput
 import Hix.Managed.Data.BuildOutput (BuildOutput)
-import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
+import Hix.Managed.Data.ManagedOp (ManagedOp (..))
 import Hix.Monad (note, throwM, tryIOMAs)
 import qualified Hix.OutputWriter
 import Hix.OutputWriter (OutputWriter, fileWriter, outputWriterM)

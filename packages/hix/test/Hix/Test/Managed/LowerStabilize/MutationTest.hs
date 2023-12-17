@@ -5,7 +5,6 @@ import Exon (exon)
 import Hedgehog (evalEither, evalMaybe)
 
 import Hix.Data.Error (Error (Fatal))
-import Hix.Data.LowerConfig (lowerConfigStabilize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
   EnvConfig (EnvConfig),
@@ -19,7 +18,8 @@ import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpLowerStabilize))
+import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig))
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpLowerStabilize))
 import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import Hix.Managed.Handlers.Lower (LowerHandlers (..))
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
@@ -136,6 +136,6 @@ test_lowerStabilizeMutation = do
       }
   evalEither =<< liftIO do
     runMTest False $ runManagedApp handlers.build handlers.report env conf OpLowerStabilize \ app ->
-      Right <$> lowerStabilize handlers lowerConfigStabilize app
+      Right <$> lowerStabilize handlers def app
   finalStateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr finalStateFile)

@@ -20,7 +20,7 @@ import Hix.Data.Dep (Dep)
 import Hix.Data.Deps (ProjectDep, projectDep, projectDepLocal)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Versions)
-import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpBump, OpLowerInit, OpLowerOptimize, OpLowerStabilize))
 import Hix.Version (lowerBound, upperVersion)
 
 -- | Left-biased semigroup op.

@@ -17,10 +17,11 @@ import Hix.Managed.Data.BuildState (initBuildState)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedOp (OpBump), StateFileConfig)
+import Hix.Managed.Data.ManagedConfig (StateFileConfig)
 import qualified Hix.Managed.Data.ManagedJob
 import qualified Hix.Managed.Data.ManagedJob as ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob)
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpBump))
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (Builder)
 import qualified Hix.Managed.Handlers.Bump

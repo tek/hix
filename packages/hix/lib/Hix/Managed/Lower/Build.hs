@@ -81,7 +81,6 @@ lowerJob initialParams candidates mkMutationHandlers app conf builder job = do
     ext = LowerState solverParams
 
     solverParams =
-      conf.extraSolverParams <>
       SolverParams.fromUserConfig app.solverBounds <>
       initialParams (uniqueDeps job.targetDeps)
 

@@ -14,7 +14,7 @@ import Hix.Data.Version (NewRange (NewRange, OldRange))
 import Hix.Deps (distributeBounds)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate)
-import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerInit))
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpLowerInit))
 import Hix.Version (lowerBound)
 
 -- | Insert the transformed 'ManagedState', which contains only the bounds for the current target set and the overrides

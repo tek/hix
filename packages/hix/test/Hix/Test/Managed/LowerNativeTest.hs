@@ -8,7 +8,7 @@ import Path (Abs, Dir, File, Path, Rel, parent, reldir, relfile, toFilePath, (</
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import qualified Hix.Data.LowerConfig
-import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig), defaultLowerConfig)
+import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig))
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
   EnvConfig (EnvConfig),
@@ -21,14 +21,10 @@ import qualified Hix.Data.Monad
 import Hix.Data.Monad (Env (Env), M)
 import Hix.Error (pathText)
 import Hix.Managed.App (managedApp)
-import Hix.Managed.Build.Mutation (MutationResult (MutationFailed, MutationKeep))
 import qualified Hix.Managed.Data.BuildResults
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (
-  ManagedConfig (ManagedConfig),
-  ManagedOp (OpLowerInit, OpLowerOptimize),
-  StateFileConfig (StateFileConfig),
-  )
+import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpLowerInit, OpLowerOptimize))
 import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (
@@ -267,17 +263,15 @@ test_lowerNative = do
           }
         managedConf = ManagedConfig {stateFile = stateFileConf, envs = ["lower"]}
         lowerInitConf = LowerInitConfig {reset = False}
-        lowerConfInit = defaultLowerConfig True MutationFailed
-        lowerConfOptimize = defaultLowerConfig False MutationKeep
 
       let stateFile = root </> [relfile|ops/managed.nix|]
       env1 <- managedApp handlersInit.build env managedConf OpLowerInit \ app -> do
-        result <- lowerInit handlersInit lowerConfInit lowerInitConf app
+        result <- lowerInit handlersInit def lowerInitConf app
         updateProject handlersInit.build.stateFile handlersInit.report managedConf.stateFile result
         pure (envWithState result.state env)
       stateFileContentInit <- liftIO (Text.readFile (toFilePath stateFile))
       managedApp handlersInit.build env1 managedConf OpLowerOptimize \ app -> do
-        result <- lowerOptimize handlersOptimize lowerConfOptimize app
+        result <- lowerOptimize handlersOptimize def app
         updateProject handlersInit.build.stateFile handlersOptimize.report managedConf.stateFile result
       stateFileContentOptimize <- liftIO (Text.readFile (toFilePath stateFile))
       pure (stateFileContentInit, stateFileContentOptimize)

@@ -16,7 +16,7 @@ import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation))
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
-import Hix.Managed.Data.ManagedConfig (ManagedOp (OpBump, OpLowerStabilize))
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpBump, OpLowerStabilize))
 import qualified Hix.Managed.Data.SolverParams
 import Hix.Managed.Data.SolverParams (BoundMutation (ExtendedBound, RetractedBound), SolverParams, updatePackageParams)
 import qualified Hix.Managed.Handlers.Solve

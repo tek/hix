@@ -13,7 +13,6 @@ import Hix.Managed.Data.BuildResults (BuildResults)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
-import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerStabilize))
 import qualified Hix.Managed.Data.ManagedJob
 import qualified Hix.Managed.Data.ManagedJob as ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob)
@@ -27,6 +26,7 @@ import Hix.Managed.Job (buildJob, buildJobs)
 import Hix.Managed.Lower.Build (lowerJob)
 import Hix.Managed.Lower.Candidates (candidatesStabilize)
 import Hix.Managed.Lower.Data.Lower (Lower)
+import Hix.Managed.Lower.Data.LowerMode (lowerStabilizeMode)
 import Hix.Managed.Overrides (newVersionOverrides)
 
 lowerInitState ::
@@ -62,7 +62,7 @@ lowerStabilizeEnv handlers conf app builder job =
 
     managed0 = ManagedJob.initialState job
     candidates initialVersions dep = candidatesStabilize handlers.versions dep (initialVersions !! dep.package)
-    mutationHandlers = Mutation.handlersLower OpLowerStabilize conf (handlers.solve app.packages)
+    mutationHandlers = Mutation.handlersLower conf lowerStabilizeMode (handlers.solve app.packages)
 
     -- TODO Be helpful about what to do
     initLowerFailed = "Build with initial lower bounds failed."

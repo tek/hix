@@ -6,7 +6,6 @@ import Hedgehog (evalEither, (===))
 
 import Hix.Data.Dep (mainDep)
 import Hix.Data.Error (Error (Client))
-import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
 import qualified Hix.Data.PackageId
@@ -16,13 +15,13 @@ import Hix.Data.Version (NewRange (NewRange))
 import Hix.Managed.Build.Mutation (MutationResult (MutationSuccess))
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
-import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerOptimize))
 import Hix.Managed.Data.SolverParams (BoundMutation (ExtendedBound), mutation)
 import Hix.Managed.Handlers.Mutation.Lower (processMutationLower)
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers (SolveHandlers))
 import Hix.Managed.Lower.Candidates (candidatesOptimize)
 import Hix.Managed.Lower.Data.Lower (LowerState (..))
+import Hix.Managed.Lower.Data.LowerMode (lowerOptimizeMode)
 import Hix.Managed.Solve.Changes (SolverPlan (..))
 import Hix.Monad (M, throwM)
 import Hix.Test.Utils (UnitTest, runMTest)
@@ -57,7 +56,7 @@ test_candidatesOptimize = do
   result <- liftIO $ runMTest False do
     majors <- candidatesOptimize availableVersions dep
     for majors \ mut ->
-      processMutationLower solve OpLowerOptimize lowerConfigOptimize state mut build
+      processMutationLower solve def lowerOptimizeMode state mut build
   mutationResults <- evalEither result
   Just (MutationSuccess candidate mstate newState) === mutationResults
   triedVersions <- liftIO (readIORef buildRef)

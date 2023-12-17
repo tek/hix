@@ -6,7 +6,7 @@ import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.ManagedEnv (ManagedEnvState)
 import Hix.Managed.Data.BuildResult (BuildResult, finalState)
-import Hix.Managed.Data.ManagedConfig (ManagedOp)
+import Hix.Managed.Data.ManagedOp (ManagedOp)
 import Hix.Managed.State (envStateWithMutations)
 
 data BuildResults a =

@@ -20,12 +20,10 @@ import Hix.Managed.Data.BuildResults (BuildResults)
 import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp (ManagedApp))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (
-  ManagedConfig,
-  ManagedOp (OpBump, OpLowerInit, OpLowerOptimize, OpLowerStabilize),
-  )
+import Hix.Managed.Data.ManagedConfig (ManagedConfig)
 import qualified Hix.Managed.Data.ManagedJob
 import Hix.Managed.Data.ManagedJob (ManagedJob (ManagedJob))
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpBump, OpLowerInit, OpLowerOptimize, OpLowerStabilize))
 import Hix.Managed.Data.Targets (sortTargets)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (BuildHandlers)

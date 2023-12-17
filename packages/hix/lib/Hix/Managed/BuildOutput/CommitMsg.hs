@@ -6,7 +6,7 @@ import Exon (exon)
 import qualified Hix.Managed.Data.BuildOutput
 import Hix.Managed.Data.BuildOutput (BuildOutput)
 import Hix.Managed.Data.Candidate (Candidate)
-import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
+import Hix.Managed.Data.ManagedOp (ManagedOp (..))
 import Hix.Pretty (showP)
 
 commitMessage :: ManagedOp -> Int -> Text -> Text

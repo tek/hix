@@ -12,7 +12,7 @@ import qualified Hix.Managed.Data.BuildResults
 import Hix.Managed.Data.BuildResults (BuildResults)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate)
-import Hix.Managed.Data.ManagedConfig (ManagedOp)
+import Hix.Managed.Data.ManagedOp (ManagedOp)
 
 data BuildOutput =
   BuildOutput {

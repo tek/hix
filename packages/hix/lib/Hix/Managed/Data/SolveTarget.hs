@@ -14,7 +14,7 @@ import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
-import Hix.Managed.Data.ManagedConfig (ManagedOp)
+import Hix.Managed.Data.ManagedOp (ManagedOp)
 import qualified Hix.Managed.Data.SolverParams
 import Hix.Managed.Data.SolverParams (PackageParams (PackageParams), SolverParams, packageParamsRange)
 

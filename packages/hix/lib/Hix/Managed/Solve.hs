@@ -26,7 +26,7 @@ import Hix.Data.Error (Error (Fatal))
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId)
 import qualified Hix.Log as Log
-import Hix.Managed.Data.ManagedConfig (ManagedOp)
+import Hix.Managed.Data.ManagedOp (ManagedOp)
 import qualified Hix.Managed.Data.SolveTarget
 import Hix.Managed.Data.SolveTarget (SolveTarget, candidateTarget, solveTargets)
 import Hix.Managed.Data.SolverParams (SolverParams)

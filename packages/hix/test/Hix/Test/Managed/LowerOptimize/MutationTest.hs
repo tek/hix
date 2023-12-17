@@ -6,7 +6,6 @@ import Hedgehog (evalEither, evalMaybe)
 import Path (Abs, Dir, Path, absdir)
 
 import Hix.Data.Error (Error (Fatal))
-import Hix.Data.LowerConfig (lowerConfigOptimize)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (
   EnvConfig (EnvConfig),
@@ -18,7 +17,8 @@ import Hix.Data.Version (Versions)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure, Success))
 import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), ManagedOp (OpLowerOptimize))
+import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig))
+import Hix.Managed.Data.ManagedOp (ManagedOp (OpLowerOptimize))
 import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
 import Hix.Managed.Handlers.Lower (LowerHandlers (..))
 import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
@@ -141,6 +141,6 @@ test_lowerOptimizeMutation = do
       }
   evalEither =<< liftIO do
     runMTest False $ runManagedApp handlers.build handlers.report env conf OpLowerOptimize \ app ->
-      Right <$> lowerOptimize handlers lowerConfigOptimize app
+      Right <$> lowerOptimize handlers def app
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)

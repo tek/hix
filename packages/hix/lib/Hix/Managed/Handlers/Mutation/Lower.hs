@@ -19,13 +19,14 @@ import Hix.Managed.Build.Mutation (BuildMutation, DepMutation (DepMutation), Mut
 import Hix.Managed.Build.Solve (buildWithSolver)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
-import Hix.Managed.Data.ManagedConfig (ManagedOp)
 import Hix.Managed.Handlers.Build (EnvBuilder)
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers (MutationHandlers))
 import Hix.Managed.Handlers.Solve (SolveHandlers)
 import qualified Hix.Managed.Lower.Data.Lower
 import Hix.Managed.Lower.Data.Lower (Lower (Lower), LowerState (LowerState))
+import qualified Hix.Managed.Lower.Data.LowerMode
+import Hix.Managed.Lower.Data.LowerMode (LowerMode)
 import Hix.Pretty (showP)
 import Hix.Version (setLowerBound)
 
@@ -33,18 +34,18 @@ import Hix.Version (setLowerBound)
 -- immediately returns success when the version is encountered that succeeded most recently that way.
 processMutationLower ::
   SolveHandlers ->
-  ManagedOp ->
   LowerConfig ->
+  LowerMode ->
   LowerState ->
   DepMutation Lower ->
   (BuildMutation -> M (Maybe ManagedState)) ->
   M (MutationResult LowerState)
-processMutationLower solve op conf state mutation build = do
+processMutationLower solve conf mode state mutation build = do
   foldM buildMajor (Right 0, Nothing) majors <&> \case
     (_, Just (candidate, newState, solverParams)) ->
       MutationSuccess candidate newState LowerState {solverParams}
     (_, Nothing) ->
-      conf.noSuccess
+      mode.noSuccess
   where
     -- | We skip all remaining majors when the number of failed majors exceeds the configured limit.
     -- There are different values for failures before the first and after the last success.
@@ -60,7 +61,7 @@ processMutationLower solve op conf state mutation build = do
       , n > conf.maxFailedPost
       = pure (failed, prev)
 
-      | conf.firstSuccess
+      | mode.firstSuccess
       , Just _ <- prev
       = pure (failed, prev)
 
@@ -76,18 +77,18 @@ processMutationLower solve op conf state mutation build = do
         package = PackageId {name = package, version},
         range = NewRange (setLowerBound version range)
       }
-      buildWithSolver solve build op state.solverParams candidate
+      buildWithSolver solve build mode.operation state.solverParams candidate
 
     DepMutation {package, mutation = Lower {majors, range}} = mutation
 
 handlersLower ::
-  ManagedOp ->
   LowerConfig ->
+  LowerMode ->
   (EnvBuilder -> M SolveHandlers) ->
   EnvBuilder ->
   M (MutationHandlers Lower LowerState)
-handlersLower op conf mkSolve builder = do
+handlersLower conf mode mkSolve builder = do
   solve <- mkSolve builder
   pure MutationHandlers {
-    process = processMutationLower solve op conf
+    process = processMutationLower solve conf mode
   }
