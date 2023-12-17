@@ -294,7 +294,6 @@ test-suite hix-test
       Hix.Test.Managed.LowerStabilize.MutationTest
       Hix.Test.Managed.ManagedEnvTest
       Hix.Test.Managed.Solver
-      Hix.Test.Managed.SolverTest
       Hix.Test.Managed.UnsafeIsString
       Hix.Test.ManagedTest
       Hix.Test.NewTest

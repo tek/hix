@@ -1,8 +1,8 @@
 module Hix.Managed.Solve.Mock.SourcePackage where
 
+import qualified Data.Map.Strict as Map
 import Distribution.Client.Types (PackageLocation (LocalTarballPackage), SourcePackageDb (..), UnresolvedSourcePackage)
 import Distribution.PackageDescription (
-  BuildInfo (defaultLanguage),
   CondTree (..),
   Library (libBuildInfo),
   LibraryVisibility (LibraryVisibilityPublic),
@@ -11,21 +11,36 @@ import Distribution.PackageDescription (
   emptyPackageDescription,
   )
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Simple (Language (GHC2021), Version)
+import Distribution.Simple (Version)
 import qualified Distribution.Solver.Types.PackageIndex as PackageIndex
+import Distribution.Solver.Types.PackageIndex (PackageIndex)
 import Distribution.Solver.Types.SourcePackage (SourcePackage (..))
 import Distribution.Types.GenericPackageDescription (GenericPackageDescription (..), emptyGenericPackageDescription)
 import Distribution.Types.Library (libVisibility)
 import Exon (exon)
 import GHC.Exts (IsList)
 
-import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, convert, ntKeys, ntPretty1, ntPrettyWith, ntTo1, via, (!!))
+import Hix.Class.Map (
+  LookupMaybe,
+  LookupMonoid,
+  NtMap,
+  convert,
+  convertWithKey,
+  ntKeys,
+  ntMap,
+  ntPretty1,
+  ntPrettyWith,
+  ntTo1,
+  via,
+  (!!),
+  )
 import qualified Hix.Data.Dep as Dep
 import Hix.Data.Dep (Dep)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
-import Hix.Data.PackageName (PackageName)
+import Hix.Data.PackageName (LocalPackage (LocalPackage), PackageName)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (..), ManagedPackages)
 import Hix.Monad (noteClient)
 import Hix.Pretty (prettyL)
 
@@ -69,7 +84,7 @@ sourcePackageVersions :: SourcePackages -> SourcePackageVersions
 sourcePackageVersions = convert (sort . ntKeys)
 
 queryVersions :: SourcePackageVersions -> PackageName -> M [Version]
-queryVersions packages query = noteClient [exon|No such package: ##{query}|] (packages !! query)
+queryVersions packages query = noteClient [exon|No such package in the source db: ##{query}|] (packages !! query)
 
 queryPackages :: SourcePackages -> PackageName -> M [Version]
 queryPackages packages =
@@ -104,7 +119,7 @@ mockSourcePackage name version deps =
       mempty {
         condTreeData = emptyLibrary {
           libVisibility = LibraryVisibilityPublic,
-          libBuildInfo = mempty {defaultLanguage = Just GHC2021}
+          libBuildInfo = mempty
         },
         condTreeConstraints = Dep.toCabal <$> deps
       }
@@ -115,4 +130,23 @@ mockSourcePackageDb packages =
   SourcePackageDb {
     packageIndex = PackageIndex.fromList (ntTo1 packages mockSourcePackage),
     packagePreferences = []
+  }
+
+managedSourcePackageVersions :: ManagedPackages -> SourcePackageVersions
+managedSourcePackageVersions =
+  convertWithKey \ (LocalPackage name) package -> (name, [package.version])
+
+managedSourcePackage :: ManagedPackage -> UnresolvedSourcePackage
+managedSourcePackage ManagedPackage {name = LocalPackage name, version, deps} =
+  mockSourcePackage name version deps
+
+managedPackageIndex :: ManagedPackages -> PackageIndex UnresolvedSourcePackage
+managedPackageIndex packages =
+  PackageIndex.fromList (managedSourcePackage <$> Map.elems (ntMap packages))
+
+dbWithManaged :: ManagedPackages -> SourcePackageDb -> SourcePackageDb
+dbWithManaged packages SourcePackageDb {packageIndex, packagePreferences} =
+  SourcePackageDb {
+    packageIndex = PackageIndex.merge packageIndex (managedPackageIndex packages),
+    packagePreferences
   }

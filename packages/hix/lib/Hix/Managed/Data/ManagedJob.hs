@@ -2,7 +2,7 @@ module Hix.Managed.Data.ManagedJob where
 
 import Hix.Data.Bounds (RemovableBounds)
 import Hix.Data.Dep (Dep)
-import Hix.Data.Deps (TargetDeps)
+import Hix.Data.Deps (TargetDeps, TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
@@ -26,8 +26,10 @@ data ManagedJob =
     -- | The flake deps with their ranges replaced by the managed bounds, if they exist.
     -- Invariant: keys are exactly the 'targets'.
     targetDeps :: TargetDeps,
+    remoteDeps :: TargetRemoteDeps,
     lowerInit :: Versions,
-    deps :: [Dep],
+    -- TODO in managedJob, filter these with the CLI options for selecting specific deps
+    query :: [Dep],
     overrides :: Overrides,
     -- | The deps in each target that had a 'targetBound' in the flake config, but not in the managed state.
     -- For the purpose of informing the user that they can be removed.
@@ -36,5 +38,5 @@ data ManagedJob =
   deriving stock (Eq, Show, Generic)
 
 initialState :: ManagedJob -> ManagedState
-initialState ManagedJob {targetDeps, overrides} =
-  ManagedState {bounds = mergeBounds targetDeps, overrides}
+initialState ManagedJob {remoteDeps, overrides} =
+  ManagedState {bounds = mergeBounds remoteDeps, overrides}

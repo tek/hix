@@ -1,7 +1,7 @@
 module Hix.Managed.Handlers.Build where
 
 import Hix.Class.Map (convert)
-import Hix.Data.Deps (TargetDeps)
+import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState)
@@ -24,7 +24,7 @@ data EnvBuilder =
 
 data Builder =
   Builder {
-    withEnvBuilder :: ∀ a . EnvName -> Targets -> TargetDeps -> ManagedState -> (EnvBuilder -> M a) -> M a
+    withEnvBuilder :: ∀ a . EnvName -> Targets -> TargetRemoteDeps -> ManagedState -> (EnvBuilder -> M a) -> M a
   }
 
 data BuildHandlers =

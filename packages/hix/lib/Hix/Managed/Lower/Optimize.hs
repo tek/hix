@@ -1,9 +1,9 @@
 module Hix.Managed.Lower.Optimize where
 
-import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerConfig)
 import Hix.Data.Monad (M)
 import Hix.Managed.Data.BuildResults (BuildResults)
+import qualified Hix.Managed.Data.ManagedApp
 import Hix.Managed.Data.ManagedApp (ManagedApp)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (OpLowerOptimize))
 import Hix.Managed.Data.SolverParams (lowerBounds)
@@ -21,8 +21,7 @@ lowerOptimize ::
   ManagedApp ->
   M (BuildResults Lower)
 lowerOptimize handlers conf app =
-  buildJobs app (lowerJob initialBounds candidates mutationHandlers app conf)
+  buildJobs app (lowerJob lowerBounds candidates mutationHandlers app conf)
   where
-    initialBounds deps = conf.initialSolverParams <> lowerBounds deps
     candidates = candidatesOptimize handlers.versions
-    mutationHandlers = Mutation.handlersLower OpLowerOptimize conf handlers.solve
+    mutationHandlers = Mutation.handlersLower OpLowerOptimize conf (handlers.solve app.packages)

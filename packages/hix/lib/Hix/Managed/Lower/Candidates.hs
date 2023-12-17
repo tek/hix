@@ -78,7 +78,7 @@ logInitConfig package conf =
       InitBeforeUpper s m ->
         [exon|all majors before the specified upper bound #{prefix s m}|]
       InitAll ->
-        "all majors."
+        "al majors."
 
 selectionInit :: InitConfig -> [Version] -> Maybe (NonEmpty Major)
 selectionInit = \case

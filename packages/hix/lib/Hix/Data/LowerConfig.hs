@@ -14,13 +14,14 @@ data LowerConfig =
     maxFailedPost :: Natural,
     maxIterations :: Natural,
     oldest :: Bool,
-    initialSolverParams :: SolverParams
+    -- TODO remove
+    extraSolverParams :: SolverParams
   }
   deriving stock (Eq, Show, Generic)
 
 lowerConfig :: LowerOptions -> Bool -> MutationResult LowerState -> LowerConfig
 lowerConfig LowerOptions {..} firstSuccess noSuccess =
-  LowerConfig {oldest = False, initialSolverParams = [], ..}
+  LowerConfig {oldest = False, extraSolverParams = [], ..}
 
 defaultLowerConfig :: Bool -> MutationResult LowerState -> LowerConfig
 defaultLowerConfig firstSuccess noSuccess =
@@ -31,7 +32,7 @@ defaultLowerConfig firstSuccess noSuccess =
     maxFailedPost = 0,
     maxIterations = 3,
     oldest = False,
-    initialSolverParams = mempty
+    extraSolverParams = mempty
   }
 
 lowerConfigInit :: LowerConfig

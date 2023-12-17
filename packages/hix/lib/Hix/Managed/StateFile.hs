@@ -5,7 +5,7 @@ import Exon (exon)
 import Path (Abs, File, Path)
 
 import Hix.Class.EncodeNix (encodeNix)
-import Hix.Data.Deps (TargetDeps)
+import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.ManagedEnv (ManagedEnvState, ManagedState)
 import Hix.Data.Monad (M)
@@ -56,7 +56,7 @@ writeProjectState handlers conf newState = do
 writeBuildStateFor ::
   Text ->
   StateFileHandlers ->
-  TargetDeps ->
+  TargetRemoteDeps ->
   EnvName ->
   ManagedState ->
   Path Abs File ->

@@ -8,6 +8,7 @@ import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import Hix.Hackage (versionsHackage)
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
+import Hix.Managed.Data.ManagedPackage (ManagedPackages)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (BuildHandlers, EnvBuilder)
 import qualified Hix.Managed.Handlers.Build.Prod as Build
@@ -17,10 +18,14 @@ import qualified Hix.Managed.Handlers.Report.Prod as Report
 import Hix.Managed.Handlers.Solve (SolveHandlers)
 import qualified Hix.Managed.Handlers.Solve.Prod as SolveHandlers
 
-solve :: Bool -> EnvBuilder -> M SolveHandlers
-solve oldest builder = do
+solve ::
+  Bool ->
+  ManagedPackages ->
+  EnvBuilder ->
+  M SolveHandlers
+solve oldest packages builder = do
   ghcDb <- builder.ghcDb
-  SolveHandlers.handlersProd solverParams ghcDb
+  SolveHandlers.handlersProd packages solverParams ghcDb
   where
     solverParams | oldest = setPreferenceDefault PreferAllOldest
                  | otherwise = id

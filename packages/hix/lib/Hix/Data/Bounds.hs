@@ -10,9 +10,9 @@ import GHC.Exts (IsList)
 import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, convert1, ntAmend1, ntInsert, ntPretty, ntPretty1, via)
 import qualified Hix.Data.Dep
-import Hix.Data.Deps (TargetDeps)
+import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.Json (jsonParsec)
-import Hix.Data.PackageName ( LocalPackage, PackageName )
+import Hix.Data.PackageName (LocalPackage, PackageName)
 
 newtype Bounds =
   Bounds (Map PackageName VersionRange)
@@ -79,7 +79,7 @@ data RemovableBounds =
   }
   deriving stock (Eq, Show, Generic)
 
-removableBounds :: TargetBound -> TargetDeps -> TargetBounds -> RemovableBounds
+removableBounds :: TargetBound -> TargetRemoteDeps -> TargetBounds -> RemovableBounds
 removableBounds targetBound configDeps managedBounds =
   RemovableBounds {
     targetBound,

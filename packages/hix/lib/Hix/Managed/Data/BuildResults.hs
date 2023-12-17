@@ -2,7 +2,7 @@ module Hix.Managed.Data.BuildResults where
 
 import qualified Data.Map.Strict as Map
 
-import Hix.Data.Deps (TargetDeps)
+import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.ManagedEnv (ManagedEnvState)
 import Hix.Managed.Data.BuildResult (BuildResult, finalState)
@@ -24,7 +24,7 @@ initBuildResults state =
 updateBuildResults ::
   ManagedOp ->
   EnvName ->
-  TargetDeps ->
+  TargetRemoteDeps ->
   BuildResults a ->
   BuildResult a ->
   BuildResults a

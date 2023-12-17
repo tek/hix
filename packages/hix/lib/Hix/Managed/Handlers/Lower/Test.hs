@@ -11,13 +11,19 @@ import Hix.Data.Version (Versions)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.Data.BuildState (BuildStatus)
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
+import Hix.Managed.Data.ManagedPackage (ManagedPackages)
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Lower (LowerHandlers (..), handlersNull)
 import Hix.Managed.Handlers.Lower.Prod (handlersProd)
 import qualified Hix.Managed.Handlers.Report.Test as ReportHandlers
 import qualified Hix.Managed.Handlers.Solve.Test as SolveHandlers
 import Hix.Managed.Lower.Data.Lower (Lower)
-import Hix.Managed.Solve.Mock.SourcePackage (SourcePackages, queryVersions, sourcePackageVersions)
+import Hix.Managed.Solve.Mock.SourcePackage (
+  SourcePackages,
+  managedSourcePackageVersions,
+  queryVersions,
+  sourcePackageVersions,
+  )
 
 handlersTest ::
   StateFileConfig ->
@@ -38,12 +44,13 @@ handlersUnitTestNoSolver buildVersions = do
 
 handlersUnitTest ::
   (Versions -> M BuildStatus) ->
+  ManagedPackages ->
   [(PackageId, [PackageId])] ->
   SourcePackages ->
   IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
-handlersUnitTest buildVersions installed available =
+handlersUnitTest buildVersions packages installed available =
   (_1 %~ add) <$> handlersUnitTestNoSolver buildVersions
   where
     add h = h {solve, versions}
-    solve _ = pure (SolveHandlers.testHandlers installed available)
-    versions = queryVersions (sourcePackageVersions available)
+    solve ps _ = pure (SolveHandlers.testHandlers ps installed available)
+    versions = queryVersions (managedSourcePackageVersions packages <> sourcePackageVersions available)

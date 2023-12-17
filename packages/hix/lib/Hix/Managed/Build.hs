@@ -12,8 +12,8 @@ import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
-import Hix.Data.PackageName (PackageName)
 import Hix.Data.PackageId (PackageId)
+import Hix.Data.PackageName (PackageName)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation), DepMutation, MutationResult (..))

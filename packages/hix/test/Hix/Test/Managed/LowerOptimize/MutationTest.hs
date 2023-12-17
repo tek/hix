@@ -125,7 +125,7 @@ stateFileTarget =
 --   The first version 1.9.1 also fails, resulting in 1.9.2 to become the bound.
 test_lowerOptimizeMutation :: UnitTest
 test_lowerOptimizeMutation = do
-  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packageDb)
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions packages [] packageDb)
   let
     env =
       ManagedEnv {

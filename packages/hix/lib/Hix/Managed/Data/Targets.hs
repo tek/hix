@@ -10,8 +10,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 
 import qualified Hix.Data.Dep
-import Hix.Data.Deps (Deps (Deps), TargetDeps (TargetDeps))
-import Hix.Data.PackageName (LocalPackage (LocalPackage))
+import Hix.Data.Deps (Deps (Deps), ProjectDep (LocalDep), TargetDeps (TargetDeps))
+import Hix.Data.PackageName (LocalPackage (LocalPackage), isLocalPackage)
 
 newtype Targets =
   UnsafeTargets [LocalPackage]
@@ -33,7 +33,11 @@ getTargets (Targets pkgs) = pkgs
 
 onlyFrom :: Set LocalPackage -> Deps -> [LocalPackage]
 onlyFrom targets (Deps deps) =
-  LocalPackage <$> filter (flip Set.member targets . coerce) ((.package) <$> Map.elems deps)
+  LocalPackage <$> mapMaybe isTarget (Map.elems deps)
+  where
+    isTarget = \case
+      LocalDep dep | isLocalPackage targets dep.package -> Just dep.package
+      _ -> Nothing
 
 graph ::
   Map LocalPackage [LocalPackage] ->

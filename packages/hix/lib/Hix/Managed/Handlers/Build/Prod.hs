@@ -21,7 +21,7 @@ import System.Process.Typed (
   )
 
 import Hix.Class.Map ((!!))
-import Hix.Data.Deps (TargetDeps)
+import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
 import qualified Hix.Data.ManagedEnv
@@ -60,7 +60,7 @@ data EnvBuilderResources =
     global :: BuilderResources,
     env :: EnvName,
     targets :: Targets,
-    deps :: TargetDeps
+    deps :: TargetRemoteDeps
   }
 
 withTempProject ::
@@ -141,7 +141,7 @@ withEnvBuilder ::
   BuilderResources ->
   EnvName ->
   Targets ->
-  TargetDeps ->
+  TargetRemoteDeps ->
   ManagedState ->
   (EnvBuilder -> M a) ->
   M a

@@ -46,9 +46,14 @@ packages =
       "direct4"
     ]),
     (("local2", "1.0"), ["local1", "local3"]),
-    (("local3", "1.0"), ["direct1", "local1"]),
+    (("local3", "1.0"), ["local1", "direct1"]),
     (("local4", "1.0"), ["direct4"]),
-    (("local5", "1.0"), ["direct5"])
+    (("local5", "1.0"), ["direct5"]),
+    (("local6", "1.0"), ["direct3"]),
+    (("local7", "1.0"), [
+      "local6 <2",
+      "direct2"
+    ])
   ]
 
 packageDb :: SourcePackages
@@ -92,7 +97,24 @@ buildVersions = \case
     | Just [1, 0, n] <- versions !! "direct4"
     , n /= 3
     -> pure Failure
-  [("direct1", [1, 0, 5]), ("direct2", [5, 0, 5]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, 3]), ("transitive2", [1, 0, 1]), ("transitive3", [1, 0, 1]), ("transitive4", [1, 0, 1])] -> pure Success
+  [
+    ("direct1", [1, 0, 5]),
+    ("direct2", [5, 0, 5]),
+    ("direct3", [1, 0, 1]),
+    ("direct4", [1, 0, 3]),
+    ("transitive2", [1, 0, 1]),
+    ("transitive3", [1, 0, 1]),
+    ("transitive4", [1, 0, 1])
+    ] -> pure Success
+  [
+    ("direct2", [5, 0]),
+    ("direct3", [1, 5]),
+    ("transitive3", [1, 0, 1])
+    ] -> pure Success
+  [
+    ("direct2", [5, 0]),
+    ("transitive3", [1, 0, 1])
+    ] -> pure Success
   versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
 
 initialState :: ManagedEnvState
@@ -129,6 +151,12 @@ stateFileTarget =
     };
     local5 = {
       direct5 = ">=1.5 && <1.6";
+    };
+    local6 = {
+      direct3 = ">=1.0.1 && <1.5";
+    };
+    local7 = {
+      direct2 = ">=5.0";
     };
   };
   overrides = {
@@ -168,6 +196,20 @@ stateFileTarget =
         hash = "transitive4-1.0.1";
       };
     };
+    lower-special = {
+      direct2 = {
+        version = "5.0";
+        hash = "direct2-5.0";
+      };
+      direct3 = {
+        version = "1.5";
+        hash = "direct3-1.5";
+      };
+      transitive3 = {
+        version = "1.0.1";
+        hash = "transitive3-1.0.1";
+      };
+    };
   };
   lowerInit = {
     lower-main = {
@@ -175,6 +217,9 @@ stateFileTarget =
       direct2 = "5.0.5";
       direct3 = "1.0.1";
       direct4 = "1.0.3";
+    };
+    lower-special = {
+      direct2 = "5.0";
     };
   };
   resolving = false;
@@ -196,6 +241,11 @@ logTarget =
     📦 direct1
 [35m[1m>>>[0m You can remove the lower bounds from these deps of 'local4':
     📦 direct4
+[35m[1m>>>[0m Result for 'lower-special': All dependencies were processed successfully.
+[35m[1m>>>[0m Updated dependency versions:
+    📦 direct2 5.0 [>=5.0]
+[35m[1m>>>[0m You can remove the lower bounds from these deps of 'local7':
+    📦 direct2
 |]
 
 -- | Goals for these deps:
@@ -218,23 +268,28 @@ logTarget =
 -- - @direct5@ is a dependency of @local5@, which is not part of the target set.
 --   The managed bounds for @local5@ in the initial file should be preserved and unchanged (save for version range
 --   normalization), and @direct5@ should never appear int the solver and build deps.
+--
+-- - @local6@ is a cross-env dependency of @local7@ and should be omitted from the overrides.
 test_lowerInitMutation :: UnitTest
 test_lowerInitMutation = do
-  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packageDb)
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions packages [] packageDb)
   let
     env =
       ManagedEnv {
         packages,
         state = initialState,
         lower = ManagedLowerEnv {solverBounds = mempty},
-        envs = [("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4"], ghc = Nothing})],
+        envs = [
+          ("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4", "local6"], ghc = Nothing}),
+          ("lower-special", EnvConfig {targets = ["local7"], ghc = Nothing})
+        ],
         buildOutputsPrefix = Nothing
       }
     conf =
       ManagedConfig {
         operation = OpLowerInit,
         stateFile = stateFileConfig,
-        envs = ["lower-main"],
+        envs = ["lower-main", "lower-special"],
         targetBound = TargetLower
       }
   (log, result) <- liftIO do
@@ -243,4 +298,4 @@ test_lowerInitMutation = do
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)
-  logTarget === drop 22 (reverse log)
+  logTarget === drop 24 (reverse log)

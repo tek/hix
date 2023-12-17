@@ -14,6 +14,7 @@
         enable = true;
         compiler = "ghc90";
       };
+      internal.localsInPackageDb = true;
     };
     ghcVersions = [];
     compat.enable = false;
@@ -23,7 +24,7 @@
         library = {
           enable = true;
           dependencies = [
-            "semigroups"
+            "containers <0.6"
           ];
         };
       };
@@ -33,12 +34,14 @@
           enable = true;
           dependencies = [
             "local1"
+            "semigroups"
           ];
         };
       };
     };
 
     envs.lower-local1.localPackage = api: api.minimal;
+    envs.lower-local1.hide = false;
     envs.lower-local2.localPackage = api: api.minimal;
 
     # TODO remove

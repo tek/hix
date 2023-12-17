@@ -16,7 +16,7 @@ import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
 import Hix.Managed.Data.ManagedConfig (ManagedOp)
 import qualified Hix.Managed.Data.SolverParams
-import Hix.Managed.Data.SolverParams (PackageParams, SolverParams, packageParamsRange)
+import Hix.Managed.Data.SolverParams (PackageParams (PackageParams), SolverParams, packageParamsRange)
 
 data SolveTarget =
   SolveTarget {
@@ -27,14 +27,14 @@ data SolveTarget =
 -- TODO better if this used TargetBound
 -- even better if it was abstracted out
 solveTarget :: ManagedOp -> PackageName -> PackageParams -> SolveTarget
-solveTarget op package params =
+solveTarget op package params@PackageParams {oldest} =
   SolveTarget {dep, pref}
   where
     dep = NamedPackage cabalName [PackagePropertyVersion range]
 
     range = packageParamsRange op params
 
-    pref | params.oldest = Just (PackageInstalledPreference cabalName PreferOldest)
+    pref | oldest = Just (PackageInstalledPreference cabalName PreferOldest)
          | otherwise = Nothing
 
     cabalName = PackageName.toCabal package

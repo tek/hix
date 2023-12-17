@@ -1,6 +1,7 @@
 module Hix.Data.PackageName where
 
 import Data.Aeson (FromJSON, FromJSONKey, ToJSON)
+import qualified Data.Set as Set
 import qualified Distribution.Package as Cabal
 import Distribution.Package (depPkgName, mkPackageName)
 import Distribution.Pretty (Pretty (pretty))
@@ -39,3 +40,9 @@ localPackageName = coerce
 
 localPackageNames :: [LocalPackage] -> [PackageName]
 localPackageNames = coerce
+
+sameLocalPackage :: LocalPackage -> PackageName -> Bool
+sameLocalPackage (LocalPackage lp) p = lp == p
+
+isLocalPackage :: Set LocalPackage -> PackageName -> Bool
+isLocalPackage lps p = Set.member (LocalPackage p) lps

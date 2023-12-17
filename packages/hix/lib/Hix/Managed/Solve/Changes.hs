@@ -5,19 +5,19 @@ import qualified Data.Set as Set
 import qualified Distribution.Client.SolverInstallPlan as SolverInstallPlan
 import Distribution.Client.SolverInstallPlan (ResolverPackage (Configured, PreExisting), SolverInstallPlan)
 import Distribution.InstalledPackageInfo (InstalledPackageInfo (..))
-import Distribution.Pretty (pretty)
+import Distribution.Pretty (Pretty, pretty)
 import Distribution.Solver.Types.InstSolverPackage (InstSolverPackage (..))
 import Distribution.Solver.Types.SolverPackage (SolverPackage (..))
 import Distribution.Solver.Types.SourcePackage (SourcePackage (..))
 import Exon (exon)
-import Text.PrettyPrint (hsep)
+import Text.PrettyPrint (hang, hsep, ($+$))
 
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (PackageName)
 import qualified Hix.Log as Log
-import Hix.Pretty (showPL)
+import Hix.Pretty (prettyL, showPL)
 
 data SolverPlan =
   SolverPlan {
@@ -51,6 +51,10 @@ data SolverChanges =
     projectDeps :: [PackageId]
   }
   deriving stock (Eq, Show, Generic)
+
+instance Pretty SolverChanges where
+  pretty SolverChanges {..} =
+    hang "overrides:" 2 (prettyL overrides) $+$ hang "projectDeps:" 2 (prettyL projectDeps)
 
 changedDeps ::
   Set PackageName ->

@@ -68,8 +68,8 @@ in {
 
   fail()
   {
-    message "Test '$current' failed!"
-    message $*
+    error_message "Test '$current' failed!"
+    error_message $*
     return 1
   }
 

@@ -403,3 +403,10 @@ ntKeys ::
   [k]
 ntKeys =
   Map.keys . ntMap
+
+ntKeysSet ::
+  NtMap map k v sort =>
+  map ->
+  Set k
+ntKeysSet =
+  Map.keysSet . ntMap

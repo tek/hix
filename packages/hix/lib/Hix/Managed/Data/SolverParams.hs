@@ -13,11 +13,11 @@ import Distribution.Version (
 import GHC.Exts (IsList)
 import Text.PrettyPrint (parens, (<+>))
 
-import qualified Hix.Class.Map as NtMap
-import Hix.Class.Map (LookupMonoid, NtMap, convert, ntFromList, ntPretty, (!!))
+import Hix.Class.Map (LookupMonoid, NtMap, convert, ntFromList, ntPretty, ntUpdating, (!!))
 import Hix.Data.Bounds (Bounds)
 import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep)
+import Hix.Data.Deps (ProjectDep, projectDep, projectDepLocal)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Data.ManagedConfig (ManagedOp (..))
@@ -51,7 +51,8 @@ data PackageParams =
   PackageParams {
     oldest :: Bool,
     mutation :: BoundMutation,
-    bounds :: Maybe VersionRange
+    bounds :: Maybe VersionRange,
+    local :: Maybe Bool
   }
   deriving stock (Eq, Show, Generic)
 
@@ -70,7 +71,8 @@ instance Semigroup PackageParams where
     PackageParams {
       oldest = l.oldest || r.oldest,
       mutation = l.mutation <> l.mutation,
-      bounds = l.bounds <|> r.bounds
+      bounds = l.bounds <|> r.bounds,
+      local = l.local <|> r.local
     }
 
 instance Monoid PackageParams where
@@ -78,8 +80,15 @@ instance Monoid PackageParams where
     PackageParams {
       oldest = False,
       mutation = NoBounds,
-      bounds = Nothing
+      bounds = Nothing,
+      local = Nothing
     }
+
+viaDep :: (Dep -> PackageParams) -> ProjectDep -> (PackageName, PackageParams)
+viaDep f pdep =
+  (dep.package, (f dep) {local = Just (projectDepLocal pdep)})
+  where
+    dep = projectDep pdep
 
 newtype SolverParams =
   SolverParams (Map PackageName PackageParams)
@@ -94,30 +103,30 @@ instance NtMap SolverParams PackageName PackageParams LookupMonoid where
 instance Pretty SolverParams where
   pretty = ntPretty
 
-fromConfig :: Bounds -> SolverParams
-fromConfig = NtMap.convert \ range -> mempty {bounds = Just range}
+viaDeps :: (Dep -> PackageParams) -> [ProjectDep] -> SolverParams
+viaDeps f = ntFromList . fmap (viaDep f)
 
-originalBounds :: [Dep] -> SolverParams
-originalBounds =
-  ntFromList . fmap \ dep -> (dep.package, mempty)
+fromUserConfig :: Bounds -> SolverParams
+fromUserConfig = convert \ range -> mempty {bounds = Just range}
 
-keepBounds :: Versions -> [Dep] -> SolverParams
+originalBounds :: [ProjectDep] -> SolverParams
+originalBounds = viaDeps (const mempty)
+
+keepBounds :: Versions -> [ProjectDep] -> SolverParams
 keepBounds keep =
-  ntFromList . fmap \ dep -> (dep.package, mempty {mutation = mutation dep})
-  where
-    mutation dep = maybe NoBounds ExtendedBound (keep !! dep.package)
+  viaDeps \ dep -> mempty {mutation = maybe NoBounds ExtendedBound (keep !! dep.package)}
 
-depBounds :: (VersionRange -> Maybe Version) -> [Dep] -> SolverParams
+depBounds :: (VersionRange -> Maybe Version) -> [ProjectDep] -> SolverParams
 depBounds get =
-  ntFromList . fmap \ dep -> (dep.package, mempty {mutation = range dep})
+  viaDeps \ dep -> mempty {mutation = range dep}
   where
     range dep | Just bound <- get dep.version = ExtendedBound bound
               | otherwise = NoBounds
 
-lowerBounds :: [Dep] -> SolverParams
+lowerBounds :: [ProjectDep] -> SolverParams
 lowerBounds = depBounds lowerBound
 
-upperBounds :: [Dep] -> SolverParams
+upperBounds :: [ProjectDep] -> SolverParams
 upperBounds = depBounds upperVersion
 
 packageParamsRange :: ManagedOp -> PackageParams -> VersionRange
@@ -146,3 +155,8 @@ packageParamsRange op PackageParams {mutation, bounds} =
 
 toBounds :: ManagedOp -> SolverParams -> Bounds
 toBounds op = convert (packageParamsRange op)
+
+updatePackageParams :: PackageName -> Bool -> BoundMutation -> SolverParams -> SolverParams
+updatePackageParams name oldest mutation =
+  ntUpdating name \ old -> old {oldest, mutation}
+

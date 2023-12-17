@@ -3,10 +3,11 @@ module Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump) where
 import Distribution.Version (Version, earlierVersion, intersectVersionRanges, orLaterVersion, unionVersionRanges)
 import Hedgehog (evalEither, (===))
 
+import Hix.Data.Deps (targetRemoteDeps)
 import Hix.Data.Error (Error (Client))
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (NewRange (NewRange, OldRange))
-import Hix.Deps (depsFromConfig, forTargets, uniqueDeps)
+import Hix.Deps (depsFromConfig, forTargets, uniqueRemoteDeps)
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
 import Hix.Managed.Bump.Candidates (candidatesBump)
@@ -116,6 +117,7 @@ test_candidatesBump = do
     runMTest False do
       allDeps <- depsFromConfig packages ["panda"]
       let targetDeps = forTargets "panda" allDeps
-      let deps = uniqueDeps targetDeps
+          remoteDeps = targetRemoteDeps targetDeps
+          deps = uniqueRemoteDeps remoteDeps
       candidatesBump handlersTest deps
   sortOn (.package) target === sortOn (.package) (toList mutations)

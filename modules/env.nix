@@ -531,6 +531,12 @@ in {
         type = util.types.cabalOverridesVia "project";
       };
 
+      overridesEnvUnmanaged = mkOption {
+        description = mdDocs "Overrides for this env, excluding extras like managed dependencies.";
+        type = util.types.cabalOverridesVia "computed env ${config.name} unmanaged";
+        readOnly = true;
+      };
+
       overridesEnv = mkOption {
         description = mdDocs "Overrides for this env, including extras like managed dependencies.";
         type = util.types.cabalOverridesVia "computed env ${config.name}";
@@ -627,6 +633,8 @@ in {
           inherit lib;
           inherit (config) ifd localPackage libraryProfiling profiling;
         };
+
+        overridesEnvUnmanaged = lib.toList [config.overrides];
 
         overridesEnv = util.concatOverrides ([config.overrides] ++ optional config.managed managedOverrides);
 

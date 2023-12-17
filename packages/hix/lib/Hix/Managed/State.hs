@@ -4,7 +4,7 @@ import qualified Data.Map.Strict as Map
 
 import Hix.Class.Map (convertMaybe, ntInsert, via)
 import Hix.Data.Bounds (Bounds)
-import Hix.Data.Deps (TargetDeps)
+import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedEnv (ManagedEnv), ManagedEnvState (ManagedEnvState), ManagedState (..))
@@ -39,7 +39,7 @@ import Hix.Version (lowerBound)
 envStateWithMutations ::
   ManagedOp ->
   EnvName ->
-  TargetDeps ->
+  TargetRemoteDeps ->
   ManagedState ->
   ManagedEnvState ->
   ManagedEnvState
@@ -59,7 +59,7 @@ envStateWithMutations op env deps new old =
     newLowerInit = convertMaybe lowerBound new.bounds
 
 envStateForBuild ::
-  TargetDeps ->
+  TargetRemoteDeps ->
   EnvName ->
   ManagedState ->
   ManagedEnvState

@@ -6,12 +6,13 @@ import Exon (exon)
 
 import Hix.Class.Map (ntMap, (!!))
 import Hix.Data.Bounds (removableBounds)
+import Hix.Data.Deps (targetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (EnvConfig, ManagedEnv)
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M)
-import Hix.Deps (uniqueDeps, depsFromConfig, forTargets, withManagedRanges)
+import Hix.Deps (depsFromConfig, forTargets, uniqueRemoteDeps, withManagedRanges)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.BuildOutput (outputResult)
 import Hix.Managed.Data.BuildOutput (buildOutput)
@@ -59,9 +60,10 @@ managedJob env conf name envConfig = do
   projectDeps <- depsFromConfig env.packages envConfig.targets
   let targets = sortTargets projectDeps envConfig.targets
       targetDeps = forTargets targets (withManagedRanges env.state.bounds projectDeps)
+      remoteDeps = targetRemoteDeps targetDeps
       lowerInit = env.state.lowerInit !! name
-      removable = removableBounds conf.targetBound targetDeps env.state.bounds
-      deps = uniqueDeps targetDeps
+      removable = removableBounds conf.targetBound remoteDeps env.state.bounds
+      query = uniqueRemoteDeps remoteDeps
   pure ManagedJob {env = name, ..}
   where
     overrides = env.state.overrides !! name
@@ -86,6 +88,7 @@ managedApp build env conf use = do
     build,
     conf = conf.stateFile,
     state = env.state,
+    packages = env.packages,
     jobs,
     solverBounds = env.lower.solverBounds,
     operation = conf.operation

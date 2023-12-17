@@ -5,7 +5,7 @@ import Control.Monad.Trans.Maybe (MaybeT (MaybeT, runMaybeT))
 import qualified Data.Map.Strict as Map
 import Exon (exon)
 
-import Hix.Class.Map (ntFromList, ntMap, ntUpdating)
+import Hix.Class.Map (ntFromList, ntMap, (!!))
 import Hix.Data.Bounds (BoundExtension (LowerBoundExtension, UpperBoundExtension), BoundExtensions)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
@@ -18,11 +18,7 @@ import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate (Candidate))
 import Hix.Managed.Data.ManagedConfig (ManagedOp (OpBump, OpLowerStabilize))
 import qualified Hix.Managed.Data.SolverParams
-import Hix.Managed.Data.SolverParams (
-  BoundMutation (ExtendedBound, RetractedBound),
-  PackageParams (PackageParams),
-  SolverParams,
-  )
+import Hix.Managed.Data.SolverParams (BoundMutation (ExtendedBound, RetractedBound), SolverParams, updatePackageParams)
 import qualified Hix.Managed.Handlers.Solve
 import Hix.Managed.Handlers.Solve (SolveHandlers)
 import qualified Hix.Managed.Solve.Changes
@@ -35,8 +31,7 @@ import Hix.Pretty (showP)
 -- Does Cabal have an interface for that?
 updateSolverParams :: ManagedOp -> Candidate -> PackageId -> SolverParams -> SolverParams
 updateSolverParams op Candidate {package = PackageId {name = candidate}} PackageId {name, version} =
-  -- TODO ntAmend
-  ntUpdating name \ old -> newParams <> old
+  uncurry (updatePackageParams name) newParams
   where
     -- TODO unclear whether only candidates should be retracted.
     -- Assume dep A is first and resolves version V1 for dep C, and then dep B gets version V2 for dep C.
@@ -45,9 +40,9 @@ updateSolverParams op Candidate {package = PackageId {name = candidate}} Package
     newParams
       | isCandidate
       , OpLowerStabilize <- op
-      = PackageParams {oldest = True, mutation = RetractedBound version, bounds = Nothing}
+      = (True, RetractedBound version)
       | otherwise
-      = PackageParams {oldest = False, mutation = ExtendedBound version, bounds = Nothing}
+      = (False, ExtendedBound version)
 
     isCandidate = candidate == name
 
@@ -64,8 +59,12 @@ directBounds op versions =
     cons | OpBump <- op = UpperBoundExtension
          | otherwise = LowerBoundExtension
 
+overrideIsLocal :: SolverParams -> PackageId -> Bool
+overrideIsLocal params package =
+  fromMaybe False (params !! package.name).local
+
 -- | Run the solver with the current bounds for all of the target set's dependencies, write the plan's versions that
--- differ from the _installed_ ones (the packagedb for the GHC created by Nix) as overrides to the state file, and run
+-- differ from the _installed_ ones (the package db for the GHC created by Nix) as overrides to the state file, and run
 -- the build.
 --
 -- The new bounds are discarded when the build fails since we're returning 'MaybeT' and the @build@ invocation returns
@@ -84,22 +83,22 @@ buildWithSolver ::
   SolverParams ->
   Candidate ->
   M (Maybe (Candidate, ManagedState, SolverParams))
-buildWithSolver solve build op bounds candidate = do
-  logStart candidate.package bounds
+buildWithSolver solve build op params candidate = do
+  logStart candidate.package params
   runMaybeT do
-    plan <- MaybeT (solve.solveForVersion op bounds candidate.package)
+    plan <- MaybeT (solve.solveForVersion op params candidate.package)
     solverChanges <- lift (processSolverPlan allDeps plan)
-    new <- MaybeT (build (mutation solverChanges))
-    let newBounds = foldr (updateSolverParams op candidate) bounds solverChanges.projectDeps
-    lift (Log.debug [exon|New solver bounds: #{showP newBounds}|])
-    pure (candidate, new, newBounds)
+    newState <- MaybeT (build (mutation solverChanges))
+    let newParams = foldr (updateSolverParams op candidate) params solverChanges.projectDeps
+    lift (Log.debug [exon|New solver params: #{showP newParams}|])
+    pure (candidate, newState, newParams)
   where
-    allDeps = Map.keysSet (ntMap bounds)
+    allDeps = Map.keysSet (ntMap params)
 
     mutation changes =
       BuildMutation {
         candidate,
-        newVersions = changes.overrides,
+        newVersions = filter (not . overrideIsLocal params) changes.overrides,
         accOverrides = [],
         newBounds = directBounds op changes.projectDeps
       }

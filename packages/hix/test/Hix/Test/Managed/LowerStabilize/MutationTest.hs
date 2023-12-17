@@ -120,7 +120,7 @@ stateFileTarget =
 
 test_lowerStabilizeMutation :: UnitTest
 test_lowerStabilizeMutation = do
-  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions [] packageDb)
+  (handlers, stateFileRef, _) <- liftIO (LowerHandlers.handlersUnitTest buildVersions packages [] packageDb)
   let
     env =
       ManagedEnv {

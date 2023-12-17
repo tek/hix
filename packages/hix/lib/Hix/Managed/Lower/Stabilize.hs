@@ -2,7 +2,6 @@ module Hix.Managed.Lower.Stabilize where
 
 import Hix.Class.Map (ntTo, (!!))
 import qualified Hix.Data.Dep
-import qualified Hix.Data.LowerConfig
 import Hix.Data.LowerConfig (LowerConfig)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState (ManagedState))
@@ -57,14 +56,13 @@ lowerStabilizeEnv handlers conf app builder job =
       state <- lowerInitState app job managed0
       buildJob builder job state >>= \case
         Success ->
-          lowerJob initialBounds (candidates job.lowerInit) mutationHandlers app conf builder job
+          lowerJob upperBounds (candidates job.lowerInit) mutationHandlers app conf builder job
         Failure ->
           pure (FatalBuildFailure initLowerFailed)
 
     managed0 = ManagedJob.initialState job
-    initialBounds deps = conf.initialSolverParams <> upperBounds deps
     candidates initialVersions dep = candidatesStabilize handlers.versions dep (initialVersions !! dep.package)
-    mutationHandlers = Mutation.handlersLower OpLowerStabilize conf handlers.solve
+    mutationHandlers = Mutation.handlersLower OpLowerStabilize conf (handlers.solve app.packages)
 
     -- TODO Be helpful about what to do
     initLowerFailed = "Build with initial lower bounds failed."

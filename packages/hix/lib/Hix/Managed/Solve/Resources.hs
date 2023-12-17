@@ -14,9 +14,11 @@ import Distribution.Verbosity (silent, verbose)
 
 import qualified Hix.Data.Monad
 import qualified Hix.Log as Log
+import Hix.Managed.Data.ManagedPackage (ManagedPackages)
 import Hix.Managed.Solve.Config (GhcDb, SolveConfig (..))
 import qualified Hix.Managed.Solve.Init
 import Hix.Managed.Solve.Init (SolveFlags, initialize)
+import qualified Hix.Managed.Solve.Mock.SourcePackage as SourcePackage
 import Hix.Monad (M, tryIOM)
 
 data SolveResources =
@@ -35,9 +37,10 @@ packageDbs :: PackageDBStack
 packageDbs = [GlobalPackageDB]
 
 resources ::
+  ManagedPackages ->
   SolveConfig ->
   M SolveResources
-resources conf = do
+resources packages conf = do
   flags <- initialize conf
   Log.debug "Acquiring Cabal resources."
   tryIOM $ withRepoContext conf.verbosity flags.global \ repoContext -> do
@@ -45,13 +48,19 @@ resources conf = do
     pkgConfigDb <- readPkgConfigDb conf.verbosity progdb
     installedPkgIndex <- getInstalledPackages conf.verbosity compiler packageDbs progdb
     sourcePkgDb <- getSourcePackages conf.verbosity repoContext
-    pure SolveResources {compiler = compilerInfo compiler, solverParams = id, ..}
+    pure SolveResources {
+      compiler = compilerInfo compiler,
+      sourcePkgDb = SourcePackage.dbWithManaged packages sourcePkgDb,
+      solverParams = id,
+      ..
+    }
 
 acquire ::
+  ManagedPackages ->
   Maybe GhcDb ->
   M SolveResources
-acquire ghc = do
+acquire packages ghc = do
   verbosity <- asks (.debug) <&> \case
     True -> verbose
     False -> silent
-  resources def {verbosity, ghc}
+  resources packages def {verbosity, ghc}
