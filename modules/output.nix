@@ -24,7 +24,7 @@ let
 
   genAll = quiet: config.pkgs.writeScript "hix-gen-all" ''
   ${if quiet then config.hpack.scriptQuiet else config.hpack.script}
-  ${if config.gen-overrides.enable then genOverrides else ""}
+  ${if config.gen-overrides.enable then genOverrides.script else ""}
   '';
 
 in {
@@ -122,7 +122,7 @@ in {
         tags = app tags.app;
         show-config = show-config.app;
         cli = app "${config.internal.hixCli.package}/bin/hix";
-        gen-overrides = app "${genOverrides}";
+        gen-overrides = app "${genOverrides.script}";
         gen = app "${genAll false}";
         gen-quiet = app "${genAll true}";
         show-overrides = app "${showOverrides}";
