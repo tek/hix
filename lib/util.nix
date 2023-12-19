@@ -192,7 +192,7 @@ let
 
     ghcOverlay = import ./ghc-overlay.nix { inherit util; };
 
-    managed = import ./managed.nix { inherit util; };
+    managed = import ./managed/default.nix { inherit util; };
 
     env = import ./env.nix { inherit util; };
   };

@@ -11,8 +11,6 @@ let
     inherit (util) hsLib;
   };
 
-  libManaged = import ./managed.nix { inherit util; };
-
   console = import ./console.nix { inherit lib; };
 
   staticDrv = util.hsLib.justStaticExecutables;
@@ -79,9 +77,6 @@ let
 
   prefixedInEnvs = envs: util.foldMapAttrs prefixedInEnv envs;
 
-  prefixedEnvDerivations = env:
-  lib.mapAttrs' (n: d: { name = "${env}-${n}"; value = d; }) config.envs.${env}.derivations;
-
   devOutputs = let
     env = config.envs.dev;
     ghc = env.ghc.ghc;
@@ -129,99 +124,15 @@ let
   envCommands = env:
   lib.mapAttrs (_: command: app ((envCommand { inherit env command; }).path)) config.commands;
 
-  managedAll = latest: lower: {
-    bump = app (libManaged.bump [latest]);
-    lower = {
-      init = app (libManaged.lowerInit [lower]);
-      optimize = app (libManaged.lowerOptimize [lower]);
-      stabilize = app (libManaged.lowerStabilize [lower]);
-    };
-  };
-
   envApps = env: {
     ${env.name} =
       envCommands env //
       envAppimages env //
-      managedAll env.name env.name //
+      util.managed.output.appsAll { latest = env.name; lower = env.name; } //
       { dep-versions = app (depVersions env.name); };
   };
 
-  managedEnvGhcs = lib.mapAttrs (_: env: { ghc-local = util.managed.managedEnvGhc env; }) util.managed.envs;
-
   commandApps = lib.mapAttrs (_: c: app c.path);
-
-  wantManagedChecks = config.managed.enable && config.managed.check;
-
-  managedChecks =
-    lib.optionalAttrs wantManagedChecks
-    (util.foldMapAttrs prefixedEnvDerivations (lib.attrNames util.managed.envs))
-    ;
-
-  managedCmdMulti = prefix: envSort: mk: sets: let
-    envName = name: "${envSort}-${name}";
-    envs = map (name: envName name) sets;
-  in
-  lib.genAttrs sets (name: app (mk [(envName name)])) //
-  app (mk envs);
-
-  managedMulti = sets: {
-    bump = managedCmdMulti "bump" "latest" libManaged.bump sets;
-    lower = {
-      init = managedCmdMulti "lower.init" "lower" libManaged.lowerInit sets;
-      optimize = managedCmdMulti "lower.optimize" "lower" libManaged.lowerOptimize sets;
-    };
-  };
-
-  # We're not guarding this with a `optionalAttrs` so that we can print an error when the user executes an app.
-  # TODO Add an override option that opts into removing these apps from the flake.
-  managedApps =
-    if config.managed.sets == "all"
-    then managedAll "latest" "lower"
-    else if config.managed.sets == "each"
-    then managedMulti config.internal.packageNames
-    else managedMulti (lib.attrNames config.managed.sets)
-    ;
-
-  managedGaWorkflow = sort: config.pkgs.writeText "${sort}.yaml" ''
-    name: ${sort}
-    on: workflow_dispatch
-    permissions:
-      contents: write
-      pull-requests: write
-    jobs:
-      bump-pr:
-        runs-on: ubuntu-latest
-        steps:
-        - uses: actions/checkout@v4
-        - uses: DeterminateSystems/nix-installer-action@main
-          with:
-            extra-conf: |
-              access-tokens = github.com=''${{ secrets.GITHUB_TOKEN }}
-        - uses: DeterminateSystems/magic-nix-cache-action@main
-        - id: bump
-          run: nix run .#${sort} -- --output=ga-pr
-        - name: pr
-          if: steps.bump.outputs.commit-message
-          uses: peter-evans/create-pull-request@v5
-          with: ''${{ steps.bump.outputs }}
-  '';
-
-  genManagedGaWorkflow = sort: let
-    script = config.pkgs.writeScript "gen-managed-ga-workflow" ''
-    dir=$PWD/.github/workflows
-    mkdir -p $dir
-    cp ${managedGaWorkflow sort} $dir/${sort}.yaml
-    '';
-  in app script;
-
-  genManaged = {
-    managed = {
-      gen.ga = {
-        bump = genManagedGaWorkflow "bump";
-        lower.optimize = genManagedGaWorkflow "lower.optimize";
-      };
-    };
-  };
 
   # We have lots of nested attrsets in the apps output, and since Nix requires all top-level apps attrs to implement the
   # app interface, we add a dummy app to each attr (and recursively, though not strictly necessary).
@@ -254,10 +165,6 @@ in {
   commandApps
   mainExe
   pkgMainExe
-  managedChecks
-  managedApps
-  managedEnvGhcs
-  genManaged
   addDummyApps
   ;
 }

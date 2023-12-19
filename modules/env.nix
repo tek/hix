@@ -621,7 +621,7 @@ in {
       internal = let
 
         managedOverrides = api: let
-          os = util.managed.envState.overrides.${config.name} or {};
+          os = util.managed.state.current.overrides.${config.name} or {};
           managedOverride = _: {version, hash}:
           api.jailbreak (api.notest (api.nodoc (api.hackage version hash)));
         in mapAttrs managedOverride os;

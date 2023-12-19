@@ -31,7 +31,7 @@ let
   in deps.replace error stored ghc.overrides self super;
 
   computeOverrides =
-    if gen.enable && ghc.gen-overrides && !util.managed.envState.resolving
+    if gen.enable && ghc.gen-overrides && !util.managed.state.current.resolving
     then readOverrides
     else reified;
 

@@ -143,11 +143,11 @@ in {
 
         apps = config.hackage.output.apps //
         basicApps //
-        libOutput.managedApps //
+        util.managed.output.apps //
         libOutput.mainAppimageApp //
         optionalAttrs config.output.commandApps { cmd = libOutput.commandApps config.commands; } //
         basicEnvApps //
-        libOutput.genManaged
+        util.managed.output.gen
         ;
 
       };
@@ -158,12 +158,12 @@ in {
         checks =
           config.envs.dev.derivations //
           optionalAttrs config.compat.enable (libOutput.prefixedInEnvs config.compat.versions) //
-          libOutput.managedChecks
+          util.managed.output.checks
           ;
 
         legacyPackages = {
           overrides = config.exportedOverrides;
-          ${prefix}.env = libOutput.managedEnvGhcs;
+          ${prefix}.env = util.managed.output.envGhcs;
         };
 
         devShells = let
