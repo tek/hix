@@ -68,7 +68,10 @@ in {
 
   fail()
   {
-    error_message "Test '$current' failed!"
+    # REMOVE
+    # This is only printed when the test has an explicit error condition, not when it's aborted via err_return.
+    # But we also print a similar message unconditionally based on the exit status, which this function also triggers.
+    # error_message "Test '$current' failed!"
     error_message $*
     return 1
   }
@@ -207,7 +210,7 @@ in {
     runtest $t
     if [[ $? != 0 ]]
     then
-      message "Test failed: $t"
+      error_message "Test failed: $t"
       (( failure = failure + 1 ))
       failed+=($t)
     fi
@@ -217,10 +220,10 @@ in {
   then
     message 'All tests succeeded.'
   else
-    message "$failure tests failed:"
+    error_message "$failure tests failed:"
     for t in $failed
     do
-      echo " - $t"
+      error_message " - $t"
     done
     exit 1
   fi
