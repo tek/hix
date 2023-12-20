@@ -42,21 +42,22 @@ let
   mkPathsBlocker = name:
   { when = { condition = false; generated-other-modules = "Paths_${replaceStrings ["-"] ["_"] name}"; }; };
 
-  replaceManagedBounds = deps: dep: let
+  replaceManagedBounds = managedBounds: dep: let
     norm = util.version.normalize dep;
     name = util.version.mainLibName norm.name;
-  in if hasAttr name deps
-  then { inherit name; version = deps.${name}; }
+  in if hasAttr name managedBounds
+  then { inherit (norm) name; version = managedBounds.${name}; }
   else dep;
 
-  addManagedBounds = deps: hconf:
-  hconf // { dependencies = map (replaceManagedBounds deps) hconf.dependencies; };
+  addManagedBounds = hconf: let
+    managedBounds = util.managed.state.current.bounds.${pkg.name} or {};
+  in
+  hconf // { dependencies = map (replaceManagedBounds managedBounds) hconf.dependencies; };
 
   generateComponent = pkg: name: conf: let
 
     prelude = conf.prelude;
     base = conf.base;
-    bounds = util.managed.state.current.bounds.${pkg.name} or {};
 
     basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
 
@@ -79,10 +80,10 @@ let
 
     withManaged =
       if config.managed.enable
-      then addManagedBounds bounds full
-      else full;
+      then addManagedBounds
+      else id;
 
-  in withManaged;
+  in withManaged full;
 
   extraLibrary = mainLib: conf:
     optionalAttrs (!mainLib && conf.public) { visibility = "public"; } //
