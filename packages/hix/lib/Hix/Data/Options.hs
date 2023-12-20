@@ -129,6 +129,8 @@ data LowerOptions =
   LowerOptions {
     env :: Either ManagedEnv JsonConfig,
     managed :: ManagedConfig,
+    initOnly :: Bool,
+    reset :: Bool,
     maxFailedPre :: Natural,
     maxFailedPost :: Natural,
     maxIterations :: Natural,
@@ -136,15 +138,8 @@ data LowerOptions =
   }
   deriving stock (Show)
 
-data LowerInitOptions =
-  LowerInitOptions {
-    common :: LowerOptions,
-    reset :: Bool
-  }
-  deriving stock (Show)
-
 data LowerCommand =
-  LowerInitCmd LowerInitOptions
+  LowerInitCmd LowerOptions
   |
   LowerOptimizeCmd LowerOptions
   |

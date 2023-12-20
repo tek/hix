@@ -18,18 +18,17 @@ import qualified Hix.Log as Log
 import qualified Hix.Managed.Build.Mutation
 import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation), DepMutation, MutationResult (..))
 import Hix.Managed.Build.UpdateState (updateState)
+import qualified Hix.Managed.Data.BuildDomain
+import Hix.Managed.Data.BuildDomain (BuildDomain)
 import qualified Hix.Managed.Data.BuildState
 import Hix.Managed.Data.BuildState (BuildState, BuildStatus (Failure, Success), justSuccess)
 import qualified Hix.Managed.Data.Candidate
 import Hix.Managed.Data.Candidate (Candidate)
-import qualified Hix.Managed.Data.ManagedJob
-import Hix.Managed.Data.ManagedJob (ManagedJob)
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (Builder, EnvBuilder)
+import Hix.Managed.Handlers.Build (Builder (Builder), EnvBuilder)
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
-import Hix.Managed.Job (withJobBuilder)
 import Hix.Managed.Overrides (newVersionOverrides)
 import Hix.Managed.State (stateWithCandidate)
 import Hix.Pretty (prettyL, showP, showPL)
@@ -115,12 +114,12 @@ buildMutations ::
   HackageHandlers ->
   Builder ->
   (EnvBuilder -> M (MutationHandlers a s)) ->
-  ManagedJob ->
+  BuildDomain ->
   [DepMutation a] ->
   BuildState a s ->
   M (BuildState a s)
-buildMutations hackage builder mkHandlers job mutations state = do
+buildMutations hackage Builder {withEnvBuilder} mkHandlers domain mutations state = do
   Log.debug [exon|Building targets with mutations: #{showPL mutations}|]
-  withJobBuilder builder job state.state \ envBuilder -> do
+  withEnvBuilder domain state.state \ envBuilder -> do
     handlers <- mkHandlers envBuilder
-    foldM (validateMutation hackage envBuilder job.env handlers) state mutations
+    foldM (validateMutation hackage envBuilder domain.env handlers) state mutations

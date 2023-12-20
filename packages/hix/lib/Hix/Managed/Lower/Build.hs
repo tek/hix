@@ -14,6 +14,8 @@ import Hix.Deps (uniqueDeps)
 import qualified Hix.Log as Log
 import Hix.Managed.Build (buildMutations)
 import Hix.Managed.Build.Mutation (DepMutation)
+import qualified Hix.Managed.Data.BuildDomain
+import Hix.Managed.Data.BuildDomain (BuildDomain)
 import Hix.Managed.Data.BuildResult (BuildResult, buildResult)
 import qualified Hix.Managed.Data.BuildState
 import Hix.Managed.Data.BuildState (BuildState (BuildState), failed)
@@ -34,12 +36,12 @@ convergeMutations ::
   ManagedApp ->
   LowerConfig ->
   Builder ->
-  ManagedJob ->
+  BuildDomain ->
   ManagedState ->
   s ->
   [DepMutation a] ->
   M (BuildState a s)
-convergeMutations mkMutationHandlers app conf builder job initialState initExt initialMutations =
+convergeMutations mkMutationHandlers app conf builder domain initialState initExt initialMutations =
   spin (BuildState {success = [], failed = initialMutations, state = initialState, ext = initExt}) 1
   where
     spin acc iteration
@@ -52,7 +54,7 @@ convergeMutations mkMutationHandlers app conf builder job initialState initExt i
 
       | otherwise
       = do
-        Log.debug [exon|Iteration #{show iteration} for '##{job.env :: EnvName}'|]
+        Log.debug [exon|Iteration #{show iteration} for '##{domain.env :: EnvName}'|]
         BuildState {success, ..} <- build acc
         let newState = BuildState {failed = reverse failed, ..}
         if length success == length acc.success
@@ -60,7 +62,24 @@ convergeMutations mkMutationHandlers app conf builder job initialState initExt i
         else spin newState (iteration + 1)
 
     build BuildState {failed = mutations, ..} =
-      buildMutations app.build.hackage builder mkMutationHandlers job mutations BuildState {failed = [], ..}
+      buildMutations app.build.hackage builder mkMutationHandlers domain mutations BuildState {failed = [], ..}
+
+lowerMutations ::
+  Pretty a =>
+  (Dep -> M (Maybe (DepMutation a))) ->
+  (EnvBuilder -> M (MutationHandlers a LowerState)) ->
+  ManagedApp ->
+  LowerConfig ->
+  Builder ->
+  BuildDomain ->
+  ManagedState ->
+  SolverParams ->
+  M (BuildState a LowerState)
+lowerMutations candidates mkMutationHandlers app conf builder domain initialState solverParams = do
+  mutations <- catMaybes <$> traverse candidates domain.query
+  convergeMutations mkMutationHandlers app conf builder domain initialState ext mutations
+  where
+    ext = LowerState solverParams
 
 -- TODO refactor the concept from lowerInit that restricts processing to a subset of deps, since we might want to make
 -- it possible to control that via CLI for all commands.
@@ -75,11 +94,9 @@ lowerJob ::
   ManagedJob ->
   M (BuildResult a)
 lowerJob initialParams candidates mkMutationHandlers app conf builder job = do
-  mutations <- catMaybes <$> traverse candidates job.query
-  buildResult job.removable <$> convergeMutations mkMutationHandlers app conf builder job initialState ext mutations
+  finalState <- lowerMutations candidates mkMutationHandlers app conf builder job.domain initialState solverParams
+  pure (buildResult job.removable finalState)
   where
-    ext = LowerState solverParams
-
     solverParams =
       SolverParams.fromUserConfig app.solverBounds <>
       initialParams (uniqueDeps job.targetDeps)

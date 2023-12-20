@@ -19,6 +19,7 @@ data Dep =
   Dep {
     package :: PackageName,
     version :: VersionRange,
+    -- TODO remove
     libs :: NonEmptySet LibraryName
   }
   deriving stock (Eq, Show)

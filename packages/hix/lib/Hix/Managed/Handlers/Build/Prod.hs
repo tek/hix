@@ -30,6 +30,8 @@ import qualified Hix.Data.Monad (Env (verbose))
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Error (pathText)
 import qualified Hix.Log as Log
+import qualified Hix.Managed.Data.BuildDomain
+import Hix.Managed.Data.BuildDomain (BuildDomain (BuildDomain))
 import Hix.Managed.Data.BuildState (BuildStatus, buildStatus)
 import qualified Hix.Managed.Data.ManagedConfig
 import Hix.Managed.Data.ManagedConfig (StateFileConfig)
@@ -139,13 +141,11 @@ ghcDb EnvBuilderResources {global, env} = do
 withEnvBuilder ::
   ∀ a .
   BuilderResources ->
-  EnvName ->
-  Targets ->
-  TargetRemoteDeps ->
+  BuildDomain ->
   ManagedState ->
   (EnvBuilder -> M a) ->
   M a
-withEnvBuilder global env targets deps initialState use = do
+withEnvBuilder global BuildDomain {env, targets, deps} initialState use = do
   writeBuildStateFor "env initialization" global.handlers deps env initialState global.stateFile
   let resources = EnvBuilderResources {..}
   use EnvBuilder {buildWithState = buildWithState resources, ghcDb = db resources}

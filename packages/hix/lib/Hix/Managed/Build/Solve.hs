@@ -40,9 +40,9 @@ updateSolverParams op Candidate {package = PackageId {name = candidate}} Package
     newParams
       | isCandidate
       , OpLowerStabilize <- op
-      = (True, RetractedBound version)
+      = (Just True, RetractedBound version)
       | otherwise
-      = (False, ExtendedBound version)
+      = (Nothing, ExtendedBound version)
 
     isCandidate = candidate == name
 

@@ -2,12 +2,12 @@ module Hix.Managed.Lower.App where
 
 import Hix.Data.Error (Error (Client))
 import qualified Hix.Data.LowerConfig
-import Hix.Data.LowerConfig (LowerConfig, LowerInitConfig (LowerInitConfig), lowerConfig)
+import Hix.Data.LowerConfig (LowerConfig, lowerConfig)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
-import Hix.Data.Options (LowerInitOptions, LowerOptions)
+import Hix.Data.Options (LowerOptions)
 import Hix.Json (jsonConfigE)
 import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Data.BuildResults (BuildResults)
@@ -40,33 +40,22 @@ chooseHandlers opts envsConf conf buildOutputsPrefix =
 
 lowerCli ::
   LowerMode ->
+  (LowerHandlers -> LowerConfig -> ManagedApp -> M (BuildResults Lower)) ->
   LowerOptions ->
-  LowerConfig ->
-  (LowerHandlers -> ManagedApp -> M (BuildResults Lower)) ->
   M ()
-lowerCli mode opts lowerConf main = do
+lowerCli mode main opts = do
   env <- jsonConfigE Client opts.env
-  handlers <- chooseHandlers opts env.envs lowerConf env.buildOutputsPrefix
+  handlers <- chooseHandlers opts env.envs conf env.buildOutputsPrefix
   runManagedApp handlers.build handlers.report env opts.managed mode.operation \ app ->
-    Right <$> main handlers app
-
-lowerInitCli :: LowerInitOptions -> M ()
-lowerInitCli opts =
-  lowerCli lowerInitMode opts.common lowerConf \ handlers app ->
-    lowerInit handlers lowerConf LowerInitConfig {reset = opts.reset} app
+    Right <$> main handlers conf app
   where
-    lowerConf = lowerConfig opts.common
+    conf = lowerConfig opts
+
+lowerInitCli :: LowerOptions -> M ()
+lowerInitCli = lowerCli lowerInitMode lowerInit
 
 lowerOptimizeCli :: LowerOptions -> M ()
-lowerOptimizeCli opts =
-  lowerCli lowerOptimizeMode opts lowerConf \ handlers app ->
-    lowerOptimize handlers lowerConf app
-  where
-    lowerConf = lowerConfig opts
+lowerOptimizeCli = lowerCli lowerOptimizeMode lowerOptimize
 
 lowerStabilizeCli :: LowerOptions -> M ()
-lowerStabilizeCli opts =
-  lowerCli lowerStabilizeMode opts lowerConf \ handlers app ->
-    lowerStabilize handlers lowerConf app
-  where
-    lowerConf = lowerConfig opts
+lowerStabilizeCli = lowerCli lowerStabilizeMode lowerStabilize

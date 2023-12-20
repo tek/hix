@@ -27,7 +27,7 @@ data SolveTarget =
 -- TODO better if this used TargetBound
 -- even better if it was abstracted out
 solveTarget :: ManagedOp -> PackageName -> PackageParams -> SolveTarget
-solveTarget op package params@PackageParams {oldest} =
+solveTarget op package params@PackageParams {oldest = fromMaybe False -> oldest} =
   SolveTarget {dep, pref}
   where
     dep = NamedPackage cabalName [PackagePropertyVersion range]

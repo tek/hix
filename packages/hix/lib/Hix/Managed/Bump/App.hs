@@ -11,6 +11,7 @@ import Hix.Managed.App (runManagedApp)
 import Hix.Managed.Build (buildMutations)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.Bump.Candidates (candidatesBump)
+import qualified Hix.Managed.Data.BuildDomain
 import Hix.Managed.Data.BuildResult (BuildResult, buildResult)
 import Hix.Managed.Data.BuildResults (BuildResults)
 import Hix.Managed.Data.BuildState (initBuildState)
@@ -39,8 +40,8 @@ bumpJob ::
   ManagedJob ->
   M (BuildResult Bump)
 bumpJob handlers builder job = do
-  mutations <- candidatesBump handlers job.query
-  result <- buildMutations handlers.build.hackage builder mutationHandlers job mutations state
+  mutations <- candidatesBump handlers job.domain.query
+  result <- buildMutations handlers.build.hackage builder mutationHandlers job.domain mutations state
   pure (buildResult job.removable result)
   where
     mutationHandlers _ = pure handlersBump
@@ -52,7 +53,7 @@ bumpReport ::
   ManagedApp ->
   M [DepMutation Bump]
 bumpReport handlers app = do
-  mutations <- for app.jobs \ job -> candidatesBump handlers job.query
+  mutations <- for app.jobs \ job -> candidatesBump handlers job.domain.query
   pure (join (toList mutations))
 
 bump ::

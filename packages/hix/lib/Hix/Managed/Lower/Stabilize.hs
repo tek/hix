@@ -40,6 +40,28 @@ lowerInitState app job state = do
   where
     newVersions = ntTo job.lowerInit \ name version -> PackageId {..}
 
+stabilize ::
+  LowerHandlers ->
+  LowerConfig ->
+  ManagedApp ->
+  ManagedJob ->
+  Builder ->
+  ManagedState ->
+  M (BuildResult Lower)
+stabilize handlers conf app job builder managed0 = do
+  state <- lowerInitState app job managed0
+  buildJob builder job state >>= \case
+    Success ->
+      lowerJob upperBounds (candidates job.lowerInit) mutationHandlers app conf builder job
+    Failure ->
+      pure (FatalBuildFailure initLowerFailed)
+  where
+    candidates initialVersions dep = candidatesStabilize handlers.versions dep (initialVersions !! dep.package)
+    mutationHandlers = Mutation.handlersLower conf lowerStabilizeMode (handlers.solve app.packages)
+
+    -- TODO Be helpful about what to do
+    initLowerFailed = "Build with initial lower bounds failed."
+
 lowerStabilizeEnv ::
   LowerHandlers ->
   LowerConfig ->
@@ -50,22 +72,9 @@ lowerStabilizeEnv ::
 lowerStabilizeEnv handlers conf app builder job =
   buildJob builder job managed0 >>= \case
     Success -> pure NoActionRequired
-    Failure -> stabilize
+    Failure -> stabilize handlers conf app job builder managed0
   where
-    stabilize = do
-      state <- lowerInitState app job managed0
-      buildJob builder job state >>= \case
-        Success ->
-          lowerJob upperBounds (candidates job.lowerInit) mutationHandlers app conf builder job
-        Failure ->
-          pure (FatalBuildFailure initLowerFailed)
-
     managed0 = ManagedJob.initialState job
-    candidates initialVersions dep = candidatesStabilize handlers.versions dep (initialVersions !! dep.package)
-    mutationHandlers = Mutation.handlersLower conf lowerStabilizeMode (handlers.solve app.packages)
-
-    -- TODO Be helpful about what to do
-    initLowerFailed = "Build with initial lower bounds failed."
 
 lowerStabilize ::
   LowerHandlers ->

@@ -5,7 +5,6 @@ import Hix.Managed.Build.Mutation (MutationResult (MutationFailed, MutationKeep)
 import Hix.Managed.Data.ManagedOp (ManagedOp (OpLowerInit, OpLowerOptimize, OpLowerStabilize))
 import Hix.Managed.Lower.Data.Lower (LowerState)
 
--- TODO move this out of ManagedApp so it can be set from @lowerInit@ etc. to avoid duplication in tests
 data LowerMode =
   LowerMode {
     operation :: ManagedOp,

@@ -77,6 +77,7 @@ library
       Hix.Managed.BuildOutput.GithubActionsPr
       Hix.Managed.Bump.App
       Hix.Managed.Bump.Candidates
+      Hix.Managed.Data.BuildDomain
       Hix.Managed.Data.BuildOutput
       Hix.Managed.Data.BuildResult
       Hix.Managed.Data.BuildResults

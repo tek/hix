@@ -56,7 +56,6 @@ import Hix.Data.Options (
   GhciOptions (..),
   GhcidOptions (..),
   LowerCommand (..),
-  LowerInitOptions (..),
   LowerOptions (LowerOptions),
   NewOptions (..),
   Options (Options),
@@ -246,6 +245,8 @@ lowerParser = do
   env <- Right <$> jsonConfigParser
   managed <- managedConfigParser
   handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  initOnly <- switch (long "init" <> help "Only initialize missing lower bounds")
+  reset <- switch (long "reset" <> help "Reinitialize bounds of all deps rather than just new ones")
   maxFailedPre <- option auto (long "max-failed-majors-pre" <> help maxFailedPreHelp <> value 99 <> showDefault)
   maxFailedPost <- option auto (long "max-failed-majors-post" <> help maxFailedPostHelp <> value 0 <> showDefault)
   maxIterations <- option auto (long "max-iterations" <> help maxIterationsHelp <> value 3 <> showDefault)
@@ -256,15 +257,9 @@ lowerParser = do
     maxFailedHelp variant = [exon|Number of majors that may fail before aborting, #{variant} success|]
     maxIterationsHelp = "Number of restarts when some dependencies fail"
 
-lowerInitParser :: Parser LowerInitOptions
-lowerInitParser = do
-  common <- lowerParser
-  reset <- switch (long "reset" <> help "Reinitialize bounds of all deps rather than just new ones")
-  pure LowerInitOptions {..}
-
 lowerCommands :: Mod CommandFields LowerCommand
 lowerCommands =
-  command "init" (LowerInitCmd <$> info lowerInitParser (progDesc "Initialize the lower bounds"))
+  command "init" (LowerInitCmd <$> info lowerParser (progDesc "Initialize the lower bounds"))
   <>
   command "optimize" (LowerOptimizeCmd <$> info lowerParser (progDesc "Optimize the lower bounds"))
   <>

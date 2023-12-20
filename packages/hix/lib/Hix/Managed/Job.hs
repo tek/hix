@@ -7,6 +7,8 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
 import qualified Hix.Log as Log
+import qualified Hix.Managed.Data.BuildDomain
+import Hix.Managed.Data.BuildDomain (BuildDomain)
 import Hix.Managed.Data.BuildResult (BuildResult)
 import Hix.Managed.Data.BuildResults (BuildResults, initBuildResults, updateBuildResults)
 import Hix.Managed.Data.BuildState (BuildStatus)
@@ -17,13 +19,12 @@ import Hix.Managed.Data.ManagedJob (ManagedJob)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (BuildHandlers (BuildHandlers), Builder (Builder), EnvBuilder (EnvBuilder))
 
-withJobBuilder :: Builder -> ManagedJob -> ManagedState -> (EnvBuilder -> M a) -> M a
-withJobBuilder Builder {withEnvBuilder} job =
-  withEnvBuilder job.env job.targets job.remoteDeps
+buildState :: Builder -> BuildDomain -> ManagedState -> M BuildStatus
+buildState Builder {withEnvBuilder} domain state =
+  withEnvBuilder domain state \ EnvBuilder {buildWithState} -> buildWithState state
 
 buildJob :: Builder -> ManagedJob -> ManagedState -> M BuildStatus
-buildJob builder job state =
-  withJobBuilder builder job state \ EnvBuilder {buildWithState} -> buildWithState state
+buildJob builder job = buildState builder job.domain
 
 buildJobs ::
   ManagedApp ->
@@ -34,8 +35,8 @@ buildJobs app use =
     foldM (build builder) (initBuildResults app.state) app.jobs
   where
     build builder results job = do
-      Log.debug [exon|Processing env '##{job.env :: EnvName}'|]
+      Log.debug [exon|Processing env '##{job.domain.env :: EnvName}'|]
       res <- use builder job
-      pure (updateBuildResults app.operation job.env job.remoteDeps results res)
+      pure (updateBuildResults app.operation job.domain.env job.domain.deps results res)
 
     BuildHandlers {withBuilder} = app.build

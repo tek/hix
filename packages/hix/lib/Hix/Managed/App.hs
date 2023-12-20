@@ -15,6 +15,8 @@ import Hix.Data.Monad (M)
 import Hix.Deps (depsFromConfig, forTargets, uniqueRemoteDeps, withManagedRanges)
 import Hix.Managed.Build.Mutation (DepMutation)
 import Hix.Managed.BuildOutput (outputResult)
+import qualified Hix.Managed.Data.BuildDomain
+import Hix.Managed.Data.BuildDomain (BuildDomain (BuildDomain))
 import Hix.Managed.Data.BuildOutput (buildOutput)
 import Hix.Managed.Data.BuildResults (BuildResults)
 import qualified Hix.Managed.Data.ManagedApp
@@ -68,11 +70,11 @@ managedJob env op name envConfig = do
   projectDeps <- depsFromConfig env.packages envConfig.targets
   let targets = sortTargets projectDeps envConfig.targets
       targetDeps = forTargets targets (withManagedRanges env.state.bounds projectDeps)
-      remoteDeps = targetRemoteDeps targetDeps
+      deps = targetRemoteDeps targetDeps
       lowerInit = env.state.lowerInit !! name
-      removable = removableBounds (targetBound op) remoteDeps env.state.bounds
-      query = uniqueRemoteDeps remoteDeps
-  pure ManagedJob {env = name, ..}
+      removable = removableBounds (targetBound op) deps env.state.bounds
+      query = uniqueRemoteDeps deps
+  pure ManagedJob {domain = BuildDomain {env = name, ..}, ..}
   where
     overrides = env.state.overrides !! name
 

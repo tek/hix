@@ -45,11 +45,9 @@ instance Pretty BoundMutation where
     NoBounds -> "[original]"
 
 -- | Left-biased semigroup op, but 'oldest' is combined by disjunction, since 'False' is the default.
---
--- TODO Should 'oldest' be 'Maybe' and be left-biased as well?
 data PackageParams =
   PackageParams {
-    oldest :: Bool,
+    oldest :: Maybe Bool,
     mutation :: BoundMutation,
     bounds :: Maybe VersionRange,
     local :: Maybe Bool
@@ -58,9 +56,9 @@ data PackageParams =
 
 instance Pretty PackageParams where
   pretty PackageParams {oldest, mutation, bounds} =
-    pretty mutation <+> parens oldnew <+> foldMap spec bounds
+    pretty mutation <+> foldMap (parens . oldnew) oldest <+> foldMap spec bounds
     where
-      oldnew = case oldest of
+      oldnew = \case
         True -> "oldest"
         False -> "newest"
 
@@ -69,7 +67,7 @@ instance Pretty PackageParams where
 instance Semigroup PackageParams where
   l <> r =
     PackageParams {
-      oldest = l.oldest || r.oldest,
+      oldest = l.oldest <|> r.oldest,
       mutation = l.mutation <> l.mutation,
       bounds = l.bounds <|> r.bounds,
       local = l.local <|> r.local
@@ -78,7 +76,7 @@ instance Semigroup PackageParams where
 instance Monoid PackageParams where
   mempty =
     PackageParams {
-      oldest = False,
+      oldest = Nothing,
       mutation = NoBounds,
       bounds = Nothing,
       local = Nothing
@@ -156,7 +154,7 @@ packageParamsRange op PackageParams {mutation, bounds} =
 toBounds :: ManagedOp -> SolverParams -> Bounds
 toBounds op = convert (packageParamsRange op)
 
-updatePackageParams :: PackageName -> Bool -> BoundMutation -> SolverParams -> SolverParams
+updatePackageParams :: PackageName -> Maybe Bool -> BoundMutation -> SolverParams -> SolverParams
 updatePackageParams name oldest mutation =
   ntUpdating name \ old -> old {oldest, mutation}
 

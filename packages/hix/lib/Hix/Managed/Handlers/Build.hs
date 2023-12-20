@@ -1,15 +1,13 @@
 module Hix.Managed.Handlers.Build where
 
 import Hix.Class.Map (convert)
-import Hix.Data.Deps (TargetRemoteDeps)
-import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.ManagedEnv
 import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Overrides
 import Hix.Data.Version (Versions)
+import Hix.Managed.Data.BuildDomain (BuildDomain)
 import Hix.Managed.Data.BuildState (BuildStatus (Failure))
-import Hix.Managed.Data.Targets (Targets)
 import qualified Hix.Managed.Handlers.Hackage as HackageHandlers
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.StateFile as StateFileHandlers
@@ -24,7 +22,7 @@ data EnvBuilder =
 
 data Builder =
   Builder {
-    withEnvBuilder :: ∀ a . EnvName -> Targets -> TargetRemoteDeps -> ManagedState -> (EnvBuilder -> M a) -> M a
+    withEnvBuilder :: ∀ a . BuildDomain -> ManagedState -> (EnvBuilder -> M a) -> M a
   }
 
 data BuildHandlers =
@@ -36,7 +34,7 @@ data BuildHandlers =
 
 testBuilder :: (ManagedState -> M BuildStatus) -> (Builder -> M a) -> M a
 testBuilder buildWithState use =
-  use Builder {withEnvBuilder = \ _ _ _ _ useE -> useE EnvBuilder {buildWithState, ghcDb = pure Nothing}}
+  use Builder {withEnvBuilder = \ _ _ useE -> useE EnvBuilder {buildWithState, ghcDb = pure Nothing}}
 
 versionsBuilder :: (Versions -> M BuildStatus) -> (Builder -> M a) -> M a
 versionsBuilder build =

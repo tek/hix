@@ -291,7 +291,7 @@ test_lowerInitMutation = do
       }
   (log, result) <- liftIO do
     runMLogTest False True $ runManagedApp handlers.build ReportHandlers.handlersProd env conf OpLowerInit \ app ->
-      Right <$> lowerInit handlers def def app
+      Right <$> lowerInit handlers def app
   evalEither result
   stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
   eqLines stateFileTarget (renderRootExpr stateFile)
