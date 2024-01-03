@@ -1,6 +1,5 @@
 module Hix.Managed.StageContext where
 
-import Hix.Class.Map (nMap)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvRequest (EnvRequest (..))
 import qualified Hix.Managed.Data.EnvState
@@ -10,7 +9,7 @@ import qualified Hix.Managed.Data.MutationState
 import Hix.Managed.Data.MutationState (MutationState (MutationState))
 import Hix.Managed.Data.Query (Query (Query))
 import Hix.Managed.Data.StageContext (StageContext (..))
-import Hix.Managed.Diff (reifyBoundsChange, reifyVersionChanges)
+import Hix.Managed.Diff (reifyBoundsChanges, reifyVersionChanges)
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.QueryDep (queryDep)
 
@@ -24,16 +23,17 @@ mutationState EnvState {versions, overrides} =
   Initial MutationState {
     bounds = mempty,
     versions = reifyVersionChanges versions,
-    overrides
+    overrides,
+    initial = mempty
   }
 
 stageContext :: EnvRequest -> EnvState -> StageContext
-stageContext EnvRequest {context = env, builder, state = initialState} envState =
+stageContext EnvRequest {context = env, builder} envState =
   StageContext {
-    query = Query (queryDep builder.cabal state initialBounds <$> env.query),
+    query = Query (queryDep builder.cabal state bounds <$> env.query),
     initial = reifyVersionChanges envState.initial,
     ..
   }
   where
-    initialBounds = nMap reifyBoundsChange . (.bounds) <$> initialState
+    bounds = reifyBoundsChanges envState.bounds
     state = mutationState envState

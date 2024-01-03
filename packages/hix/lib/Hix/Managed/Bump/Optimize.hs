@@ -89,13 +89,13 @@ bumpBuildStage ::
   BuildConfig ->
   Flow BuildStatus
 bumpBuildStage handlers conf =
-  execStage (bumpBuild handlers conf)
+  execStage "bump" (bumpBuild handlers conf)
 
 bumpReportStage ::
   BumpHandlers ->
   Flow BuildStatus
 bumpReportStage handlers =
-  execStatelessStage \ StageContext {query = Query query} ->
+  execStatelessStage "bump-report" \ StageContext {query = Query query} ->
     toSummary . toCandidates <$> traverse (candidatesBump handlers) (toList query)
   where
     toSummary = \case

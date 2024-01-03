@@ -15,12 +15,10 @@ import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import Hix.Managed.Data.Query (Query (Query))
 import qualified Hix.Managed.Data.QueryDep
-import Hix.Managed.Data.StageContext (query)
-import qualified Hix.Managed.Data.StageResult
-import Hix.Managed.Data.StageResult (StageResult (StageResult), StageSummary (StageNoAction))
+import Hix.Managed.Data.StageContext (StageContext (StageContext), query)
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
 import Hix.Managed.Diff (reifyVersionChanges)
-import Hix.Managed.Flow (Flow, runStage_, stageError, stageState)
+import Hix.Managed.Flow (Flow, evalStageState, runStage_, stageError)
 import qualified Hix.Managed.Handlers.Lower
 import Hix.Managed.Handlers.Lower (LowerHandlers)
 import Hix.Managed.Lower.Init (lowerInitStage)
@@ -62,17 +60,25 @@ pristineBounds EnvState {versions, initial} (Query query) =
     justEqual (Just (Just ini)) (Just current) | ini == current = Just current
     justEqual _ _ = Nothing
 
+-- | Return the current 'Query' without those deps whose current versions differ from their initial ones, i.e. that have
+-- been optimized before.
+pristineBoundsQuery :: Flow (Maybe Query)
+pristineBoundsQuery =
+  evalStageState \ env StageContext {query} -> pristineBounds env query
+
+-- | Run Optimize, but only consider the deps that have not been optimized before.
+--
+-- TODO this could use a flag for forcing optimization of all (query) deps.
 optimizePristineBounds ::
   LowerHandlers ->
   BuildConfig ->
   Flow ()
 optimizePristineBounds handlers conf = do
-  -- TODO principled approach
-  env <- stageState id
-  runStage_ \ context ->
-    case pristineBounds env context.query of
-      Just newQuery -> lowerOptimize handlers conf context {query = newQuery}
-      Nothing -> pure StageResult {summary = StageNoAction Nothing, state = Nothing}
+  pristineBoundsQuery >>= \case
+    Just newQuery ->
+      runStage_ "auto-optimize" \ context ->
+        lowerOptimize handlers conf context {query = newQuery}
+    Nothing -> unit
 
 postInit ::
   LowerHandlers ->

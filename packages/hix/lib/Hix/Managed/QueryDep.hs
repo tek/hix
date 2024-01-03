@@ -17,10 +17,10 @@ import Hix.Managed.Handlers.Cabal (CabalHandlers)
 queryDep ::
   CabalHandlers ->
   Initial MutationState ->
-  Initial MutableBounds ->
+  MutableBounds ->
   MutableDep ->
   QueryDep
-queryDep cabal (Initial state) (Initial bounds) package =
+queryDep cabal (Initial state) bounds package =
   QueryDep {..}
   where
     installed = cabal.installedVersion name

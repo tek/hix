@@ -66,7 +66,7 @@ lowerOptimizeStage ::
   BuildConfig ->
   Flow ()
 lowerOptimizeStage handlers conf =
-  runStage_ (lowerOptimize handlers conf)
+  runStage_ "optimize" (lowerOptimize handlers conf)
 
 lowerOptimizeMain ::
   LowerHandlers ->

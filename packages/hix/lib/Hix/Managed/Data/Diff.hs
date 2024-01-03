@@ -29,7 +29,7 @@ instance (
     PrettyDiffDetail d
   ) => Pretty (Diff d a) where
     pretty = \case
-      DiffAdded a -> "[++]" <+> pretty a
+      DiffAdded a -> "[+]" <+> pretty a
       DiffChanged {original, new, detail} -> pretty original <+> "->" <+> pretty new <+> fold (prettyDiffDetail detail)
 
 type VersionDiff = Diff () Version
@@ -58,7 +58,7 @@ instance (
   ) => Pretty (Change d a) where
     pretty = \case
       Unchanged Nothing -> "[0]"
-      Unchanged (Just a) -> "[~~]" <+> pretty a
+      Unchanged (Just a) -> "[=]" <+> pretty a
       Changed diff -> pretty diff
 
 type VersionChange = Change () Version

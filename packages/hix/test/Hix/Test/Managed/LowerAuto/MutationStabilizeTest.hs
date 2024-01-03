@@ -1,4 +1,4 @@
-module Hix.Test.Managed.LowerAuto.MutationTest where
+module Hix.Test.Managed.LowerAuto.MutationStabilizeTest where
 
 import Data.IORef (readIORef)
 import Exon (exon)
@@ -77,7 +77,7 @@ initialState =
     override (num :: Natural) =
       (
         fromString [exon|direct#{show num}|],
-        Override {version = [1, 0], hash = SourceHash [exon|direct#{show num}-1.0.1|]}
+        Override {version = [1, 0], hash = SourceHash [exon|direct#{show num}-1.0|]}
       )
 
 installed :: [(PackageId, [PackageId])]
@@ -199,8 +199,8 @@ stateFileTarget =
 --
 -- - @direct2@ has become incompatible for all versions up to 1.2.
 --   The mutation handler tries 1.0, 1.2 and 1.5, the third of which succeeds.
-test_lowerAutoMutation :: UnitTest
-test_lowerAutoMutation = do
+test_lowerAutoMutationStabilize :: UnitTest
+test_lowerAutoMutationStabilize = do
   (handlers, stateFileRef, _) <- LowerHandlers.handlersUnitTest buildVersions ghcPackages
   let
     proto =

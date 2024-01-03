@@ -6,7 +6,8 @@ data BuildConfig =
     maxFailedPre :: Natural,
     maxFailedPost :: Natural,
     lookup :: Bool,
-    validate :: Bool
+    validate :: Bool,
+    buildOutput :: Bool
   }
   deriving stock (Eq, Show, Generic)
 
@@ -16,5 +17,6 @@ instance Default BuildConfig where
     maxFailedPre = 99,
     maxFailedPost = 0,
     lookup = False,
-    validate = False
+    validate = False,
+    buildOutput = False
   }

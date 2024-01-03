@@ -55,7 +55,8 @@ build buildRef BuildMutation {constraints = [("dep", MutationConstraints {mutati
       = Just MutationState {
         bounds = [("dep", fromLower version)],
         versions = [("dep", Just version)],
-        overrides = mempty
+        overrides = mempty,
+        initial = []
       }
       | otherwise
       = Nothing
@@ -80,7 +81,8 @@ test_candidatesOptimize = do
       MutationState {
         bounds = [("dep", fromLower candidateVersion)],
         versions = [(mutable, Just candidateVersion)],
-        overrides = mempty
+        overrides = mempty,
+        initial = []
       }
 
     newConstraints = [(package, mempty {mutation = fromUpper candidateVersion})]

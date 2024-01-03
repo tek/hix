@@ -57,7 +57,7 @@ initialVersions state =
 
 buildLowerInit :: Flow BuildStatus
 buildLowerInit = do
-  execStatelessStage \ StageContext {env, initial, builder} ->
+  execStatelessStage "stabilize-initial" \ StageContext {env, initial, builder} ->
     buildVersions builder env "initial lower bounds" initial <&> \case
       Success -> StageNoAction (Just "Env builds successfully with the initial bounds.")
       Failure ->
@@ -111,7 +111,7 @@ stabilizeStage ::
   BuildConfig ->
   Flow ()
 stabilizeStage handlers conf =
-  runStage_ (lowerStabilize handlers conf)
+  runStage_ "stabilize"  (lowerStabilize handlers conf)
 
 stabilizeIfPossible ::
   LowerHandlers ->
@@ -124,7 +124,7 @@ stabilizeIfPossible handlers conf =
 
 validateCurrent :: Flow BuildStatus
 validateCurrent =
-  execStatelessStage \ StageContext {env, state = Initial MutationState {versions}, builder} ->
+  execStatelessStage "stabilize-current" \ StageContext {env, state = Initial MutationState {versions}, builder} ->
     buildVersions builder env "current lower bounds" versions <&> \case
       Success -> StageNoAction (Just "Env builds successfully with the current bounds.")
       Failure -> StageFailure (FailedPrecondition ["Env does not build successfully with the current bounds."])

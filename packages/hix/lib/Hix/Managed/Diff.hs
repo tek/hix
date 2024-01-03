@@ -5,7 +5,7 @@ import Hix.Data.Version (Version)
 import qualified Hix.Data.VersionBounds
 import Hix.Data.VersionBounds (VersionBounds (VersionBounds), anyBounds)
 import Hix.Managed.Data.Diff (BoundsChange, BoundsDiffDetail (..), Change (..), Diff (..), VersionChange, VersionDiff)
-import Hix.Managed.Data.Mutable (MutableDep, MutableDeps, MutableVersions)
+import Hix.Managed.Data.Mutable (MutableBounds, MutableDep, MutableDeps, MutableVersions)
 import Hix.These (maybeThese)
 
 diff ::
@@ -103,6 +103,7 @@ updateVersionChange new d =
   replaceChange new versionDiffDetail d
 
 -- TODO change to reify + diffBounds
+-- Need to track whether the original value was @current@ so that the new value will be as well
 updateBoundsChange :: VersionBounds -> BoundsChange -> BoundsChange
 updateBoundsChange new d =
   updateChange mkDetail new d
@@ -154,6 +155,9 @@ reifyBoundsChangeMaybe d =
 reifyBoundsChange :: BoundsChange -> VersionBounds
 reifyBoundsChange d =
   reifyChange anyBounds d
+
+reifyBoundsChanges :: MutableDeps BoundsChange -> MutableBounds
+reifyBoundsChanges = nMap reifyBoundsChange
 
 reifyVersionChange :: VersionChange -> Maybe Version
 reifyVersionChange d =

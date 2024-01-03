@@ -332,7 +332,9 @@ test-suite hix-test
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
       Hix.Test.Managed.DiffTest
-      Hix.Test.Managed.LowerAuto.MutationTest
+      Hix.Test.Managed.Lower
+      Hix.Test.Managed.LowerAuto.MutationOptimizeTest
+      Hix.Test.Managed.LowerAuto.MutationStabilizeTest
       Hix.Test.Managed.LowerInit.MutationTest
       Hix.Test.Managed.LowerNativeTest
       Hix.Test.Managed.LowerOptimize.CandidatesTest

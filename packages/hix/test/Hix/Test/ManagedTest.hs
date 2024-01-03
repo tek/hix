@@ -6,7 +6,8 @@ import Hix.Test.Managed.BuildOutputTest (test_buildOutput)
 import Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump)
 import Hix.Test.Managed.Bump.MutationTest (test_bumpMutation)
 import Hix.Test.Managed.DiffTest (test_diff)
-import Hix.Test.Managed.LowerAuto.MutationTest (test_lowerAutoMutation)
+import Hix.Test.Managed.LowerAuto.MutationOptimizeTest (test_lowerAutoMutationOptimize)
+import Hix.Test.Managed.LowerAuto.MutationStabilizeTest (test_lowerAutoMutationStabilize)
 import Hix.Test.Managed.LowerInit.MutationTest (test_lowerInitMutation)
 import Hix.Test.Managed.LowerNativeTest ()
 import Hix.Test.Managed.LowerOptimize.CandidatesTest (test_candidatesOptimize)
@@ -27,7 +28,8 @@ test_managed =
         unitTest "lower.init" test_lowerInitMutation,
         unitTest "lower.optimize" test_lowerOptimizeMutation,
         unitTest "lower.stabilize" test_lowerStabilizeMutation,
-        unitTest "lower.auto" test_lowerAutoMutation
+        unitTest "lower.auto stabilize" test_lowerAutoMutationStabilize,
+        test_lowerAutoMutationOptimize
       ],
       unitTest "parse ProjectContext" test_parseProjectContextProto,
       test_buildOutput,

@@ -128,7 +128,7 @@ initialState =
     overrides = [
       ("fancy", [("direct5", "direct5-1.1.1")])
     ],
-    initial = [("fancy", [("direct4", "2.0.0")])],
+    initial = [],
     resolving = False
   }
 
@@ -195,12 +195,12 @@ stateFileTarget =
   };
   initial = {
     fancy = {
-      base = "4.12.0.0";
-      direct1 = "1.2.1";
-      direct2 = "1.2.1";
-      direct3 = "1.0.1";
-      direct4 = "2.0.0";
-      direct5 = "1.2.1";
+      base = null;
+      direct1 = null;
+      direct2 = null;
+      direct3 = null;
+      direct4 = null;
+      direct5 = null;
     };
   };
   resolving = false;

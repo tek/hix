@@ -34,7 +34,7 @@ import Hix.Managed.Lower.Candidates (candidatesInit)
 import Hix.Managed.Lower.Data.LowerMode (lowerInitMode)
 import Hix.Managed.Process (processProject)
 import Hix.Managed.Report (describeIterations)
-import Hix.Managed.StageResult (stageResult)
+import Hix.Managed.StageResult (stageResultInit)
 
 lowerInitUpdate :: Bool -> MutableId -> PackageId -> MutationConstraints -> MutationConstraints
 lowerInitUpdate _ _ PackageId {version} MutationConstraints {..} =
@@ -64,8 +64,9 @@ lowerInit ::
   BuildConfig ->
   StageContext ->
   M StageResult
-lowerInit handlers conf buildConf context =
-  stageResult success failure <$> processQuery candidates mutationHandlers buildConf context ext
+lowerInit handlers conf buildConf context = do
+  result <- processQuery candidates mutationHandlers buildConf context ext
+  pure (stageResultInit success failure result)
   where
     candidates = candidatesInit handlers.versions (nKeysSet (nCatMaybes keep :: MutableDeps Version))
 
@@ -82,7 +83,7 @@ lowerInitStage ::
   BuildConfig ->
   Flow BuildStatus
 lowerInitStage handlers conf buildConf =
-  execStage (lowerInit handlers conf buildConf)
+  execStage "lower-init" (lowerInit handlers conf buildConf)
 
 lowerInitMain ::
   LowerConfig ->

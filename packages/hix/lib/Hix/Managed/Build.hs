@@ -70,11 +70,12 @@ updateMutationState ::
   Overrides ->
   MutationState ->
   MutationState
-updateMutationState updateBound newVersions overrides MutationState {bounds, versions} =
+updateMutationState updateBound newVersions overrides MutationState {bounds, versions, initial} =
   updateBoundsWith updateBound MutationState {
     bounds,
     versions = addBuildVersions newVersions versions,
-    overrides
+    overrides,
+    initial
   }
 
 -- | /Note/: This quietly discards non-reinstallable packages.

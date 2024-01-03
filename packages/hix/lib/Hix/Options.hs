@@ -246,6 +246,7 @@ buildConfigParser = do
   maxFailedPost <- option auto (long "max-failed-majors-post" <> help maxFailedPostHelp <> value 0 <> showDefault)
   lookup <- switch (long "lookup" <> short 'n' <> help "Only print latest versions (bump)")
   validate <- switch (long "validate" <> help "Validate new versions, but don't update the project state")
+  buildOutput <- switch (long "build-output" <> help "Show output from Nix builds")
   pure BuildConfig {..}
   where
     maxIterationsHelp = "Number of restarts when some dependencies fail"
