@@ -65,11 +65,7 @@
     };
   };
   initial = {
-    latest-main = {
-      aeson = "2.2.0.0";
-      base = "4.17.2.0";
-      extra = "1.7.14";
-    };
+    latest-main = {};
   };
   resolving = false;
 }

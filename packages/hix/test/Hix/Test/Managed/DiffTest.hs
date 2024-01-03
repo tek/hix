@@ -7,7 +7,7 @@ import Test.Tasty (TestTree, testGroup)
 
 import Hix.Data.VersionBounds (versionBounds)
 import Hix.Managed.Data.Diff (BoundsChange, VersionChange)
-import Hix.Managed.Diff (diffBounds, diffVersions)
+import Hix.Managed.Diff (boundsChange, versionChange)
 import qualified Hix.Managed.EnvResult
 import Hix.Managed.EnvResult (
   DepModification (DepUpdated),
@@ -20,11 +20,11 @@ import Hix.Test.Utils (UnitTest, unitTest)
 
 versionDiff1 :: VersionChange
 versionDiff1 =
-  diffVersions (Just [1, 0]) (Just [1, 5])
+  versionChange (Just [1, 0]) (Just [1, 5])
 
 boundsDiff1 :: BoundsChange
 boundsDiff1 =
-  diffBounds (versionBounds [1, 0] [2, 0]) (versionBounds [1, 5] [2, 0])
+  boundsChange (versionBounds [1, 0] [2, 0]) (versionBounds [1, 5] [2, 0])
 
 result1 :: Maybe DepResult
 result1 =

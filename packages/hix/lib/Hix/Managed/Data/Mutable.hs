@@ -29,7 +29,7 @@ import Distribution.Pretty (Pretty (pretty))
 import Exon (ToSegment (toSegment))
 import GHC.Exts (IsList)
 
-import Hix.Class.EncodeNix (EncodeNix, EncodeNixKey)
+import Hix.Class.EncodeNix (EncodeNix (encodeNix), EncodeNixKey)
 import Hix.Class.Map (
   LookupMaybe,
   NLookup,
@@ -87,12 +87,15 @@ instance Pretty a => Pretty (MutableDeps a) where
 newtype MutableVersions =
   MutableVersions (Map MutableDep (Maybe Version))
   deriving stock (Eq, Show, Generic)
-  deriving newtype (Semigroup, Monoid, IsList, EncodeNix)
+  deriving newtype (Semigroup, Monoid, IsList)
 
 instance NMap MutableVersions MutableDep (Maybe Version) LookupMaybe where
 
 instance Pretty MutableVersions where
   pretty = nPrettyWith (maybe "[missing]" pretty)
+
+instance EncodeNix MutableVersions where
+  encodeNix = encodeNix . mutRelaxVersions
 
 newtype MutableBounds =
   MutableBounds (Map MutableDep VersionBounds)

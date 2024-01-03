@@ -194,14 +194,7 @@ stateFileTarget =
     };
   };
   initial = {
-    fancy = {
-      base = null;
-      direct1 = null;
-      direct2 = null;
-      direct3 = null;
-      direct4 = null;
-      direct5 = null;
-    };
+    fancy = {};
   };
   resolving = false;
 }

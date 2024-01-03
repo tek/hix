@@ -22,7 +22,7 @@ import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))
 import Hix.Managed.Data.Mutation (FailedMutation)
 import Hix.Managed.Data.StageResult (stageFailures)
-import Hix.Managed.Diff (diffChangedOriginal, reifyBoundsChange, reifyVersionChange)
+import Hix.Managed.Diff (diffOriginal, reifyBoundsChange, reifyVersionChange)
 import Hix.These (maybeThese)
 
 data DepModification =
@@ -72,7 +72,7 @@ depResult package versionChange boundsChange = do
 
     boundsUpdate = case boundsChange of
       Changed (DiffChanged _ _ (BoundsDiffDetail det)) ->
-        maybeThese (diffChangedOriginal <$> justHere det) (diffChangedOriginal <$> justThere det)
+        maybeThese (diffOriginal <$> justHere det) (diffOriginal <$> justThere det)
       _ -> Nothing
 
 deps :: EnvResult -> [DepResult]

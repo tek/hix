@@ -75,15 +75,8 @@
     };
   };
   initial = {
-    latest-main = {
-      aeson = "2.2.0.0";
-      base = "4.17.2.0";
-      extra = "1.7.14";
-    };
-    latest-other = {
-      base = "4.17.2.0";
-      path = "0.9.5";
-    };
+    latest-main = {};
+    latest-other = {};
   };
   resolving = false;
 }

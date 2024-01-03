@@ -47,11 +47,9 @@
   };
   initial = {
     lower-local1 = {
-      base = "4.15.1.0";
       containers = "0.7";
     };
     lower-local2 = {
-      base = "4.15.1.0";
       semigroups = "0.20";
     };
   };
