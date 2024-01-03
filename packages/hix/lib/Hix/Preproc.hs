@@ -2,7 +2,6 @@ module Hix.Preproc where
 
 import Control.Lens (IndexedTraversal', has, index, ix, preview, (%~), (.~), (^..))
 import Control.Lens.Regex.ByteString (Match, group, groups, match, regex)
-import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, throwE)
 import qualified Data.ByteString as ByteString
 import Data.ByteString (elemIndex)
@@ -26,13 +25,14 @@ import Hix.Cabal (buildInfoForFile)
 import Hix.Component (targetComponentOrError)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec))
-import Hix.Data.Monad (M)
+import Hix.Data.Monad (M, liftE)
 import Hix.Data.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Error (Error (..), sourceError, tryIO)
+import Hix.Error (Error (..), sourceError)
 import Hix.Json (jsonConfigE)
+import Hix.Monad (tryIOM)
 import Hix.Optparse (JsonConfig)
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
@@ -449,11 +449,11 @@ preprocessModule source conf dummyExportName inLines =
 
 preprocessWith :: PreprocOptions -> CabalConfig -> M ()
 preprocessWith opt conf = do
-  inLines <- lift (tryIO (ByteString.readFile (toFilePath opt.inFile)))
+  inLines <- tryIOM (ByteString.readFile (toFilePath opt.inFile))
   dummyNumber :: Int <- randomRIO (10000, 10000000)
   let dummyExportName = DummyExportName [exon|Hix_Dummy_#{show dummyNumber}|]
   let result = preprocessModule opt.source conf dummyExportName inLines
-  lift (tryIO (ByteStringBuilder.writeFile (toFilePath opt.outFile) result))
+  tryIOM (ByteStringBuilder.writeFile (toFilePath opt.outFile) result)
 
 fromConfig ::
   Maybe (Path Abs Dir) ->
@@ -484,7 +484,7 @@ fromCabal info =
 
 fromCabalFile :: Path Abs File -> M CabalConfig
 fromCabalFile source =
-  fromCabal <$> lift (buildInfoForFile source)
+  fromCabal <$> liftE (buildInfoForFile source)
 
 -- TODO add common stanzas
 preprocess :: PreprocOptions -> M ()

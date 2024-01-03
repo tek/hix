@@ -49,6 +49,32 @@ color :: Int -> Text -> Text
 color n =
   sgis [show (30 + n)]
 
+data ColorOffsets =
+  ColorOffsets {
+    black :: Int,
+    red :: Int,
+    green :: Int,
+    yellow :: Int,
+    blue :: Int,
+    magenta :: Int,
+    cyan :: Int,
+    white :: Int
+  }
+  deriving stock (Eq, Show, Generic)
+
+colors :: ColorOffsets
+colors =
+  ColorOffsets {
+    black = 0,
+    red = 1,
+    green = 2,
+    yellow = 3,
+    blue = 4,
+    magenta = 5,
+    cyan = 6,
+    white = 7
+  }
+
 withChevrons :: Int -> Text -> Text
 withChevrons col msg =
   [exon|#{sgis [show (30 + col), "1"] ">>>"} #{msg}|]

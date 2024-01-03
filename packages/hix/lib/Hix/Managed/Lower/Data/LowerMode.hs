@@ -1,24 +1,18 @@
 module Hix.Managed.Lower.Data.LowerMode where
 
-import Hix.Data.Bounds (TargetBound (TargetLower))
-import Hix.Managed.Build.Mutation (MutationResult (MutationFailed, MutationKeep))
-import Hix.Managed.Data.ManagedOp (ManagedOp (OpLowerInit, OpLowerOptimize, OpLowerStabilize))
-import Hix.Managed.Lower.Data.Lower (LowerState)
+import Hix.Managed.Cabal.Data.SolverState (SolverState)
+import Hix.Managed.Data.Mutation (MutationResult (MutationFailed, MutationKeep))
 
 data LowerMode =
   LowerMode {
-    operation :: ManagedOp,
-    targetBound :: TargetBound,
     firstSuccess :: Bool,
-    noSuccess :: MutationResult LowerState
+    noSuccess :: MutationResult SolverState
   }
   deriving stock (Eq, Show, Generic)
 
 lowerInitMode :: LowerMode
 lowerInitMode =
   LowerMode {
-    operation = OpLowerInit,
-    targetBound = TargetLower,
     firstSuccess = True,
     noSuccess = MutationFailed
   }
@@ -26,8 +20,6 @@ lowerInitMode =
 lowerOptimizeMode :: LowerMode
 lowerOptimizeMode =
   LowerMode {
-    operation = OpLowerOptimize,
-    targetBound = TargetLower,
     firstSuccess = False,
     noSuccess = MutationKeep
   }
@@ -35,8 +27,6 @@ lowerOptimizeMode =
 lowerStabilizeMode :: LowerMode
 lowerStabilizeMode =
   LowerMode {
-    operation = OpLowerStabilize,
-    targetBound = TargetLower,
     firstSuccess = True,
     noSuccess = MutationFailed
   }

@@ -2,14 +2,15 @@ module Hix.Log where
 
 import Control.Monad.Trans.Reader (ask)
 import Exon (exon)
+import Text.PrettyPrint (Doc)
 
 import Hix.Console (color, withChevrons)
 import qualified Hix.Data.Monad
-import Hix.Data.Monad (LogLevel (..), M)
+import Hix.Data.Monad (LogLevel (..), M (M))
 
 log :: LogLevel -> Text -> M ()
 log level msg = do
-  env <- ask
+  env <- M ask
   env.logger level msg
 
 verbose :: Text -> M ()
@@ -20,9 +21,16 @@ debug :: Text -> M ()
 debug msg =
   log LogDebug [exon|[#{color 6 "debug"}] #{msg}|]
 
+debugP :: Doc -> M ()
+debugP = debug . show
+
 info :: Text -> M ()
 info msg =
   log LogInfo (withChevrons 5 msg)
+
+infoPlain :: Text -> M ()
+infoPlain msg =
+  log LogInfo msg
 
 warn :: Text -> M ()
 warn msg =
@@ -38,12 +46,15 @@ error msg =
 
 logWith :: (LogLevel -> Text -> IO ()) -> LogLevel -> Text -> M ()
 logWith handler level msg = do
-  env <- ask
+  env <- M ask
+  let
+    minVerbose = env.verbose || env.debug
+    minInfo = minVerbose || not env.quiet
   case level of
     LogDebug | env.debug -> accept
-    LogVerbose | env.verbose -> accept
-    LogInfo | not env.quiet -> accept
-    LogWarn | not env.quiet -> accept
+    LogVerbose | minVerbose -> accept
+    LogInfo | minInfo -> accept
+    LogWarn | minInfo -> accept
     LogError -> accept
     _ -> unit
   where

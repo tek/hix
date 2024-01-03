@@ -2,9 +2,9 @@ module Hix.Data.EnvName where
 
 import Data.Aeson (FromJSON, FromJSONKey)
 import Distribution.Pretty (Pretty (pretty))
-import qualified Text.PrettyPrint as Pretty
 
 import Hix.Class.EncodeNix (EncodeNixKey)
+import Hix.Pretty (prettyText)
 
 newtype EnvName =
   EnvName { unEnvName :: Text }
@@ -12,4 +12,4 @@ newtype EnvName =
   deriving newtype (IsString, Ord, FromJSON, FromJSONKey, EncodeNixKey)
 
 instance Pretty EnvName where
-  pretty (EnvName n) = Pretty.text (toString n)
+  pretty (EnvName n) = prettyText n

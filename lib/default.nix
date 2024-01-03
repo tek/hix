@@ -51,11 +51,14 @@ let
 
   unlinesConcatMap = f: xs: concatStringsSep "\n" (concatMap f xs);
 
-  foldAttrs =
+  catAttrs =
   foldl lib.mergeAttrs {};
 
-  foldMapAttrs = f: xs:
-  foldAttrs (map f xs);
+  mapListCatAttrs = f: xs:
+  catAttrs (map f xs);
+
+  foldMapAttrs = f: set:
+  lib.foldlAttrs (z: name: attr: z // f name attr) {} set;
 
   over = path: f: attrs:
   if hasAttrByPath path attrs
@@ -196,7 +199,8 @@ in {
   unlines
   unlinesMap
   unlinesConcatMap
-  foldAttrs
+  catAttrs
+  mapListCatAttrs
   foldMapAttrs
   over
   mergeAttr

@@ -3,15 +3,25 @@
 module Hix.Test.Managed.UnsafeIsString where
 
 import Distribution.Version (VersionRange)
+import Exon (exon)
+import GHC.Exts (IsList (Item, fromList, toList))
 
 import Hix.CabalParsec (unsafeParsec)
+import qualified Hix.Data.Dep
 import qualified Hix.Data.Dep as Dep
-import Hix.Data.Dep (Dep)
+import Hix.Data.Dep (Dep (Dep))
 import qualified Hix.Data.Overrides
 import Hix.Data.Overrides (Override (Override))
 import qualified Hix.Data.PackageId as PackageId
-import Hix.Data.PackageId (PackageId)
+import Hix.Data.PackageId (PackageId (PackageId))
+import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (SourceHash (SourceHash), Version)
+import qualified Hix.Data.VersionBounds
+import Hix.Data.VersionBounds (VersionBounds (VersionBounds), fromLower, unsafeVersionBoundsFromRange, versionBounds)
+import Hix.Managed.Data.Constraints (MutationConstraints (mutation))
+import Hix.Managed.Data.Mutable (MutableDep, unsafeMutableDep)
+import qualified Hix.Managed.Data.MutableId
+import Hix.Managed.Data.MutableId (MutableId (MutableId))
 import Hix.Pretty (showP)
 
 instance IsString Version where
@@ -20,8 +30,32 @@ instance IsString Version where
 instance IsString VersionRange where
   fromString = unsafeParsec
 
+instance IsString VersionBounds where
+  fromString =
+    unsafeVersionBoundsFromRange . fromString
+
+instance IsList VersionBounds where
+  type Item VersionBounds = Version
+
+  fromList = \case
+    [] -> VersionBounds {lower = Nothing, upper = Nothing}
+    [lower] -> fromLower lower
+    [lower, upper] -> versionBounds lower upper
+    l -> error [exon|IsList VersionBounds: not two elements or fewer: #{show l}|]
+
+  toList VersionBounds {lower, upper} = maybeToList lower ++ maybeToList upper
+
+instance IsString MutableDep where
+  fromString = unsafeMutableDep . fromString
+
 instance IsString PackageId where
   fromString = PackageId.fromCabal . unsafeParsec
+
+instance IsString MutableId where
+  fromString s =
+    MutableId {name = unsafeMutableDep name, version}
+    where
+      PackageId {name, version} = fromString s
 
 instance IsString Dep where
   fromString = Dep.fromCabal . unsafeParsec
@@ -31,3 +65,9 @@ instance IsString Override where
     Override {hash = SourceHash (showP package), version = package.version}
     where
       package = fromString @PackageId s
+
+instance IsString (PackageName, MutationConstraints) where
+  fromString s =
+    (package, mempty {mutation = unsafeVersionBoundsFromRange version})
+    where
+      Dep {package, version} = fromString s

@@ -1,94 +1,151 @@
 module Hix.Managed.Build where
 
 import Control.Monad (foldM)
+import qualified Data.Map.Strict as Map
 import Distribution.Pretty (Pretty, pretty)
 import Exon (exon)
-import Text.PrettyPrint (hang, vcat)
+import Text.PrettyPrint (vcat)
 
-import Hix.Class.Map (ntAmend)
-import Hix.Data.Bounds (BoundExtension (LowerBoundExtension, UpperBoundExtension), BoundExtensions, Bounds)
 import Hix.Data.EnvName (EnvName)
-import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (ManagedState)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.PackageId (PackageId)
-import Hix.Data.PackageName (PackageName)
+import Hix.Data.Version (Version, Versions)
+import Hix.Data.VersionBounds (VersionBounds)
 import qualified Hix.Log as Log
-import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (BuildMutation (BuildMutation), DepMutation, MutationResult (..))
-import Hix.Managed.Build.UpdateState (updateState)
-import qualified Hix.Managed.Data.BuildDomain
-import Hix.Managed.Data.BuildDomain (BuildDomain)
-import qualified Hix.Managed.Data.BuildState
-import Hix.Managed.Data.BuildState (BuildState, BuildStatus (Failure, Success), justSuccess)
-import qualified Hix.Managed.Data.Candidate
-import Hix.Managed.Data.Candidate (Candidate)
+import Hix.Managed.Build.Solve (solveMutation)
+import qualified Hix.Managed.Cabal.Changes
+import Hix.Managed.Cabal.Config (isNonReinstallableDep, isReinstallableId)
+import qualified Hix.Managed.Data.BuildConfig
+import Hix.Managed.Data.BuildConfig (BuildConfig)
+import Hix.Managed.Data.Constraints (EnvConstraints)
+import qualified Hix.Managed.Data.EnvContext
+import Hix.Managed.Data.EnvContext (EnvContext)
+import Hix.Managed.Data.Mutable (MutableDep, addBuildVersions)
+import qualified Hix.Managed.Data.Mutation
+import Hix.Managed.Data.Mutation (BuildMutation (BuildMutation), DepMutation, MutationResult (..))
+import qualified Hix.Managed.Data.MutationState
+import Hix.Managed.Data.MutationState (MutationState (MutationState), updateBoundsWith)
+import Hix.Managed.Data.Query (Query (Query))
+import qualified Hix.Managed.Data.QueryDep
+import Hix.Managed.Data.QueryDep (QueryDep)
+import qualified Hix.Managed.Data.StageContext
+import Hix.Managed.Data.StageContext (StageContext (StageContext))
+import qualified Hix.Managed.Data.StageState
+import Hix.Managed.Data.StageState (
+  BuildStatus (Failure, Success),
+  StageState,
+  failed,
+  initStageState,
+  iterations,
+  justSuccess,
+  )
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (Builder (Builder), EnvBuilder)
+import Hix.Managed.Handlers.Build (EnvBuilder)
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
-import Hix.Managed.Overrides (newVersionOverrides)
-import Hix.Managed.State (stateWithCandidate)
-import Hix.Pretty (prettyL, showP, showPL)
-import Hix.Version (setLowerBound, setUpperBound)
+import Hix.Managed.Overrides (packageOverrides)
+import Hix.Managed.StageState (updateStageState)
+import Hix.Pretty (showP, showPL)
 
 logBuildInputs ::
-  ManagedState ->
-  Candidate ->
-  [PackageId] ->
-  Overrides ->
+  EnvName ->
+  Text ->
   Overrides ->
   M ()
-logBuildInputs managed candidate newVersions newOverrides accOverrides = do
-  Log.verbose [exon|Executing build with new dep version '#{showP candidate}'|]
-  Log.debug (show (vcat ["Managed state pre:", pretty managed]))
-  Log.debug (show (hang "Extra versions:" 2 (prettyL newVersions)))
-  Log.debug (show (hang "New overrides:" 2 (pretty newOverrides)))
-  Log.debug (show (hang "Overrides retained from previous runs:" 2 (pretty accOverrides)))
+logBuildInputs env description overrides = do
+  Log.info [exon|Building targets in '##{env}' with #{description}...|]
+  Log.debugP (vcat ["Overrides:", pretty overrides])
 
-logCandidateResult :: Candidate -> BuildStatus -> M ()
-logCandidateResult candidate status =
-  Log.info [exon|Build for candidate '##{showP candidate}' #{result status}|]
+logBuildResult :: Text -> BuildStatus -> M ()
+logBuildResult description status =
+  Log.info [exon|Build with ##{description} #{result status}|]
   where
     result = \case
       Success -> "succeeded"
       Failure -> "failed"
 
-buildBounds :: BoundExtensions -> Bounds -> Bounds
-buildBounds =
-  ntAmend \case
-    LowerBoundExtension version -> setLowerBound version
-    UpperBoundExtension version -> setUpperBound version
+updateMutationState ::
+  (Version -> VersionBounds -> VersionBounds) ->
+  Versions ->
+  Overrides ->
+  MutationState ->
+  MutationState
+updateMutationState updateBound newVersions overrides MutationState {bounds, versions} =
+  updateBoundsWith updateBound MutationState {
+    bounds,
+    versions = addBuildVersions newVersions versions,
+    overrides
+  }
 
+-- TODO This could be moved to EnvBuilder – remove HackageHandlers from this file and fetch the overrides in the
+-- backend, returning them.
+buildOverrides ::
+  EnvBuilder ->
+  EnvContext ->
+  Text ->
+  Versions ->
+  Overrides ->
+  M BuildStatus
+buildOverrides builder context description versions overrides = do
+  logBuildInputs context.env description overrides
+  status <- builder.buildWithState versions overrides
+  logBuildResult description status
+  pure status
+
+-- | /Note/: This quietly discards non-reinstallable packages.
+--
+-- TODO Discard installed versions, for builds with initial versions.
+buildVersions ::
+  HackageHandlers ->
+  EnvBuilder ->
+  EnvContext ->
+  Text ->
+  Versions ->
+  [PackageId] ->
+  M (Overrides, BuildStatus)
+buildVersions handlers builder context description versions overrideVersions = do
+  overrides <- packageOverrides handlers reinstallable
+  status <- buildOverrides builder context description versions overrides
+  pure (overrides, status)
+  where
+    reinstallable = filter isReinstallableId overrideVersions
+ 
+buildConstraints ::
+  HackageHandlers ->
+  EnvBuilder ->
+  EnvContext ->
+  Text ->
+  EnvConstraints ->
+  M (Maybe (Versions, Overrides, BuildStatus))
+buildConstraints handlers builder context description constraints =
+  solveMutation builder.cabal context.deps constraints >>= traverse \ changes -> do
+    (overrides, status) <- buildVersions handlers builder context description changes.versions changes.overrides
+    pure (changes.versions, overrides, status)
+ 
 buildMutation ::
   HackageHandlers ->
   EnvBuilder ->
-  EnvName ->
-  ManagedState ->
+  EnvContext ->
+  MutationState ->
   BuildMutation ->
-  M (Maybe ManagedState)
-buildMutation handlers builder env state BuildMutation {candidate, newVersions, accOverrides, newBounds} = do
-  newOverrides <- newVersionOverrides handlers (candidate.package : newVersions)
-  let overrides = newOverrides <> accOverrides
-      bounds = buildBounds newBounds state.bounds
-      newState = stateWithCandidate bounds candidate overrides
-  logBuildInputs state candidate newVersions newOverrides accOverrides
-  Log.info [exon|Building targets in '##{env}' with '#{showP candidate}'...|]
-  status <- builder.buildWithState newState
-  logCandidateResult candidate status
-  pure (justSuccess newState status)
+  M (Maybe MutationState)
+buildMutation handlers builder context state BuildMutation {description, constraints, updateBound} =
+  result <$> buildConstraints handlers builder context description constraints
+  where
+    result = \case
+      Just (versions, overrides, status) ->
+        justSuccess (updateMutationState updateBound versions overrides state) status
+      Nothing -> Nothing
 
 logMutationResult ::
-  PackageName ->
+  MutableDep ->
   MutationResult s ->
   M ()
 logMutationResult package = \case
   MutationSuccess candidate _ _ ->
     Log.verbose [exon|Build succeeded for #{showP candidate}|]
-  MutationUpdateBounds _ range ->
-    Log.verbose [exon|'##{package}' only needs bounds update: #{showP range}|]
   MutationKeep ->
     Log.verbose [exon|Build is up to date for '##{package}'|]
   MutationFailed ->
@@ -97,29 +154,82 @@ logMutationResult package = \case
 validateMutation ::
   HackageHandlers ->
   EnvBuilder ->
-  EnvName ->
+  EnvContext ->
   MutationHandlers a s ->
-  BuildState a s ->
+  StageState a s ->
   DepMutation a ->
-  M (BuildState a s)
-validateMutation hackage envBuilder env handlers buildState mutation = do
-  result <- handlers.process buildState.ext mutation build
+  M (StageState a s)
+validateMutation hackage envBuilder context handlers stageState mutation = do
+  result <- processReinstallable
   logMutationResult mutation.package result
-  pure (updateState buildState mutation result)
+  pure (updateStageState stageState mutation result)
   where
-    build = buildMutation hackage envBuilder env buildState.state
+    processReinstallable
+      | isNonReinstallableDep mutation.package
+      = pure MutationKeep
+      | otherwise
+      = handlers.process stageState.ext mutation build
+    build = buildMutation hackage envBuilder context stageState.state
 
-buildMutations ::
+convergeMutations ::
   Pretty a =>
   HackageHandlers ->
-  Builder ->
-  (EnvBuilder -> M (MutationHandlers a s)) ->
-  BuildDomain ->
+  MutationHandlers a s ->
+  BuildConfig ->
+  EnvBuilder ->
+  EnvContext ->
+  StageState a s ->
   [DepMutation a] ->
-  BuildState a s ->
-  M (BuildState a s)
-buildMutations hackage Builder {withEnvBuilder} mkHandlers domain mutations state = do
-  Log.debug [exon|Building targets with mutations: #{showPL mutations}|]
-  withEnvBuilder domain state.state \ envBuilder -> do
-    handlers <- mkHandlers envBuilder
-    foldM (validateMutation hackage envBuilder domain.env handlers) state mutations
+  M (StageState a s)
+convergeMutations hackage handlers conf builder context state0 =
+  spin state0 {iterations = 0}
+  where
+    spin state mutations
+
+      | [] <- mutations
+      = pure state
+
+      | state.iterations >= conf.maxIterations
+      = pure state
+
+      | otherwise
+      = do
+        Log.debug [exon|Iteration #{show (state.iterations + 1)} for '##{context.env :: EnvName}'|]
+        newState <- build state mutations
+        if Map.size newState.success == Map.size state.success
+        then pure newState
+        -- reversing so the build order is consistent
+        else spin newState (reverse newState.failed)
+
+    build statePre mutations = do
+      let state = statePre {failed = [], iterations = statePre.iterations + 1}
+      Log.debug [exon|Building targets with mutations: #{showPL mutations}|]
+      foldM (validateMutation hackage builder context handlers) state mutations
+
+reinstallableCandidates ::
+  (QueryDep -> M (Maybe (DepMutation a))) ->
+  Query ->
+  M [DepMutation a]
+reinstallableCandidates candidates (Query query) =
+  catMaybes <$> traverse reinstallableOnly (toList query)
+  where
+    reinstallableOnly dep
+      | isNonReinstallableDep dep.package
+      = pure Nothing
+      | otherwise
+      = candidates dep
+
+processQuery ::
+  Pretty a =>
+  HackageHandlers ->
+  (QueryDep -> M (Maybe (DepMutation a))) ->
+  MutationHandlers a s ->
+  BuildConfig ->
+  StageContext ->
+  s ->
+  M (StageState a s)
+processQuery hackage candidates handlers conf StageContext {env, builder, state, query = query} ext = do
+  mutations <- reinstallableCandidates candidates query
+  convergeMutations hackage handlers conf builder env stageState mutations
+  where
+    stageState = initStageState state ext

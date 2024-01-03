@@ -359,6 +359,8 @@ in {
 
     description = mkDefault "See ${config.hackageRootLink}";
 
+    # TODO This adds multi-component sets unconditionally, suggesting that downstream check the enable flag, but checks
+    # it itself for the single components...that doesn't seem right.
     internal.componentsSet =
       optionalAttrs config.library.enable { library = config.library; } //
       config.libraries //

@@ -2,9 +2,7 @@ module Hix.Data.Dep where
 
 import Data.Aeson (FromJSON (parseJSON), Value (Object, String), (.:))
 import Data.Aeson.Types (Parser)
-import Distribution.Compat.NonEmptySet (NonEmptySet)
 import Distribution.Package (mainLibSet)
-import Distribution.PackageDescription (LibraryName)
 import Distribution.Pretty (Pretty, pretty)
 import Distribution.Types.Dependency (Dependency (Dependency))
 import Distribution.Version (VersionRange, thisVersion)
@@ -18,26 +16,23 @@ import Hix.Data.Version (Version)
 data Dep =
   Dep {
     package :: PackageName,
-    version :: VersionRange,
-    -- TODO remove
-    libs :: NonEmptySet LibraryName
+    version :: VersionRange
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 toCabal :: Dep -> Dependency
 toCabal Dep {..} =
-  Dependency (PackageName.toCabal package) version libs
+  Dependency (PackageName.toCabal package) version mainLibSet
 
 fromCabal :: Dependency -> Dep
-fromCabal (Dependency (PackageName.fromCabal -> package) version libs) =
-  Dep {package, version, libs}
+fromCabal (Dependency (PackageName.fromCabal -> package) version _) =
+  Dep {package, version}
 
 instance Pretty Dep where
   pretty = pretty . toCabal
 
-mainDep :: PackageName -> VersionRange -> Dep
-mainDep package version =
-  Dep {libs = mainLibSet, ..}
+mkDep :: PackageName -> VersionRange -> Dep
+mkDep package version = Dep {..}
 
 jsonParseCabal :: String -> Parser Dep
 jsonParseCabal v = fromCabal <$> aesonParsec v
@@ -47,7 +42,7 @@ renderDep = show . pretty
 
 thisVersionDep :: PackageName -> Version -> Dep
 thisVersionDep package version =
-  mainDep package (thisVersion version)
+  mkDep package (thisVersion version)
 
 instance FromJSON Dep where
   parseJSON = \case

@@ -5,8 +5,8 @@ import Path (Abs, Dir, Path, parent, toFilePath)
 import System.FilePattern.Directory (getDirectoryFiles)
 import System.IO.Error (tryIOError)
 
-import qualified Hix.Monad
-import Hix.Monad (Env (Env), M)
+import qualified Hix.Data.Monad
+import Hix.Data.Monad (AppResources (AppResources), M (M))
 
 findFlake :: Path Abs Dir -> IO (Maybe (Path Abs Dir))
 findFlake cur =
@@ -17,7 +17,7 @@ findFlake cur =
 
 inferRoot :: M (Path Abs Dir)
 inferRoot = do
-  Env {cwd} <- ask
+  AppResources {cwd} <- M ask
   fromMaybe cwd <$> liftIO (findFlake cwd)
 
 rootDir :: Maybe (Path Abs Dir) -> M (Path Abs Dir)

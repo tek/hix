@@ -1,12 +1,39 @@
 {
   bounds = {
     local1 = {
-      aeson = ">=2.2 && <2.3";
-      extra = ">=1.7 && <1.8";
-      th-abstraction = ">=0.5 && <0.6";
+      aeson = {
+        lower = "2.2";
+        upper = "2.3";
+      };
+      base = {
+        lower = null;
+        upper = "4.18";
+      };
+      extra = {
+        lower = null;
+        upper = "1.8";
+      };
     };
     local2 = {
-      path = ">=0.9 && <0.10";
+      base = {
+        lower = null;
+        upper = "4.18";
+      };
+      path = {
+        lower = null;
+        upper = "0.10";
+      };
+    };
+  };
+  versions = {
+    latest-main = {
+      aeson = "2.2.0.0";
+      base = "4.17.2.0";
+      extra = "1.7.14";
+    };
+    latest-other = {
+      base = "4.17.2.0";
+      path = "0.9.5";
     };
   };
   overrides = {
@@ -15,9 +42,25 @@
         version = "2.2.0.0";
         hash = "1rxbydr7mvchhlyz2111n70db90s1zd9h6miqbbqh2kyc2l0b3pd";
       };
-      extra = {
-        version = "1.7.14";
-        hash = "0dvp4h3grnfkly6aj7j9ic62qgy4gzvn8c8s8d4ncx6kjglgwn3v";
+      bifunctors = {
+        version = "5.6.1";
+        hash = "12k2v7334brn4v7yg3vjd6yv6sh4pzffc3d89qgc2llw7ncv4krw";
+      };
+      integer-conversion = {
+        version = "0.1.0.1";
+        hash = "1qy49ig5k8wcqsgjf2rkbv0dy9gpbdzg8yid1kcdn0s7vys59plj";
+      };
+      semialign = {
+        version = "1.3";
+        hash = "09147lz8z79ghnpr7z08y9dd0l6c9dz9hz85avfh6z330vl25r95";
+      };
+      semigroupoids = {
+        version = "6.0.0.1";
+        hash = "1fijnbfn29iwj567kdbhk67pn11ajm80p9d3hg48hppyx7yzpb2k";
+      };
+      text-iso8601 = {
+        version = "0.1";
+        hash = "0zsqjrks9spakiwhbc7xi4dqsx68lb2cd4rvrin3iclyrqg3a6xg";
       };
       th-abstraction = {
         version = "0.5.0.0";
@@ -31,6 +74,16 @@
       };
     };
   };
-  lowerInit = {};
+  initial = {
+    latest-main = {
+      aeson = "2.2.0.0";
+      base = "4.17.2.0";
+      extra = "1.7.14";
+    };
+    latest-other = {
+      base = "4.17.2.0";
+      path = "0.9.5";
+    };
+  };
   resolving = false;
 }

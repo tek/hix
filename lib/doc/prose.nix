@@ -529,6 +529,22 @@ in {
   individual environment, and on the `ghc` module in an environment (although the latter is populated by Hix with the
   merged global and local overrides).
 
+  ::: {.note}
+  nixpkgs' shipped GHC package sets come with a few special derivations whose attribute names are suffixed with a
+  concrete version, like `Cabal_3_10_2_1`, to be used as overrides for packages with incompatible requirements.
+  If you create a Hackage override for such a package, there's a chance that it will result in an `infinite recursion`
+  error.
+  The precise reason for this is not clear to me yet, but it can be avoided by using that special derivation, if it is
+  compatible with your dependency set:
+  ```
+  ```
+  {
+    overrides = {super, ...}: {
+      broken-dep = super.broken-dep_1_2_3;
+    };
+  }
+  :::
+
   ### Override combinators {#overrides-combinators}
 
   There are different classes of combinators.

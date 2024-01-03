@@ -6,9 +6,11 @@ import Hix.Hackage (fetchHashHackageCached)
 import qualified Hix.Managed.Handlers.Hackage
 import Hix.Managed.Handlers.Hackage (HackageHandlers (HackageHandlers))
 
-handlersProd :: IO HackageHandlers
+handlersProd ::
+  MonadIO m =>
+  m HackageHandlers
 handlersProd = do
-  hashCache <- newIORef mempty
+  hashCache <- liftIO (newIORef mempty)
   pure HackageHandlers {
     fetchHash = fetchHashHackageCached hashCache
   }

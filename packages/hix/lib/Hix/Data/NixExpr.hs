@@ -10,6 +10,8 @@ data ExprAttr =
   deriving stock (Eq, Show, Generic)
 
 data Expr =
+  ExprNull
+  |
   ExprString Text
   |
   ExprLit Text

@@ -195,6 +195,8 @@ let
     managed = import ./managed/default.nix { inherit util; };
 
     env = import ./env.nix { inherit util; };
+
+    hpack = import ./hpack/default.nix { inherit util; };
   };
 
 in util

@@ -24,7 +24,7 @@
 
     envsSet = name: envsFor "-${name}";
 
-    envsEach = util.foldMapAttrs envsSingle config.internal.packageNames;
+    envsEach = util.mapListCatAttrs envsSingle config.internal.packageNames;
 
     envsSets = lib.concatMapAttrs envsSet conf.sets;
 

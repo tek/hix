@@ -1,5 +1,6 @@
 module Main where
 
+import Hix ()
 import Hix.Test.BootstrapTest (test_bootstrap)
 import Hix.Test.BoundsTest (test_bounds)
 import Hix.Test.CabalTest (test_cabal)

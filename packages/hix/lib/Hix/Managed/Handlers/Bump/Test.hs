@@ -1,31 +1,58 @@
 module Hix.Managed.Handlers.Bump.Test where
 
-import Distribution.Version (Version, mkVersion)
+import Data.IORef (IORef)
+import Data.Map.Strict ((!?))
+import Distribution.Version (Version)
 import Exon (exon)
 
 import Hix.Data.Error (Error (Client))
-import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
+import Hix.Data.NixExpr (Expr)
+import qualified Hix.Data.PackageId
 import Hix.Data.PackageName (PackageName)
-import Hix.Managed.Data.ManagedConfig (StateFileConfig)
-import Hix.Managed.Handlers.Bump (BumpHandlers (..))
-import Hix.Managed.Handlers.Bump.Prod (handlersProd)
+import Hix.Data.Version (Versions)
+import qualified Hix.Managed.Cabal.Data.Packages
+import Hix.Managed.Cabal.Data.Packages (GhcPackages)
+import Hix.Managed.Cabal.Mock.SourcePackage (queryVersionsLatest, sourcePackageVersions)
+import Hix.Managed.Data.EnvConfig (EnvConfig)
+import Hix.Managed.Data.Envs (Envs)
+import Hix.Managed.Data.Mutation (FailedMutation)
+import Hix.Managed.Data.StageState (BuildStatus)
+import Hix.Managed.Data.StateFileConfig (StateFileConfig)
+import Hix.Managed.Handlers.Build (BuildOutputsPrefix)
+import qualified Hix.Managed.Handlers.Build.Test as Build
+import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
+import Hix.Managed.Handlers.Cabal.Prod (testPackages)
 import Hix.Monad (M, throwM)
 
-latestVersion :: PackageName -> M (Maybe Version)
-latestVersion = \case
-  "aeson" -> found [2, 2, 0, 0]
-  "extra" -> found [1, 7, 14]
-  "th-abstraction" -> found [0, 5, 0, 0]
-  "path" -> found [0, 9, 5]
-  n -> throwM (Client [exon|Invalid package for latestVersion: ##{n}|])
+latestVersionNixTest :: PackageName -> M (Maybe Version)
+latestVersionNixTest name =
+  maybe invalid found (testPackages !? name)
   where
-    found = pure . Just . mkVersion
+    invalid = throwM (Client [exon|Invalid package for latestVersion: ##{name}|])
+    found = pure . Just . (.version)
 
 handlersTest ::
   StateFileConfig ->
-  EnvsConfig ->
+  Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  Bool ->
   IO BumpHandlers
-handlersTest stateFileConf envsConf buildOutputsPrefix = do
-  h <- handlersProd stateFileConf envsConf buildOutputsPrefix
-  pure h {latestVersion}
+handlersTest stateFileConf envsConf buildOutputsPrefix oldest = do
+  build <- Build.handlersTest stateFileConf envsConf buildOutputsPrefix oldest
+  pure BumpHandlers {
+    build,
+    latestVersion = latestVersionNixTest
+  }
+
+-- TODO unify with Lower
+handlersUnitTest ::
+  MonadIO m =>
+  (Versions -> M BuildStatus) ->
+  GhcPackages ->
+  m (BumpHandlers, IORef [Expr], IORef [FailedMutation])
+handlersUnitTest buildVersions ghcPackages = do
+  (build, stateFileRef, mutationsRef) <- Build.handlersUnitTest buildVersions
+  pure (handlersNull {build, latestVersion}, stateFileRef, mutationsRef)
+  where
+    latestVersion =
+      queryVersionsLatest (sourcePackageVersions ghcPackages.available)

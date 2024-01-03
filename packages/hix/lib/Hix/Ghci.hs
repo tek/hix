@@ -1,6 +1,5 @@
 module Hix.Ghci where
 
-import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT, catchE)
 import Data.List.Extra (nubOrd)
 import qualified Data.Map.Strict as Map
@@ -22,11 +21,11 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   Target (Target),
   )
-import Hix.Error (Error (GhciError), note, pathText, tryIO)
 import qualified Hix.Data.GhciConfig
 import Hix.Data.GhciConfig (GhciConfig, GhciRunExpr (GhciRunExpr), GhciSetupCode (GhciSetupCode))
 import qualified Hix.Data.GhciTest as GhciTest
 import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (GhcidRun))
+import Hix.Data.Monad (liftE)
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (
   ExtraGhciOptions (ExtraGhciOptions),
@@ -37,6 +36,7 @@ import Hix.Data.Options (
   TestOptions (TestOptions),
   )
 import Hix.Data.PackageName (PackageName)
+import Hix.Error (Error (GhciError), note, pathText, tryIO)
 import Hix.Json (jsonConfigE)
 import Hix.Monad (M, noteGhci)
 import Hix.Path (rootDir)
@@ -175,8 +175,8 @@ ghciCmdlineFromOptions ::
   M GhciRun
 ghciCmdlineFromOptions tmp opt = do
   conf <- assemble opt
-  shellScriptFile <- lift (ghciScriptFile tmp conf.script)
-  runScriptFile <- lift (traverse (ghciScriptFile tmp) conf.test)
+  shellScriptFile <- liftE (ghciScriptFile tmp conf.script)
+  runScriptFile <- liftE (traverse (ghciScriptFile tmp) conf.test)
   pure (ghciCmdline conf opt.extra shellScriptFile runScriptFile)
 
 ghcidCmdlineFromOptions ::
@@ -195,7 +195,7 @@ printGhciCmdline ::
   GhciOptions ->
   M ()
 printGhciCmdline opt = do
-  tmp <- lift hixTempDir
+  tmp <- liftE hixTempDir
   cmd <- ghciCmdlineFromOptions tmp opt
   liftIO (Text.putStrLn [exon|ghci #{cmd.shell} #{fold cmd.run}|])
 
@@ -203,6 +203,6 @@ printGhcidCmdline ::
   GhcidOptions ->
   M ()
 printGhcidCmdline opt = do
-  tmp <- lift hixTempDir
+  tmp <- liftE hixTempDir
   cmd <- ghcidCmdlineFromOptions tmp opt
   liftIO (Text.putStrLn cmd.cmdline)

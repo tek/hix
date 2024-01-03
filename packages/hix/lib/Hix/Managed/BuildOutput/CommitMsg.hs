@@ -4,33 +4,27 @@ import qualified Data.Text as Text
 import Exon (exon)
 
 import qualified Hix.Managed.Data.BuildOutput
-import Hix.Managed.Data.BuildOutput (BuildOutput)
-import Hix.Managed.Data.Candidate (Candidate)
-import Hix.Managed.Data.ManagedOp (ManagedOp (..))
+import Hix.Managed.Data.BuildOutput (BuildOutput, ModifiedId)
 import Hix.Pretty (showP)
 
-commitMessage :: ManagedOp -> Int -> Text -> Text
-commitMessage op num names
+commitMessage :: Int -> Text -> Text
+commitMessage num names
   | num <= 3
-  = [exon|#{action} #{names}|]
+  = [exon|Bump #{names}|]
   | otherwise
-  = [exon|#{action} #{show num} dependencies|]
-  where
-    action = case op of
-      OpBump -> "Bump"
-      _ -> "Adjust lower bounds of"
+  = [exon|Bump #{show num} dependencies|]
 
-candidateList :: [Candidate] -> [Text]
+candidateList :: [ModifiedId] -> [Text]
 candidateList = fmap \ c -> [exon|* #{showP c}|]
 
-commitBody :: [Candidate] -> [Text]
+commitBody :: [ModifiedId] -> [Text]
 commitBody candidates =
   ["New versions:", ""] ++ candidateList candidates
 
 commit :: BuildOutput -> Maybe (Text, [Text])
 commit output =
   output.modifiedNames <&> \ names ->
-    (commitMessage output.operation (length output.modified) names, commitBody output.modified)
+    (commitMessage (length output.modified) names, commitBody output.modified)
 
 formatCommit :: BuildOutput -> Maybe Text
 formatCommit output =

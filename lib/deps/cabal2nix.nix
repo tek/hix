@@ -6,7 +6,7 @@
   inherit (spec) decl;
 
   hackageDrv = meta: {self, pkg, options, ...}:
-  self.callHackageDirect { inherit (meta) ver sha256; inherit pkg; } (util.foldAttrs options.cabal2nix-overrides or []);
+  self.callHackageDirect { inherit (meta) ver sha256; inherit pkg; } (util.catAttrs options.cabal2nix-overrides or []);
 
   srcHackage = meta: pkg: let
     pkgver = "${pkg}-${meta.ver}";
@@ -23,7 +23,7 @@
   spec.pregen srcHackage pregenHackage (decl "hackage" "Hackage: ${ver}" { inherit ver sha256; } hackageDrv);
 
   cabal2nixDrv = {src}: {self, pkg, options, ...}:
-  self.callCabal2nixWithOptions pkg src (util.unwords options.cabal2nix or []) (util.foldAttrs options.cabal2nix-overrides or []);
+  self.callCabal2nixWithOptions pkg src (util.unwords options.cabal2nix or []) (util.catAttrs options.cabal2nix-overrides or []);
 
   srcCabal2nix = meta: pkg: meta.src;
 

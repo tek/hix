@@ -14,7 +14,6 @@
         enable = true;
         compiler = "ghc90";
       };
-      internal.localsInPackageDb = true;
     };
     ghcVersions = [];
     compat.enable = false;

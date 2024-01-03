@@ -9,8 +9,9 @@
   in {
     main = "root";
     managed.enable = true;
+    managed.mergeBounds = true;
     cabal = {
-      dependencies = ["base >= 4 && < 6"];
+      dependencies = ["base >= 4 && < 5"];
       ghc-options = ["-Wunused-imports"];
       default-extensions = ["DataKinds"];
       version = lib.mkDefault "13";
@@ -59,6 +60,7 @@
 
         libraries = {
           lib1 = {
+            public = false;
             source-dirs = "src-1";
             paths = false;
           };

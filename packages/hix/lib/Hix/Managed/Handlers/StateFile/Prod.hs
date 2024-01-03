@@ -1,12 +1,15 @@
 module Hix.Managed.Handlers.StateFile.Prod where
 
 import qualified Data.Text.IO as Text
-import Path (Abs, Dir, File, Path, Rel, parent, toFilePath, (</>))
+import Path (Abs, File, Path, parent, toFilePath, (</>), Dir)
 import Path.IO (createDirIfMissing, doesDirExist, doesFileExist)
 import System.Posix (fileMode, getFileStatus, ownerWriteMode, setFileMode, unionFileModes)
 
 import Hix.Data.NixExpr (Expr)
+import qualified Hix.Managed.Data.StateFileConfig
+import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 import Hix.Managed.Handlers.StateFile (StateFileHandlers (..))
+import Hix.Managed.Path (rootOrCwd)
 import Hix.Monad (M, tryIOM)
 import Hix.NixExpr (renderRootExpr)
 
@@ -24,24 +27,28 @@ setDepsFileWritable file =
     fileFp = toFilePath file
     dir = parent file
 
-initFile :: Path Abs Dir -> Path Rel File -> M (Path Abs File)
-initFile root file = do
+initFile ::
+  StateFileConfig ->
+  Maybe (Path Abs Dir) ->
+  M (Path Abs File)
+initFile conf tmpRoot = do
+  root <- maybe (rootOrCwd conf.projectRoot) pure tmpRoot
+  let depsFile = root </> conf.file
   createDirIfMissing False (parent depsFile)
   setDepsFileWritable depsFile
   pure depsFile
-  where
-    depsFile = root </> file
 
 writeFile ::
-  Path Abs File ->
+  StateFileConfig ->
+  Maybe (Path Abs Dir) ->
   Expr ->
   M ()
-writeFile depsFile nixExpr =
-  liftIO (Text.writeFile (toFilePath depsFile) (renderRootExpr nixExpr))
+writeFile conf tmpRoot nixExpr = do
+  path <- initFile conf tmpRoot
+  liftIO (Text.writeFile (toFilePath path) (renderRootExpr nixExpr))
 
-handlersProd :: StateFileHandlers
-handlersProd =
-  StateFileHandlers {
-    initFile,
-    writeFile
-  }
+handlersProd ::
+  StateFileConfig ->
+  StateFileHandlers
+handlersProd conf =
+  StateFileHandlers {writeFile = writeFile conf}

@@ -1,29 +1,32 @@
 module Hix.Managed.Lower.Candidates where
 
-import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Distribution.Pretty (pretty)
-import Distribution.Version (Version, VersionRange)
+import Distribution.Version (Version)
 import Exon (exon)
 
-import Hix.Class.Map (ntMap)
-import qualified Hix.Data.Dep
-import Hix.Data.Dep (Dep)
+import Hix.Class.Map ((!!))
 import Hix.Data.Error (Error (Client))
 import Hix.Data.Monad (M)
 import Hix.Data.PackageName (PackageName)
-import Hix.Data.Version (Major, Versions)
+import Hix.Data.Version (Major)
+import qualified Hix.Data.VersionBounds
+import Hix.Data.VersionBounds (VersionBounds)
 import qualified Hix.Log as Log
-import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
-import qualified Hix.Managed.Lower.Data.Lower
-import Hix.Managed.Lower.Data.Lower (Lower (Lower))
+import qualified Hix.Managed.Data.Lower
+import Hix.Managed.Data.Lower (Lower (Lower))
+import Hix.Managed.Data.Mutable (MutableDep, MutableVersions, depName)
+import qualified Hix.Managed.Data.Mutation
+import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
+import qualified Hix.Managed.Data.QueryDep
+import Hix.Managed.Data.QueryDep (QueryDep)
 import Hix.Monad (throwM)
 import Hix.Pretty (showP)
-import Hix.Version (allMajors, lowerBound, majorParts, majorsBefore, upperBound, versionsBetween, versionsFrom)
+import Hix.Version (allMajors, majorParts, majorsBefore, versionsBetween, versionsFrom)
 
 logNoVersions ::
-  PackageName ->
+  MutableDep ->
   [Version] ->
   Maybe a ->
   M (Maybe a)
@@ -33,26 +36,27 @@ logNoVersions package allVersions mutation = do
     Log.warn [exon|No suitable version found for '##{package}'.|]
   pure mutation
 
-specifiedLower :: VersionRange -> Maybe (Int, Int)
-specifiedLower = majorParts <=< lowerBound
+specifiedLower :: VersionBounds -> Maybe (Int, Int)
+specifiedLower = majorParts <=< (.lower)
 
-specifiedUpper :: VersionRange -> Maybe (Int, Int)
-specifiedUpper = majorParts <=< upperBound
+specifiedUpper :: VersionBounds -> Maybe (Int, Int)
+specifiedUpper = majorParts <=< (.upper)
 
 prefix :: Int -> Int -> Text
 prefix s m = [exon|#{show s}.#{show m}|]
 
 candidates ::
   (PackageName -> M [Version]) ->
-  Dep ->
+  QueryDep ->
+  Bool ->
   ([Version] -> Maybe (NonEmpty Major)) ->
   M (Maybe (DepMutation Lower))
-candidates fetchVersions dep selection = do
-  allVersions <- fetchVersions dep.package
+candidates fetchVersions dep retract selection = do
+  allVersions <- fetchVersions (depName package)
   let
     result = do
       majors <- selection (sort allVersions)
-      pure DepMutation {package, mutation = Lower {majors, range = dep.version}}
+      pure DepMutation {package, retract, mutation = Lower {majors}}
   logNoVersions package allVersions result
   pure result
   where
@@ -64,13 +68,13 @@ data InitConfig =
   InitAll
   deriving stock (Eq, Show, Generic)
 
-initConfig :: VersionRange -> InitConfig
+initConfig :: VersionBounds -> InitConfig
 initConfig version =
   case specifiedUpper version of
     Just (s, m) -> InitBeforeUpper s m
     _ -> InitAll
 
-logInitConfig :: PackageName -> InitConfig -> M ()
+logInitConfig :: MutableDep -> InitConfig -> M ()
 logInitConfig package conf =
   Log.verbose [exon|Choosing versions for '##{package}' from #{msg conf}.|]
   where
@@ -78,7 +82,7 @@ logInitConfig package conf =
       InitBeforeUpper s m ->
         [exon|all majors before the specified upper bound #{prefix s m}|]
       InitAll ->
-        "al majors."
+        "all majors"
 
 selectionInit :: InitConfig -> [Version] -> Maybe (NonEmpty Major)
 selectionInit = \case
@@ -89,16 +93,16 @@ selectionInit = \case
 
 candidatesInit ::
   (PackageName -> M [Version]) ->
-  Versions ->
-  Dep ->
+  Set MutableDep ->
+  QueryDep ->
   M (Maybe (DepMutation Lower))
 candidatesInit fetchVersions pre dep
-  | Map.member dep.package (ntMap pre)
+  | Set.member dep.package pre
   = pure Nothing
   | otherwise
   = do
     logInitConfig dep.package conf
-    candidates fetchVersions dep (selectionInit conf)
+    candidates fetchVersions dep False (selectionInit conf)
   where
     conf = initConfig dep.version
 
@@ -108,18 +112,24 @@ data OptimizeConfig =
   OptimizeNoBound
   deriving stock (Eq, Show, Generic)
 
-optimizeConfig :: VersionRange -> OptimizeConfig
-optimizeConfig version =
-  case specifiedLower version of
+optimizeConfig ::
+  Maybe Version ->
+  VersionBounds ->
+  OptimizeConfig
+optimizeConfig initial version =
+  case majorParts =<< (version.lower <|> initial) of
     Just (s, m) -> OptimizeMajorsBefore s m
-    _ -> OptimizeNoBound
+    Nothing -> OptimizeNoBound
 
-logOptimizeConfig :: PackageName -> OptimizeConfig -> M ()
+logOptimizeConfig ::
+  MutableDep ->
+  OptimizeConfig ->
+  M ()
 logOptimizeConfig package = \case
   OptimizeMajorsBefore s m ->
     Log.verbose [exon|Choosing versions for '##{package}' from all majors before #{prefix s m}.|]
   OptimizeNoBound ->
-    throwM (Client [exon|'##{package}' has no lower bound. Please run '.#lower.init' first.|])
+    throwM (Client [exon|'##{package}' has no initial lower bound. Please run '.#lower.init' first.|])
 
 selectionOptimize :: OptimizeConfig -> [Version] -> Maybe (NonEmpty Major)
 selectionOptimize = \case
@@ -130,34 +140,36 @@ selectionOptimize = \case
 
 candidatesOptimize ::
   (PackageName -> M [Version]) ->
-  Dep ->
+  MutableVersions ->
+  QueryDep ->
   M (Maybe (DepMutation Lower))
-candidatesOptimize fetchVersions dep = do
+candidatesOptimize fetchVersions initial dep = do
   logOptimizeConfig dep.package conf
-  candidates fetchVersions dep (selectionOptimize conf)
+  candidates fetchVersions dep False (selectionOptimize conf)
   where
-    conf = optimizeConfig dep.version
+    conf = optimizeConfig (join (initial !! dep.package)) dep.version
 
 data StabilizeConfig =
   StabilizeFromVersion Version (Maybe Version)
   |
-  StabilizeNoBound
+  StabilizeNoBound InitConfig
   deriving stock (Eq, Show, Generic)
 
-stabilizeConfig :: VersionRange -> Maybe Version -> StabilizeConfig
+stabilizeConfig :: VersionBounds -> Maybe Version -> StabilizeConfig
 stabilizeConfig version initialBound =
-  case lowerBound version of
-    Just v -> StabilizeFromVersion v (initialBound <|> upperBound version)
-    _ -> StabilizeNoBound
+  case version.lower of
+    Just v -> StabilizeFromVersion v (initialBound <|> version.upper)
+    Nothing | Just v <- initialBound -> StabilizeFromVersion v (initialBound <|> version.upper)
+    Nothing -> StabilizeNoBound (initConfig version)
 
-logStabilizeConfig :: PackageName -> StabilizeConfig -> M ()
+logStabilizeConfig :: MutableDep -> StabilizeConfig -> M ()
 logStabilizeConfig package = \case
   StabilizeFromVersion v Nothing ->
-    Log.verbose [exon|Choosing versions for '##{package}' after the current version #{showP v}, if it doesn't build.|]
+    Log.verbose [exon|Choosing versions for '##{package}' after the current version #{showP v}.|]
   StabilizeFromVersion l (Just u) ->
-    Log.verbose [exon|Choosing versions for '##{package}' between the current version #{showP l} and the initial version #{showP u}, if it doesn't build.|]
-  StabilizeNoBound ->
-    throwM (Client [exon|'##{package}' has no lower bound. Please run '.#lower.init' first.|])
+    Log.verbose [exon|Choosing versions for '##{package}' between the current version #{showP l} and the initial version #{showP u}.|]
+  StabilizeNoBound conf ->
+    logInitConfig package conf
 
 selectionStabilize :: StabilizeConfig -> [Version] -> Maybe (NonEmpty Major)
 selectionStabilize = \case
@@ -165,16 +177,20 @@ selectionStabilize = \case
     nonEmpty . versionsFrom l
   StabilizeFromVersion l (Just u) ->
     nonEmpty . versionsBetween l u
-  StabilizeNoBound ->
-    const Nothing
+  StabilizeNoBound conf ->
+    selectionInit conf
 
 candidatesStabilize ::
   (PackageName -> M [Version]) ->
-  Dep ->
+  QueryDep ->
   Maybe Version ->
   M (Maybe (DepMutation Lower))
 candidatesStabilize fetchVersions dep initialBound = do
   logStabilizeConfig dep.package conf
-  candidates fetchVersions dep (selectionStabilize conf)
+  candidates fetchVersions dep (isRetract conf) (selectionStabilize conf)
   where
     conf = stabilizeConfig dep.version initialBound
+
+    isRetract = \case
+      StabilizeFromVersion _ _ -> True
+      StabilizeNoBound _ -> False

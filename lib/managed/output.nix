@@ -4,13 +4,14 @@
   appsWith = cons: {
     bump = cons { cmd = util.managed.cmd.bump; env = "latest"; sub = null; };
     lower = {
+      auto = cons { cmd = util.managed.cmd.lower "auto"; env = "lower"; sub = "auto"; };
       init = cons { cmd = util.managed.cmd.lower "init"; env = "lower"; sub = "init"; };
       optimize = cons { cmd = util.managed.cmd.lower "optimize"; env = "lower"; sub = "optimize"; };
       stabilize = cons { cmd = util.managed.cmd.lower "stabilize"; env = "lower"; sub = "stabilize"; };
     };
   };
 
-  appsAll = envs: appsWith ({cmd, env, sub}: util.app (cmd [envs.${env}]));
+  appsForEnvs = envs: appsWith ({cmd, env, sub}: util.app (cmd [envs.${env}]));
 
   wantChecks = config.managed.enable && config.managed.check;
 
@@ -19,7 +20,7 @@
 
   checks =
     lib.optionalAttrs wantChecks
-    (util.foldMapAttrs prefixedEnvDerivations (lib.attrNames util.managed.env.envs))
+    (util.mapListCatAttrs prefixedEnvDerivations (lib.attrNames util.managed.env.envs))
     ;
 
   managedCmdMulti = envSort: cmd: sets: let
@@ -35,7 +36,7 @@
   # TODO Add an override option that opts into removing these apps from the flake.
   apps =
     if config.managed.sets == "all"
-    then appsAll { latest = "latest"; lower = "lower"; }
+    then appsForEnvs { latest = "latest"; lower = "lower"; }
     else if config.managed.sets == "each"
     then managedMulti config.internal.packageNames
     else managedMulti (lib.attrNames config.managed.sets)
@@ -85,5 +86,5 @@
   envGhcs = lib.mapAttrs (_: env: { ghc-local = util.managed.managedEnvGhc env; }) util.managed.env.envs;
 
 in {
-  inherit appsAll checks apps gen envGhcs;
+  inherit appsForEnvs checks apps gen envGhcs;
 }

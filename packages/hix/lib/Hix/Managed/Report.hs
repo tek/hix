@@ -2,35 +2,14 @@ module Hix.Managed.Report where
 
 import Exon (exon)
 
-import Hix.Data.Version (forNewRange)
-import qualified Hix.Log as Log
-import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
-import qualified Hix.Managed.Lower.Data.Bump
-import Hix.Managed.Lower.Data.Bump (Bump (Bump))
-import Hix.Managed.Lower.Data.Lower (Lower)
-import Hix.Data.Monad (M)
-import Hix.Pretty (showP)
+plural ::
+  Eq a =>
+  Num a =>
+  a ->
+  Text
+plural num | num == 1 = ""
+           | otherwise = "s"
 
-class ReportMutation a where
-  reportMutation :: DepMutation a -> M ()
-
-instance ReportMutation Bump where
-  reportMutation DepMutation {package, mutation = Bump {..}} = do
-    Log.info [exon|  New version for '##{package}': #{showP version}|]
-    forNewRange range \ r ->
-      Log.info [exon|    New bounds: #{showP r}|]
-
-instance ReportMutation Lower where
-  reportMutation _ = unit
-
-reportMutations ::
-  ReportMutation a =>
-  [DepMutation a] ->
-  M ()
-reportMutations mutations
-  | null mutations =
-    Log.info "All dependencies are up to date."
-  | otherwise = do
-    Log.info "Found new dependency versions:"
-    traverse_ reportMutation mutations
+describeIterations :: Natural -> Text
+describeIterations iterations =
+  [exon|#{show iterations} iteration#{plural iterations}|]

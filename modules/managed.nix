@@ -31,16 +31,6 @@ with lib;
         default = "ops/managed.nix";
       };
 
-      update = mkOption {
-        description = mdDoc ''
-        Whether to build the project with the new latest versions and update [](#opt-managed-managed.file) on success.
-        Not applicable for [lower bounds](#opt-managed-managed.lower.enable) – there would be nothing to do if this were
-        disabled.
-        '';
-        type = bool;
-        default = true;
-      };
-
       generate = mkOption {
         description = mdDoc ''
         Whether to regenerate cabal files and override derivations after [updating](#opt-managed-managed.update) the
@@ -96,21 +86,28 @@ with lib;
         };
       };
 
+      readUpperBounds = mkOption {
+        description = mdDoc "Use the upper bounds from the flake for the first run.";
+        type = bool;
+        default = false;
+      };
+
+      mergeBounds = mkOption {
+        description = mdDoc ''
+        Add the flake bounds to the managed bounds.
+        Aside from going in the Cabal file, they are added to Cabal's dependency solver when finding new bounds.
+        This can be used to avoid problematic versions that have dependencies with a high tendency to break the build.
+        '';
+        type = bool;
+        default = false;
+      };
+
       lower = {
 
         enable = mkOption {
           description = mdDoc "Enable an environment for testing lower bounds.";
           type = bool;
           default = false;
-        };
-
-        solverBounds = mkOption {
-          description = mdDoc ''
-          Extra package bounds that Cabal's dependency solver should always use when finding a working set.
-          This can be used to avoid problematic versions that have dependencies with a high tendency to break the build.
-          '';
-          type = attrsOf str;
-          default = {};
         };
 
         compiler = mkOption {

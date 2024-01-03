@@ -1,8 +1,25 @@
 {
   bounds = {
     root = {
-      microlens = ">=0.3.5.1 && < 0.5";
-      semigroups = ">=0.18.4 && <0.21";
+      base = {
+        lower = "4.15.1.0";
+        upper = null;
+      };
+      microlens = {
+        lower = "0.3.5.1";
+        upper = "0.5";
+      };
+      semigroups = {
+        lower = "0.18.4";
+        upper = "0.21";
+      };
+    };
+  };
+  versions = {
+    lower = {
+      base = "4.15.1.0";
+      microlens = "0.3.5.1";
+      semigroups = "0.18.4";
     };
   };
   overrides = {
@@ -17,6 +34,12 @@
       };
     };
   };
-  lowerInit = {};
+  initial = {
+    lower = {
+      base = "4.15.1.0";
+      microlens = "0.4.13.1";
+      semigroups = "0.20";
+    };
+  };
   resolving = false;
 }

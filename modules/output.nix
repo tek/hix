@@ -130,7 +130,7 @@ in {
       };
 
       basicEnvApps = optionalAttrs config.output.envApps {
-        env = util.foldMapAttrs libOutput.envApps (lib.attrValues util.visibleAppEnvs);
+        env = util.mapListCatAttrs libOutput.envApps (lib.attrValues util.visibleAppEnvs);
       };
 
       lowPrio = {
@@ -138,6 +138,7 @@ in {
         legacyPackages = libOutput.scopedEnvOutputs config.ghcVersions // libOutput.envsApi config.envs // {
           inherit config;
           inherit (config.envs.dev.ghc) pkgs ghc;
+          ghc0 = config.envs.dev.ghc.vanillaGhc;
           show-config = show-config.shell;
         };
 

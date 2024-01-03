@@ -10,17 +10,17 @@ import Hix.Data.PackageName (PackageName)
 import qualified Hix.Managed.Handlers.Hackage
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
 
-newVersionOverride ::
+packageOverride ::
   HackageHandlers ->
   PackageId ->
   M (PackageName, Override)
-newVersionOverride handlers package@PackageId {name, version} = do
+packageOverride handlers package@PackageId {name, version} = do
   hash <- handlers.fetchHash package
   pure (name, Override {..})
 
-newVersionOverrides ::
+packageOverrides ::
   HackageHandlers ->
   [PackageId] ->
   M Overrides
-newVersionOverrides handlers versions =
-  Overrides . Map.fromList <$> traverse (newVersionOverride handlers) versions
+packageOverrides handlers versions =
+  Overrides . Map.fromList <$> traverse (packageOverride handlers) versions

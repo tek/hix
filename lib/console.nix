@@ -27,12 +27,16 @@
 
   bold = color "1";
 
+  faint = color "2";
+
+  underline = color "4";
+
   colorExt = n: color "38;5;${toString n}";
 
   colorExtBg = n: color "48;5;${toString n}";
 
 in {
-  inherit indentLine color colors colorsBg colorsBright colorsBgBright bold colorExt colorExtBg;
+  inherit indentLine color colors colorsBg colorsBright colorsBgBright bold faint underline colorExt colorExtBg;
 
   indent = map indentLine;
 

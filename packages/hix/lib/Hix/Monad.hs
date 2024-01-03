@@ -1,12 +1,13 @@
 module Hix.Monad (
   module Hix.Monad,
-  Env (..),
+  AppResources (..),
   M,
 ) where
 
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (runExceptT, throwE)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask, asks)
+import Control.Monad.Trans.State.Strict (StateT, get, put, runStateT)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -21,14 +22,14 @@ import qualified Hix.Console as Console
 import Hix.Data.Error (Error (BootstrapError, Client, EnvError, GhciError, NewError))
 import qualified Hix.Data.GlobalOptions as GlobalOptions
 import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions), defaultGlobalOptions)
-import Hix.Data.Monad (Env (..), LogLevel, M)
+import Hix.Data.Monad (AppResources (..), LogLevel, M (M), liftE)
 import Hix.Error (Error (Fatal), tryIO, tryIOWith)
 import qualified Hix.Log as Log
 import Hix.Log (logWith)
 
 throwM :: Error -> M a
 throwM =
-  lift . throwE
+  liftE . throwE
 
 note :: Error -> Maybe a -> M a
 note err =
@@ -76,7 +77,7 @@ eitherFatalShow msg =
 
 whenDebug :: M () -> M ()
 whenDebug m =
-  whenM (asks (.debug)) do
+  whenM (M (asks (.debug))) do
     m
 
 logIORef :: IORef [Text] -> LogLevel -> Text -> IO ()
@@ -91,9 +92,9 @@ withLogIORef use = do
   pure (log, result)
 
 runMLoggerWith :: (LogLevel -> Text -> IO ()) -> GlobalOptions -> M a -> IO (Either Error a)
-runMLoggerWith logger GlobalOptions {..} ma =
+runMLoggerWith logger GlobalOptions {..} (M ma) =
   withSystemTempDir "hix-cli" \ tmp ->
-    runExceptT (runReaderT ma Env {logger = logWith logger, ..})
+    runExceptT (runReaderT ma AppResources {logger = logWith logger, ..})
 
 runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
 runMLogWith opts ma =
@@ -119,7 +120,7 @@ tryIOMWithM handleError ma =
     Left err -> handleError (show err)
 
 tryIOMWith :: (Text -> Error) -> IO a -> M a
-tryIOMWith mkErr ma = lift (tryIOWith mkErr ma)
+tryIOMWith mkErr ma = M (lift (tryIOWith mkErr ma))
 
 tryIOMAs :: Error -> IO a -> M a
 tryIOMAs err ma = do
@@ -131,7 +132,7 @@ tryIOMAs err ma = do
       throwM err
 
 tryIOM :: IO a -> M a
-tryIOM ma = lift (tryIO ma)
+tryIOM ma = M (lift (tryIO ma))
 
 catchIOM :: IO a -> (Text -> M a) -> M a
 catchIOM ma handle =
@@ -141,13 +142,34 @@ catchIOM ma handle =
 
 withTempDir :: String -> (Path Abs Dir -> M a) -> M a
 withTempDir name use = do
-  Env {tmp} <- ask
+  AppResources {tmp} <- M ask
   Path.withTempDir tmp name use
 
 withTempFile :: String -> Maybe [Text] -> (Path Abs File -> M a) -> M a
 withTempFile name content use = do
-  Env {tmp} <- ask
+  AppResources {tmp} <- M ask
   Path.withTempFile tmp name \ file handle -> do
     for_ content \ lns -> liftIO (Text.hPutStr handle (Text.unlines lns))
     liftIO (hClose handle)
     use file
+
+stateM ::
+  Monad m =>
+  (s -> a -> m (s, b)) ->
+  a ->
+  StateT s m b
+stateM f a = do
+  s <- get
+  (s', b) <- lift (f s a)
+  put s'
+  pure b
+
+mapAccumM ::
+  Traversable t =>
+  Monad m =>
+  (s -> a -> m (s, b)) ->
+  s ->
+  t a ->
+  m (s, t b)
+mapAccumM f s as =
+  swap <$> runStateT (traverse (stateM f) as) s

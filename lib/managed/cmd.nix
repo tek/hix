@@ -7,13 +7,15 @@
 
   file = conf.file;
 
-  update = lib.optionalString conf.update "--update-project";
-
   verbose = lib.optionalString conf.verbose "--verbose";
 
   debug = lib.optionalString conf.debug "--debug";
 
   quiet = lib.optionalString conf.quiet "--quiet";
+
+  readUpperBounds = lib.optionalString conf.readUpperBounds "--read-upper-bounds";
+
+  mergeBounds = lib.optionalString conf.mergeBounds "--merge-bounds";
 
   # TODO change this to use only one script that loops over all the options
   # TODO also generalize
@@ -29,7 +31,8 @@
     general = [
       "--config ${util.managed.state.cliJson}"
       "--file ${file}"
-      update
+      readUpperBounds
+      mergeBounds
     ];
 
     envsArgs = map (env: "--env ${env}") envs;

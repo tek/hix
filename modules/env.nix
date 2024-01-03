@@ -585,7 +585,7 @@ in {
 
     derivations = mkDefault (localPackages // extraPackages);
 
-    hostPorts = util.foldMapAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
+    hostPorts = util.mapListCatAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
 
     shell = mkDefault (global.pkgs.stdenv.mkDerivation {
       inherit (config) name;

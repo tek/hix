@@ -37,7 +37,7 @@ let
 
   foldExes = f: let
     pkgExes = pkg: lib.genAttrs (lib.attrNames (allExes pkg)) (f pkg);
-  in util.foldMapAttrs pkgExes (lib.attrValues config.packages);
+  in util.mapListCatAttrs pkgExes (lib.attrValues config.packages);
 
   staticPackageExe = env: pkg: exe: staticDrv (env.ghc.ghc.${pkg.name}.overrideAttrs (_: { pname = exe; }));
 
@@ -75,7 +75,7 @@ let
 
   prefixedInEnv = v: lib.mapAttrs' (n: d: { name = "${v}-${n}"; value = d; }) (envOutputs v);
 
-  prefixedInEnvs = envs: util.foldMapAttrs prefixedInEnv envs;
+  prefixedInEnvs = envs: util.mapListCatAttrs prefixedInEnv envs;
 
   devOutputs = let
     env = config.envs.dev;
@@ -97,7 +97,9 @@ let
 
   scopedEnvOutputs = envs: lib.genAttrs envs envOutputs;
 
-  envsApi = envs: { env = lib.mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; } // fullEnvOutputs n) envs; };
+  envsApi = envs: {
+    env = lib.mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; ghc0 = e.ghc.vanillaGhc; } // fullEnvOutputs n) envs;
+  };
 
   appimage = env: name: config.pkgs.writeScript "hix-appimage-${name}" ''
   set -eu
@@ -128,7 +130,7 @@ let
     ${env.name} =
       envCommands env //
       envAppimages env //
-      util.managed.output.appsAll { latest = env.name; lower = env.name; } //
+      util.managed.output.appsForEnvs { latest = env.name; lower = env.name; } //
       { dep-versions = app (depVersions env.name); };
   };
 

@@ -8,7 +8,7 @@ import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions))
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (
   Command (..),
-  LowerCommand (LowerInitCmd, LowerOptimizeCmd, LowerStabilizeCmd),
+  LowerCommand (LowerAutoCmd, LowerInitCmd, LowerOptimizeCmd, LowerStabilizeCmd),
   Options (Options),
   )
 import Hix.Env (printEnvRunner)
@@ -24,7 +24,7 @@ import Hix.Error (
   )
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
 import Hix.Managed.Bump.App (bumpCli)
-import Hix.Managed.Lower.App (lowerInitCli, lowerOptimizeCli, lowerStabilizeCli)
+import Hix.Managed.Lower.App (lowerAutoCli, lowerInitCli, lowerOptimizeCli, lowerStabilizeCli)
 import Hix.Monad (M, runMWith)
 import Hix.New (newProject)
 import Hix.Options (parseCli)
@@ -59,6 +59,7 @@ runCommand = \case
     LowerInitCmd opts -> lowerInitCli opts
     LowerOptimizeCmd opts -> lowerOptimizeCli opts
     LowerStabilizeCmd opts -> lowerStabilizeCli opts
+    LowerAutoCmd opts -> lowerAutoCli opts
 
 main :: IO ()
 main = do

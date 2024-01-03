@@ -1,19 +1,29 @@
 module Hix.Managed.BuildOutput where
 
 import qualified Data.Aeson as Aeson
-import Data.Aeson (decodeFileStrict', encodeFile)
-import Exon (exon)
-import Path (Abs, File, Path, toFilePath)
+import Data.List.Extra (nubSortOn)
+import qualified Data.Text as Text
+import Data.These.Combinators (justThere)
 
 import Hix.Data.Monad (M)
 import Hix.Data.OutputFormat (OutputFormat (..))
 import Hix.Data.OutputTarget (OutputTarget (..))
-import Hix.Error (pathText)
+import Hix.Data.PackageName (PackageName (PackageName))
 import Hix.Managed.BuildOutput.CommitMsg (formatCommit)
 import Hix.Managed.BuildOutput.GithubActionsPr (githubActionsPr)
-import Hix.Managed.Data.BuildOutput (BuildOutput, combineBuildOutputs)
-import qualified Hix.Monad as Monad
-import Hix.Monad (catchIOM, noteClient)
+import qualified Hix.Managed.Data.BuildOutput
+import Hix.Managed.Data.BuildOutput (BuildOutput (BuildOutput), ModifiedId (ModifiedId))
+import Hix.Managed.Data.Mutable (MutableDep, depName)
+import qualified Hix.Managed.Data.Mutation
+import Hix.Managed.Data.ProjectResult (ProjectResult)
+import qualified Hix.Managed.EnvResult
+import Hix.Managed.EnvResult (
+  DepModification (DepAdded, DepUpdated),
+  DepResult,
+  DepResultDetail (DepModified),
+  DepResults (DepResults),
+  )
+import qualified Hix.Managed.ProjectResult as ProjectResult
 import qualified Hix.OutputWriter
 import Hix.OutputWriter (outputWriterGlobal)
 
@@ -26,18 +36,32 @@ outputResult output target = \case
   where
     writer = outputWriterGlobal target
 
-loadBatchLog :: Path Abs File -> M (Maybe BuildOutput)
-loadBatchLog file =
-  catchIOM (decodeFileStrict' (toFilePath file)) \ _ -> pure Nothing
-
-requireBatchLog :: Path Abs File -> M BuildOutput
-requireBatchLog file =
-  noteClient [exon|No build output log found at #{pathText file}|] =<< loadBatchLog file
-
-updateBatchLog :: BuildOutput -> Path Abs File -> M ()
-updateBatchLog output file = do
-  old <- loadBatchLog file
-  combined <- maybe (pure output) combine old
-  liftIO (encodeFile (toFilePath file) combined)
+buildOutputFromLists :: [ModifiedId] -> [MutableDep] -> [MutableDep] -> BuildOutput
+buildOutputFromLists modified unmodified failed =
+  BuildOutput {
+    modified,
+    unmodified,
+    failed,
+    modifiedNames = comma ((.package) <$> modified),
+    unmodifiedNames = comma unmodified,
+    failedNames = comma failed
+  }
   where
-    combine old = Monad.eitherClient "When combining logs" (combineBuildOutputs old output)
+    comma = fmap (Text.intercalate ", " . fmap (coerce . depName) . toList) . nonEmpty
+
+modifiedId :: DepResult -> ModifiedId
+modifiedId result =
+  ModifiedId {package = result.package, version = result.version, range}
+  where
+    range = case result.detail of
+      DepModified (DepUpdated (justThere -> Just _)) -> Just result.bounds
+      DepModified DepAdded -> Just result.bounds
+      _ -> Nothing
+
+buildOutput :: ProjectResult -> BuildOutput
+buildOutput result =
+  buildOutputFromLists modified ((.package) <$> unmodified) failed
+  where
+    modified = modifiedId <$> nubSortOn (.package) (added ++ updated)
+    failed = (.package) <$> ProjectResult.failures result
+    DepResults {..} = ProjectResult.grouped result

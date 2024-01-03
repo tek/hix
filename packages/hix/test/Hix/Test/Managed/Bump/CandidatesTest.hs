@@ -1,38 +1,32 @@
 module Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump) where
 
-import Distribution.Version (Version, earlierVersion, intersectVersionRanges, orLaterVersion, unionVersionRanges)
+import Distribution.Version (Version)
 import Hedgehog (evalEither, (===))
 
-import Hix.Data.Deps (targetRemoteDeps)
 import Hix.Data.Error (Error (Client))
 import Hix.Data.PackageName (PackageName)
-import Hix.Data.Version (NewRange (NewRange, OldRange))
-import Hix.Deps (depsFromConfig, forTargets, uniqueRemoteDeps)
-import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
+import Hix.Data.VersionBounds (VersionBounds)
 import Hix.Managed.Bump.Candidates (candidatesBump)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (..), ManagedPackages (..))
+import qualified Hix.Managed.Data.Bump
+import Hix.Managed.Data.Bump (Bump (Bump))
+import Hix.Managed.Data.Mutable (MutableDep)
+import qualified Hix.Managed.Data.Mutation
+import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
 import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
-import qualified Hix.Managed.Lower.Data.Bump
-import Hix.Managed.Lower.Data.Bump (Bump (Bump))
+import Hix.Managed.QueryDep (simpleQueryDep)
 import Hix.Monad (M, throwM)
 import Hix.Test.Utils (UnitTest, runMTest)
 
-packages :: ManagedPackages
-packages =
-  [("panda", ManagedPackage {
-    name = "panda",
-    version = "1.2.1",
-    deps = [
-      "dep1 ^>=2.0",
-      "dep2 <1.5",
-      "dep3",
-      "dep4 (>=0.1 && <0.3) || (>=1.1 && <1.2.3) || >=2.3",
-      "dep5 ==1.0.1",
-      "dep6 <8.4",
-      "dep7 ^>=1.1"
-    ]
-  })]
+deps :: [(MutableDep, VersionBounds)]
+deps =
+  [
+    ("dep1", "^>=2.0"),
+    ("dep2", "<1.5"),
+    ("dep3", ">=0"),
+    ("dep5", "==1.0.1"),
+    ("dep6", "<8.4"),
+    ("dep7", "^>=1.1")
+  ]
 
 dep1Version :: Version
 dep1Version = [2, 2, 0, 5]
@@ -74,50 +68,40 @@ handlersTest =
 target :: [DepMutation Bump]
 target =
   [
-    mkBump "dep6" dep6Range dep6Version,
-    mkBump "dep1" dep1Range dep1Version,
-    DepMutation {package = "dep7", mutation = Bump {version = [1, 1, 1], range = OldRange}},
-    mkBump "dep4" dep4Range dep4Version,
-    mkBump "dep2" dep2Range dep2Version,
-    mkBump "dep5" dep5Range dep5Version,
-    mkBump "dep3" dep3Range dep3Version
+    mkBump "dep6" dep6Bound dep6Version,
+    mkBump "dep1" dep1Bound dep1Version,
+    DepMutation {package = "dep7", retract = False, mutation = Bump {version = [1, 1, 1], bound = [1, 2], changed = True}},
+    mkBump "dep2" dep2Bound dep2Version,
+    mkBump "dep5" dep5Bound dep5Version,
+    mkBump "dep3" dep3Bound dep3Version
   ]
   where
-    mkBump name range newVersion =
+    mkBump name bound newVersion =
       DepMutation {
         package = fromString name,
+        retract = False,
         mutation = Bump {
           version = newVersion,
-          range = NewRange range
+          bound,
+          changed = True
         }
       }
 
-    dep1Range = between [2, 0] [2, 3]
+    dep1Bound = [2, 3]
 
-    dep2Range = between [1, 7] [1, 8]
+    dep2Bound = [1, 8]
 
-    dep3Range = between [1, 0] [1, 1]
+    dep3Bound = [1, 1]
 
-    dep4Range =
-      foldr1 @NonEmpty unionVersionRanges [
-        (between [0, 1] [0, 3]),
-        (between [1, 1] [1, 2, 3]),
-        (between [2, 3] [2, 5])
-      ]
+    dep5Bound = [1, 10]
 
-    dep5Range = between [1, 0, 1] [1, 10]
-
-    dep6Range = between [7, 3] [7, 4]
-
-    between l r = intersectVersionRanges (orLaterVersion l) (earlierVersion r)
+    dep6Bound = [7, 4]
 
 test_candidatesBump :: UnitTest
 test_candidatesBump = do
   mutations <- evalEither =<< liftIO do
     runMTest False do
-      allDeps <- depsFromConfig packages ["panda"]
-      let targetDeps = forTargets "panda" allDeps
-          remoteDeps = targetRemoteDeps targetDeps
-          deps = uniqueRemoteDeps remoteDeps
-      candidatesBump handlersTest deps
+      catMaybes <$> traverse (candidatesBump handlersTest) query
   sortOn (.package) target === sortOn (.package) (toList mutations)
+  where
+    query = uncurry simpleQueryDep <$> deps

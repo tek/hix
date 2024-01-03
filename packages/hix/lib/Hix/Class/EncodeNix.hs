@@ -61,6 +61,11 @@ instance EncodeNix Version where
 instance EncodeNix VersionRange where
   encodeNix = encodeNix . pretty . simplifyVersionRange
 
+instance EncodeNix a => EncodeNix (Maybe a) where
+  encodeNix = \case
+    Just a -> encodeNix a
+    Nothing -> ExprNull
+
 instance EncodeNix a => EncodeNix [a] where
   encodeNix = ExprList . fmap encodeNix
 

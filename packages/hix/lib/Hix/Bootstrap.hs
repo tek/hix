@@ -26,14 +26,15 @@ import System.FilePattern.Directory (getDirectoryFilesIgnore)
 import Hix.Compat (readGenericPackageDescription)
 import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
-import qualified Hix.Data.Monad (Env (cwd))
+import qualified Hix.Data.Monad (AppResources (cwd))
+import Hix.Data.Monad (M (M))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NixExpr (Expr (ExprAttrs, ExprLit, ExprPrefix, ExprString), ExprAttr (ExprAttr, ExprAttrNil))
 import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Error (pathText, tryIO)
-import Hix.Monad (Env (Env), M, noteBootstrap)
+import Hix.Monad (AppResources (AppResources), noteBootstrap)
 import Hix.NixExpr (mkAttrs, multi, multiOrSingle, nonEmptyAttrs, renderRootExpr, single, singleOpt)
 import qualified Hix.Prelude
 import Hix.Prelude (Prelude, findPrelude)
@@ -258,8 +259,8 @@ flake conf pkgs =
 
 bootstrapFiles :: BootstrapProjectConfig -> M [ProjectFile]
 bootstrapFiles conf = do
-  Env {cwd} <- ask
-  cabals <- paths =<< lift (tryIO (getDirectoryFilesIgnore (toFilePath cwd) ["**/*.cabal"] ["dist-newstyle/**"]))
+  AppResources {cwd} <- M ask
+  cabals <- paths =<< M (lift (tryIO (getDirectoryFilesIgnore (toFilePath cwd) ["**/*.cabal"] ["dist-newstyle/**"])))
   pkgs <- fmap convert <$> traverse (readCabal cwd) cabals
   pure [
     ProjectFile {path = [relfile|flake.nix|], content = renderRootExpr (flake conf pkgs)}

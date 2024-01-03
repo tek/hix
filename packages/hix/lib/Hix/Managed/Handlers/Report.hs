@@ -1,15 +1,13 @@
 module Hix.Managed.Handlers.Report where
 
 import Hix.Data.Monad (M)
-import Hix.Managed.Data.BuildResults (BuildResults)
+import Hix.Managed.Data.ProjectResult (ProjectResult)
 
-data ReportHandlers a =
+data ReportHandlers =
   ReportHandlers {
-    mutations :: BuildResults a -> M ()
+    mutations :: ProjectResult -> M ()
   }
 
-handlersNull :: ReportHandlers a
+handlersNull :: ReportHandlers
 handlersNull =
-  ReportHandlers {
-    mutations = \ _ -> unit
-  }
+  ReportHandlers {mutations = \ _ -> unit}

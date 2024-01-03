@@ -1,8 +1,6 @@
 { lib, config, util, ... }:
-with builtins;
-with lib;
-with types;
 let
+  inherit (lib) types mkOption mdDoc;
 
   libOutput = import ../lib/output.nix { inherit config lib util; };
 
@@ -11,8 +9,7 @@ let
   then { default = a; }
   else {};
 
-  optionalField = name: conf: optionalAttrs (hasAttr name conf) { ${name} = conf.${name}; };
-
+  # TODO this is too out of place here
   appWithAppimage = pkg: name:
   util.app "${pkg}/bin/${name}" // libOutput.appimageApp "dev" name;
 
@@ -24,132 +21,15 @@ let
     main = libOutput.pkgMainExe config.packages.${pname};
     pkg = outputs.${pname};
   in
-  optionalAttrs (main != null) { ${pname} = appWithAppimage pkg main.name; } //
-  util.foldAttrs (mapAttrsToList (appField pkg) (conf.executables or {}))
+  lib.optionalAttrs (main != null) { ${pname} = appWithAppimage pkg main.name; } //
+  util.catAttrs (lib.mapAttrsToList (appField pkg) (conf.executables or {}))
   ;
-
-  mkPrelude = prelude: base: let
-    mod = prelude.module;
-    preludePackageBase = if isAttrs prelude.package then prelude.package else { name = prelude.package; };
-    preludePackage = preludePackageBase // {
-      mixin = optionals (mod != "Prelude") [
-        "(${mod} as Prelude)"
-        "hiding (${mod})"
-      ];
-    };
-  in [preludePackage] ++ optional (base != null) base;
-
-  mkPathsBlocker = name:
-  { when = { condition = false; generated-other-modules = "Paths_${replaceStrings ["-"] ["_"] name}"; }; };
-
-  replaceManagedBounds = managedBounds: dep: let
-    norm = util.version.normalize dep;
-    name = util.version.mainLibName norm.name;
-  in if hasAttr name managedBounds
-  then { inherit (norm) name; version = managedBounds.${name}; }
-  else dep;
-
-  addManagedBounds = hconf: let
-    managedBounds = util.managed.state.current.bounds.${pkg.name} or {};
-  in
-  hconf // { dependencies = map (replaceManagedBounds managedBounds) hconf.dependencies; };
-
-  generateComponent = pkg: name: conf: let
-
-    prelude = conf.prelude;
-    base = conf.base;
-
-    basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
-
-    # TODO omit base dep if it's already in conf.dependencies
-    preludeDeps = {
-      dependencies =
-        if prelude.enable
-        then mkPrelude prelude conf.baseHide
-        else optional (base != null) base;
-    };
-
-    paths = if conf.paths then {} else mkPathsBlocker pkg.name;
-
-    full = util.mergeAll [
-      preludeDeps
-      basic
-      paths
-      conf.component
-    ];
-
-    withManaged =
-      if config.managed.enable
-      then addManagedBounds
-      else id;
-
-  in withManaged full;
-
-  extraLibrary = mainLib: conf:
-    optionalAttrs (!mainLib && conf.public) { visibility = "public"; } //
-    optionalField "reexported-modules" conf
-    ;
-
-  extraExecutable = conf: { inherit (conf) main; };
-
-  plural = isLib: sort:
-  if isLib
-  then "internal-libraries"
-  else "${sort}s";
-
-  wrap = isLib: mainLib: conf: hconf:
-  if mainLib
-  then hconf
-  else { ${plural isLib conf.internal.sort} = hconf; };
-
-  generateSort = pkg: name: conf: let
-    sort = conf.internal.sort;
-    isLib = sort == "library";
-    mainLib = isLib && name == "library";
-    extra =
-      if isLib
-      then extraLibrary mainLib
-      else extraExecutable
-      ;
-  in
-  optionalAttrs conf.enable (wrap isLib mainLib conf { ${name} = extra conf // generateComponent pkg name conf; });
-
-  generatePackageConf = name: conf: let
-
-    cabal = conf.cabal-config;
-
-    basic = { inherit (conf) name; inherit (cabal) version; };
-
-    optAttrs = [
-      "author"
-      "license"
-      "license-file"
-      "copyright"
-      "build-type"
-    ];
-
-    opt = util.foldMapAttrs (a: let v = cabal.${a}; in optionalAttrs (v != null) { ${a} = v; }) optAttrs;
-
-    desc = optionalAttrs (conf.description != null) { inherit (conf) description; };
-
-    components = mapAttrsToList (generateSort conf) conf.internal.componentsSet;
-
-  in util.mergeAll ([
-    cabal.meta
-    basic
-    opt
-    desc
-  ] ++ components);
-
-  script = import ../lib/hpack.nix { inherit config; verbose = true; };
-
-  scriptQuiet = import ../lib/hpack.nix { inherit config; };
 
 in {
   options = {
 
     defaultApp = mkOption {
-      type = str;
+      type = types.str;
       description = mdDoc ''
       The name of an executable in [](#opt-general-packages) that should be assigned to `packages.default`.
       '';
@@ -158,12 +38,12 @@ in {
     hpack = {
 
       apps = mkOption {
-        type = lazyAttrsOf util.types.flakeApp;
+        type = types.lazyAttrsOf util.types.flakeApp;
         default = {};
       };
 
       script = mkOption {
-        type = path;
+        type = types.path;
         description = mdDoc ''
           The script that generates a Cabal file in each of the directories configured in `packages` by
           executing `hpack`.
@@ -174,33 +54,37 @@ in {
       };
 
       scriptQuiet = mkOption {
-        type = path;
+        type = types.path;
         description = mdDoc ''
           Same as `script`, but suppress all output.
         '';
       };
 
       internal.packages = mkOption {
-        type = attrsOf util.types.strict;
+        type = types.attrsOf util.types.strict;
       };
     };
   };
 
   config = {
 
-    defaultApp = mkDefault config.main;
+    defaultApp = lib.mkDefault config.main;
 
     hpack = {
 
-      apps = mkDefault (
-        util.foldAttrs (mapAttrsToList (packageApps config.envs.dev.derivations) config.hpack.internal.packages)
+      apps = lib.mkDefault (
+        util.catAttrs (lib.mapAttrsToList (packageApps config.envs.dev.derivations) config.hpack.internal.packages)
       );
 
-      script = script;
+      script = util.hpack.gen { verbose = true; };
 
-      scriptQuiet = scriptQuiet;
+      scriptQuiet = util.hpack.gen { verbose = false; };
 
-      internal.packages = mapAttrs generatePackageConf config.packages;
+      internal.packages =
+        if config.managed.enable
+        then util.hpack.conf.packagesWithManaged
+        else util.hpack.conf.packages
+        ;
 
     };
   };

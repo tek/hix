@@ -1,5 +1,7 @@
 module Hix.Data.Monad where
 
+import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Except (ExceptT)
 import Control.Monad.Trans.Reader (ReaderT, asks)
 import GHC.Records (HasField (getField))
@@ -21,8 +23,8 @@ data LogLevel =
   LogDebug
   deriving stock (Eq, Show, Generic)
 
-data Env =
-  Env {
+data AppResources =
+  AppResources {
     cwd :: Path Abs Dir,
     tmp :: Path Abs Dir,
     verbose :: Bool,
@@ -33,12 +35,17 @@ data Env =
     logger :: LogLevel -> Text -> M ()
   }
 
-type M a = ReaderT Env (ExceptT Error IO) a
+newtype M a =
+  M (ReaderT AppResources (ExceptT Error IO) a)
+  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch, MonadMask)
 
-data EnvM = EnvM
+liftE :: ExceptT Error IO a -> M a
+liftE = M . lift
 
-instance HasField name Env a => HasField name EnvM (M a) where
-  getField EnvM = asks (getField @name)
+data AppResProxy = AppResProxy
 
-envM :: EnvM
-envM = EnvM
+instance HasField name AppResources a => HasField name AppResProxy (M a) where
+  getField AppResProxy = M (asks (getField @name))
+
+appRes :: AppResProxy
+appRes = AppResProxy

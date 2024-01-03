@@ -7,8 +7,7 @@ import GHC.Exts (IsList)
 import Text.PrettyPrint (brackets, (<+>))
 
 import Hix.Class.EncodeNix (EncodeNix)
-import Hix.Class.Map (LookupMaybe, LookupMonoid, NtMap, ntPretty, ntPretty1, (!!))
-import Hix.Data.EnvName (EnvName)
+import Hix.Class.Map (LookupMaybe, NMap, nPretty)
 import Hix.Data.Json (JsonParsec (JsonParsec))
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (SourceHash)
@@ -31,34 +30,14 @@ instance FromJSON Override where
 instance Pretty Override where
   pretty Override {..} = pretty version <+> brackets (pretty hash)
 
+-- | Overrides can be either for mutable (direct, nonlocal) deps, or for transitive deps, so they must use
+-- 'PackageName'.
 newtype Overrides =
   Overrides (Map PackageName Override)
   deriving stock (Eq, Show, Generic)
   deriving newtype (FromJSON, Semigroup, Monoid, IsList, EncodeNix)
 
-instance NtMap Overrides PackageName Override LookupMaybe where
+instance NMap Overrides PackageName Override LookupMaybe where
 
 instance Pretty Overrides where
-  pretty = ntPretty
-
-newtype EnvOverrides =
-  EnvOverrides (Map EnvName Overrides)
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON, Semigroup, Monoid, IsList, EncodeNix)
-
-instance NtMap EnvOverrides EnvName Overrides LookupMonoid where
-
-instance Pretty EnvOverrides where
-  pretty = ntPretty1
-
-latestVersionNewer :: Overrides -> PackageName -> Version -> Bool
-latestVersionNewer overrides package version =
-  case overrides !! package of
-    Nothing -> True
-    Just Override {version = oVersion} -> oVersion < version
-
-candidateMatchesOverride :: Overrides -> PackageName -> Version -> Bool
-candidateMatchesOverride overrides package version =
-  any match (overrides !! package)
-  where
-    match Override {version = oVersion} = oVersion == version
+  pretty = nPretty

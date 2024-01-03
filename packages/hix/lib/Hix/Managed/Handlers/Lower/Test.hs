@@ -1,56 +1,39 @@
 module Hix.Managed.Handlers.Lower.Test where
 
-import Control.Lens (_1, (%~))
 import Data.IORef (IORef)
 
-import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr)
-import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Versions)
-import Hix.Managed.Build.Mutation (DepMutation)
-import Hix.Managed.Data.BuildState (BuildStatus)
-import Hix.Managed.Data.ManagedConfig (StateFileConfig)
-import Hix.Managed.Data.ManagedPackage (ManagedPackages)
+import qualified Hix.Managed.Cabal.Data.Packages
+import Hix.Managed.Cabal.Data.Packages (GhcPackages)
+import Hix.Managed.Cabal.Mock.SourcePackage (queryVersions, sourcePackageVersions)
+import Hix.Managed.Data.EnvConfig (EnvConfig)
+import Hix.Managed.Data.Envs (Envs)
+import Hix.Managed.Data.Mutation (FailedMutation)
+import Hix.Managed.Data.StageState (BuildStatus)
+import Hix.Managed.Data.StateFileConfig (StateFileConfig)
+import Hix.Managed.Handlers.Build (BuildOutputsPrefix)
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Lower (LowerHandlers (..), handlersNull)
 import Hix.Managed.Handlers.Lower.Prod (handlersProd)
-import qualified Hix.Managed.Handlers.Report.Test as ReportHandlers
-import qualified Hix.Managed.Handlers.Solve.Test as SolveHandlers
-import Hix.Managed.Lower.Data.Lower (Lower)
-import Hix.Managed.Solve.Mock.SourcePackage (
-  SourcePackages,
-  managedSourcePackageVersions,
-  queryVersions,
-  sourcePackageVersions,
-  )
 
 handlersTest ::
   StateFileConfig ->
-  EnvsConfig ->
+  Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
   Bool ->
   M LowerHandlers
 handlersTest =
   handlersProd
 
-handlersUnitTestNoSolver ::
-  (Versions -> M BuildStatus) ->
-  IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
-handlersUnitTestNoSolver buildVersions = do
-  (build, stateFileRef) <- BuildHandlers.handlersUnitTest buildVersions
-  (report, mutationsRef) <- ReportHandlers.handlersUnitTest
-  pure (handlersNull {build, report}, stateFileRef, mutationsRef)
-
 handlersUnitTest ::
+  MonadIO m =>
   (Versions -> M BuildStatus) ->
-  ManagedPackages ->
-  [(PackageId, [PackageId])] ->
-  SourcePackages ->
-  IO (LowerHandlers, IORef [Expr], IORef [DepMutation Lower])
-handlersUnitTest buildVersions packages installed available =
-  (_1 %~ add) <$> handlersUnitTestNoSolver buildVersions
+  GhcPackages ->
+  m (LowerHandlers, IORef [Expr], IORef [FailedMutation])
+handlersUnitTest buildVersions ghcPackages = do
+  (build, stateFileRef, mutationsRef) <- BuildHandlers.handlersUnitTest buildVersions
+  pure (handlersNull {build, versions}, stateFileRef, mutationsRef)
   where
-    add h = h {solve, versions}
-    solve ps _ = pure (SolveHandlers.testHandlers ps installed available)
-    versions = queryVersions (managedSourcePackageVersions packages <> sourcePackageVersions available)
+    versions = queryVersions (sourcePackageVersions ghcPackages.available)

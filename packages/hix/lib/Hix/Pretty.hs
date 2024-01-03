@@ -1,7 +1,7 @@
 module Hix.Pretty where
 
 import Distribution.Pretty (Pretty, pretty)
-import Text.PrettyPrint (Doc, comma, punctuate, sep)
+import Text.PrettyPrint (Doc, comma, punctuate, sep, text)
 
 showP ::
   ∀ b a .
@@ -19,13 +19,22 @@ showPM ::
   b
 showPM = show . fmap pretty
 
-prettyL :: Pretty a => [a] -> Doc
-prettyL = sep . punctuate comma . fmap pretty
+prettyL ::
+  ∀ t a .
+  Pretty a =>
+  Foldable t =>
+  t a ->
+  Doc
+prettyL = sep . punctuate comma . fmap pretty . toList
 
 showPL ::
-  ∀ b a .
+  ∀ t b a .
   Pretty a =>
+  Foldable t =>
   IsString b =>
-  [a] ->
+  t a ->
   b
 showPL = show . prettyL
+
+prettyText :: Text -> Doc
+prettyText = text . toString

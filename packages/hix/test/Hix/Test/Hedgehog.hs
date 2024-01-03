@@ -12,7 +12,19 @@ eqLines ::
   TestT m ()
 eqLines l r =
   withFrozenCallStack do
-    Text.lines l === Text.lines r
+    take common linesL === take common linesR
+    if ll > lr
+    then trailing "missing lines: " linesL
+    else if lr > ll
+    then trailing "extra lines: " linesR
+    else unit
+  where
+    trailing desc ls = fail (toString (desc <> Text.unlines (drop common ls)))
+    common = min ll lr
+    ll = length linesL
+    lr = length linesR
+    linesL = Text.lines l
+    linesR = Text.lines r
 
 assertRight ::
   ∀ a m e .

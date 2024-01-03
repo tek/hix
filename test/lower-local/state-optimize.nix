@@ -1,10 +1,34 @@
 {
   bounds = {
     local1 = {
-      containers = ">=0.5.7.0 && <0.6";
+      base = {
+        lower = "4.15.1.0";
+        upper = null;
+      };
+      containers = {
+        lower = "0.5.7.0";
+        upper = null;
+      };
     };
     local2 = {
-      semigroups = ">=0.18.1";
+      base = {
+        lower = "4.15.1.0";
+        upper = null;
+      };
+      semigroups = {
+        lower = "0.18.1";
+        upper = null;
+      };
+    };
+  };
+  versions = {
+    lower-local1 = {
+      base = "4.15.1.0";
+      containers = "0.5.7.0";
+    };
+    lower-local2 = {
+      base = "4.15.1.0";
+      semigroups = "0.18.1";
     };
   };
   overrides = {
@@ -15,21 +39,19 @@
       };
     };
     lower-local2 = {
-      containers = {
-        version = "0.5.11.0";
-        hash = "158dq1h4xgqjznl4aqrb3bccm7wr20vgvg2l698b7mywfk6ssqyb";
-      };
       semigroups = {
         version = "0.18.1";
         hash = "1z714pdlx2klcsp0h9qrsm5if54fd07zy9rwgqr62gp0akvr4w78";
       };
     };
   };
-  lowerInit = {
+  initial = {
     lower-local1 = {
-      containers = "0.5.7.0";
+      base = "4.15.1.0";
+      containers = "0.7";
     };
     lower-local2 = {
+      base = "4.15.1.0";
       semigroups = "0.20";
     };
   };

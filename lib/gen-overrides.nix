@@ -25,9 +25,21 @@ let
 
   script = pkgs.writeScript "gen-overrides" ''
     #!${pkgs.bashInteractive}/bin/bash
+    if [[ -e "${overridesFile}" ]]
+    then
+      initial=false
+    else
+      initial=true
+    fi
     mkdir -p ${dirOf overridesFile}
     cp ${file} ${overridesFile}
     chmod u+w ${overridesFile}
+    ${lib.optionalString config.gen-overrides.gitAdd ''
+      if ${config.pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]] && [[ -f ${overridesFile} ]]
+      then
+        ${config.pkgs.git}/bin/git add ${overridesFile}
+      fi
+    ''}
   '';
 
 in {

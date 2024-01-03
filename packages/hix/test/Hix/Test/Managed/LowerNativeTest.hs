@@ -7,40 +7,30 @@ import Hedgehog (evalEither)
 import Path (Abs, Dir, File, Path, Rel, parent, reldir, relfile, toFilePath, (</>))
 import Path.IO (createDirIfMissing, getCurrentDir)
 
-import qualified Hix.Data.LowerConfig
-import Hix.Data.LowerConfig (LowerInitConfig (LowerInitConfig))
-import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (
-  EnvConfig (EnvConfig),
-  ManagedEnv (ManagedEnv),
-  ManagedEnvState (ManagedEnvState),
-  ManagedLowerEnv (ManagedLowerEnv),
-  state,
-  )
 import qualified Hix.Data.Monad
-import Hix.Data.Monad (Env (Env), M)
+import Hix.Data.Monad (AppResources (AppResources), M (M))
+import Hix.Data.Options (projectOptions)
 import Hix.Error (pathText)
-import Hix.Managed.App (managedApp)
-import qualified Hix.Managed.Data.BuildResults
-import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
-import Hix.Managed.Data.ManagedOp (ManagedOp (OpLowerInit, OpLowerOptimize))
-import Hix.Managed.Data.ManagedPackage (ManagedPackages, managedPackages)
-import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (
-  BuildHandlers (BuildHandlers),
-  Builder (Builder),
-  EnvBuilder (EnvBuilder),
-  ghcDb,
-  withBuilder,
-  )
+import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
+import qualified Hix.Managed.Data.EnvConfig
+import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
+import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
+import Hix.Managed.Data.Packages (Packages)
+import qualified Hix.Managed.Data.ProjectContext
+import qualified Hix.Managed.Data.ProjectContextProto
+import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (ProjectContextProto))
+import qualified Hix.Managed.Data.ProjectResult
+import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
+import qualified Hix.Managed.Data.StateFileConfig
+import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
 import qualified Hix.Managed.Handlers.Lower
 import qualified Hix.Managed.Handlers.Lower.Prod as Lower
-import Hix.Managed.Lower.Init (lowerInit)
-import Hix.Managed.Lower.Optimize (lowerOptimize)
-import Hix.Managed.Project (updateProject)
-import Hix.Managed.State (envWithState)
+import Hix.Managed.Lower.Init (lowerInitMain)
+import Hix.Managed.Lower.Optimize (lowerOptimizeMain)
+import Hix.Managed.ProjectContext (updateProject)
+import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
+import Hix.Managed.ProjectContextProto (projectContext)
 import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Utils (UnitTest, runMTest)
 
@@ -48,7 +38,7 @@ import Hix.Test.Utils (UnitTest, runMTest)
 -- reaching optimize.
 -- But when it is set to 2.1, the build succeeds during init.
 -- in the former case, there are a few more overrides added from the solver plan.
-packages :: ManagedPackages
+packages :: Packages ManagedPackageProto
 packages =
   managedPackages [
     (("root", "1.0"), ["aeson >=2.2 && <2.3", "extra >=1.6 && <1.8"])
@@ -97,7 +87,7 @@ addFile root path content = do
 
 setupProject :: M (Path Abs Dir)
 setupProject = do
-  Env {tmp} <- ask
+  AppResources {tmp} <- M ask
   cwd <- getCurrentDir
   let projectRoot = tmp </> [reldir|project|]
   let hixRoot = parent (parent cwd)
@@ -151,7 +141,7 @@ targetStateFileInit =
       };
     };
   };
-  lowerInit = {
+  initial = {
     lower = {
       aeson = "2.2.0.0";
       extra = "1.7.7";
@@ -226,7 +216,7 @@ targetStateFileOptimize =
       };
     };
   };
-  lowerInit = {
+  initial = {
     lower = {
       aeson = "2.2.0.0";
       extra = "1.7.7";
@@ -236,44 +226,47 @@ targetStateFileOptimize =
 }
 |]
 
+lowerNativeTest :: M (Text, Text)
+lowerNativeTest = do
+  root <- setupProject
+  let
+    stateFileConf = StateFileConfig {
+      file = [relfile|ops/managed.nix|],
+      projectRoot = Just root
+    }
+    envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
+  build <- Build.handlersProd stateFileConf envsConfig Nothing False
+  handlersInit <- Lower.handlersProdWith build
+  handlersOptimize <- Lower.handlersProdWith build
+  let
+    opts = projectOptions ["lower"]
+
+    proto0 =
+      ProjectContextProto {
+        packages,
+        state = ProjectStateProto mempty mempty mempty mempty False,
+        envs = envsConfig,
+        buildOutputsPrefix = Nothing
+      }
+
+    stateFile = root </> [relfile|ops/managed.nix|]
+
+    run context handlers process = do
+      result <- process handlers context
+      updateProject handlersInit.build context.build result
+      stateFileContent <- liftIO (Text.readFile (toFilePath stateFile))
+      pure (result.state, stateFileContent)
+
+  context0 <- ProjectContextProto.validate opts proto0
+  (state1, stateFileContentInit) <- run context0 handlersInit (lowerInitMain def)
+  -- TODO the packages here aren't updated with the result from the first run
+  let context1 = projectContext def state1 context0.packages context0.envs
+  (_, stateFileContentOptimize) <- run context1 handlersOptimize lowerOptimizeMain
+  pure (stateFileContentInit, stateFileContentOptimize)
+
 test_lowerNative :: UnitTest
 test_lowerNative = do
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
-    runMTest True do
-      root <- setupProject
-      let
-        stateFileConf = StateFileConfig {
-          file = [relfile|ops/managed.nix|],
-          updateProject = True,
-          projectRoot = Just root
-        }
-        envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = Nothing})]
-      build <- liftIO (Build.handlersProd stateFileConf envsConfig Nothing) <&> \ BuildHandlers {withBuilder, ..} ->
-        BuildHandlers {withBuilder = \ f -> withBuilder \ Builder {withEnvBuilder} -> f Builder {withEnvBuilder = \ e t d s g -> withEnvBuilder e t d s \ eb -> g EnvBuilder {buildWithState = eb.buildWithState, ghcDb = pure Nothing}}, ..}
-      handlersInit <- Lower.handlersProdWith build False
-      handlersOptimize <- Lower.handlersProdWith build False
-      let
-        env =
-          ManagedEnv {
-            packages,
-            state = ManagedEnvState mempty mempty mempty False,
-            lower = ManagedLowerEnv {solverBounds = []},
-            envs = envsConfig,
-            buildOutputsPrefix = Nothing
-          }
-        managedConf = ManagedConfig {stateFile = stateFileConf, envs = ["lower"]}
-        lowerInitConf = LowerInitConfig {reset = False}
-
-      let stateFile = root </> [relfile|ops/managed.nix|]
-      env1 <- managedApp handlersInit.build env managedConf OpLowerInit \ app -> do
-        result <- lowerInit handlersInit def lowerInitConf app
-        updateProject handlersInit.build.stateFile handlersInit.report managedConf.stateFile result
-        pure (envWithState result.state env)
-      stateFileContentInit <- liftIO (Text.readFile (toFilePath stateFile))
-      managedApp handlersInit.build env1 managedConf OpLowerOptimize \ app -> do
-        result <- lowerOptimize handlersOptimize def app
-        updateProject handlersInit.build.stateFile handlersOptimize.report managedConf.stateFile result
-      stateFileContentOptimize <- liftIO (Text.readFile (toFilePath stateFile))
-      pure (stateFileContentInit, stateFileContentOptimize)
+    runMTest True lowerNativeTest
   eqLines targetStateFileInit stateFileContentInit
   eqLines targetStateFileOptimize stateFileContentOptimize

@@ -11,9 +11,7 @@ import Hix.Data.Error (Error (Client, Fatal))
 import Hix.Data.Monad (M)
 import Hix.Data.OutputTarget (OutputTarget)
 import Hix.Managed.BuildOutput.CommitMsg (commit)
-import qualified Hix.Managed.Data.BuildOutput
 import Hix.Managed.Data.BuildOutput (BuildOutput)
-import Hix.Managed.Data.ManagedOp (ManagedOp (..))
 import Hix.Monad (note, throwM, tryIOMAs)
 import qualified Hix.OutputWriter
 import Hix.OutputWriter (OutputWriter, fileWriter, outputWriterM)
@@ -40,10 +38,10 @@ writeOutputs :: OutputWriter -> Map Text [Text] -> M ()
 writeOutputs writer values =
   writer.textAppend (Text.unlines (formatOutputs values))
 
-modifiedOutputs :: ManagedOp -> Text -> Text -> [Text] -> Map Text [Text]
-modifiedOutputs op date msg body =
+modifiedOutputs :: Text -> Text -> [Text] -> Map Text [Text]
+modifiedOutputs date msg body =
   [
-    ("branch", [[exon|hix-managed/#{opslug}-#{date}|]]),
+    ("branch", [[exon|hix-managed/bump-#{date}|]]),
     ("commit-message", [msg, ""] ++ body),
     ("title", [msg]),
     ("body", body),
@@ -51,14 +49,10 @@ modifiedOutputs op date msg body =
     ("signoff", ["false"]),
     ("delete-branch", ["true"])
   ]
-  where
-    opslug = case op of
-      OpBump -> "bump"
-      _ -> "lower"
 
 githubActionsPr :: BuildOutput -> OutputTarget -> M ()
 githubActionsPr output target =
   for_ (commit output) \ (msg, body) -> do
     date <- liftIO epochTime
     writer <- outputWriterM envVarWriter target
-    writeOutputs writer (modifiedOutputs output.operation (show date) msg body)
+    writeOutputs writer (modifiedOutputs (show date) msg body)

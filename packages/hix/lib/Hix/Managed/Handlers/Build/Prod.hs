@@ -2,9 +2,8 @@ module Hix.Managed.Handlers.Build.Prod where
 
 import Control.Monad.Catch (catch)
 import Control.Monad.Trans.Reader (asks)
-import Data.Foldable.Extra (allM)
 import Exon (exon)
-import Path (Abs, Dir, File, Path, parseAbsDir, toFilePath)
+import Path (Abs, Dir, Path, toFilePath)
 import Path.IO (copyDirRecur')
 import System.IO.Error (IOError)
 import System.Process.Typed (
@@ -13,56 +12,55 @@ import System.Process.Typed (
   inherit,
   nullStream,
   proc,
-  readProcessStdout,
   runProcess,
   setStderr,
   setStdout,
   setWorkingDir,
   )
 
-import Hix.Class.Map ((!!))
-import Hix.Data.Deps (TargetRemoteDeps)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
-import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (BuildOutputsPrefix (BuildOutputsPrefix), EnvsConfig, ManagedState)
-import qualified Hix.Data.Monad (Env (verbose))
+import Hix.Data.Monad (M (M))
+import qualified Hix.Data.Monad (AppResources (verbose))
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.PackageName (LocalPackage)
+import Hix.Data.Version (Versions)
 import Hix.Error (pathText)
 import qualified Hix.Log as Log
-import qualified Hix.Managed.Data.BuildDomain
-import Hix.Managed.Data.BuildDomain (BuildDomain (BuildDomain))
-import Hix.Managed.Data.BuildState (BuildStatus, buildStatus)
-import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (StateFileConfig)
-import Hix.Managed.Data.Targets (Targets (Targets))
+import Hix.Managed.Data.EnvConfig (EnvConfig)
+import qualified Hix.Managed.Data.EnvContext
+import Hix.Managed.Data.EnvContext (EnvContext (EnvContext))
+import Hix.Managed.Data.EnvState (EnvState)
+import Hix.Managed.Data.Envs (Envs)
+import Hix.Managed.Data.Initial (Initial)
+import Hix.Managed.Data.StageState (BuildStatus, buildStatus)
+import qualified Hix.Managed.Data.StateFileConfig
+import Hix.Managed.Data.StateFileConfig (StateFileConfig)
+import Hix.Managed.Data.Targets (allMTargets)
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (BuildHandlers (..), Builder (Builder), EnvBuilder (EnvBuilder))
+import Hix.Managed.Handlers.Build (BuildHandlers (..), BuildOutputsPrefix, Builder (Builder), EnvBuilder (EnvBuilder))
+import Hix.Managed.Handlers.Cabal (CabalHandlers)
+import qualified Hix.Managed.Handlers.Cabal.Prod as CabalHandlers
 import qualified Hix.Managed.Handlers.Hackage.Prod as HackageHandlers
-import qualified Hix.Managed.Handlers.StateFile
+import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import qualified Hix.Managed.Handlers.StateFile.Prod as StateFileHandlers
 import Hix.Managed.Path (rootOrCwd)
-import Hix.Managed.Solve.Config (GhcDb (GhcDb))
-import Hix.Managed.StateFile (writeBuildStateFor)
-import Hix.Monad (M, noteFatal, throwM, tryIOM, withTempDir)
+import Hix.Managed.StateFile (writeBuildStateFor, writeInitialEnvState)
+import Hix.Monad (throwM, tryIOM, withTempDir)
 
 data BuilderResources =
   BuilderResources {
-    handlers :: StateFileHandlers,
-    stateFileConf :: StateFileConfig,
-    envsConf :: EnvsConfig,
+    stateFileHandlers :: StateFileHandlers,
+    envsConf :: Envs EnvConfig,
     buildOutputsPrefix :: Maybe BuildOutputsPrefix,
-    root :: Path Abs Dir,
-    stateFile :: Path Abs File
+    root :: Path Abs Dir
   }
 
 data EnvBuilderResources =
   EnvBuilderResources {
     global :: BuilderResources,
-    env :: EnvName,
-    targets :: Targets,
-    deps :: TargetRemoteDeps
+    context :: EnvContext
   }
 
 withTempProject ::
@@ -86,7 +84,7 @@ nixProc ::
   M (ProcessConfig () () ())
 nixProc root cmd installable extra = do
   Log.debug [exon|Running nix at '#{pathText root}' with args #{show args}|]
-  conf <$> asks (.verbose)
+  conf <$> M (asks (.verbose))
   where
     conf verbose = err verbose (setWorkingDir (toFilePath root) (proc "nix" args))
 
@@ -102,7 +100,7 @@ buildPackage ::
   LocalPackage ->
   M Bool
 buildPackage root env target = do
-  verbose <- asks (.verbose)
+  verbose <- M (asks (.verbose))
   conf <- nixProc root ["-L", "build"] [exon|env.##{env}.##{target}|] []
   tryIOM (runProcess (err verbose conf)) <&> \case
     ExitSuccess -> True
@@ -114,69 +112,63 @@ buildPackage root env target = do
 
 buildWithState ::
   EnvBuilderResources ->
-  ManagedState ->
+  Versions ->
+  Overrides ->
   M BuildStatus
-buildWithState EnvBuilderResources {targets = Targets targets, ..} state = do
-  writeBuildStateFor "current build" global.handlers deps env state global.stateFile
-  buildStatus <$> allM (buildPackage global.root env) targets
+buildWithState EnvBuilderResources {context = context@EnvContext {env, targets}, ..} _ overrides = do
+  writeBuildStateFor "current build" global.stateFileHandlers global.root context overrides
+  buildStatus <$> allMTargets (buildPackage global.root env) targets
 
-ghcDb ::
-  EnvBuilderResources ->
-  M (Maybe GhcDb)
-ghcDb EnvBuilderResources {global, env} = do
-  conf <- nixProc global.root ["eval", "--raw"] [exon|#{prefix}.env.##{env}.ghc-local|] []
-  tryIOM (readProcessStdout conf) >>= \case
-    (ExitSuccess, decodeUtf8 -> out) -> Just . GhcDb <$> noteFatal (parseError out) (parseAbsDir out)
-    (ExitFailure _, _) -> throwM (Fatal "Evaluation failed for vanilla GHC path")
-  where
-    BuildOutputsPrefix prefix = fromMaybe "build" global.buildOutputsPrefix
-    parseError out = [exon|Parse error for vanilla GHC path: #{toText out}|]
-
--- | This writes the initial state separate from the individual builds because we want to load the GHC package db for
--- the Cabal solver at the start of @use@.
--- Since we allow multiple envs to be processed in sequence, the state will be updated between runs, which influences
--- the package db (due to local packages getting new dependency bounds).
+-- | This used to have the purpose of reading an updated GHC package db using the current managed state, but this has
+-- become obsolete.
 --
--- TODO should EnvBuilder provide a solver constructor?
+-- TODO Decide whether to keep this for abstraction purposes.
 withEnvBuilder ::
   ∀ a .
   BuilderResources ->
-  BuildDomain ->
-  ManagedState ->
+  CabalHandlers ->
+  EnvContext ->
+  Initial EnvState ->
   (EnvBuilder -> M a) ->
   M a
-withEnvBuilder global BuildDomain {env, targets, deps} initialState use = do
-  writeBuildStateFor "env initialization" global.handlers deps env initialState global.stateFile
-  let resources = EnvBuilderResources {..}
-  use EnvBuilder {buildWithState = buildWithState resources, ghcDb = db resources}
+withEnvBuilder global cabal context initialState use = do
+  writeInitialEnvState global.stateFileHandlers global.root context initialState
+  use builder
   where
-    db _ = case (.ghc) =<< global.envsConf !! env of
-      Just path -> pure (Just path)
-      Nothing -> throwM (Fatal "No GHC package db in the config")
+    builder =
+      EnvBuilder {
+        cabal,
+        buildWithState = buildWithState resources
+      }
+
+    resources = EnvBuilderResources {..}
 
 withBuilder ::
   StateFileHandlers ->
   StateFileConfig ->
-  EnvsConfig ->
+  Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
   (Builder -> M a) ->
   M a
-withBuilder handlers stateFileConf envsConf buildOutputsPrefix use =
+withBuilder stateFileHandlers stateFileConf envsConf buildOutputsPrefix use =
   withTempProject stateFileConf.projectRoot \ root -> do
-    stateFile <- handlers.initFile root stateFileConf.file
     let resources = BuilderResources {..}
     use Builder {withEnvBuilder = withEnvBuilder resources}
 
 handlersProd ::
+  MonadIO m =>
   StateFileConfig ->
-  EnvsConfig ->
+  Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
-  IO BuildHandlers
-handlersProd stateFileConf envsConf buildOutputsPrefix = do
+  Bool ->
+  m BuildHandlers
+handlersProd stateFileConf envsConf buildOutputsPrefix oldest = do
   hackage <- HackageHandlers.handlersProd
-  let stateFile = StateFileHandlers.handlersProd
+  let stateFile = StateFileHandlers.handlersProd stateFileConf
   pure BuildHandlers {
     stateFile,
     hackage,
+    report = ReportHandlers.handlersProd,
+    cabal = CabalHandlers.handlersProd oldest,
     withBuilder = withBuilder stateFile stateFileConf envsConf buildOutputsPrefix
   }

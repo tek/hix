@@ -1,22 +1,22 @@
 module Hix.Data.PackageName where
 
-import Data.Aeson (FromJSON, FromJSONKey, ToJSON)
+import Data.Aeson (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
 import qualified Data.Set as Set
 import qualified Distribution.Package as Cabal
 import Distribution.Package (depPkgName, mkPackageName)
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Types.Dependency (Dependency)
-import Text.PrettyPrint (text)
 
 import Hix.Class.EncodeNix (EncodeNixKey)
+import Hix.Pretty (prettyText)
 
 newtype PackageName =
   PackageName Text
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, ToJSON, EncodeNixKey)
+  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, ToJSON, ToJSONKey, EncodeNixKey)
 
 instance Pretty PackageName where
-  pretty (PackageName n) = text (toString n)
+  pretty (PackageName n) = prettyText n
 
 fromCabal :: Cabal.PackageName -> PackageName
 fromCabal =
@@ -46,3 +46,10 @@ sameLocalPackage (LocalPackage lp) p = lp == p
 
 isLocalPackage :: Set LocalPackage -> PackageName -> Bool
 isLocalPackage lps p = Set.member (LocalPackage p) lps
+
+toLocalPackage :: Set LocalPackage -> PackageName -> Maybe LocalPackage
+toLocalPackage lps p
+  | isLocalPackage lps p
+  = Just (LocalPackage p)
+  | otherwise
+  = Nothing

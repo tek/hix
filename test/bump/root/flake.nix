@@ -20,10 +20,7 @@
         src = ./packages/local1;
         library = {
           enable = true;
-          dependencies = [
-            "aeson"
-            "th-abstraction ^>= 0.5"
-          ];
+          dependencies = ["aeson"];
         };
         test = {
           enable = true;
@@ -34,9 +31,7 @@
         src = ./packages/local2;
         library = {
           enable = true;
-          dependencies = [
-            "path"
-          ];
+          dependencies = ["path"];
         };
       };
     };

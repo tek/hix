@@ -1,13 +1,12 @@
 module Hix.Json where
 
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (throwE)
 import qualified Data.Aeson as Aeson
 import Data.Aeson (FromJSON, fromJSON)
 import Exon (exon)
 
 import Hix.Data.Error (Error)
 import Hix.Data.Monad (M)
+import Hix.Monad (throwM)
 import Hix.Optparse (JsonConfig (JsonConfig))
 
 jsonConfig ::
@@ -23,7 +22,7 @@ jsonConfig consError (JsonConfig mv) =
       Aeson.Error err -> failure [exon|Invalid JSON: #{toText err}
 #{show v}|]
   where
-    failure = lift . throwE . consError
+    failure = throwM . consError
 
 jsonConfigE ::
   FromJSON a =>

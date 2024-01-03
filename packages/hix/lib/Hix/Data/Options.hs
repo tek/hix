@@ -4,13 +4,16 @@ import Path (Abs, Dir, File, Path, SomeBase)
 
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions)
-import Hix.Data.ManagedEnv (ManagedEnv)
 import Hix.Data.NewProjectConfig (NewProjectConfig)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Managed.Data.ManagedConfig (ManagedConfig)
+import Hix.Managed.Data.BuildConfig (BuildConfig)
+import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
+import Hix.Managed.Data.Query (RawQuery)
+import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 import Hix.Managed.Handlers.Bump (SpecialBumpHandlers)
 import Hix.Managed.Handlers.Lower (SpecialLowerHandlers)
 import Hix.Optparse (JsonConfig)
@@ -117,23 +120,49 @@ data EnvRunnerCommandOptions =
   }
   deriving stock (Show, Generic)
 
+data ProjectOptions =
+  ProjectOptions {
+    build :: BuildConfig,
+    envs :: [EnvName],
+    query :: RawQuery,
+    readUpperBounds :: Bool,
+    mergeBounds :: Bool
+  }
+  deriving stock (Eq, Show, Generic)
+
+instance Default ProjectOptions where
+  def = ProjectOptions {
+    build = def,
+    envs = [],
+    query = [],
+    readUpperBounds = False,
+    mergeBounds = False
+  }
+
+projectOptions :: [EnvName] -> ProjectOptions
+projectOptions envs = def {envs}
+
+data ManagedOptions =
+  ManagedOptions {
+    context :: Either ProjectContextProto JsonConfig,
+    project :: ProjectOptions,
+    stateFile :: StateFileConfig
+  }
+  deriving stock (Show, Generic)
+
 data BumpOptions =
   BumpOptions {
-    env :: Either ManagedEnv JsonConfig,
-    config :: ManagedConfig,
+    common :: ManagedOptions,
     handlers :: Maybe SpecialBumpHandlers
   }
   deriving stock (Show, Generic)
 
 data LowerOptions =
   LowerOptions {
-    env :: Either ManagedEnv JsonConfig,
-    managed :: ManagedConfig,
+    common :: ManagedOptions,
     initOnly :: Bool,
     reset :: Bool,
-    maxFailedPre :: Natural,
-    maxFailedPost :: Natural,
-    maxIterations :: Natural,
+    stabilize :: Bool,
     handlers :: Maybe SpecialLowerHandlers
   }
   deriving stock (Show)
@@ -144,6 +173,8 @@ data LowerCommand =
   LowerOptimizeCmd LowerOptions
   |
   LowerStabilizeCmd LowerOptions
+  |
+  LowerAutoCmd LowerOptions
   deriving stock (Show)
 
 data Command =

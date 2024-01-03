@@ -6,7 +6,7 @@
     git add .
     git commit -m "init" --quiet
 
-    target_out_init='{"failed":[],"failedNames":null,"modified":[{"name":"aeson","range":">=2.2.0.0 && <2.3","version":"2.2.0.0"},{"name":"extra","range":">=1.7.7 && <1.8","version":"1.7.7"}],"modifiedNames":"aeson, extra","operation":"lower-init","unmodified":[],"unmodifiedNames":null}'
+    target_out_init='{"failed":[],"failedNames":null,"modified":[{"package":"aeson","range":">=2.2.0.0","version":"2.2.0.0"},{"package":"base","range":">=4.15.1.0","version":"4.15.1.0"},{"package":"extra","range":">=1.7.7","version":"1.7.7"}],"modifiedNames":"aeson, base, extra","unmodified":[],"unmodifiedNames":null}'
 
     out_init=$(nix run .#lower.init.main -- --output=json --root $PWD)
     if [[ $? != 0 ]]

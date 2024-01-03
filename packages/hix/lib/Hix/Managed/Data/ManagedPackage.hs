@@ -1,59 +1,40 @@
 module Hix.Managed.Data.ManagedPackage where
 
-import Data.Aeson (FromJSON (parseJSON), withObject, (.:))
-import qualified Data.Map.Strict as Map
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Version (intersectVersionRanges)
-import GHC.Exts (IsList)
+import Text.PrettyPrint (hang, ($+$))
 
-import Hix.Class.Map (LookupMaybe, NtMap, ntFromList, ntPretty)
+import Hix.Class.Map (nTo, nTransform)
+import Hix.Data.Bounds (Ranges)
 import qualified Hix.Data.Dep
-import Hix.Data.Dep (Dep, mainDep)
-import Hix.Data.Json (jsonParsec)
+import Hix.Data.Dep (Dep (Dep))
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
-import Hix.Data.PackageName (LocalPackage (LocalPackage))
+import Hix.Data.PackageName (LocalPackage (LocalPackage), localPackageName)
 import Hix.Data.Version (Version)
+import Hix.Managed.Data.Mutable (LocalRanges, MutableRanges, depName)
 
 data ManagedPackage =
   ManagedPackage {
-    name :: LocalPackage,
+    package :: LocalPackage,
     version :: Version,
-    deps :: [Dep]
+    local :: LocalRanges,
+    mutable :: MutableRanges
   }
   deriving stock (Eq, Show, Generic)
 
 instance Pretty ManagedPackage where
-  pretty ManagedPackage {..} = pretty PackageId {name = coerce name, version}
+  pretty ManagedPackage {..} =
+    hang (pretty package) 2 (pretty local $+$ pretty mutable)
 
-uniqueDeps :: [Dep] -> [Dep]
-uniqueDeps =
-  Map.elems .
-  Map.fromListWith merge .
-  fmap \ d -> (d.package, d)
-  where
-    merge d1 d2 = mainDep d1.package (intersectVersionRanges d1.version d2.version)
+ranges :: ManagedPackage -> Ranges
+ranges ManagedPackage {local, mutable} =
+  nTransform (\ k v -> (localPackageName k, v)) local <>
+  nTransform (\ k v -> (depName k, v)) mutable
 
-instance FromJSON ManagedPackage where
-  parseJSON =
-    withObject "ManagedPackage" \ o -> do
-      name <- o .: "name"
-      version <- jsonParsec <$> o .: "version"
-      deps <- uniqueDeps <$> o .: "deps"
-      pure ManagedPackage {..}
+packageId :: ManagedPackage -> PackageId
+packageId ManagedPackage {package = LocalPackage name, version} =
+  PackageId {..}
 
-newtype ManagedPackages =
-  ManagedPackages (Map LocalPackage ManagedPackage)
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (Semigroup, Monoid, IsList, FromJSON)
-
-instance NtMap ManagedPackages LocalPackage ManagedPackage LookupMaybe where
-
-instance Pretty ManagedPackages where
-  pretty = ntPretty
-
-managedPackages :: Map (LocalPackage, Version) [Dep] -> ManagedPackages
-managedPackages =
-  ntFromList . fmap pkg . Map.toList
-  where
-    pkg ((name, version), deps) = (name, ManagedPackage {..})
+deps :: ManagedPackage -> [Dep]
+deps mp =
+  nTo (ranges mp) \ package version -> Dep {..}

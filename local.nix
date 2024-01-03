@@ -82,6 +82,7 @@ in {
       "path-io >= 1.7 && < 1.9"
       "pretty"
       "random ^>= 1.2"
+      "these ^>=1.2"
       "typed-process ^>= 0.2"
       "transformers"
       "unix"
@@ -100,6 +101,7 @@ in {
       "path-io >= 1.7 && < 1.9"
       "tasty ^>= 1.4"
       "tasty-hedgehog >= 1.3 && < 1.5"
+      "these ^>=1.2"
       "transformers"
     ];
 

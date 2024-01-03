@@ -1,8 +1,25 @@
 {
   bounds = {
     root = {
-      aeson = ">=2.2.0.0 && <2.3";
-      extra = ">=1.7.7 && <1.8";
+      aeson = {
+        lower = "2.2.0.0";
+        upper = null;
+      };
+      base = {
+        lower = "4.15.1.0";
+        upper = null;
+      };
+      extra = {
+        lower = "1.7.7";
+        upper = null;
+      };
+    };
+  };
+  versions = {
+    lower-main = {
+      aeson = "2.2.0.0";
+      base = "4.15.1.0";
+      extra = "1.7.7";
     };
   };
   overrides = {
@@ -41,9 +58,10 @@
       };
     };
   };
-  lowerInit = {
+  initial = {
     lower-main = {
       aeson = "2.2.0.0";
+      base = "4.15.1.0";
       extra = "1.7.7";
     };
   };

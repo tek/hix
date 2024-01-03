@@ -1,84 +1,34 @@
 module Hix.Managed.Bump.App where
 
 import Hix.Data.Error (Error (Client))
-import qualified Hix.Data.ManagedEnv
-import Hix.Data.ManagedEnv (BuildOutputsPrefix, EnvsConfig)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
-import Hix.Data.Options (BumpOptions)
+import Hix.Data.Options (BumpOptions (BumpOptions))
 import Hix.Json (jsonConfigE)
-import Hix.Managed.App (runManagedApp)
-import Hix.Managed.Build (buildMutations)
-import Hix.Managed.Build.Mutation (DepMutation)
-import Hix.Managed.Bump.Candidates (candidatesBump)
-import qualified Hix.Managed.Data.BuildDomain
-import Hix.Managed.Data.BuildResult (BuildResult, buildResult)
-import Hix.Managed.Data.BuildResults (BuildResults)
-import Hix.Managed.Data.BuildState (initBuildState)
-import qualified Hix.Managed.Data.ManagedApp
-import Hix.Managed.Data.ManagedApp (ManagedApp)
-import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (StateFileConfig)
-import qualified Hix.Managed.Data.ManagedJob
-import qualified Hix.Managed.Data.ManagedJob as ManagedJob
-import Hix.Managed.Data.ManagedJob (ManagedJob)
-import Hix.Managed.Data.ManagedOp (ManagedOp (OpBump))
-import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (Builder)
+import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
+import Hix.Managed.Data.EnvConfig (EnvConfig)
+import Hix.Managed.Data.Envs (Envs)
+import qualified Hix.Managed.Data.ProjectContextProto
+import Hix.Managed.Data.StateFileConfig (StateFileConfig)
+import Hix.Managed.Handlers.Build (BuildOutputsPrefix)
 import qualified Hix.Managed.Handlers.Bump
 import Hix.Managed.Handlers.Bump (BumpHandlers, SpecialBumpHandlers (TestBumpHandlers))
 import Hix.Managed.Handlers.Bump.Prod (handlersProd)
 import Hix.Managed.Handlers.Bump.Test (handlersTest)
-import Hix.Managed.Handlers.Mutation.Bump (handlersBump)
-import Hix.Managed.Job (buildJobs)
-import qualified Hix.Managed.Lower.Data.Bump
-import Hix.Managed.Lower.Data.Bump (Bump, BumpState (BumpState))
-
-bumpJob ::
-  BumpHandlers ->
-  Builder ->
-  ManagedJob ->
-  M (BuildResult Bump)
-bumpJob handlers builder job = do
-  mutations <- candidatesBump handlers job.domain.query
-  result <- buildMutations handlers.build.hackage builder mutationHandlers job.domain mutations state
-  pure (buildResult job.removable result)
-  where
-    mutationHandlers _ = pure handlersBump
-    state = initBuildState (ManagedJob.initialState job) ext
-    ext = BumpState {overrides = job.overrides}
-
-bumpReport ::
-  BumpHandlers ->
-  ManagedApp ->
-  M [DepMutation Bump]
-bumpReport handlers app = do
-  mutations <- for app.jobs \ job -> candidatesBump handlers job.domain.query
-  pure (join (toList mutations))
-
-bump ::
-  BumpHandlers ->
-  ManagedApp ->
-  M (Either [DepMutation Bump] (BuildResults Bump))
-bump handlers app
-  | app.conf.updateProject
-  = Right <$> buildJobs app (bumpJob handlers)
-  | otherwise
-  = Left <$> bumpReport handlers app
+import Hix.Managed.ProjectContext (withProjectContext)
 
 chooseHandlers ::
   StateFileConfig ->
-  EnvsConfig ->
+  Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
   Maybe SpecialBumpHandlers ->
   IO (BumpHandlers)
 chooseHandlers stateFileConf envsConf buildOutputsPrefix = \case
-  Just TestBumpHandlers -> handlersTest stateFileConf envsConf buildOutputsPrefix
-  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix
+  Just TestBumpHandlers -> handlersTest stateFileConf envsConf buildOutputsPrefix False
+  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix False
 
 bumpCli :: BumpOptions -> M ()
-bumpCli opts = do
-  env <- jsonConfigE Client opts.env
-  handlers <- liftIO (chooseHandlers opts.config.stateFile env.envs env.buildOutputsPrefix opts.handlers)
-  runManagedApp handlers.build handlers.report env opts.config OpBump \ app ->
-    bump handlers app
+bumpCli BumpOptions {common = opts, handlers = specialHandlers} = do
+  context <- jsonConfigE Client opts.context
+  handlers <- liftIO (chooseHandlers opts.stateFile context.envs context.buildOutputsPrefix specialHandlers)
+  withProjectContext handlers.build opts.project context (bumpOptimizeMain handlers)

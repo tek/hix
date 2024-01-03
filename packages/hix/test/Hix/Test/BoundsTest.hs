@@ -6,13 +6,12 @@ import qualified Hedgehog.Gen as Gen
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 
-import Hix.Class.Map (ntAmend1, ntForKeys, ntFromKeys, ntPadKeep1)
-import Hix.Data.Bounds (Bounds, TargetBounds)
+import Hix.Class.Map (nAmend1, nForKeys, nFromKeys, nMap1, nPadKeep1)
+import Hix.Data.Bounds (Ranges)
 import qualified Hix.Data.Dep
-import Hix.Data.Dep (mainDep, withVersion)
-import Hix.Data.Deps (RemoteDeps, TargetRemoteDeps)
+import Hix.Data.Dep (Dep, mkDep, withVersion)
 import Hix.Data.PackageName (LocalPackage, PackageName)
-import Hix.Deps (depsToTargetBounds)
+import Hix.Managed.Data.Packages (Deps, Packages)
 
 packages :: [PackageName]
 packages = ["dep1", "dep2", "dep3"]
@@ -20,31 +19,31 @@ packages = ["dep1", "dep2", "dep3"]
 targets :: [LocalPackage]
 targets = ["target1", "target2", "target3"]
 
-genBounds :: Gen Bounds
+genBounds :: Gen Ranges
 genBounds = do
   keys <- Gen.subsequence packages
-  pure (ntFromKeys keys (const dep))
+  pure (nFromKeys keys (const dep))
   where
     dep = orEarlierVersion [2, 5]
 
-genTargetBounds :: Gen TargetBounds
+genTargetBounds :: Gen (Packages Ranges)
 genTargetBounds = do
   keys <- Gen.subsequence targets
-  ntForKeys keys (const genBounds)
+  nForKeys keys (const genBounds)
 
-genDeps :: RemoteDeps
+genDeps :: Deps Dep
 genDeps =
-  ntFromKeys packages \ k -> mainDep k (orLaterVersion [1, 5])
+  nFromKeys packages \ k -> mkDep k (orLaterVersion [1, 5])
 
-deps :: TargetRemoteDeps
+deps :: Packages (Deps Dep)
 deps =
-  ntFromKeys targets (const genDeps)
+  nFromKeys targets (const genDeps)
 
 prop_amendBounds :: Property
 prop_amendBounds =
   property do
     bounds <- forAll genTargetBounds
-    ntPadKeep1 (.version) deps bounds === depsToTargetBounds (ntAmend1 withVersion bounds deps)
+    nPadKeep1 (.version) deps bounds === nMap1 (.version) (nAmend1 withVersion bounds deps)
 
 test_bounds :: TestTree
 test_bounds =

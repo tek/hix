@@ -25,6 +25,7 @@ import Options.Applicative (
   showDefault,
   showHelpOnEmpty,
   showHelpOnError,
+  strArgument,
   strOption,
   subparserInline,
   switch,
@@ -57,18 +58,23 @@ import Hix.Data.Options (
   GhcidOptions (..),
   LowerCommand (..),
   LowerOptions (LowerOptions),
+  ManagedOptions (ManagedOptions),
   NewOptions (..),
   Options (Options),
   PackageSpec (..),
   PreprocOptions (PreprocOptions),
+  ProjectOptions (ProjectOptions),
   TargetSpec (..),
   TestOptions (..),
   )
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
 import Hix.Data.PackageName (PackageName (PackageName))
-import qualified Hix.Managed.Data.ManagedConfig
-import Hix.Managed.Data.ManagedConfig (ManagedConfig (ManagedConfig), StateFileConfig (StateFileConfig))
+import qualified Hix.Managed.Data.BuildConfig
+import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig))
+import Hix.Managed.Data.Query (RawQuery (RawQuery))
+import qualified Hix.Managed.Data.StateFileConfig
+import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import Hix.Optparse (
   JsonConfig,
   absDirOption,
@@ -225,37 +231,58 @@ bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
-managedConfigParser :: Parser ManagedConfig
-managedConfigParser = do
-  envs <- some (strOption (long "env" <> short 'e' <> help "Environment for building and managed overrides"))
+stateFileConfigParser :: Parser StateFileConfig
+stateFileConfigParser = do
   file <- option relFileOption (long "file" <> short 'f' <> help "The relative path to the managed deps file")
-  updateProject <- switch (long "update-project" <> short 'u' <> help "Build with new versions and write to config")
+  -- TODO this isn't nice. maybe there should be two options, since the user might want to build bumps without modifying
+  -- the state.
   projectRoot <- optional (option absDirOption (long "root" <> help "The root directory of the project"))
-  pure ManagedConfig {stateFile = StateFileConfig {..}, ..}
+  pure StateFileConfig {..}
+
+buildConfigParser :: Parser BuildConfig
+buildConfigParser = do
+  maxIterations <- option auto (long "max-iterations" <> help maxIterationsHelp <> value 3 <> showDefault)
+  maxFailedPre <- option auto (long "max-failed-majors-pre" <> help maxFailedPreHelp <> value 99 <> showDefault)
+  maxFailedPost <- option auto (long "max-failed-majors-post" <> help maxFailedPostHelp <> value 0 <> showDefault)
+  lookup <- switch (long "lookup" <> short 'n' <> help "Only print latest versions (bump)")
+  validate <- switch (long "validate" <> help "Validate new versions, but don't update the project state")
+  pure BuildConfig {..}
+  where
+    maxIterationsHelp = "Number of restarts when some dependencies fail"
+    maxFailedPreHelp = maxFailedHelp "prior to the first"
+    maxFailedPostHelp = maxFailedHelp "after the last"
+    maxFailedHelp variant = [exon|Number of majors that may fail before aborting, #{variant} success|]
+
+projectOptionsParser :: Parser ProjectOptions
+projectOptionsParser = do
+  build <- buildConfigParser
+  query <- RawQuery <$> many (strArgument (help "Positional arguments select individual deps for processing"))
+  envs <- some (strOption (long "env" <> short 'e' <> help "Environments whose packages should be updated"))
+  readUpperBounds <- switch (long "read-upper-bounds" <> help "Use the upper bounds from the flake for the first run")
+  mergeBounds <- switch (long "merge-bounds" <> help "Always add the flake bounds to the managed bounds")
+  pure ProjectOptions {..}
+
+managedOptionsParser :: Parser ManagedOptions
+managedOptionsParser = do
+  context <- Right <$> jsonConfigParser
+  project <- projectOptionsParser
+  stateFile <- stateFileConfigParser
+  pure ManagedOptions {..}
 
 bumpParser :: Parser BumpOptions
 bumpParser = do
-  env <- Right <$> jsonConfigParser
-  config <- managedConfigParser
   handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  common <- managedOptionsParser
   pure BumpOptions {..}
 
 lowerParser :: Parser LowerOptions
 lowerParser = do
-  env <- Right <$> jsonConfigParser
-  managed <- managedConfigParser
   handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   initOnly <- switch (long "init" <> help "Only initialize missing lower bounds")
   reset <- switch (long "reset" <> help "Reinitialize bounds of all deps rather than just new ones")
-  maxFailedPre <- option auto (long "max-failed-majors-pre" <> help maxFailedPreHelp <> value 99 <> showDefault)
-  maxFailedPost <- option auto (long "max-failed-majors-post" <> help maxFailedPostHelp <> value 0 <> showDefault)
-  maxIterations <- option auto (long "max-iterations" <> help maxIterationsHelp <> value 3 <> showDefault)
+  stabilize <- switch (long "stabilize" <> help "Attempt to find working bounds if the current ones are broken")
+  common <- managedOptionsParser
   pure LowerOptions {..}
-  where
-    maxFailedPreHelp = maxFailedHelp "prior to the first"
-    maxFailedPostHelp = maxFailedHelp "after the last"
-    maxFailedHelp variant = [exon|Number of majors that may fail before aborting, #{variant} success|]
-    maxIterationsHelp = "Number of restarts when some dependencies fail"
 
 lowerCommands :: Mod CommandFields LowerCommand
 lowerCommands =
@@ -264,6 +291,8 @@ lowerCommands =
   command "optimize" (LowerOptimizeCmd <$> info lowerParser (progDesc "Optimize the lower bounds"))
   <>
   command "stabilize" (LowerStabilizeCmd <$> info lowerParser (progDesc "Stabilize the lower bounds"))
+  <>
+  command "auto" (LowerAutoCmd <$> info lowerParser (progDesc "Process the lower bounds"))
 
 managedCommitMsgParser :: Parser (Path Abs File)
 managedCommitMsgParser =

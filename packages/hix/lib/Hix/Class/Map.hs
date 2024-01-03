@@ -1,9 +1,17 @@
 module Hix.Class.Map where
 
 import qualified Data.Map.Merge.Strict as Map
-import Data.Map.Merge.Strict (dropMissing, mapMissing, preserveMissing, zipWithMatched)
+import Data.Map.Merge.Strict (
+  SimpleWhenMatched,
+  SimpleWhenMissing,
+  WhenMatched,
+  WhenMissing,
+  dropMissing,
+  mapMissing,
+  preserveMissing,
+  zipWithMatched,
+  )
 import qualified Data.Map.Strict as Map
-import Data.Map.Strict ((!?))
 import Distribution.Pretty (Pretty (pretty))
 import Exon (exon)
 import qualified Text.PrettyPrint as PrettyPrint
@@ -16,397 +24,692 @@ data LookupMonoid
 data LookupMaybe
 data LookupFatal
 
-type NtMap :: Type -> Type -> Type -> Type -> Constraint
-class (Ord k, Coercible map (Map k v)) => NtMap map k v sort | map -> k v sort where
-  ntMap :: map -> Map k v
-  ntMap = coerce
+type NMap :: Type -> Type -> Type -> Type -> Constraint
+class (Ord k, Coercible map (Map k v)) => NMap map k v sort | map -> k v sort where
+  nGet :: map -> Map k v
+  nGet = coerce
 
-instance Ord k => NtMap (Map k v) k v LookupMaybe where
+lookupError ::
+  ∀ k v .
+  Show k =>
+  Text ->
+  k ->
+  Maybe v ->
+  M v
+lookupError thing k =
+  noteFatal [exon|No such #{thing}: #{show k}|]
 
-type Lookup :: Type -> Type -> Type -> Type -> Constraint
-class Lookup sort k v l | sort v -> l where
-  lookup :: k -> Maybe v -> l
+nFatal ::
+  ∀ map k v sort .
+  Show k =>
+  NMap map k v sort =>
+  Text ->
+  k ->
+  map ->
+  M v
+nFatal thing k m =
+  lookupError thing k (nGet m Map.!? k)
 
-instance Monoid v => Lookup LookupMonoid k v v where
-  lookup _ = fold
+type NLookup :: Type -> Type -> Type -> Type -> Constraint
+class NLookup sort k v l | sort v -> l where
+  nLookup :: k -> Maybe v -> l
 
-instance Lookup LookupMaybe k v (Maybe v) where
-  lookup _ = id
+instance Monoid v => NLookup LookupMonoid k v v where
+  nLookup _ = fold
 
-instance Show k => Lookup LookupFatal k v (Text -> M v) where
-  lookup k v thing = noteFatal [exon|No such #{thing}: #{show k}|] v
+instance NLookup LookupMaybe k v (Maybe v) where
+  nLookup _ = id
+
+instance Show k => NLookup LookupFatal k v (Text -> M v) where
+  nLookup k v thing = lookupError thing k v
+
+(!?) ::
+  ∀ map k v sort .
+  NMap map k v sort =>
+  map ->
+  k ->
+  Maybe v
+(!?) m k = nGet m Map.!? k
+
+infixl !?
 
 (!!) ::
   ∀ map k v sort l .
-  NtMap map k v sort =>
-  Lookup sort k v l =>
+  NMap map k v sort =>
+  NLookup sort k v l =>
   map ->
   k ->
   l
-(!!) m k = lookup @sort @k @v @l k (coerce m !? k)
+(!!) m k = nLookup @sort @k @v @l k (m !? k)
 
 infixl !!
 
-ntInsert ::
+nInsert ::
   ∀ map k v sort .
-  NtMap map k v sort =>
+  NMap map k v sort =>
   k ->
   v ->
   map ->
   map
-ntInsert k v m =
-  coerce (Map.insert k v (ntMap m))
+nInsert k v m =
+  coerce (Map.insert k v (nGet m))
 
-ntUpdate ::
+nUpdate ::
   ∀ map k v sort l .
-  NtMap map k v sort =>
-  Lookup sort k v l =>
+  NMap map k v sort =>
+  NLookup sort k v l =>
   k ->
   map ->
   (l -> v) ->
   map
-ntUpdate k m f =
-  ntInsert k (f (m !! k)) m
+nUpdate k m f =
+  nInsert k (f (m !! k)) m
 
-ntUpdating ::
+nUpdateWith ::
   ∀ map k v sort l .
-  NtMap map k v sort =>
-  Lookup sort k v l =>
+  NMap map k v sort =>
+  NLookup sort k v l =>
   k ->
   (l -> v) ->
   map ->
   map
-ntUpdating k =
-  flip (ntUpdate k)
+nUpdateWith k =
+  flip (nUpdate k)
 
-via ::
-  NtMap map k v sort =>
-  (Map k v -> Map k v) ->
+nAdjust ::
+  ∀ map k v sort .
+  NMap map k v sort =>
+  k ->
   map ->
+  (v -> v) ->
   map
-via =
+nAdjust k m f =
+  nVia (Map.adjust f k) m
+
+nVia ::
+  NMap map1 k1 v1 s1 =>
+  NMap map2 k2 v2 s2 =>
+  (Map k1 v1 -> Map k2 v2) ->
+  map1 ->
+  map2
+nVia =
   coerce
 
-convert ::
-  NtMap map1 k v1 sort1 =>
-  NtMap map2 k v2 sort2 =>
+nViaA ::
+  Applicative m =>
+  NMap map1 k1 v1 s1 =>
+  NMap map2 k2 v2 s2 =>
+  (Map k1 v1 -> m (Map k2 v2)) ->
+  map1 ->
+  m map2
+nViaA f m =
+  coerce <$> f (coerce m)
+
+nMapKeys ::
+  NMap map1 k1 v sort1 =>
+  NMap map2 k2 v sort2 =>
+  (k1 -> k2) ->
+  map1 ->
+  map2
+nMapKeys f =
+  nVia (Map.mapKeys f)
+
+nMap ::
+  NMap map1 k v1 sort1 =>
+  NMap map2 k v2 sort2 =>
   (v1 -> v2) ->
   map1 ->
   map2
-convert f =
-  coerce . fmap f . ntMap
+nMap f =
+  coerce . fmap f . nGet
 
-convert1 ::
+nMap1 ::
   ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
-  NtMap map1 k map1' s1 =>
-  NtMap map2 k map2' s2 =>
-  NtMap map1' k' v1 s1' =>
-  NtMap map2' k' v2 s2' =>
+  NMap map1 k map1' s1 =>
+  NMap map2 k map2' s2 =>
+  NMap map1' k' v1 s1' =>
+  NMap map2' k' v2 s2' =>
   (v1 -> v2) ->
   map1 ->
   map2
-convert1 =
-  convert . convert
+nMap1 =
+  nMap . nMap
 
-convertWithKey ::
-  NtMap map1 k1 v1 sort1 =>
-  NtMap map2 k2 v2 sort2 =>
+nMapWithKey ::
+  NMap map1 k v1 sort1 =>
+  NMap map2 k v2 sort2 =>
+  (k -> v1 -> v2) ->
+  map1 ->
+  map2
+nMapWithKey f =
+  coerce . Map.mapWithKey f . nGet
+
+nMapWithKey1 ::
+  ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
+  NMap map1 k map1' s1 =>
+  NMap map2 k map2' s2 =>
+  NMap map1' k' v1 s1' =>
+  NMap map2' k' v2 s2' =>
+  (k -> k' -> v1 -> v2) ->
+  map1 ->
+  map2
+nMapWithKey1 f =
+  nMapWithKey \ k -> nMapWithKey (f k)
+
+nTransform ::
+  NMap map1 k1 v1 sort1 =>
+  NMap map2 k2 v2 sort2 =>
   (k1 -> v1 -> (k2, v2)) ->
   map1 ->
   map2
-convertWithKey f =
+nTransform f =
   coerce .
   Map.fromList .
   fmap (uncurry f) .
   Map.toList .
-  ntMap
+  nGet
 
-convertMaybe ::
-  NtMap map1 k v1 sort1 =>
-  NtMap map2 k v2 sort2 =>
-  (v1 -> Maybe v2) ->
-  map1 ->
-  map2
-convertMaybe f =
-  coerce . Map.mapMaybeWithKey (const f) . ntMap
-
-convertMaybe1 ::
-  ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
-  NtMap map1 k map1' s1 =>
-  NtMap map2 k map2' s2 =>
-  NtMap map1' k' v1 s1' =>
-  NtMap map2' k' v2 s2' =>
-  (v1 -> Maybe v2) ->
-  map1 ->
-  map2
-convertMaybe1 =
-  convert . convertMaybe
-
-convertWithKeyMaybe ::
-  NtMap map1 k1 v1 sort1 =>
-  NtMap map2 k2 v2 sort2 =>
+nTransformMaybe ::
+  NMap map1 k1 v1 sort1 =>
+  NMap map2 k2 v2 sort2 =>
   (k1 -> v1 -> Maybe (k2, v2)) ->
   map1 ->
   map2
-convertWithKeyMaybe f =
+nTransformMaybe f =
   coerce .
   Map.fromList .
   mapMaybe (uncurry f) .
   Map.toList .
-  ntMap
+  nGet
 
-ntPrettyWith ::
+nMapMaybe ::
+  NMap map1 k v1 sort1 =>
+  NMap map2 k v2 sort2 =>
+  (v1 -> Maybe v2) ->
+  map1 ->
+  map2
+nMapMaybe f =
+  coerce . Map.mapMaybeWithKey (const f) . nGet
+
+nMapMaybe1 ::
+  ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
+  NMap map1 k map1' s1 =>
+  NMap map2 k map2' s2 =>
+  NMap map1' k' v1 s1' =>
+  NMap map2' k' v2 s2' =>
+  (v1 -> Maybe v2) ->
+  map1 ->
+  map2
+nMapMaybe1 =
+  nMap . nMapMaybe
+
+nMapMaybeWithKey ::
+  NMap map1 k v1 sort1 =>
+  NMap map2 k v2 sort2 =>
+  (k -> v1 -> Maybe v2) ->
+  map1 ->
+  map2
+nMapMaybeWithKey f =
+  coerce .
+  Map.mapMaybeWithKey f .
+  nGet
+
+nMapMaybeWithKey1 ::
+  ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
+  NMap map1 k map1' s1 =>
+  NMap map2 k map2' s2 =>
+  NMap map1' k' v1 s1' =>
+  NMap map2' k' v2 s2' =>
+  (k' -> v1 -> Maybe v2) ->
+  map1 ->
+  map2
+nMapMaybeWithKey1 =
+  nMap . nMapMaybeWithKey
+
+nCatMaybes ::
+  NMap map1 k (Maybe v) sort1 =>
+  NMap map2 k v sort2 =>
+  map1 ->
+  map2
+nCatMaybes =
+  nMapMaybe id
+
+nFilter ::
+  ∀ map k v sort .
+  NMap map k v sort =>
+  (v -> Bool) ->
+  map ->
+  map
+nFilter =
+  nVia . Map.filter
+
+nFilter1 ::
+  ∀ map map' k k' v s s' .
+  NMap map k map' s =>
+  NMap map' k' v s' =>
+  (v -> Bool) ->
+  map ->
+  map
+nFilter1 =
+  nMap . nFilter
+
+nPrettyWith ::
   Pretty k =>
-  NtMap map k v sort =>
+  NMap map k v sort =>
   (v -> Doc) ->
   map ->
   Doc
-ntPrettyWith prettyV (ntMap -> m) =
+nPrettyWith prettyV (nGet -> m) =
   sep (punctuate comma (assoc <$> Map.toList m))
   where
     assoc (k, v) = pretty k <+> "->" <+> prettyV v
 
-ntPretty ::
+nPretty ::
   Pretty k =>
   Pretty v =>
-  NtMap map k v sort =>
+  NMap map k v sort =>
   map ->
   Doc
-ntPretty =
-  ntPrettyWith pretty
+nPretty =
+  nPrettyWith pretty
 
-ntPretty1 ::
+nPretty1 ::
   Pretty k =>
   Pretty v =>
-  NtMap map k v sort =>
+  NMap map k v sort =>
   map ->
   Doc
-ntPretty1 (ntMap -> m) =
+nPretty1 (nGet -> m) =
   vcat (assoc <$> Map.toList m)
   where
     assoc (k, v) = hang (pretty k PrettyPrint.<> ":") 2 (pretty v)
 
+nMergeA ::
+  ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 m .
+  Applicative m =>
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  NMap map3 k v3 s3 =>
+  WhenMissing m k v1 v3 ->
+  WhenMissing m k v2 v3 ->
+  WhenMatched m k v1 v2 v3 ->
+  map1 ->
+  map2 ->
+  m map3
+nMergeA missing1 missing2 matched map1 map2 =
+  nViaA (Map.mergeA missing1 missing2 matched (nGet map1)) map2
+
+nMerge ::
+  ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  NMap map3 k v3 s3 =>
+  SimpleWhenMissing k v1 v3 ->
+  SimpleWhenMissing k v2 v3 ->
+  SimpleWhenMatched k v1 v2 v3 ->
+  map1 ->
+  map2 ->
+  map3
+nMerge missing1 missing2 matched map1 map2 =
+  nVia (Map.merge missing1 missing2 matched (nGet map1)) map2
+
+nAmendWithKey ::
+  ∀ map1 map2 k v1 v2 s1 s2 .
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  (k -> v1 -> v2 -> v2) ->
+  map1 ->
+  map2 ->
+  map2
+nAmendWithKey matched =
+  nMerge dropMissing preserveMissing (zipWithMatched matched)
+
 -- | For each key that is present in both maps, replace the value by the result of the combining function.
 -- For everything else, leave @map2@ unchanged.
-ntAmend ::
+nAmend ::
   ∀ map1 map2 k v1 v2 s1 s2 .
-  NtMap map1 k v1 s1 =>
-  NtMap map2 k v2 s2 =>
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
   (v1 -> v2 -> v2) ->
   map1 ->
   map2 ->
   map2
-ntAmend matched map1 map2 =
-  via (Map.merge dropMissing preserveMissing (zipWithMatched (const matched)) (ntMap map1)) map2
+nAmend matched =
+  nAmendWithKey (const matched)
 
 -- | For each key path that is present in both submaps, replace the value by the result of the combining function.
 -- For everything else, leave @map2@ unchanged.
-ntAmend1 ::
+nAmend1 ::
   ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
-  NtMap map1 k map1' s1 =>
-  NtMap map2 k map2' s2 =>
-  NtMap map1' k' v1 s1' =>
-  NtMap map2' k' v2 s2' =>
+  NMap map1 k map1' s1 =>
+  NMap map2 k map2' s2 =>
+  NMap map1' k' v1 s1' =>
+  NMap map2' k' v2 s2' =>
   (v1 -> v2 -> v2) ->
   map1 ->
   map2 ->
   map2
-ntAmend1 matched map1 =
-  via (Map.merge dropMissing preserveMissing (zipWithMatched matched1) (ntMap map1))
+nAmend1 matched =
+  nMerge dropMissing preserveMissing (zipWithMatched matched1)
   where
-    matched1 _ map1' map2' = ntAmend matched map1' map2'
+    matched1 _ map1' map2' = nAmend matched map1' map2'
 
 -- | For each key that is present in both maps, replace the value by the result of the combining function.
 -- For each key that is present in @map1@, insert the result of the conversion function.
 -- Keep keys only present in @map2@.
-ntPad ::
+nPad ::
   ∀ map1 map2 k v1 v2 s1 s2 .
-  NtMap map1 k v1 s1 =>
-  NtMap map2 k v2 s2 =>
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
   (v1 -> v2 -> v2) ->
   (v1 -> v2) ->
   map1 ->
   map2 ->
   map2
-ntPad matched conv map1 map2 =
-  via (Map.merge (mapMissing (const conv)) preserveMissing (zipWithMatched (const matched)) (ntMap map1)) map2
+nPad matched conv =
+  nMerge (mapMissing (const conv)) preserveMissing (zipWithMatched (const matched))
 
 -- | For each key path that is present in both submaps, replace the value by the result of the combining function.
 -- For each key and key path that is present only in @map1@ and each submap, insert the result of the conversion
 -- function.
 -- Keep keys only present in @map2@ and each submap.
-ntPad1 ::
+nPad1 ::
   ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
-  NtMap map1 k map1' s1 =>
-  NtMap map2 k map2' s2 =>
-  NtMap map1' k' v1 s1' =>
-  NtMap map2' k' v2 s2' =>
+  NMap map1 k map1' s1 =>
+  NMap map2 k map2' s2 =>
+  NMap map1' k' v1 s1' =>
+  NMap map2' k' v2 s2' =>
   (v1 -> v2 -> v2) ->
   (v1 -> v2) ->
   map1 ->
   map2 ->
   map2
-ntPad1 matched conv map1 map2 =
-  via (Map.merge (mapMissing missing) preserveMissing (zipWithMatched matched1) (ntMap map1)) map2
+nPad1 matched conv =
+  nMerge (mapMissing missing) preserveMissing (zipWithMatched matched1)
   where
-    missing _ = convert conv
-    matched1 _ map1' map2' = ntPad matched conv map1' map2'
+    missing _ = nMap conv
+    matched1 _ = nPad matched conv
 
 -- | For each key that is present only in @map1@, insert the result of the conversion function.
 -- For everything else, leave @map2@ unchanged.
-ntPadKeep ::
+nPadKeep ::
   ∀ map1 map2 k v1 v2 s1 s2 .
-  NtMap map1 k v1 s1 =>
-  NtMap map2 k v2 s2 =>
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
   (v1 -> v2) ->
   map1 ->
   map2 ->
   map2
-ntPadKeep =
-  ntPad \ _ v2 -> v2
+nPadKeep =
+  nPad \ _ v2 -> v2
 
 -- | For each key and key path that is present only in @map1@ and each submap, insert the result of the conversion
 -- function.
 -- For everything else, leave @map2@ and its submaps unchanged.
-ntPadKeep1 ::
+nPadKeep1 ::
   ∀ map1 map2 map1' map2' k k' v1 v2 s1 s2 s1' s2' .
-  NtMap map1 k map1' s1 =>
-  NtMap map2 k map2' s2 =>
-  NtMap map1' k' v1 s1' =>
-  NtMap map2' k' v2 s2' =>
+  NMap map1 k map1' s1 =>
+  NMap map2 k map2' s2 =>
+  NMap map1' k' v1 s1' =>
+  NMap map2' k' v2 s2' =>
   (v1 -> v2) ->
   map1 ->
   map2 ->
   map2
-ntPadKeep1 =
-  ntPad1 \ _ v2 -> v2
+nPadKeep1 =
+  nPad1 \ _ v2 -> v2
 
-ntFromList ::
-  NtMap map k v sort =>
+nZipWithKeyR ::
+  ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  NMap map3 k v3 s3 =>
+  (k -> Maybe v1 -> v2 -> v3) ->
+  map1 ->
+  map2 ->
+  map3
+nZipWithKeyR f =
+  nMerge dropMissing (mapMissing missing) (zipWithMatched matched)
+  where
+    missing k = f k Nothing
+    matched k v = f k (Just v)
+
+nZipR ::
+  ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  NMap map3 k v3 s3 =>
+  (Maybe v1 -> v2 -> v3) ->
+  map1 ->
+  map2 ->
+  map3
+nZipR f = nZipWithKeyR (const f)
+
+nZipWithKey ::
+  ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  NMap map3 k v3 s3 =>
+  (k -> v1 -> v2 -> v3) ->
+  map1 ->
+  map2 ->
+  map3
+nZipWithKey f =
+  nMerge dropMissing dropMissing (zipWithMatched f)
+
+nZip ::
+  ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  NMap map3 k v3 s3 =>
+  (v1 -> v2 -> v3) ->
+  map1 ->
+  map2 ->
+  map3
+nZip f = nZipWithKey (const f)
+
+nFromList ::
+  NMap map k v sort =>
   [(k, v)] ->
   map
-ntFromList =
+nFromList =
   coerce . Map.fromList
 
-ntList ::
-  NtMap map k v sort =>
+nList ::
+  NMap map k v sort =>
   map ->
   [(k, v)]
-ntList =
+nList =
   Map.toList . coerce
 
-ntTo ::
-  NtMap map k v sort =>
+nTo ::
+  NMap map k v sort =>
   map ->
   (k -> v -> a) ->
   [a]
-ntTo m f =
-  fmap (uncurry f) (ntList m)
+nTo m f =
+  fmap (uncurry f) (nList m)
 
-ntToWith ::
-  NtMap map k v sort =>
+nToWith ::
+  NMap map k v sort =>
   (k -> v -> a) ->
   map ->
   [a]
-ntToWith = flip ntTo
+nToWith = flip nTo
 
-ntConcat ::
-  NtMap map k v sort =>
+nConcat ::
+  Monoid a =>
+  NMap map k v sort =>
   map ->
-  (k -> v -> [a]) ->
-  [a]
-ntConcat m f =
-  uncurry f =<< ntList m
+  (k -> v -> a) ->
+  a
+nConcat m f =
+  mconcat (uncurry f <$> nList m)
 
-ntConcatWith ::
-  NtMap map k v sort =>
-  (k -> v -> [a]) ->
+nConcatWith ::
+  Monoid a =>
+  NMap map k v sort =>
+  (k -> v -> a) ->
   map ->
-  [a]
-ntConcatWith =
-  flip ntConcat
+  a
+nConcatWith =
+  flip nConcat
 
-ntTo1 ::
+nToMaybe ::
+  NMap map k v sort =>
+  map ->
+  (k -> v -> Maybe a) ->
+  [a]
+nToMaybe m f =
+  mapMaybe (uncurry f) (nList m)
+
+nTo1 ::
   ∀ map1 map2 k1 k2 v s1 s2 a .
-  NtMap map1 k1 map2 s1 =>
-  NtMap map2 k2 v s2 =>
+  NMap map1 k1 map2 s1 =>
+  NMap map2 k2 v s2 =>
   map1 ->
   (k1 -> k2 -> v -> a) ->
   [a]
-ntTo1 m1 f =
-  ntConcat m1 (ntToWith . f)
+nTo1 m1 f =
+  nConcat m1 (nToWith . f)
 
-ntToWith1 ::
+nToWith1 ::
   ∀ map1 map2 k1 k2 v s1 s2 a .
-  NtMap map1 k1 map2 s1 =>
-  NtMap map2 k2 v s2 =>
+  NMap map1 k1 map2 s1 =>
+  NMap map2 k2 v s2 =>
   (k1 -> k2 -> v -> a) ->
   map1 ->
   [a]
-ntToWith1 f =
-  ntConcatWith (ntToWith . f)
+nToWith1 f =
+  nConcatWith (nToWith . f)
 
-ntFromKeys ::
-  NtMap map k v sort =>
-  [k] ->
+nFromKeys ::
+  Foldable t =>
+  NMap map k v sort =>
+  t k ->
   (k -> v) ->
   map
-ntFromKeys keys f =
-  ntFromList (keys <&> \ k -> (k, f k))
+nFromKeys keys f =
+  nFromList (toList keys <&> \ k -> (k, f k))
 
-ntBy ::
-  NtMap map k v sort =>
-  [v] ->
+nFromKeysMaybe ::
+  Foldable t =>
+  NMap map k v sort =>
+  t k ->
+  (k -> Maybe v) ->
+  map
+nFromKeysMaybe keys f =
+  nFromList (flip mapMaybe (toList keys) \ k -> (k,) <$> f k)
+
+nBy ::
+  Foldable t =>
+  NMap map k v sort =>
+  t v ->
   (v -> k) ->
   map
-ntBy values f =
-  ntFromList (values <&> \ v -> (f v, v))
+nBy values f =
+  nFromList (toList values <&> \ v -> (f v, v))
 
-ntForKeys ::
+nGen ::
+  Foldable t =>
+  NMap map k v sort =>
+  t a ->
+  (a -> (k, v)) ->
+  map
+nGen values f =
+  nFromList (f <$> toList values)
+
+nGenWith ::
+  Foldable t =>
+  NMap map k v sort =>
+  (a -> (k, v)) ->
+  t a ->
+  map
+nGenWith =
+  flip nGen
+
+nGenMaybe ::
+  Foldable t =>
+  NMap map k v sort =>
+  t a ->
+  (a -> Maybe (k, v)) ->
+  map
+nGenMaybe values f =
+  nFromList (mapMaybe f (toList values))
+
+nForKeys ::
   Applicative m =>
-  NtMap map k v sort =>
+  NMap map k v sort =>
   [k] ->
   (k -> m v) ->
   m map
-ntForKeys keys f =
-  ntFromList <$> for keys \ k -> (k,) <$> f k
+nForKeys keys f =
+  nFromList <$> for keys \ k -> (k,) <$> f k
 
-ntFor ::
+nFor ::
   Applicative m =>
-  NtMap map k v sort =>
+  NMap map k v sort =>
   [v] ->
   (v -> m k) ->
   m map
-ntFor values f =
-  ntFromList <$> for values \ v -> (,v) <$> f v
+nFor values f =
+  nFromList <$> for values \ v -> (,v) <$> f v
 
-ntElems1 ::
+nElems ::
+  ∀ map k v s .
+  NMap map k v s =>
+  map ->
+  [v]
+nElems =
+  Map.elems . nGet
+
+nElems1 ::
   ∀ map1 map2 k1 k2 v s1 s2 .
-  NtMap map1 k1 map2 s1 =>
-  NtMap map2 k2 v s2 =>
+  NMap map1 k1 map2 s1 =>
+  NMap map2 k2 v s2 =>
   map1 ->
   [v]
-ntElems1 =
-  Map.elems . ntMap <=< Map.elems . ntMap
+nElems1 =
+  nElems <=< nElems
 
-ntFlatten ::
+nFlatten ::
+  ∀ map1 map2 map3 k1 k2 v1 v2 s1 s2 .
   Monoid map2 =>
-  NtMap map1 k1 map2 LookupMonoid =>
+  NMap map1 k1 map2 LookupMonoid =>
+  NMap map2 k2 v1 s1 =>
+  NMap map3 k2 v2 s2 =>
+  (v1 -> v2) ->
   map1 ->
-  map2
-ntFlatten =
-  mconcat . Map.elems . ntMap
+  map3
+nFlatten f =
+  nMap f . mconcat . nElems
 
-ntKeys ::
-  NtMap map k v sort =>
+nKeys ::
+  NMap map k v sort =>
   map ->
   [k]
-ntKeys =
-  Map.keys . ntMap
+nKeys =
+  Map.keys . nGet
 
-ntKeysSet ::
-  NtMap map k v sort =>
+nKeysSet ::
+  NMap map k v sort =>
   map ->
   Set k
-ntKeysSet =
-  Map.keysSet . ntMap
+nKeysSet =
+  Map.keysSet . nGet
+
+nRestrictKeys ::
+  NMap map k v sort =>
+  Set k ->
+  map ->
+  map
+nRestrictKeys keys =
+  nVia (`Map.restrictKeys` keys)
+
+nWithoutKeys ::
+  NMap map k v sort =>
+  Set k ->
+  map ->
+  map
+nWithoutKeys keys =
+  nVia (`Map.withoutKeys` keys)

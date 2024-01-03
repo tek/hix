@@ -3,152 +3,33 @@
 module Hix.Version where
 
 import Data.List.Extra (groupOnKey)
-import Data.List.NonEmpty.Extra (foldl1')
 import Distribution.Version (
-  Bound (ExclusiveBound, InclusiveBound),
+  Bound (ExclusiveBound),
   LowerBound (LowerBound),
-  UpperBound (NoUpperBound, UpperBound),
+  UpperBound (UpperBound),
   Version,
   VersionInterval (VersionInterval),
   VersionRange,
   alterVersion,
   asVersionIntervals,
-  earlierVersion,
-  intersectVersionRanges,
-  laterVersion,
-  orEarlierVersion,
-  orLaterVersion,
-  simplifyVersionRange,
-  unionVersionRanges,
   version0,
   versionNumbers,
   )
 
 import qualified Hix.Data.Version
-import Hix.Data.Version (Major (Major), range0)
+import Hix.Data.Version (Major (Major))
 
-rangeFromInterval :: VersionInterval -> VersionRange
-rangeFromInterval (VersionInterval (LowerBound lowerV lowerB) upper) =
-  simplifyVersionRange (addUpper upper (consLower lowerB lowerV))
-  where
-    consLower = \case
-      ExclusiveBound -> laterVersion
-      InclusiveBound -> orLaterVersion
-
-    addUpper = \case
-      NoUpperBound -> id
-      UpperBound upperV upperB -> intersectVersionRanges (consUpper upperB upperV)
-
-    consUpper = \case
-      ExclusiveBound -> earlierVersion
-      InclusiveBound -> orEarlierVersion
-
-rangeFromIntervals :: [VersionInterval] -> VersionRange
-rangeFromIntervals = \case
-  [] -> range0
-  h : t -> foldl1' unionVersionRanges (rangeFromInterval <$> (h :| t))
-
--- TODO check what to do with exclusivity
-lowerBound :: VersionRange -> Maybe Version
-lowerBound range =
+lowerVersion :: VersionRange -> Maybe Version
+lowerVersion range =
   [v | VersionInterval (LowerBound v _) _ <- head (asVersionIntervals range), v /= version0]
 
-lowerBoundRange :: VersionRange -> VersionRange
-lowerBoundRange range =
-  orLaterVersion (fromMaybe version0 (lowerBound range))
-
-upperBound :: VersionRange -> Maybe Version
-upperBound range =
+exclusiveUpperVersion :: VersionRange -> Maybe Version
+exclusiveUpperVersion range =
   [v | VersionInterval _ (UpperBound v ExclusiveBound) <- last (asVersionIntervals range)]
 
 upperVersion :: VersionRange -> Maybe Version
 upperVersion range =
   [v | VersionInterval _ (UpperBound v _) <- last (asVersionIntervals range)]
-
-withIntervals :: ([VersionInterval] -> [VersionInterval]) -> VersionRange -> VersionRange
-withIntervals f =
-  simplifyVersionRange .
-  rangeFromIntervals .
-  f .
-  asVersionIntervals
-
--- TODO This probably doesn't do the right thing when there is an interval that's entirely below the new bound.
--- What happens is that a new interval will be created, so that setting 1.6 as new bound for @>=1.1 && <1.3@ will result
--- in @>=1.1 && <1.3 || >= 1.6@.
---
--- But we call this after having decided that the project will _not_ build for any version lower than 1.6.
--- However, if the given bounds were preexisting, we wouldn't even select 1.6 as a candidate, so it doesn't matter too
--- much, and the project would have failed to build anyway before running @lower.init@.
---
--- On the other hand, if we want to use it for @latest@ to adjust the bounds, it creates some issues.
-setLowerBound :: Version -> VersionRange -> VersionRange
-setLowerBound bound =
-  withIntervals spin
-  where
-    spin = \case
-      [] -> [VersionInterval (LowerBound bound InclusiveBound) NoUpperBound]
-
-      interval : rest
-        | VersionInterval _ (UpperBound upper ExclusiveBound) <- interval
-        , upper <= bound
-        -> interval : spin rest
-
-        | VersionInterval _ (UpperBound upper InclusiveBound) <- interval
-        , upper < bound
-        -> interval : spin rest
-
-        | VersionInterval _ upper <- interval
-        -> VersionInterval (LowerBound bound InclusiveBound) upper : rest
-
-setUpperBoundAs :: Bound -> Version -> VersionRange -> VersionRange
-setUpperBoundAs boundSort bound =
-  withIntervals (reverse . spin . reverse)
-  where
-    spin = \case
-      [] -> [VersionInterval (LowerBound version0 InclusiveBound) (UpperBound bound boundSort)]
-
-      interval : rest
-        | VersionInterval (LowerBound lower ExclusiveBound) _ <- interval
-        , lower >= bound
-        -> interval : spin rest
-
-        | VersionInterval (LowerBound lower InclusiveBound) _ <- interval
-        , lower > bound
-        -> interval : spin rest
-
-        | VersionInterval lower _ <- interval
-        -> VersionInterval lower (UpperBound bound boundSort) : rest
-
-setUpperBound :: Version -> VersionRange -> VersionRange
-setUpperBound = setUpperBoundAs ExclusiveBound
-
-requireUpperBound :: Version -> VersionRange -> VersionRange
-requireUpperBound bound =
-  withIntervals (spin version0)
-  where
-    spin highest = \case
-      [] -> [VersionInterval (LowerBound highest InclusiveBound) (UpperBound bound ExclusiveBound)]
-
-      [VersionInterval lower _] -> [VersionInterval (clampLower lower) (UpperBound bound ExclusiveBound)]
-
-      interval : rest
-        | VersionInterval _ (UpperBound upper _) <- interval
-        , upper < bound
-        -> interval : spin upper rest
-
-        | VersionInterval lower _ <- interval
-        -> [VersionInterval (clampLower lower) (UpperBound bound ExclusiveBound)]
-
-    clampLower (LowerBound lower boundSort)
-        | lower >= bound = LowerBound (prevMajor bound) InclusiveBound
-        | otherwise = LowerBound lower boundSort
-
-amendLowerBound :: Version -> VersionRange -> VersionRange
-amendLowerBound bound =
-  withIntervals \case
-    [VersionInterval (LowerBound lower _) upper] | lower == version0 ->
-      [VersionInterval (LowerBound bound InclusiveBound) upper]
-    a -> a
 
 majorParts :: Version -> Maybe (Int, Int)
 majorParts =
@@ -210,12 +91,6 @@ lastMajorBefore s m =
       = (a : z, cur)
       where
         mp = majorParts a
-
-zipApply :: (a -> b) -> [a] -> [(a, b)]
-zipApply f = fmap \ a -> (a, f a)
-
-zipApplyL :: (a -> b) -> [a] -> [(b, a)]
-zipApplyL f = fmap \ a -> (f a, a)
 
 nextMajor :: Version -> Version
 nextMajor =

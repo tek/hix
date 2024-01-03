@@ -14,9 +14,6 @@ let
 
   pathSegs = if path == "" then [] else splitString "." path;
 
-  # TODO remove
-  concatMapAttrs = f: a: concatLists (mapAttrsToList f a);
-
   colors = {
     attrset = "33";
     submodule = "32";
@@ -55,7 +52,7 @@ let
   attrsOrEmpty = f: cs: n:
   if cs == {}
   then kv n "{}"
-  else sub n ++ indent (concatMapAttrs f cs);
+  else sub n ++ indent (util.concatMapAttrsToList f cs);
 
   renderPackage = p:
     if p ? pname
@@ -184,7 +181,7 @@ let
   else stringifyAny n a;
 
   stringifyModule = c: opts:
-  concatMapAttrs (n: a: optionals (n != "__zoom" && isAttrs c && hasAttr n c) (stringifyValue c.${n} n (c.__zoom or false) a)) opts;
+  util.concatMapAttrsToList (n: a: optionals (n != "__zoom" && isAttrs c && hasAttr n c) (stringifyValue c.${n} n (c.__zoom or false) a)) opts;
 
   stringifyRoot = let
     lines = stringifyModule (zoom pathSegs mods.config) mods.options ++ [""];

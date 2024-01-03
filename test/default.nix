@@ -123,11 +123,6 @@ in {
     check_re "$(eval $1 2>&1)" $2 $3
   }
 
-  check_run()
-  {
-    check "$(eval $1)" $2 $3
-  }
-
   check_diff()
   {
     if ! diff $1 $2

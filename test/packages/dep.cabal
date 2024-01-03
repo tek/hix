@@ -26,6 +26,6 @@ library
       DataKinds
   ghc-options: -Wall -Werror -Wunused-imports
   build-depends:
-      base >=4 && <6
+      base (>=4 && <5) && >=4 && <4.20
     , containers
   default-language: GHC2021

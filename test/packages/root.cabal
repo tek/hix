@@ -21,15 +21,14 @@ library
       DataKinds
   ghc-options: -Wunused-imports
   build-depends:
-      aeson >1 && <=3
+      aeson >=1 && <3
     , array ==0.5.4.0
-    , base >=4 && <6
+    , base ==4.*
   mixins:
       array hiding (Data.Array)
   default-language: GHC2021
 
 library lib1
-  visibility: public
   exposed-modules:
       Root.Lib1
   hs-source-dirs:
@@ -38,7 +37,7 @@ library lib1
       DataKinds
   ghc-options: -Wunused-imports
   build-depends:
-      base >=4 && <6
+      base ==4.*
   default-language: GHC2021
 
 library lib2
@@ -55,7 +54,7 @@ library lib2
       DataKinds
   ghc-options: -Wunused-imports
   build-depends:
-      base >=4 && <6
+      base ==4.*
     , root:lib1 ==23
     , transformers
   default-language: GHC2021
@@ -72,7 +71,7 @@ executable run
       DataKinds
   ghc-options: -Wunused-imports -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4 && <6
+      base ==4.*
     , root >=23 && <23.1
     , root:{lib1,lib2}
   default-language: GHC2021
@@ -90,6 +89,6 @@ test-suite root-unit
       DataKinds
   ghc-options: -Wunused-imports -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4 && <6
+      base ==4.*
     , root
   default-language: GHC2021

@@ -4,11 +4,10 @@ import Distribution.Package (PackageIdentifier (PackageIdentifier))
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Version (Version)
 import Exon (exon)
-import qualified Text.PrettyPrint as PrettyPrint
 
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName (..))
-import Hix.Pretty (showP)
+import Hix.Pretty (prettyText, showP)
 
 data PackageId =
   PackageId {
@@ -22,7 +21,7 @@ renderPackage PackageId {..} =
   [exon|##{name}-#{showP version}|]
 
 instance Pretty PackageId where
-  pretty = PrettyPrint.text . toString . renderPackage
+  pretty = prettyText . renderPackage
 
 toCabal :: PackageId -> PackageIdentifier
 toCabal PackageId {..} =

@@ -1,28 +1,24 @@
 module Hix.Managed.Bump.Candidates where
 
-import Distribution.Version (Version, VersionRange, simplifyVersionRange)
+import Distribution.Version (Version)
 
-import qualified Hix.Data.Dep
-import Hix.Data.Dep (Dep)
-import Hix.Data.Version (NewRange (NewRange, OldRange))
-import qualified Hix.Managed.Build.Mutation
-import Hix.Managed.Build.Mutation (DepMutation (DepMutation))
+import Hix.Data.Monad (M)
+import qualified Hix.Managed.Data.Mutation
+import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
+import qualified Hix.Managed.Data.Bump
+import Hix.Managed.Data.Bump (Bump (Bump))
+import Hix.Managed.Data.Mutable (depName)
+import qualified Hix.Managed.Data.QueryDep
+import Hix.Managed.Data.QueryDep (QueryDep (QueryDep))
 import qualified Hix.Managed.Handlers.Bump
 import Hix.Managed.Handlers.Bump (BumpHandlers)
-import qualified Hix.Managed.Lower.Data.Bump
-import Hix.Managed.Lower.Data.Bump (Bump (Bump))
-import Hix.Data.Monad (M)
-import Hix.Version (amendLowerBound, currentMajor, nextMajor, requireUpperBound)
+import Hix.Version (nextMajor)
 
-extendCurrentDep :: Version -> VersionRange -> NewRange
-extendCurrentDep latest range
-  | amended == simplifyVersionRange range
-  = OldRange
-  | otherwise
-  = NewRange amended
-  where
-    amended = amendLowerBound (currentMajor latest) withUpper
-    withUpper = requireUpperBound (nextMajor latest) range
+-- | We only want to report a bump if the new version actually changes the build.
+isBump :: Version -> Maybe Version -> Bool
+isBump version = \case
+  Just override -> version > override
+  Nothing -> True
 
 -- | Decide whether the latest version of a dependency requires changes to the currently specified bound.
 --
@@ -33,27 +29,19 @@ extendCurrentDep latest range
 -- If the specified dependency has no upper bound (e.g. because the user has only entered the package name and ran the
 -- app to resolve the bounds), or if the latest version is outside of the existing bounds, then we add a new bound to
 -- the managed state, so we extend the version range by setting the upper bound to the major prefix of the next-highest
--- major of the latest version and return 'NewRange'.
+-- major of the latest version and return 'NewBounds'.
 --
--- Otherwise, we return 'OldRange'.
---
--- Whether the project needs to be built to verify that the latest version is compatible will be decided downstream
--- based on the existing override (in the mutation handler).
-bumpDep ::
-  BumpHandlers ->
-  Dep ->
-  M (Maybe (DepMutation Bump))
-bumpDep handlers dep = do
-  fmap mutation <$> handlers.latestVersion package
-  where
-    mutation latest =
-      DepMutation {package, mutation = Bump {version = latest, range = extendCurrentDep latest dep.version}}
-
-    package = dep.package
-
+-- Otherwise, we return 'OldBounds'.
 candidatesBump ::
   BumpHandlers ->
-  [Dep] ->
-  M [DepMutation Bump]
-candidatesBump handlers deps =
-  catMaybes <$> traverse (bumpDep handlers) deps
+  QueryDep ->
+  M (Maybe (DepMutation Bump))
+candidatesBump handlers QueryDep {package, override} = do
+  fmap mutation <$> handlers.latestVersion (depName package)
+  where
+    mutation version =
+      DepMutation {
+        package,
+        retract = False,
+        mutation = Bump {version, bound = nextMajor version, changed = isBump version override}
+      }
