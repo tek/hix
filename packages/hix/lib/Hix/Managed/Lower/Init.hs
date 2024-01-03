@@ -27,7 +27,6 @@ import Hix.Managed.Data.StageContext (StageContext)
 import Hix.Managed.Data.StageResult (StageResult)
 import Hix.Managed.Data.StageState (BuildStatus, BuildSuccess)
 import Hix.Managed.Flow (Flow, execStage)
-import qualified Hix.Managed.Handlers.Build
 import qualified Hix.Managed.Handlers.Lower
 import Hix.Managed.Handlers.Lower (LowerHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
@@ -66,7 +65,7 @@ lowerInit ::
   StageContext ->
   M StageResult
 lowerInit handlers conf buildConf context =
-  stageResult success failure <$> processQuery handlers.build.hackage candidates mutationHandlers buildConf context ext
+  stageResult success failure <$> processQuery candidates mutationHandlers buildConf context ext
   where
     candidates = candidatesInit handlers.versions (nKeysSet (nCatMaybes keep :: MutableDeps Version))
 

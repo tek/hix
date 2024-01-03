@@ -23,7 +23,7 @@ handlersUnitTest ::
 handlersUnitTest builder = do
   (stateFile, stateFileRef) <- StateFile.handlersUnitTest
   (report, mutationsRef) <- ReportHandlers.handlersUnitTest
-  pure (handlersNull {stateFile, report, cabal, withBuilder = versionsBuilder builder}, stateFileRef, mutationsRef)
+  pure (handlersNull {stateFile, report, cabal, withBuilder = versionsBuilder handlersNull.hackage builder}, stateFileRef, mutationsRef)
   where
     cabal = CabalHandlers.handlersProd False
 

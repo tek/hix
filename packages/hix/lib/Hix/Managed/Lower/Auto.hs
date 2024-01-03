@@ -21,7 +21,6 @@ import Hix.Managed.Data.StageResult (StageResult (StageResult), StageSummary (St
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
 import Hix.Managed.Diff (reifyVersionChanges)
 import Hix.Managed.Flow (Flow, runStage_, stageError, stageState)
-import qualified Hix.Managed.Handlers.Build
 import qualified Hix.Managed.Handlers.Lower
 import Hix.Managed.Handlers.Lower (LowerHandlers)
 import Hix.Managed.Lower.Init (lowerInitStage)
@@ -81,7 +80,7 @@ postInit ::
   BuildConfig ->
   Flow ()
 postInit handlers conf buildConf =
-  validateCurrent handlers.build.hackage >>= \case
+  validateCurrent >>= \case
     Success -> optimizePristineBounds handlers buildConf
     Failure | conf.stabilize -> stabilizeIfPossible handlers buildConf
             | otherwise -> suggestStabilize

@@ -26,7 +26,6 @@ import Hix.Managed.Data.StageContext (StageContext (StageContext))
 import Hix.Managed.Data.StageResult (StageResult)
 import Hix.Managed.Data.StageState (BuildSuccess)
 import Hix.Managed.Flow (Flow, runStage_)
-import qualified Hix.Managed.Handlers.Build
 import qualified Hix.Managed.Handlers.Lower
 import Hix.Managed.Handlers.Lower (LowerHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
@@ -54,7 +53,7 @@ lowerOptimize ::
   StageContext ->
   M StageResult
 lowerOptimize handlers conf context@StageContext {env, state = Initial MutationState {versions}} =
-  stageResult success failure <$> processQuery handlers.build.hackage candidates mutationHandlers conf context ext
+  stageResult success failure <$> processQuery candidates mutationHandlers conf context ext
   where
     candidates = candidatesOptimize handlers.versions context.initial
 

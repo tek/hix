@@ -111,7 +111,7 @@ handlersTest = do
   let
     handlers = handlersNull {
       build = handlersNull.build {
-        withBuilder = versionsBuilder buildVersions,
+        withBuilder = versionsBuilder handlersNull.build.hackage buildVersions,
         stateFile
       },
       latestVersion = queryPackagesLatest packageDb

@@ -23,6 +23,7 @@ import Hix.Data.Error (Error (Fatal))
 import Hix.Data.Monad (M (M))
 import qualified Hix.Data.Monad (AppResources (verbose))
 import Hix.Data.Overrides (Overrides)
+import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
 import Hix.Error (pathText)
@@ -41,16 +42,19 @@ import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (BuildHandlers (..), BuildOutputsPrefix, Builder (Builder), EnvBuilder (EnvBuilder))
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
 import qualified Hix.Managed.Handlers.Cabal.Prod as CabalHandlers
+import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Hackage.Prod as HackageHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import qualified Hix.Managed.Handlers.StateFile.Prod as StateFileHandlers
+import Hix.Managed.Overrides (packageOverrides)
 import Hix.Managed.Path (rootOrCwd)
 import Hix.Managed.StateFile (writeBuildStateFor, writeInitialEnvState)
 import Hix.Monad (throwM, tryIOM, withTempDir)
 
 data BuilderResources =
   BuilderResources {
+    hackage :: HackageHandlers,
     stateFileHandlers :: StateFileHandlers,
     envsConf :: Envs EnvConfig,
     buildOutputsPrefix :: Maybe BuildOutputsPrefix,
@@ -113,11 +117,13 @@ buildPackage root env target = do
 buildWithState ::
   EnvBuilderResources ->
   Versions ->
-  Overrides ->
-  M BuildStatus
-buildWithState EnvBuilderResources {context = context@EnvContext {env, targets}, ..} _ overrides = do
+  [PackageId] ->
+  M (Overrides, BuildStatus)
+buildWithState EnvBuilderResources {global, context = context@EnvContext {env, targets}} _ overrideVersions = do
+  overrides <- packageOverrides global.hackage overrideVersions
   writeBuildStateFor "current build" global.stateFileHandlers global.root context overrides
-  buildStatus <$> allMTargets (buildPackage global.root env) targets
+  status <- buildStatus <$> allMTargets (buildPackage global.root env) targets
+  pure (overrides, status)
 
 -- | This used to have the purpose of reading an updated GHC package db using the current managed state, but this has
 -- become obsolete.
@@ -144,13 +150,14 @@ withEnvBuilder global cabal context initialState use = do
     resources = EnvBuilderResources {..}
 
 withBuilder ::
+  HackageHandlers ->
   StateFileHandlers ->
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
   (Builder -> M a) ->
   M a
-withBuilder stateFileHandlers stateFileConf envsConf buildOutputsPrefix use =
+withBuilder hackage stateFileHandlers stateFileConf envsConf buildOutputsPrefix use =
   withTempProject stateFileConf.projectRoot \ root -> do
     let resources = BuilderResources {..}
     use Builder {withEnvBuilder = withEnvBuilder resources}
@@ -170,5 +177,5 @@ handlersProd stateFileConf envsConf buildOutputsPrefix oldest = do
     hackage,
     report = ReportHandlers.handlersProd,
     cabal = CabalHandlers.handlersProd oldest,
-    withBuilder = withBuilder stateFile stateFileConf envsConf buildOutputsPrefix
+    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix
   }

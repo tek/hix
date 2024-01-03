@@ -79,7 +79,7 @@ bumpBuild ::
   StageContext ->
   M StageResult
 bumpBuild handlers conf stage@StageContext {env, builder, state} = do
-  result <- processQuery handlers.build.hackage (candidatesBump handlers) handlersBump conf stage ext
+  result <- processQuery (candidatesBump handlers) handlersBump conf stage ext
   pure (stageResult success failure result)
   where
     ext = solverState env.solverBounds env.deps (bumpSolverParams env.deps builder.cabal state)

@@ -35,8 +35,6 @@ import Hix.Managed.Data.StageResult (
   )
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success), BuildSuccess)
 import Hix.Managed.Flow (Flow, execStatelessStage, runStage_)
-import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Lower
 import Hix.Managed.Handlers.Lower (LowerHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
@@ -57,12 +55,10 @@ initialVersions state =
   where
     initVersion name version = PackageId {name = depName name, ..}
 
-buildLowerInit ::
-  HackageHandlers ->
-  Flow BuildStatus
-buildLowerInit hackage = do
+buildLowerInit :: Flow BuildStatus
+buildLowerInit = do
   execStatelessStage \ StageContext {env, initial, builder} ->
-    buildVersions hackage builder env "initial lower bounds" initial <&> \case
+    buildVersions builder env "initial lower bounds" initial <&> \case
       Success -> StageNoAction (Just "Env builds successfully with the initial bounds.")
       Failure ->
         StageFailure (FailedPrecondition msg)
@@ -102,7 +98,7 @@ lowerStabilize ::
   StageContext ->
   M StageResult
 lowerStabilize handlers conf context =
-  stageResult success failure <$> processQuery handlers.build.hackage candidates mutationHandlers conf context ext
+  stageResult success failure <$> processQuery candidates mutationHandlers conf context ext
   where
     candidates query = candidatesStabilize handlers.versions query (join (context.initial !! query.package))
 
@@ -122,16 +118,14 @@ stabilizeIfPossible ::
   BuildConfig ->
   Flow ()
 stabilizeIfPossible handlers conf =
-  buildLowerInit handlers.build.hackage >>= \case
+  buildLowerInit >>= \case
     Success -> stabilizeStage handlers conf
     Failure -> unit
 
-validateCurrent ::
-  HackageHandlers ->
-  Flow BuildStatus
-validateCurrent hackage =
+validateCurrent :: Flow BuildStatus
+validateCurrent =
   execStatelessStage \ StageContext {env, state = Initial MutationState {versions}, builder} ->
-    buildVersions hackage builder env "current lower bounds" versions <&> \case
+    buildVersions builder env "current lower bounds" versions <&> \case
       Success -> StageNoAction (Just "Env builds successfully with the current bounds.")
       Failure -> StageFailure (FailedPrecondition ["Env does not build successfully with the current bounds."])
 
@@ -140,7 +134,7 @@ lowerStabilizeStages ::
   BuildConfig ->
   Flow ()
 lowerStabilizeStages handlers conf =
-  validateCurrent handlers.build.hackage >>= \case
+  validateCurrent >>= \case
     Success -> unit
     Failure -> stabilizeIfPossible handlers conf
 

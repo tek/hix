@@ -5,6 +5,7 @@ import Data.IORef (IORef, newIORef)
 
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
+import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Cabal.Changes (SolverPlan)
 import Hix.Managed.Cabal.Data.Config (GhcDb)
@@ -24,6 +25,7 @@ import qualified Hix.Managed.Handlers.Report as Report
 import Hix.Managed.Handlers.Report (ReportHandlers)
 import qualified Hix.Managed.Handlers.StateFile as StateFileHandlers
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
+import Hix.Managed.Overrides (packageOverrides)
 
 newtype BuildOutputsPrefix =
   BuildOutputsPrefix Text
@@ -33,7 +35,7 @@ newtype BuildOutputsPrefix =
 data EnvBuilder =
   EnvBuilder {
     cabal :: CabalHandlers,
-    buildWithState :: Versions -> Overrides -> M BuildStatus
+    buildWithState :: Versions -> [PackageId] -> M (Overrides, BuildStatus)
   }
 
 data Builder =
@@ -53,13 +55,16 @@ data BuildHandlers =
     withBuilder :: ∀ a . (Builder -> M a) -> M a
   }
 
-testBuilder :: (Versions -> Overrides -> M BuildStatus) -> (Builder -> M a) -> M a
+testBuilder :: (Versions -> [PackageId] -> M (Overrides, BuildStatus)) -> (Builder -> M a) -> M a
 testBuilder buildWithState use =
   use Builder {withEnvBuilder = \ cabal _ _ useE -> useE EnvBuilder {cabal, buildWithState}}
 
-versionsBuilder :: (Versions -> M BuildStatus) -> (Builder -> M a) -> M a
-versionsBuilder build =
-  testBuilder \ versions _ -> build versions
+versionsBuilder :: HackageHandlers -> (Versions -> M BuildStatus) -> (Builder -> M a) -> M a
+versionsBuilder hackage build =
+  testBuilder \ versions overrideVersions -> do
+    overrides <- packageOverrides hackage overrideVersions
+    status <- build versions
+    pure (overrides, status)
 
 handlersNull :: BuildHandlers
 handlersNull =
@@ -68,7 +73,7 @@ handlersNull =
     hackage = HackageHandlers.handlersNull,
     report = Report.handlersNull,
     cabal = \ _ _ -> pure Solve.handlersNull,
-    withBuilder = testBuilder \ _ _ -> pure Failure
+    withBuilder = testBuilder \ _ _ -> pure (mempty, Failure)
   }
 
 wrapCabal :: (CabalHandlers -> CabalHandlers) -> BuildHandlers -> BuildHandlers
