@@ -20,8 +20,8 @@ import System.Process.Typed (
 
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
+import qualified Hix.Data.Monad
 import Hix.Data.Monad (M (M))
-import qualified Hix.Data.Monad (AppResources (verbose))
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (LocalPackage)
@@ -88,9 +88,9 @@ nixProc ::
   M (ProcessConfig () () ())
 nixProc root cmd installable extra = do
   Log.debug [exon|Running nix at '#{pathText root}' with args #{show args}|]
-  conf <$> M (asks (.verbose))
+  conf <$> M (asks (.debug))
   where
-    conf verbose = err verbose (setWorkingDir (toFilePath root) (proc "nix" args))
+    conf debug = err debug (setWorkingDir (toFilePath root) (proc "nix" args))
 
     err = \case
       True -> setStderr inherit
@@ -104,9 +104,9 @@ buildPackage ::
   LocalPackage ->
   M Bool
 buildPackage root env target = do
-  verbose <- M (asks (.verbose))
+  debug <- M (asks (.debug))
   conf <- nixProc root ["-L", "build"] [exon|env.##{env}.##{target}|] []
-  tryIOM (runProcess (err verbose conf)) <&> \case
+  tryIOM (runProcess (err debug conf)) <&> \case
     ExitSuccess -> True
     ExitFailure _ -> False
   where
