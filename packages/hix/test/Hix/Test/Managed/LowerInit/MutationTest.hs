@@ -81,6 +81,31 @@ packageDb =
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed = [], available = packageDb}
 
+state :: ProjectStateProto
+state =
+  ProjectStateProto {
+    bounds = [
+      ("local1", [
+        ("direct2", [[4, 0], [4, 4]]),
+        ("direct3", [[1, 0, 1], [1, 5]])
+      ]),
+      ("local5", [("direct5", [[1, 5], [1, 6]])])
+    ],
+    versions = [
+      ("lower-main", [
+        ("direct1", [1, 0, 1]),
+        ("direct2", [4, 3, 1]),
+        ("direct3", [1, 0, 1])
+      ])
+    ],
+    overrides = [
+      ("latest", [("direct2", Override {version = [5, 0], hash = SourceHash "direct2-5.0"})]),
+      ("lower-main", [("direct3", Override {version = [1, 0, 1], hash = SourceHash "direct3-1.0.1"})])
+    ],
+    initial = [("lower-main", [("direct3", [1, 0, 1])])],
+    resolving = False
+  }
+
 build :: Versions -> M BuildStatus
 build = \case
   versions
@@ -110,31 +135,6 @@ build = \case
     ("transitive3", [1, 0, 1])
     ] -> pure Success
   versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
-
-initialState :: ProjectStateProto
-initialState =
-  ProjectStateProto {
-    bounds = [
-      ("local1", [
-        ("direct2", [[4, 0], [4, 4]]),
-        ("direct3", [[1, 0, 1], [1, 5]])
-      ]),
-      ("local5", [("direct5", [[1, 5], [1, 6]])])
-    ],
-    versions = [
-      ("lower-main", [
-        ("direct1", [1, 0, 1]),
-        ("direct2", [4, 3, 1]),
-        ("direct3", [1, 0, 1])
-      ])
-    ],
-    overrides = [
-      ("latest", [("direct2", Override {version = [5, 0], hash = SourceHash "direct2-5.0"})]),
-      ("lower-main", [("direct3", Override {version = [1, 0, 1], hash = SourceHash "direct3-1.0.1"})])
-    ],
-    initial = [("lower-main", [("direct3", [1, 0, 1])])],
-    resolving = False
-  }
 
 -- | This uses a very bespoke @IsString@ instance for @(PackageName, MutationConstraints)@ that parses a @Dep@ and uses
 -- the bounds (inclusive or exclusive) to construct @VersionBounds@.
@@ -405,7 +405,7 @@ test_lowerInitMutation = do
         cabalLog = True,
         log = True,
         ghcPackages,
-        state = initialState,
+        state,
         projectOptions = def {envs = ["lower-main", "lower-special"], readUpperBounds = True},
         build
       }
