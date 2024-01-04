@@ -117,6 +117,12 @@ stateFileTarget =
       direct2 = "1.9.2";
     };
   };
+  initial = {
+    lower = {
+      direct1 = "2.0.1";
+      direct2 = "2.0.1";
+    };
+  };
   overrides = {
     lower = {
       direct1 = {
@@ -131,12 +137,6 @@ stateFileTarget =
         version = "1.0.1";
         hash = "transitive1-1.0.1";
       };
-    };
-  };
-  initial = {
-    lower = {
-      direct1 = "2.0.1";
-      direct2 = "2.0.1";
     };
   };
   resolving = false;

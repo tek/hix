@@ -36,6 +36,10 @@
       path = "0.9.5";
     };
   };
+  initial = {
+    latest-main = {};
+    latest-other = {};
+  };
   overrides = {
     latest-main = {
       aeson = {
@@ -73,10 +77,6 @@
         hash = "05b84rizmrii847pq2fbvlpna796bwxha1vc01c3vxb2rhrknrf7";
       };
     };
-  };
-  initial = {
-    latest-main = {};
-    latest-other = {};
   };
   resolving = false;
 }

@@ -22,6 +22,12 @@
       extra = "1.7.7";
     };
   };
+  initial = {
+    lower-main = {
+      aeson = "2.2.0.0";
+      extra = "1.7.7";
+    };
+  };
   overrides = {
     lower-main = {
       aeson = {
@@ -56,12 +62,6 @@
         version = "0.5.0.0";
         hash = "0dkilfrvk8zdn3gvyfv5zgjbwqhdf1yg90fk4byka0ib43kgkyvf";
       };
-    };
-  };
-  initial = {
-    lower-main = {
-      aeson = "2.2.0.0";
-      extra = "1.7.7";
     };
   };
   resolving = false;

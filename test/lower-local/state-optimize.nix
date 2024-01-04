@@ -31,6 +31,14 @@
       semigroups = "0.18.1";
     };
   };
+  initial = {
+    lower-local1 = {
+      containers = "0.7";
+    };
+    lower-local2 = {
+      semigroups = "0.20";
+    };
+  };
   overrides = {
     lower-local1 = {
       containers = {
@@ -43,14 +51,6 @@
         version = "0.18.1";
         hash = "1z714pdlx2klcsp0h9qrsm5if54fd07zy9rwgqr62gp0akvr4w78";
       };
-    };
-  };
-  initial = {
-    lower-local1 = {
-      containers = "0.7";
-    };
-    lower-local2 = {
-      semigroups = "0.20";
     };
   };
   resolving = false;

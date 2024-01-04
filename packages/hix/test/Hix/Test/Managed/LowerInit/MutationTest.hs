@@ -273,6 +273,17 @@ stateFileTarget =
       direct2 = "5.0";
     };
   };
+  initial = {
+    lower-main = {
+      direct1 = "1.0.5";
+      direct2 = "5.0.5";
+      direct3 = "1.0.1";
+      direct4 = "1.0.3";
+    };
+    lower-special = {
+      direct2 = "5.0";
+    };
+  };
   overrides = {
     latest = {
       direct2 = {
@@ -323,17 +334,6 @@ stateFileTarget =
         version = "1.0.1";
         hash = "transitive3-1.0.1";
       };
-    };
-  };
-  initial = {
-    lower-main = {
-      direct1 = "1.0.5";
-      direct2 = "5.0.5";
-      direct3 = "1.0.1";
-      direct4 = "1.0.3";
-    };
-    lower-special = {
-      direct2 = "5.0";
     };
   };
   resolving = false;

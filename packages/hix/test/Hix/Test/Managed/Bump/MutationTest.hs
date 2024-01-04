@@ -173,6 +173,9 @@ stateFileTarget =
       direct5 = "1.2.1";
     };
   };
+  initial = {
+    fancy = {};
+  };
   overrides = {
     fancy = {
       direct1 = {
@@ -192,9 +195,6 @@ stateFileTarget =
         hash = "direct5-1.2.1";
       };
     };
-  };
-  initial = {
-    fancy = {};
   };
   resolving = false;
 }

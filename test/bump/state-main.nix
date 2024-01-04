@@ -32,6 +32,9 @@
       extra = "1.7.14";
     };
   };
+  initial = {
+    latest-main = {};
+  };
   overrides = {
     latest-main = {
       aeson = {
@@ -63,9 +66,6 @@
         hash = "0dkilfrvk8zdn3gvyfv5zgjbwqhdf1yg90fk4byka0ib43kgkyvf";
       };
     };
-  };
-  initial = {
-    latest-main = {};
   };
   resolving = false;
 }

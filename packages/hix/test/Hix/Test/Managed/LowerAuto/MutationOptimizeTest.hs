@@ -165,6 +165,13 @@ stateFileTargetBasic =
       direct3 = "0.9";
     };
   };
+  initial = {
+    lower = {
+      direct1 = "1.5";
+      direct2 = "1.5";
+      direct3 = "1.2";
+    };
+  };
   overrides = {
     lower = {
       direct1 = {
@@ -175,13 +182,6 @@ stateFileTargetBasic =
         version = "0.9";
         hash = "direct3-0.9";
       };
-    };
-  };
-  initial = {
-    lower = {
-      direct1 = "1.5";
-      direct2 = "1.5";
-      direct3 = "1.2";
     };
   };
   resolving = false;
@@ -288,6 +288,13 @@ stateFileTargetReset =
       direct3 = "0.9";
     };
   };
+  initial = {
+    lower = {
+      direct1 = "1.9";
+      direct2 = "1.9";
+      direct3 = "1.2";
+    };
+  };
   overrides = {
     lower = {
       direct1 = {
@@ -298,13 +305,6 @@ stateFileTargetReset =
         version = "0.9";
         hash = "direct3-0.9";
       };
-    };
-  };
-  initial = {
-    lower = {
-      direct1 = "1.9";
-      direct2 = "1.9";
-      direct3 = "1.2";
     };
   };
   resolving = false;

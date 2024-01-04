@@ -22,6 +22,13 @@
       semigroups = "0.19.1";
     };
   };
+  initial = {
+    lower = {
+      base = "4.15.1.0";
+      microlens = "0.4.13.1";
+      semigroups = "0.20";
+    };
+  };
   overrides = {
     lower = {
       microlens = {
@@ -32,13 +39,6 @@
         version = "0.19.1";
         hash = "0ng4j78di5p2yqx3m4bnfcz9cplp5px7d95374w2qxi20spjabpi";
       };
-    };
-  };
-  initial = {
-    lower = {
-      base = "4.15.1.0";
-      microlens = "0.4.13.1";
-      semigroups = "0.20";
     };
   };
   resolving = false;
