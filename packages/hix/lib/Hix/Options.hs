@@ -295,6 +295,10 @@ lowerCommands =
   <>
   command "auto" (LowerAutoCmd <$> info lowerParser (progDesc "Process the lower bounds"))
 
+lowerCommand :: Parser LowerCommand
+lowerCommand =
+  hsubparser lowerCommands <|> (LowerAutoCmd <$> lowerParser)
+
 managedCommitMsgParser :: Parser (Path Abs File)
 managedCommitMsgParser =
   option absFileOption (long "file" <> help "The JSON file written by a managed deps app")
@@ -319,7 +323,7 @@ commands =
   <>
   command "bump" (BumpCmd <$> info bumpParser (progDesc "Bump the deps of a package"))
   <>
-  command "lower" (LowerCmd <$> info (hsubparser lowerCommands) (progDesc "Modify the lower bounds of a package"))
+  command "lower" (LowerCmd <$> info lowerCommand (progDesc "Modify the lower bounds of a package"))
   where
     bootstrapDesc = "Bootstrap an existing Cabal project in the current directory"
 

@@ -1105,30 +1105,60 @@ in {
   ### Lower bounds {#lower}
 
   If the option [](#opt-managed-managed.lower.enable) is enabled, the flake will expose an environment named `lower` and
-  three apps named `lower.init`, `lower.optimize` and `lower.stabilize`.
+  an app named `lower`.
+  The app executes a subset of three stages based on the current state, `init`, `optimize` and `stabilize`, that are
+  also available as subcommands of this app (by running e.g. `nix run .#lower optimize`).
+  The mode of operation is similar to `bump`, with the most crucial difference being that it manipulates the lower
+  bounds of dependencies.
 
-  Running `nix run .#lower.init` will update the dependency bounds and build the project for each update, like the
-  `bump` app – with the difference that the chosen versions will be the lowest that match the dependency bounds, and
-  that the overrides will be written for the environment `lower`.
-
-  If the specified dependencies have lower bounds configured in the flake, they will be ignored.
-  The purpose of this step is preparation for the other two apps: The initial bounds will be sufficiently recent that
-  the project won't break with these versions after changes with a high probability.
-
-  After the lower bounds have been initialized, you can run `nix run .#lower.optimize` to find the lowest possible
-  bounds with which the project builds successfully.
-  The initial bounds will be retained in the managed state file separately, for `.#lower.stabilize`.
-
-  The longterm workflow for this environment should usually be that you want to verify that the bounds are still
-  accurate after making changes to the project, and adjust them if they aren't.
-  For example, when you introduce the import of a name that had been added to its library in a version that's newer than
-  the current lower bound, the build in the `lower` environment will fail.
-  In order to rectify this, you can run `nix run .#lower.stabilize` as a pre-commit hook or a pre-release CI job.
-  This app builds the project with the initial lower bounds (from `lower.init`) and the current lower bound of each
-  dependency, and if it fails, it will search upwards for a working version.
+  The operational details of this app that are most important for a user are that `optimize` determines the lowest
+  possible bounds with which the project builds, and that `stabilize` attempts to repair them after the code was changed
+  in a way that invalidates them, e.g. by importing a name that wasn't available in a dependency at the version in the
+  lower bound.
+  This allows the bounds validation to be integrated into the development process by running
+  `nix run .#lower -- --stabilize` as a pre-commit hook or a pre-release CI job.
 
   Since older versions require boot packages from older GHCs, it is advisable to use the oldest GHC available.
   See the option [](#opt-managed-managed.lower.compiler) for more information.
+  The default is to use the first version in [](#opt-general-ghcVersions).
+
+  #### Details {#lower-details}
+
+  The first stage of `lower` is called `init`, and it attempts to determine _initial_ lower bounds, which consist of the
+  lowest version in the highest major that builds successfully with the environment's GHC.
+  For example, if a dependency has the majors 1.4, 1.5 and 1.6, and all versions greater than 1.5.4 fail to build, the
+  initial lower bound will be 1.5.0.
+  Repeatedly executing this stage will only compute initial bounds for dependencies that don't have any yet (unless
+  `--reset` is specified).
+
+  The purpose of this step is preparation for the other two apps: The initial bounds will be sufficiently recent that
+  the project won't break with these versions after changes with a high probability.
+  The initial versions are stored in the managed state file along with the bounds.
+
+  Executing the app with a subcommand, `nix run .#lower init`, will only run this stage; otherwise, the next stage will
+  depend on the final state and the outcome of `init`.
+
+  If the specified dependencies have lower bounds configured in the flake, they will be ignored.
+
+  After the lower bounds have been initialized, or if the first stage is skipped due to all dependencies having bounds,
+  the app will build the current state to decide what to do next.
+  If the build succeeds, it will continue with the `optimize` stage, otherwise it will run `stabilize`, although this
+  requires the user to pass `--stabilize` in the command line, since it is an expensive operation with a high failure
+  rate.
+
+  The `optimize` stage will iterate over the majors of all dependencies, building all versions in each of them until it
+  finds a working one, and terminating when an entire majors fails after at least one working version had been found.
+  E.g. if a package has the majors 1.1, 1.2, 1.3, 1.4 and 1.5, and some versions in 1.3 and 1.4 build successfully, but
+  none in 1.3 do, then the lowest version in 1.4 will be the optimized lower bound.
+
+  Before the `stabilize` stage is executed, the app will first build the project with the versions that form the initial
+  lower bounds.
+  If that fails, it will refuse to continue, and require the user to fix the situation manually (the easiest first step
+  would be to run `nix run .#lower -- --reset`).
+  Otherwise, it will build the project with the initial lower versions and the optimized lower bound of the first
+  dependency, continuing upwards in the version sequence until a working version is found.
+  Then the same process is performed with the next dependency, keeping the stabilized bounds of all previously processed
+  dependencies.
 
   ### Target sets {#managed-targets}
 

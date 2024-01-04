@@ -3,7 +3,7 @@
 
   appsWith = cons: {
     bump = cons { cmd = util.managed.cmd.bump; env = "latest"; sub = null; };
-    lower = {
+    lower = cons { cmd = util.managed.cmd.lower ""; env = "lower"; sub = null; } // {
       auto = cons { cmd = util.managed.cmd.lower "auto"; env = "lower"; sub = "auto"; };
       init = cons { cmd = util.managed.cmd.lower "init"; env = "lower"; sub = "init"; };
       optimize = cons { cmd = util.managed.cmd.lower "optimize"; env = "lower"; sub = "optimize"; };
