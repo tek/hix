@@ -28,8 +28,13 @@ import qualified Hix.Log as Log
 import Hix.Log (logWith)
 
 throwM :: Error -> M a
-throwM =
-  liftE . throwE
+throwM = liftE . throwE
+
+clientError :: Text -> M a
+clientError msg = throwM (Client msg)
+
+fatalError :: Text -> M a
+fatalError msg = throwM (Fatal msg)
 
 note :: Error -> Maybe a -> M a
 note err =
@@ -59,13 +64,11 @@ noteFatal :: Text -> Maybe a -> M a
 noteFatal err =
   note (Fatal err)
 
-eitherClient :: Text -> Either Text a -> M a
-eitherClient msg =
-  leftA \ err -> throwM (Client [exon|#{msg}: #{err}|])
+eitherClient :: Either Text a -> M a
+eitherClient = leftA clientError
 
-eitherFatal :: Text -> Either Text a -> M a
-eitherFatal msg =
-  leftA \ err -> throwM (Fatal [exon|#{msg}: #{err}|])
+eitherFatal :: Either Text a -> M a
+eitherFatal = leftA fatalError
 
 eitherFatalShow ::
   Show b =>
@@ -73,7 +76,9 @@ eitherFatalShow ::
   Either b a ->
   M a
 eitherFatalShow msg =
-  eitherFatal msg . first show
+  eitherFatal . first mkMsg
+  where
+    mkMsg err = [exon|#{msg}: #{show err}|]
 
 whenDebug :: M () -> M ()
 whenDebug m =

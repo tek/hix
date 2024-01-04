@@ -18,3 +18,12 @@ data ProjectContextProto =
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
+
+instance Default ProjectContextProto where
+  def =
+    ProjectContextProto {
+      packages = mempty,
+      state = def,
+      envs = mempty,
+      buildOutputsPrefix = Nothing
+    }

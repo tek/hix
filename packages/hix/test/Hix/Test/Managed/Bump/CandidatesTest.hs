@@ -3,7 +3,6 @@ module Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump) where
 import Distribution.Version (Version)
 import Hedgehog (evalEither, (===))
 
-import Hix.Data.Error (Error (Client))
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.VersionBounds (VersionBounds)
 import Hix.Managed.Bump.Candidates (candidatesBump)
@@ -14,7 +13,7 @@ import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
 import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
 import Hix.Managed.QueryDep (simpleQueryDep)
-import Hix.Monad (M, throwM)
+import Hix.Monad (M, clientError)
 import Hix.Test.Utils (UnitTest, runMTest)
 
 deps :: [(MutableDep, VersionBounds)]
@@ -59,7 +58,7 @@ latestVersion =
     "dep5" -> pure dep5Version
     "dep6" -> pure dep6Version
     "dep7" -> pure dep7Version
-    _ -> throwM (Client "No such package")
+    _ -> clientError "No such package"
 
 handlersTest :: BumpHandlers
 handlersTest =

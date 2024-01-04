@@ -4,7 +4,6 @@ import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Distribution.Version (Version)
 import Hedgehog (evalEither, (===))
 
-import Hix.Data.Error (Error (Client))
 import Hix.Data.PackageName (PackageName)
 import qualified Hix.Data.VersionBounds
 import Hix.Data.VersionBounds (fromLower, fromUpper)
@@ -22,13 +21,13 @@ import Hix.Managed.Lower.Candidates (candidatesOptimize)
 import Hix.Managed.Lower.Data.LowerMode (lowerOptimizeMode)
 import Hix.Managed.Lower.Optimize (lowerOptimizeUpdate)
 import Hix.Managed.QueryDep (simpleQueryDep)
-import Hix.Monad (M, throwM)
+import Hix.Monad (M, clientError)
 import Hix.Test.Utils (UnitTest, runMTest)
 
 availableVersions :: PackageName -> M [Version]
 availableVersions = \case
   "dep" -> pure versions
-  _ -> throwM (Client "No such package")
+  _ -> clientError "No such package"
   where
     versions = s1 ++ s2
     s1 = [[1, m, n] | m <- [7 .. 9], n <- [1 .. 3]]

@@ -4,9 +4,8 @@ import Distribution.Parsec (Parsec, eitherParsec)
 import Exon (exon)
 import Type.Reflection (typeRep)
 
-import Hix.Data.Error (Error (Client))
 import Hix.Data.Monad (M)
-import Hix.Monad (throwM)
+import Hix.Monad (eitherClient)
 
 eitherParsecFor ::
   Parsec b =>
@@ -46,4 +45,4 @@ parsecM ::
   a ->
   M b
 parsecM desc spec =
-  leftA (throwM . Client . toText) (eitherParsecFor desc spec)
+  eitherClient (first toText (eitherParsecFor desc spec))

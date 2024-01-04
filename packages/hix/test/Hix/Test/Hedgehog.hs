@@ -1,5 +1,6 @@
 module Hix.Test.Hedgehog where
 
+import Data.List.Extra (zipWithLongest)
 import qualified Data.Text as Text
 import Hedgehog (TestT, evalEither, (===))
 
@@ -39,3 +40,18 @@ assertRight ::
 assertRight a =
   withFrozenCallStack do
     (===) a <=< evalEither
+
+listEqZip ::
+  ∀ m a .
+  Monad m =>
+  HasCallStack =>
+  Eq a =>
+  Show a =>
+  [a] ->
+  [a] ->
+  TestT m ()
+listEqZip target log =
+  for_ (zip [0 :: Natural ..] (zipWithLongest (,) target log)) \case
+    (i, (Just t, Just l)) -> (i, t) === (i, l)
+    _ | [] <- log -> fail "Result list is empty."
+    _ -> target === log

@@ -1,10 +1,8 @@
 module Hix.Test.Managed.LowerInit.MutationTest where
 
-import Data.IORef (readIORef)
-import Data.List.Extra (zipWithLongest)
 import qualified Data.Text as Text
 import Exon (exon)
-import Hedgehog (evalEither, evalMaybe, (===))
+import Hedgehog ((===))
 
 import Hix.Class.Map ((!!))
 import Hix.Data.Error (Error (Fatal))
@@ -14,33 +12,23 @@ import Hix.Data.Overrides (Override (Override))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Changes (SolverPlan (SolverPlan))
-import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSynthetic))
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Cabal.Mock.SourcePackage (allDep, allDeps)
 import Hix.Managed.Data.Constraints (EnvConstraints)
-import qualified Hix.Managed.Data.EnvConfig
-import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
 import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
-import qualified Hix.Managed.Data.ProjectContextProto
-import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (ProjectContextProto))
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
-import Hix.Managed.Handlers.Build (report)
-import qualified Hix.Managed.Handlers.Lower as LowerHandlers
-import Hix.Managed.Handlers.Lower (LowerHandlers (..))
-import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
-import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import Hix.Managed.Lower.Init (lowerInitMain)
-import Hix.Managed.ProjectContext (withProjectContext)
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
-import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Utils (UnitTest, runMLogTest)
+import Hix.Test.Hedgehog (eqLines, listEqZip)
+import Hix.Test.Managed.Lower (LowerTestParams (..), Result (..), lowerParams, lowerTest)
+import Hix.Test.Utils (UnitTest)
 
 packages :: Packages ManagedPackageProto
 packages =
@@ -93,8 +81,8 @@ packageDb =
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed = [], available = packageDb}
 
-buildVersions :: Versions -> M BuildStatus
-buildVersions = \case
+build :: Versions -> M BuildStatus
+build = \case
   versions
     | Just [1, 0, n] <- versions !! "direct1"
     , n /= 5
@@ -403,35 +391,21 @@ logTarget =
 --   This version is written to the overrides for @lower-special@, like any non-installed transitive dep.
 test_lowerInitMutation :: UnitTest
 test_lowerInitMutation = do
-  (handlers0, stateFileRef, _) <- LowerHandlers.handlersUnitTest buildVersions ghcPackages
-  (cabalRef, handlers) <- LowerHandlers.logCabal handlers0 {build = handlers0.build {report = ReportHandlers.handlersProd}}
-  let
-    ghc = GhcDbSynthetic ghcPackages
-
-    opts = def {envs = ["lower-main", "lower-special"], readUpperBounds = True}
-
-    proto =
-      ProjectContextProto {
-        packages,
-        state = initialState,
-        envs = [
-          ("lower-main", EnvConfig {targets = ["local1", "local2", "local3", "local4", "local6"], ghc}),
-          ("lower-special", EnvConfig {targets = ["local7"], ghc})
-        ],
-        buildOutputsPrefix = Nothing
-      }
-
-  (log, result) <- liftIO do
-    runMLogTest False True do
-      withProjectContext handlers.build opts proto \ project ->
-        lowerInitMain def handlers project
-  evalEither result
-  cabalLog <- reverse <$> liftIO (readIORef cabalRef)
-  stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
-  for_ (zip [0 :: Natural ..] (zipWithLongest (,) cabalTarget cabalLog)) \case
-    (i, (Just t, Just l)) -> (i, t) === (i, l)
-    _ | [] <- cabalLog -> fail "Cabal log is empty."
-    _ -> cabalTarget === cabalLog
-  cabalTarget === cabalLog
+  Result {..} <- lowerTest params (lowerInitMain def)
+  listEqZip cabalTarget cabalLog
   eqLines stateFileTarget (renderRootExpr stateFile)
   logTarget === drop 24 (reverse log)
+  where
+    params =
+      (lowerParams False packages) {
+        envs = [
+          ("lower-main", ["local1", "local2", "local3", "local4", "local6"]),
+          ("lower-special", ["local7"])
+        ],
+        cabalLog = True,
+        log = True,
+        ghcPackages,
+        state = initialState,
+        projectOptions = def {envs = ["lower-main", "lower-special"], readUpperBounds = True},
+        build
+      }

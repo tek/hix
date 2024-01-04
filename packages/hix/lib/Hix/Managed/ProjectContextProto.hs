@@ -4,7 +4,6 @@ import Exon (exon)
 
 import Hix.Class.Map (nBy, nGenWith, nKeysSet, nTo, (!!))
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.Error (Error (Client))
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (ProjectOptions)
@@ -25,7 +24,7 @@ import Hix.Managed.Data.Query (RawQuery (RawQuery))
 import Hix.Managed.EnvContext (envContexts)
 import qualified Hix.Managed.ManagedPackageProto as ManagedPackageProto
 import qualified Hix.Managed.ProjectStateProto as ProjectStateProto
-import Hix.Monad (throwM)
+import Hix.Monad (clientError)
 
 validateQuery ::
   Packages ManagedPackage ->
@@ -35,7 +34,7 @@ validateQuery packages (RawQuery deps) =
   nonEmpty <$> traverse check deps
   where
     check dep | Just m <- mutables !! dep = pure m
-              | otherwise = throwM (Client [exon|'##{dep}' is not a dependency of any package.|])
+              | otherwise = clientError [exon|'##{dep}' is not a dependency of any package.|]
 
     mutables :: Deps MutableDep
     mutables = nBy mutablesSet depName

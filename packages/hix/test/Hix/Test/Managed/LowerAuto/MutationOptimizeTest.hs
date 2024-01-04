@@ -23,7 +23,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Lower (lowerTest)
+import Hix.Test.Managed.Lower (LowerTestParams (..), Result (..), lowerParams, lowerTest)
 import Hix.Test.Utils (UnitTest, unitTest)
 
 packages :: Packages ManagedPackageProto
@@ -204,8 +204,15 @@ stateFileTargetBasic =
 --   0.9.
 test_lowerAutoMutationOptimizeBasic :: UnitTest
 test_lowerAutoMutationOptimizeBasic = do
-  stateFile <- lowerTest False packages ghcPackages initialState buildVersionsBasic (lowerAutoMain def)
+  Result {stateFile} <- lowerTest params (lowerAutoMain def)
   eqLines stateFileTargetBasic (renderRootExpr stateFile)
+  where
+    params =
+      (lowerParams False packages) {
+        ghcPackages,
+        state = initialState,
+        build = buildVersionsBasic
+      }
 
 buildVersionsReset :: Versions -> M BuildStatus
 buildVersionsReset = \case
@@ -320,8 +327,15 @@ stateFileTargetReset =
 --   0.9.
 test_lowerAutoMutationOptimizeReset :: UnitTest
 test_lowerAutoMutationOptimizeReset = do
-  stateFile <- lowerTest False packages ghcPackages initialState buildVersionsReset (lowerAutoMain def {reset = True})
+  Result {stateFile} <- lowerTest params (lowerAutoMain def {reset = True})
   eqLines stateFileTargetReset (renderRootExpr stateFile)
+  where
+    params =
+      (lowerParams False packages) {
+        ghcPackages,
+        state = initialState,
+        build = buildVersionsReset
+      }
 
 test_lowerAutoMutationOptimize :: TestTree
 test_lowerAutoMutationOptimize =

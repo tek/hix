@@ -6,7 +6,6 @@ import Exon (exon)
 
 import Hix.Class.Map (nKeys, nKeysSet, (!?))
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.Error (Error (Client))
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (ProjectOptions)
@@ -20,7 +19,7 @@ import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Mutable (MutableDep, mutRelax)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.ManagedPackage as ManagedPackage
-import Hix.Monad (noteClient, throwM)
+import Hix.Monad (clientError, noteClient)
 import Hix.Pretty (showPL)
 import Hix.Zip (zipApplyA)
 
@@ -46,7 +45,7 @@ selectEnvs envs specified = do
 
 unknownTargets :: EnvName -> NonEmpty LocalPackage -> M ()
 unknownTargets env missing =
-  throwM (Client msg)
+  clientError msg
   where
     msg =
       [exon|The flake config for '##{env}' references #{number} in its targets that #{verb} present|]
