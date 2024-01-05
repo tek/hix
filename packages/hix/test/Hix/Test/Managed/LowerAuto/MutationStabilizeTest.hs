@@ -22,7 +22,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Lower (LowerTestParams (..), Result (..), lowerParams, lowerTest)
+import Hix.Test.Managed.Run (TestParams (..), Result (..), testParams, lowerTest)
 import Hix.Test.Utils (UnitTest)
 
 packages :: Packages ManagedPackageProto
@@ -196,7 +196,7 @@ test_lowerAutoMutationStabilize = do
   eqLines stateFileTarget (renderRootExpr stateFile)
   where
     params =
-      (lowerParams False packages) {
+      (testParams False packages) {
         ghcPackages,
         state,
         build

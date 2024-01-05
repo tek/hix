@@ -3,6 +3,8 @@ module Hix.Managed.Handlers.Build.Prod where
 import Control.Monad.Catch (catch)
 import Control.Monad.Trans.Reader (asks)
 import Exon (exon)
+import Network.HTTP.Client (newManager)
+import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Path (Abs, Dir, Path, toFilePath)
 import Path.IO (copyDirRecur')
 import System.IO.Error (IOError)
@@ -27,6 +29,7 @@ import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
 import Hix.Error (pathText)
+import Hix.Hackage (latestVersionHackage, versionsHackage)
 import qualified Hix.Log as Log
 import Hix.Managed.Data.EnvConfig (EnvConfig)
 import qualified Hix.Managed.Data.EnvContext
@@ -170,12 +173,14 @@ handlersProd ::
   Bool ->
   m BuildHandlers
 handlersProd stateFileConf envsConf buildOutputsPrefix oldest = do
+  manager <- liftIO (newManager tlsManagerSettings)
   hackage <- HackageHandlers.handlersProd
   let stateFile = StateFileHandlers.handlersProd stateFileConf
   pure BuildHandlers {
     stateFile,
-    hackage,
     report = ReportHandlers.handlersProd,
     cabal = CabalHandlers.handlersProd oldest,
-    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix
+    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix,
+    versions = versionsHackage manager,
+    latestVersion = latestVersionHackage manager
   }

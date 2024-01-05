@@ -48,8 +48,8 @@ handlersProd ::
 handlersProd =
   handlersWith id
 
-testPackages :: Map PackageName PackageId
-testPackages =
+testPackagesBump :: Map PackageName PackageId
+testPackagesBump =
   Map.fromList $ zipApplyL (.name) [
     PackageId {name = "aeson", version = [2, 2, 0, 0]},
     PackageId {name = "base", version = [4, 17, 2, 0]},
@@ -71,7 +71,7 @@ testResources SolveResources {..} =
   where
     removeLaterTestPackageVersions SourcePackageDb {..} =
       SourcePackageDb {
-        packageIndex = Map.foldr' removeLaterVersions packageIndex testPackages,
+        packageIndex = Map.foldr' removeLaterVersions packageIndex testPackagesBump,
         ..
       }
 

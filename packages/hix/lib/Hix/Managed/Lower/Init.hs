@@ -27,8 +27,8 @@ import Hix.Managed.Data.StageContext (StageContext)
 import Hix.Managed.Data.StageResult (StageResult)
 import Hix.Managed.Data.StageState (BuildStatus, BuildSuccess)
 import Hix.Managed.Flow (Flow, execStage)
-import qualified Hix.Managed.Handlers.Lower
-import Hix.Managed.Handlers.Lower (LowerHandlers)
+import qualified Hix.Managed.Handlers.Build
+import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Lower.Candidates (candidatesInit)
 import Hix.Managed.Lower.Data.LowerMode (lowerInitMode)
@@ -59,7 +59,7 @@ failure iterations =
 -- Otherwise, the lower bounds of _all_ deps are reset to the initial ones, requiring the user to run @lower.optimize@
 -- again.
 lowerInit ::
-  LowerHandlers ->
+  BuildHandlers ->
   LowerConfig ->
   BuildConfig ->
   StageContext ->
@@ -78,7 +78,7 @@ lowerInit handlers conf buildConf context = do
          | otherwise = context.initial
 
 lowerInitStage ::
-  LowerHandlers ->
+  BuildHandlers ->
   LowerConfig ->
   BuildConfig ->
   Flow BuildStatus
@@ -87,8 +87,8 @@ lowerInitStage handlers conf buildConf =
 
 lowerInitMain ::
   LowerConfig ->
-  LowerHandlers ->
+  BuildHandlers ->
   ProjectContext ->
   M ProjectResult
 lowerInitMain conf handlers project =
-  processProject handlers.build project (void (lowerInitStage handlers conf project.build))
+  processProject handlers project (void (lowerInitStage handlers conf project.build))

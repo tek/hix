@@ -5,44 +5,26 @@ import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (LowerOptions (LowerOptions))
 import Hix.Json (jsonConfigE)
-import Hix.Managed.Data.EnvConfig (EnvConfig)
-import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.LowerConfig (LowerConfig, lowerConfig)
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import qualified Hix.Managed.Data.ProjectContextProto
 import Hix.Managed.Data.ProjectResult (ProjectResult)
-import Hix.Managed.Data.StateFileConfig (StateFileConfig)
-import Hix.Managed.Handlers.Build (BuildOutputsPrefix)
-import qualified Hix.Managed.Handlers.Lower
-import Hix.Managed.Handlers.Lower (LowerHandlers, SpecialLowerHandlers (TestLowerHandlers))
-import qualified Hix.Managed.Handlers.Lower.Prod as Lower
-import qualified Hix.Managed.Handlers.Lower.Test as Lower
+import Hix.Managed.Handlers.Build (BuildHandlers)
+import Hix.Managed.Handlers.Build.Test (chooseHandlers)
 import Hix.Managed.Lower.Auto (lowerAutoMain)
 import Hix.Managed.Lower.Init (lowerInitMain)
 import Hix.Managed.Lower.Optimize (lowerOptimizeMain)
 import Hix.Managed.Lower.Stabilize (lowerStabilizeMain)
 import Hix.Managed.ProjectContext (withProjectContext)
 
-chooseHandlers ::
-  StateFileConfig ->
-  Envs EnvConfig ->
-  Maybe BuildOutputsPrefix ->
-  Maybe SpecialLowerHandlers ->
-  M LowerHandlers
-chooseHandlers stateFileConf envsConf buildOutputsPrefix = \case
-  Just TestLowerHandlers -> Lower.handlersTest stateFileConf envsConf buildOutputsPrefix oldest
-  Nothing -> Lower.handlersProd stateFileConf envsConf buildOutputsPrefix oldest
-  where
-    oldest = False
-
 lowerCli ::
-  (LowerConfig -> LowerHandlers -> ProjectContext -> M ProjectResult) ->
+  (LowerConfig -> BuildHandlers -> ProjectContext -> M ProjectResult) ->
   LowerOptions ->
   M ()
-lowerCli main opts@LowerOptions {common, handlers = specialHandlers} = do
+lowerCli main opts@LowerOptions {common} = do
   context <- jsonConfigE Client common.context
-  handlers <- chooseHandlers common.stateFile context.envs context.buildOutputsPrefix specialHandlers
-  withProjectContext handlers.build common.project context (main conf handlers)
+  handlers <- chooseHandlers common.stateFile context.envs context.buildOutputsPrefix common.handlers
+  withProjectContext handlers common.project context (main conf handlers)
   where
     conf = lowerConfig opts
 

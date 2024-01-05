@@ -27,7 +27,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines, listEqZip)
-import Hix.Test.Managed.Lower (LowerTestParams (..), Result (..), lowerParams, lowerTest)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
 import Hix.Test.Utils (UnitTest)
 
 packages :: Packages ManagedPackageProto
@@ -397,7 +397,7 @@ test_lowerInitMutation = do
   logTarget === drop 24 (reverse log)
   where
     params =
-      (lowerParams False packages) {
+      (testParams False packages) {
         envs = [
           ("lower-main", ["local1", "local2", "local3", "local4", "local6"]),
           ("lower-special", ["local7"])

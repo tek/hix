@@ -24,8 +24,6 @@ import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto)
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
-import qualified Hix.Managed.Handlers.Lower
-import qualified Hix.Managed.Handlers.Lower.Prod as Lower
 import Hix.Managed.Lower.Init (lowerInitMain)
 import Hix.Managed.Lower.Optimize (lowerOptimizeMain)
 import Hix.Managed.ProjectContext (updateProject)
@@ -235,9 +233,7 @@ lowerNativeTest = do
       projectRoot = Just root
     }
     envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
-  build <- Build.handlersProd stateFileConf envsConfig Nothing False
-  handlersInit <- Lower.handlersProdWith build
-  handlersOptimize <- Lower.handlersProdWith build
+  handlers <- Build.handlersProd stateFileConf envsConfig Nothing False
   let
     opts = projectOptions ["lower"]
 
@@ -251,17 +247,17 @@ lowerNativeTest = do
 
     stateFile = root </> [relfile|ops/managed.nix|]
 
-    run context handlers process = do
+    run context process = do
       result <- process handlers context
-      updateProject handlersInit.build context.build result
+      updateProject handlers context.build result
       stateFileContent <- liftIO (Text.readFile (toFilePath stateFile))
       pure (result.state, stateFileContent)
 
   context0 <- ProjectContextProto.validate opts proto0
-  (state1, stateFileContentInit) <- run context0 handlersInit (lowerInitMain def)
+  (state1, stateFileContentInit) <- run context0 (lowerInitMain def)
   -- TODO the packages here aren't updated with the result from the first run
   let context1 = projectContext def state1 context0.packages context0.envs
-  (_, stateFileContentOptimize) <- run context1 handlersOptimize lowerOptimizeMain
+  (_, stateFileContentOptimize) <- run context1 lowerOptimizeMain
   pure (stateFileContentInit, stateFileContentOptimize)
 
 test_lowerNative :: UnitTest

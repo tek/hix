@@ -35,8 +35,8 @@ import Hix.Managed.Data.StageResult (
   )
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success), BuildSuccess)
 import Hix.Managed.Flow (Flow, execStatelessStage, runStage_)
-import qualified Hix.Managed.Handlers.Lower
-import Hix.Managed.Handlers.Lower (LowerHandlers)
+import qualified Hix.Managed.Handlers.Build
+import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Lower.Candidates (candidatesStabilize)
 import Hix.Managed.Lower.Data.LowerMode (lowerStabilizeMode)
@@ -93,7 +93,7 @@ failure iterations =
 -- upper.
 -- When a stable version was found, it will be set as a retracted bound, treated as a lower.
 lowerStabilize ::
-  LowerHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   StageContext ->
   M StageResult
@@ -107,14 +107,14 @@ lowerStabilize handlers conf context =
     ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper context.initial)
 
 stabilizeStage ::
-  LowerHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   Flow ()
 stabilizeStage handlers conf =
   runStage_ "stabilize"  (lowerStabilize handlers conf)
 
 stabilizeIfPossible ::
-  LowerHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   Flow ()
 stabilizeIfPossible handlers conf =
@@ -130,7 +130,7 @@ validateCurrent =
       Failure -> StageFailure (FailedPrecondition ["Env does not build successfully with the current bounds."])
 
 lowerStabilizeStages ::
-  LowerHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   Flow ()
 lowerStabilizeStages handlers conf =
@@ -139,8 +139,8 @@ lowerStabilizeStages handlers conf =
     Failure -> stabilizeIfPossible handlers conf
 
 lowerStabilizeMain ::
-  LowerHandlers ->
+  BuildHandlers ->
   ProjectContext ->
   M ProjectResult
 lowerStabilizeMain handlers project =
-  processProject handlers.build project (lowerStabilizeStages handlers project.build)
+  processProject handlers project (lowerStabilizeStages handlers project.build)

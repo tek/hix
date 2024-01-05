@@ -26,8 +26,8 @@ import Hix.Managed.Data.StageContext (StageContext (StageContext))
 import Hix.Managed.Data.StageResult (StageResult)
 import Hix.Managed.Data.StageState (BuildSuccess)
 import Hix.Managed.Flow (Flow, runStage_)
-import qualified Hix.Managed.Handlers.Lower
-import Hix.Managed.Handlers.Lower (LowerHandlers)
+import qualified Hix.Managed.Handlers.Build
+import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Lower.Candidates (candidatesOptimize)
 import Hix.Managed.Lower.Data.LowerMode (lowerOptimizeMode)
@@ -48,7 +48,7 @@ failure iterations =
   [exon|Couldn't find working lower bounds for some deps after #{describeIterations iterations}.|]
 
 lowerOptimize ::
-  LowerHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   StageContext ->
   M StageResult
@@ -62,15 +62,15 @@ lowerOptimize handlers conf context@StageContext {env, state = Initial MutationS
     ext = solverState env.solverBounds env.deps (fromVersions fromUpper versions)
 
 lowerOptimizeStage ::
-  LowerHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   Flow ()
 lowerOptimizeStage handlers conf =
   runStage_ "optimize" (lowerOptimize handlers conf)
 
 lowerOptimizeMain ::
-  LowerHandlers ->
+  BuildHandlers ->
   ProjectContext ->
   M ProjectResult
 lowerOptimizeMain handlers project =
-  processProject handlers.build project (lowerOptimizeStage handlers project.build)
+  processProject handlers project (lowerOptimizeStage handlers project.build)

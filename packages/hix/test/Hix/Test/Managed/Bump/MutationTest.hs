@@ -1,39 +1,28 @@
 module Hix.Test.Managed.Bump.MutationTest where
 
-import Data.IORef (IORef, readIORef)
+import qualified Data.Text as Text
 import Exon (exon)
-import Hedgehog (evalEither, evalMaybe)
+import Hedgehog ((===))
 
 import Hix.Data.Error (Error (Fatal))
-import Hix.Data.NixExpr (Expr)
-import Hix.Data.Options (projectOptions)
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
-import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSynthetic))
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
-import Hix.Managed.Cabal.Mock.SourcePackage (queryPackagesLatest)
-import qualified Hix.Managed.Data.EnvConfig
-import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
 import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
-import qualified Hix.Managed.Data.ProjectContextProto
-import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (ProjectContextProto))
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
-import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
-import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
-import qualified Hix.Managed.Handlers.Bump.Test as BumpHandlers
-import qualified Hix.Managed.Handlers.StateFile.Test as StateFileHandlers
-import Hix.Managed.ProjectContext (withProjectContext)
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Utils (UnitTest, runMTest)
+import qualified Hix.Test.Managed.Run
+import Hix.Test.Managed.Run (Result (Result), TestParams (..), lowerTest, testParams)
+import Hix.Test.Utils (UnitTest)
 
 packages :: Packages ManagedPackageProto
 packages =
@@ -95,8 +84,8 @@ packageDb =
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed, available = packageDb}
 
-buildVersions :: Versions -> M BuildStatus
-buildVersions = \case
+build :: Versions -> M BuildStatus
+build = \case
   [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, 1]), ("direct5", [1, 1, 1])] -> pure Success
   [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 2, 1]), ("direct4", [1, 0, 1]), ("direct5", [1, 1, 1])] -> pure Failure
   [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 1, 1])] -> pure Success
@@ -105,24 +94,15 @@ buildVersions = \case
   [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 2, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 2, 1])] -> pure Failure
   versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
 
-handlersTest :: IO (BumpHandlers, IORef [Expr])
-handlersTest = do
-  (stateFile, stateFileRef) <- StateFileHandlers.handlersUnitTest
-  let
-    handlers = handlersNull {
-      build = handlersNull.build {
-        withBuilder = versionsBuilder handlersNull.build.hackage buildVersions,
-        stateFile
-      },
-      latestVersion = queryPackagesLatest packageDb
-    }
-  pure (handlers, stateFileRef)
-
-initialState :: ProjectStateProto
-initialState =
+state :: ProjectStateProto
+state =
   ProjectStateProto {
     bounds = [
-      ("local1", [("direct4", "^>=1.0")])
+      ("local1", [
+        ("direct1", ">=0.1"),
+        ("direct2", ">=0.1"),
+        ("direct4", "^>=1.0")
+      ])
     ],
     versions = [("fancy", [("direct4", "1.0.1")])],
     overrides = [
@@ -142,11 +122,11 @@ stateFileTarget =
         upper = "4.13";
       };
       direct1 = {
-        lower = null;
+        lower = "0.1";
         upper = "1.3";
       };
       direct2 = {
-        lower = null;
+        lower = "0.1";
         upper = "1.3";
       };
       direct3 = {
@@ -231,20 +211,13 @@ stateFileTarget =
 -- - @direct5@ has an existing override for version 1.1.1, which will be replaced by the successful candidate 1.2.1.
 test_bumpMutation :: UnitTest
 test_bumpMutation = do
-  (handlers, stateFileRef, _) <- BumpHandlers.handlersUnitTest buildVersions ghcPackages
-  let
-    opts = projectOptions ["fancy"]
-
-    project =
-      ProjectContextProto {
-        packages,
-        state = initialState,
-        envs = [("fancy", EnvConfig {targets = ["local1"], ghc = GhcDbSynthetic ghcPackages})],
-        buildOutputsPrefix = Nothing
-      }
-
-  evalEither =<< liftIO do
-    runMTest False do
-      withProjectContext handlers.build opts project (bumpOptimizeMain handlers)
-  files <- liftIO (readIORef stateFileRef)
-  eqLines stateFileTarget . renderRootExpr =<< evalMaybe (head files)
+  Result {stateFile, log} <- lowerTest params bumpOptimizeMain
+  eqLines stateFileTarget (renderRootExpr stateFile)
+  where
+    params = (testParams False packages) {
+      log = True,
+      envs = [("fancy", ["local1"])],
+      ghcPackages,
+      state,
+      build
+    }

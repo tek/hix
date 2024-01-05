@@ -1,6 +1,6 @@
-module Hix.Test.Managed.Lower where
+module Hix.Test.Managed.Run where
 
-import Data.IORef (IORef, readIORef)
+import Data.IORef (readIORef)
 import Hedgehog (TestT, evalEither, evalMaybe)
 
 import Hix.Class.Map (nFromList, nKeys)
@@ -25,16 +25,15 @@ import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto)
 import Hix.Managed.Data.StageState (BuildStatus (Failure))
+import qualified Hix.Managed.Handlers.Build as BuildHandlers
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
-import qualified Hix.Managed.Handlers.Lower as LowerHandlers
-import Hix.Managed.Handlers.Lower (LowerHandlers (..))
-import qualified Hix.Managed.Handlers.Lower.Test as LowerHandlers
+import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import Hix.Managed.ProjectContext (withProjectContext)
 import Hix.Test.Utils (runMLogTest, runMTest)
 
-data LowerTestParams =
-  LowerTestParams {
+data TestParams =
+  TestParams {
     envs :: [(EnvName, [LocalPackage])],
     cabalLog :: Bool,
     log :: Bool,
@@ -46,12 +45,12 @@ data LowerTestParams =
     build :: Versions -> M BuildStatus
   }
 
-lowerParams ::
+testParams ::
   Bool ->
   Packages ManagedPackageProto ->
-  LowerTestParams
-lowerParams debug packages =
-  LowerTestParams {
+  TestParams
+testParams debug packages =
+  TestParams {
     envs = [],
     cabalLog = False,
     log = False,
@@ -71,9 +70,10 @@ data Result =
   }
 
 testProjectContext ::
-  LowerTestParams ->
+  EnvName ->
+  TestParams ->
   ProjectContextProto
-testProjectContext params =
+testProjectContext defaultEnvName params =
   ProjectContextProto {
     ProjectContextProto.packages = params.packages,
     state = params.state,
@@ -83,24 +83,26 @@ testProjectContext params =
   where
     mkEnv targets = EnvConfig {targets, ghc = GhcDbSynthetic params.ghcPackages}
 
-    defaultEnv = [("lower", nKeys params.packages)]
+    defaultEnv = [(defaultEnvName, nKeys params.packages)]
 
-withCabalLog ::
-  MonadIO m =>
-  LowerHandlers ->
-  m ((IORef [(EnvConstraints, Maybe SolverPlan)]), LowerHandlers)
-withCabalLog handlers0 =
-  LowerHandlers.logCabal handlers0 {LowerHandlers.build = handlers0.build {report = ReportHandlers.handlersProd}}
-
-lowerTest ::
-  LowerTestParams ->
-  (LowerHandlers -> ProjectContext -> M ProjectResult) ->
+managedTest ::
+  EnvName ->
+  TestParams ->
+  (BuildHandlers -> ProjectContext -> M ProjectResult) ->
   TestT IO Result
-lowerTest params main =
+managedTest defaultEnvName params main =
   withFrozenCallStack do
-    (handlers0, stateFileRef, _) <- LowerHandlers.handlersUnitTest params.build params.ghcPackages
-    (cabalRef, handlers) <- if params.cabalLog then first Just <$> withCabalLog handlers0 else pure (Nothing, handlers0)
-    (log, result) <- liftIO (runner (withProjectContext handlers.build params.projectOptions context (main handlers)))
+    (handlers0, stateFileRef, _) <- BuildHandlers.handlersUnitTest params.ghcPackages params.build
+    (cabalRef, handlers1) <-
+      if params.cabalLog
+      then first Just <$> BuildHandlers.logCabal handlers0
+      else pure (Nothing, handlers0)
+    let
+      handlers =
+        if params.log
+        then handlers1 {report = ReportHandlers.handlersProd}
+        else handlers1
+    (log, result) <- liftIO (runner (withProjectContext handlers params.projectOptions context (main handlers)))
     evalEither result
     stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
     cabalLog <- fold <$> for cabalRef \ ref -> reverse <$> liftIO (readIORef ref)
@@ -109,4 +111,20 @@ lowerTest params main =
     runner | params.log = runMLogTest params.debug (not params.debug)
            | otherwise = fmap ([],) . runMTest params.debug
 
-    context = testProjectContext params
+    context = testProjectContext defaultEnvName params
+
+lowerTest ::
+  TestParams ->
+  (BuildHandlers -> ProjectContext -> M ProjectResult) ->
+  TestT IO Result
+lowerTest params main =
+  withFrozenCallStack do
+    managedTest "lower" params main
+
+bumpTest ::
+  TestParams ->
+  (BuildHandlers -> ProjectContext -> M ProjectResult) ->
+  TestT IO Result
+bumpTest params main =
+  withFrozenCallStack do
+    managedTest "latest" params main

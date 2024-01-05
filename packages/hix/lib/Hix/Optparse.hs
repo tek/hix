@@ -10,8 +10,7 @@ import qualified Text.Show as Show
 
 import Hix.Data.OutputFormat (OutputFormat (..))
 import Hix.Data.OutputTarget (OutputTarget (..))
-import Hix.Managed.Handlers.Bump (SpecialBumpHandlers (TestBumpHandlers))
-import Hix.Managed.Handlers.Lower (SpecialLowerHandlers (TestLowerHandlers))
+import Hix.Managed.Handlers.Build (SpecialBuildHandlers (TestBumpHandlers))
 
 pathOption ::
   String ->
@@ -52,17 +51,11 @@ jsonOption = do
     Just f -> eitherDecodeFileStrict' (toFilePath f)
     Nothing -> pure (eitherDecodeStrict' (encodeUtf8 raw))
 
-bumpHandlersOption :: ReadM SpecialBumpHandlers
-bumpHandlersOption =
+buildHandlersOption :: ReadM SpecialBuildHandlers
+buildHandlersOption =
   readerAsk >>= \case
     "test" -> pure TestBumpHandlers
-    h -> fail [exon|Invalid value for bump handlers: #{h}|]
-
-lowerHandlersOption :: ReadM SpecialLowerHandlers
-lowerHandlersOption =
-  readerAsk >>= \case
-    "test" -> pure TestLowerHandlers
-    h -> fail [exon|Invalid value for lower handlers: #{h}|]
+    h -> fail [exon|Invalid value for build handlers: #{h}|]
 
 outputFormatOption :: ReadM OutputFormat
 outputFormatOption =

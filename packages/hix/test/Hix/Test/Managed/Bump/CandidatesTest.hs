@@ -11,7 +11,7 @@ import Hix.Managed.Data.Bump (Bump (Bump))
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
-import Hix.Managed.Handlers.Bump (BumpHandlers (..), handlersNull)
+import Hix.Managed.Handlers.Build (BuildHandlers (latestVersion), handlersNull)
 import Hix.Managed.QueryDep (simpleQueryDep)
 import Hix.Monad (M, clientError)
 import Hix.Test.Utils (UnitTest, runMTest)
@@ -60,7 +60,7 @@ latestVersion =
     "dep7" -> pure dep7Version
     _ -> clientError "No such package"
 
-handlersTest :: BumpHandlers
+handlersTest :: BuildHandlers
 handlersTest =
   handlersNull {latestVersion}
 

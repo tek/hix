@@ -19,8 +19,7 @@ import Hix.Managed.Data.StageContext (StageContext (StageContext), query)
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
 import Hix.Managed.Diff (reifyVersionChanges)
 import Hix.Managed.Flow (Flow, evalStageState, runStage_, stageError)
-import qualified Hix.Managed.Handlers.Lower
-import Hix.Managed.Handlers.Lower (LowerHandlers)
+import Hix.Managed.Handlers.Build (BuildHandlers)
 import Hix.Managed.Lower.Init (lowerInitStage)
 import Hix.Managed.Lower.Optimize (lowerOptimize)
 import Hix.Managed.Lower.Stabilize (stabilizeIfPossible, stabilizeStage, validateCurrent)
@@ -32,7 +31,7 @@ suggestStabilize = stageError "Re-run with --stabilize to attempt to fix the bou
 -- | This skips building with initial bounds because it only runs after LowerInit failed, which means that we have no
 -- initial bounds.
 stabilizeInitFailure ::
-  LowerHandlers ->
+  BuildHandlers ->
   LowerConfig ->
   BuildConfig ->
   Flow ()
@@ -70,7 +69,7 @@ pristineBoundsQuery =
 --
 -- TODO this could use a flag for forcing optimization of all (query) deps.
 optimizePristineBounds ::
-  LowerHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   Flow ()
 optimizePristineBounds handlers conf = do
@@ -81,7 +80,7 @@ optimizePristineBounds handlers conf = do
     Nothing -> unit
 
 postInit ::
-  LowerHandlers ->
+  BuildHandlers ->
   LowerConfig ->
   BuildConfig ->
   Flow ()
@@ -92,7 +91,7 @@ postInit handlers conf buildConf =
             | otherwise -> suggestStabilize
 
 lowerAutoStages ::
-  LowerHandlers ->
+  BuildHandlers ->
   LowerConfig ->
   BuildConfig ->
   Flow ()
@@ -104,8 +103,8 @@ lowerAutoStages handlers conf buildConf =
 
 lowerAutoMain ::
   LowerConfig ->
-  LowerHandlers ->
+  BuildHandlers ->
   ProjectContext ->
   M ProjectResult
 lowerAutoMain conf handlers project =
-  processProject handlers.build project (lowerAutoStages handlers conf project.build)
+  processProject handlers project (lowerAutoStages handlers conf project.build)

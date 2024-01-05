@@ -135,16 +135,10 @@ library
       Hix.Managed.Handlers.Build
       Hix.Managed.Handlers.Build.Prod
       Hix.Managed.Handlers.Build.Test
-      Hix.Managed.Handlers.Bump
-      Hix.Managed.Handlers.Bump.Prod
-      Hix.Managed.Handlers.Bump.Test
       Hix.Managed.Handlers.Cabal
       Hix.Managed.Handlers.Cabal.Prod
       Hix.Managed.Handlers.Hackage
       Hix.Managed.Handlers.Hackage.Prod
-      Hix.Managed.Handlers.Lower
-      Hix.Managed.Handlers.Lower.Prod
-      Hix.Managed.Handlers.Lower.Test
       Hix.Managed.Handlers.Mutation
       Hix.Managed.Handlers.Mutation.Bump
       Hix.Managed.Handlers.Mutation.Lower
@@ -332,7 +326,6 @@ test-suite hix-test
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
       Hix.Test.Managed.DiffTest
-      Hix.Test.Managed.Lower
       Hix.Test.Managed.LowerAuto.MutationOptimizeTest
       Hix.Test.Managed.LowerAuto.MutationStabilizeTest
       Hix.Test.Managed.LowerInit.MutationTest
@@ -341,6 +334,7 @@ test-suite hix-test
       Hix.Test.Managed.LowerOptimize.MutationTest
       Hix.Test.Managed.LowerStabilize.MutationTest
       Hix.Test.Managed.ProjectContextProtoTest
+      Hix.Test.Managed.Run
       Hix.Test.Managed.UnsafeIsString
       Hix.Test.ManagedTest
       Hix.Test.NewTest

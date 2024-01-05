@@ -14,8 +14,7 @@ import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import Hix.Managed.Data.Query (RawQuery)
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
-import Hix.Managed.Handlers.Bump (SpecialBumpHandlers)
-import Hix.Managed.Handlers.Lower (SpecialLowerHandlers)
+import Hix.Managed.Handlers.Build (SpecialBuildHandlers)
 import Hix.Optparse (JsonConfig)
 
 data PreprocOptions =
@@ -146,14 +145,14 @@ data ManagedOptions =
   ManagedOptions {
     context :: Either ProjectContextProto JsonConfig,
     project :: ProjectOptions,
-    stateFile :: StateFileConfig
+    stateFile :: StateFileConfig,
+    handlers :: Maybe SpecialBuildHandlers
   }
   deriving stock (Show, Generic)
 
 data BumpOptions =
   BumpOptions {
-    common :: ManagedOptions,
-    handlers :: Maybe SpecialBumpHandlers
+    common :: ManagedOptions
   }
   deriving stock (Show, Generic)
 
@@ -162,8 +161,7 @@ data LowerOptions =
     common :: ManagedOptions,
     initOnly :: Bool,
     reset :: Bool,
-    stabilize :: Bool,
-    handlers :: Maybe SpecialLowerHandlers
+    stabilize :: Bool
   }
   deriving stock (Show)
 

@@ -3,15 +3,15 @@ module Hix.Managed.Bump.Candidates where
 import Distribution.Version (Version)
 
 import Hix.Data.Monad (M)
-import qualified Hix.Managed.Data.Mutation
-import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
 import qualified Hix.Managed.Data.Bump
 import Hix.Managed.Data.Bump (Bump (Bump))
 import Hix.Managed.Data.Mutable (depName)
+import qualified Hix.Managed.Data.Mutation
+import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
 import qualified Hix.Managed.Data.QueryDep
 import Hix.Managed.Data.QueryDep (QueryDep (QueryDep))
-import qualified Hix.Managed.Handlers.Bump
-import Hix.Managed.Handlers.Bump (BumpHandlers)
+import qualified Hix.Managed.Handlers.Build
+import Hix.Managed.Handlers.Build (BuildHandlers)
 import Hix.Version (nextMajor)
 
 -- | We only want to report a bump if the new version actually changes the build.
@@ -33,7 +33,7 @@ isBump version = \case
 --
 -- Otherwise, we return 'OldBounds'.
 candidatesBump ::
-  BumpHandlers ->
+  BuildHandlers ->
   QueryDep ->
   M (Maybe (DepMutation Bump))
 candidatesBump handlers QueryDep {package, override} = do

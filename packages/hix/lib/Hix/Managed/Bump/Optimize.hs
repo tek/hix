@@ -33,8 +33,7 @@ import Hix.Managed.Data.StageResult (StageResult, StageSummary (StageNoAction, S
 import Hix.Managed.Data.StageState (BuildStatus, BuildSuccess)
 import Hix.Managed.Flow (Flow, execStage, execStatelessStage)
 import qualified Hix.Managed.Handlers.Build
-import qualified Hix.Managed.Handlers.Bump
-import Hix.Managed.Handlers.Bump (BumpHandlers)
+import Hix.Managed.Handlers.Build (BuildHandlers)
 import Hix.Managed.Handlers.Cabal (CabalHandlers, installedVersions)
 import Hix.Managed.Handlers.Mutation.Bump (handlersBump)
 import Hix.Managed.Process (processProject)
@@ -74,7 +73,7 @@ failure iterations =
   [exon|Couldn't find working latest versions for some deps after #{describeIterations iterations}.|]
 
 bumpBuild ::
-  BumpHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   StageContext ->
   M StageResult
@@ -85,14 +84,14 @@ bumpBuild handlers conf stage@StageContext {env, builder, state} = do
     ext = solverState env.solverBounds env.deps (bumpSolverParams env.deps builder.cabal state)
 
 bumpBuildStage ::
-  BumpHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   Flow BuildStatus
 bumpBuildStage handlers conf =
   execStage "bump" (bumpBuild handlers conf)
 
 bumpReportStage ::
-  BumpHandlers ->
+  BuildHandlers ->
   Flow BuildStatus
 bumpReportStage handlers =
   execStatelessStage "bump-report" \ StageContext {query = Query query} ->
@@ -108,7 +107,7 @@ bumpReportStage handlers =
       MutableId {..}
 
 bumpStages ::
-  BumpHandlers ->
+  BuildHandlers ->
   BuildConfig ->
   Flow BuildStatus
 bumpStages handlers conf
@@ -118,8 +117,8 @@ bumpStages handlers conf
   = bumpBuildStage handlers conf
 
 bumpOptimizeMain ::
-  BumpHandlers ->
+  BuildHandlers ->
   ProjectContext ->
   M ProjectResult
 bumpOptimizeMain handlers project =
-  processProject handlers.build project (void (bumpStages handlers project.build))
+  processProject handlers project (void (bumpStages handlers project.build))

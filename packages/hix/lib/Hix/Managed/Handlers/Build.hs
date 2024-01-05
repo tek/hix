@@ -6,7 +6,8 @@ import Data.IORef (IORef, newIORef)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.PackageId (PackageId)
-import Hix.Data.Version (Versions)
+import Hix.Data.PackageName (PackageName)
+import Hix.Data.Version (Version, Versions)
 import Hix.Managed.Cabal.Changes (SolverPlan)
 import Hix.Managed.Cabal.Data.Config (GhcDb)
 import Hix.Managed.Data.Constraints (EnvConstraints)
@@ -19,7 +20,6 @@ import Hix.Managed.Data.StageState (BuildStatus (Failure))
 import qualified Hix.Managed.Handlers.Cabal as Solve
 import qualified Hix.Managed.Handlers.Cabal as Cabal
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
-import qualified Hix.Managed.Handlers.Hackage as HackageHandlers
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
 import qualified Hix.Managed.Handlers.Report as Report
 import Hix.Managed.Handlers.Report (ReportHandlers)
@@ -49,10 +49,11 @@ runBuilder Builder {withEnvBuilder} = withEnvBuilder
 data BuildHandlers =
   BuildHandlers {
     stateFile :: StateFileHandlers,
-    hackage :: HackageHandlers,
     report :: ReportHandlers,
     cabal :: Packages ManagedPackage -> GhcDb -> M CabalHandlers,
-    withBuilder :: ∀ a . (Builder -> M a) -> M a
+    withBuilder :: ∀ a . (Builder -> M a) -> M a,
+    versions :: PackageName -> M [Version],
+    latestVersion :: PackageName -> M (Maybe Version)
   }
 
 testBuilder :: (Versions -> [PackageId] -> M (Overrides, BuildStatus)) -> (Builder -> M a) -> M a
@@ -70,17 +71,17 @@ handlersNull :: BuildHandlers
 handlersNull =
   BuildHandlers {
     stateFile = StateFileHandlers.handlersNull,
-    hackage = HackageHandlers.handlersNull,
     report = Report.handlersNull,
     cabal = \ _ _ -> pure Solve.handlersNull,
-    withBuilder = testBuilder \ _ _ -> pure (mempty, Failure)
+    withBuilder = testBuilder \ _ _ -> pure (mempty, Failure),
+    versions = \ _ -> pure [],
+    latestVersion = \ _ -> pure Nothing
   }
 
 wrapCabal :: (CabalHandlers -> CabalHandlers) -> BuildHandlers -> BuildHandlers
 wrapCabal f BuildHandlers {..} =
   BuildHandlers {cabal = \ p d -> f <$> cabal p d, ..}
 
--- TODO use the additive pattern of IORef exfiltration for other handlers?
 logCabal ::
   MonadIO m =>
   BuildHandlers ->
@@ -88,3 +89,7 @@ logCabal ::
 logCabal handlers = do
   ref <- liftIO (newIORef [])
   pure (ref, wrapCabal (Cabal.logCabal ref) handlers)
+
+data SpecialBuildHandlers =
+  TestBumpHandlers
+  deriving stock (Eq, Show)

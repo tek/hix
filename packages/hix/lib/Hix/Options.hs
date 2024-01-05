@@ -79,9 +79,8 @@ import Hix.Optparse (
   JsonConfig,
   absDirOption,
   absFileOption,
-  bumpHandlersOption,
+  buildHandlersOption,
   jsonOption,
-  lowerHandlersOption,
   outputFormatOption,
   outputTargetOption,
   relFileOption,
@@ -268,17 +267,16 @@ managedOptionsParser = do
   context <- Right <$> jsonConfigParser
   project <- projectOptionsParser
   stateFile <- stateFileConfigParser
+  handlers <- optional (option buildHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   pure ManagedOptions {..}
 
 bumpParser :: Parser BumpOptions
 bumpParser = do
-  handlers <- optional (option bumpHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   common <- managedOptionsParser
   pure BumpOptions {..}
 
 lowerParser :: Parser LowerOptions
 lowerParser = do
-  handlers <- optional (option lowerHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
   initOnly <- switch (long "init" <> help "Only initialize missing lower bounds")
   reset <- switch (long "reset" <> help "Reinitialize bounds of all deps rather than just new ones")
   stabilize <- switch (long "stabilize" <> help "Attempt to find working bounds if the current ones are broken")
