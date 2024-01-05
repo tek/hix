@@ -119,9 +119,11 @@ in {
 
       tests = import ./test/default.nix { inherit util; };
 
-      testApps = lib.mapAttrs (_: util.app) tests.sets;
-
-    in testApps // {
+    in {
+      test-basic = util.app tests.sets.test-basic;
+      test-vm = util.app tests.sets.test-vm;
+      test-managed = util.app tests.sets.test-managed;
+      test = util.app tests.sets.test;
 
       cli = util.app "${config.outputs.packages.hix}/bin/hix";
 

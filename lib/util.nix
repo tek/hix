@@ -160,6 +160,7 @@ let
   util = basic // {
     inherit
     config
+    pkgs
     hsLib
     paramApp
     types
