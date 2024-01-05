@@ -116,18 +116,14 @@ in {
     };
 
     apps = let
+
       tests = import ./test/default.nix { inherit util; };
-    in {
 
-      test = {
-        type = "app";
-        program = "${tests.main}";
-      };
+      testApps = lib.mapAttrs (_: util.app) tests.sets;
 
-      cli = {
-        type = "app";
-        program = "${config.outputs.packages.hix}/bin/hix";
-      };
+    in testApps // {
+
+      cli = util.app "${config.outputs.packages.hix}/bin/hix";
 
       new-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
@@ -135,17 +131,11 @@ in {
         '' ''
         ${util.nixC} run .#gen-cabal-quiet
         '';
-      in {
-        type = "app";
-        program = "${prog}";
-      };
+      in util.app prog;
 
       new = let
         prog = pkgs.writeScript "hix-new" ''${util.nixC} run ${inputs.self}#new-nocache -- "$@"'';
-      in {
-        type = "app";
-        program = "${prog}";
-      };
+      in util.app prog;
 
       bootstrap-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-bootstrap-nocache" ''
@@ -153,27 +143,15 @@ in {
         '' ''
         ${util.nixC} run .#gen-cabal-quiet
         '';
-      in {
-        type = "app";
-        program = "${prog}";
-      };
+      in util.app prog;
 
       bootstrap = let
         prog = pkgs.writeScript "hix-bootstrap" ''${util.nixC} run ${inputs.self}#bootstrap-nocache -- "$@"'';
-      in {
-        type = "app";
-        program = "${prog}";
-      };
+      in util.app prog;
 
-      release-nix = {
-        type = "app";
-        program = "${release.nix}";
-      };
+      release-nix = util.app release.nix;
 
-      release-all = {
-        type = "app";
-        program = "${release.all}";
-      };
+      release-all = util.app release.all;
 
     };
 

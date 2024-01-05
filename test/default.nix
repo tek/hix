@@ -1,20 +1,17 @@
-{ util, keep ? false, ... }:
+{ util, ... }:
 let
   inherit (util) config lib;
   inherit (config) pkgs;
 
   test = name: (import (./. + "/${name}/test.nix") { inherit config util pkgs; }).test;
 
-  tests = {
+  tests-basic = {
     basic = test "basic";
     deps = test "deps";
     ghci = test "ghci";
-    ghci-vm = test "ghci-vm";
     packages = test "packages";
     hackage = test "hackage";
     cross = test "cross";
-    service = test "service";
-    postgres = test "postgres";
     env = test "env";
     new = test "new";
     bootstrap = test "bootstrap";
@@ -26,17 +23,26 @@ let
     dep-versions = test "dep-versions";
     update-cli-version = test "update-cli-version";
     direnv = test "direnv";
+  };
+
+  tests-vm = {
+    ghci-vm = test "ghci-vm";
+    service = test "service";
+    postgres = test "postgres";
+  };
+
+  tests-managed = {
     bump = test "bump";
     lower = test "lower";
     lower-stabilize = test "lower-stabilize";
     lower-local = test "lower-local";
   };
 
-  testA = n: t: "${n} ${t}";
+  tests = tests-basic // tests-vm // tests-managed;
 
-  testsA = lib.concatStringsSep " " (lib.mapAttrsToList testA tests);
+  testAssoc = n: t: "${n} ${t}";
 
-  ciSkipTests = "ghci-vm service postgres";
+  testsAssocArray = set: lib.concatStringsSep " " (lib.mapAttrsToList testAssoc set);
 
   rsyncFilter = pkgs.writeText "hix-test-rsync-filter" ''
   + /*.nix
@@ -49,21 +55,13 @@ let
   - *
   '';
 
-in {
-  main = pkgs.writeScript "hix-tests" ''
-  #!${pkgs.zsh}/bin/zsh
+  preamble = set: ''
   hix_src_dir=$PWD
   tmpdir=/tmp/hix-test-temp
-  if (( $# == 0 ))
+  if [[ -z ''${hix_test_keep-} ]]
   then
-    targets="${toString (lib.attrNames tests)}"
-  else
-    targets="$@"
+    trap "rm -rf $tmpdir" EXIT
   fi
-  typeset -A tests
-  set -A tests ${testsA}
-  typeset -a vm_tests
-  ci_skip_tests=(${ciSkipTests})
   ${util.loadConsole}
 
   fail()
@@ -75,13 +73,6 @@ in {
     error_message $*
     return 1
   }
-
-  ${if keep then "" else ''
-  if [[ -z ''${hix_test_keep-} ]]
-  then
-    trap "rm -rf $tmpdir" EXIT
-  fi
-  ''}
 
   check_eq()
   {
@@ -141,7 +132,9 @@ in {
   {
     nix flake update --quiet --quiet
   }
+  '';
 
+  runtest = ''
   runtest()
   {
     setopt local_options err_return
@@ -157,12 +150,6 @@ in {
     then
       message "Invalid test name: $current"
       return 1
-    fi
-
-    if [[ -n $CI ]] && [[ -n ''${ci_skip_tests[(r)$current]} ]]
-    then
-      message "Skipping test '$current'"
-      return 0
     fi
 
     mkdir -p $test_base
@@ -193,7 +180,20 @@ in {
     message "Running test '$current'..."
     source $test
   }
+  '';
 
+  loadTargets = set: ''
+  if (( $# == 0 ))
+  then
+    targets="${toString (lib.attrNames set)}"
+  else
+    targets="$@"
+  fi
+  typeset -A tests
+  set -A tests ${testsAssocArray set}
+  '';
+
+  main = ''
   rm -rf $tmpdir
   mkdir -p $tmpdir
 
@@ -223,4 +223,20 @@ in {
     exit 1
   fi
   '';
+
+  script = name: set: pkgs.writeScript "hix-tests-${name}" ''
+  #!${pkgs.zsh}/bin/zsh
+  ${preamble set}
+  ${runtest}
+  ${loadTargets set}
+  ${main}
+  '';
+
+in {
+  sets = {
+    test-basic = script "basic" tests-basic;
+    test-vm = script "vm" tests-vm;
+    test-managed = script "managed" tests-managed;
+    test = script "all" tests;
+  };
 }

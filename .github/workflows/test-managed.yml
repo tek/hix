@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run Tests for Managed Bounds
 on:
   push:
     branches:
@@ -20,5 +20,4 @@ jobs:
       with:
         name: tek
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-    - run: nix run .#test-basic
-    - run: nix flake check
+    - run: nix run .#test-managed
