@@ -184,6 +184,7 @@ library
       Hix.Preproc
       Hix.Pretty
       Hix.These
+      Hix.Trace
       Hix.Version
       Hix.Zip
   hs-source-dirs:
