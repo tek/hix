@@ -29,7 +29,7 @@
 
     check_appimage()
     {
-      check "nix run $1 2>/dev/null" 'string' "Running the AppImage for $1 produced the wrong output"
+      check "$(nix run $1 2>/dev/null)" 'string' "Running the AppImage for $1 produced the wrong output"
     }
 
     check_appimage '.#appimage'
