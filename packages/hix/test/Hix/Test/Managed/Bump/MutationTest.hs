@@ -180,6 +180,22 @@ stateFileTarget =
 }
 |]
 
+logTarget :: [Text]
+logTarget =
+  Text.lines [exon|
+[35m[1m>>>[0m [33mfancy[0m
+[35m[1m>>>[0m Couldn't find working latest versions for some deps after 2 iterations.
+    📦 direct3 1.2.1 (<1.3) [x]
+[35m[1m>>>[0m Added new versions:
+    📦 [34mbase[0m      4.12.0.0   ↕ [no bounds] -> <[32m4.13[0m
+    📦 [34mdirect1[0m   1.2.1      ↕ >=0.1 -> [0.1, [32m1.3[0m]
+    📦 [34mdirect2[0m   1.2.1      ↕ >=0.1 -> [0.1, [32m1.3[0m]
+    📦 [34mdirect3[0m   1.0.1      ↕ [no bounds] -> <[32m1.1[0m
+    📦 [34mdirect5[0m   1.2.1      ↕ [no bounds] -> <[32m1.3[0m
+[35m[1m>>>[0m Updated versions:
+    📦 [34mdirect4[0m   [31m1.0.1[0m -> [32m1.2.1[0m   ↕ [1.0, [31m1.1[0m] -> [1.0, [32m1.3[0m]
+|]
+
 -- | Goals for these deps:
 --
 -- Unless stated otherwise, packages have an installed version, 1.0.1, and a latest available version, 1.2.1, which will
@@ -213,6 +229,7 @@ test_bumpMutation :: UnitTest
 test_bumpMutation = do
   Result {stateFile, log} <- lowerTest params bumpOptimizeMain
   eqLines stateFileTarget (renderRootExpr stateFile)
+  logTarget === drop 12 (reverse log)
   where
     params = (testParams False packages) {
       log = True,

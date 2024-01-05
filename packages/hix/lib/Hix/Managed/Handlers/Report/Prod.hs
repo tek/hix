@@ -24,6 +24,7 @@ import Hix.Managed.Data.StageResult (StageFailure (FailedMutations, FailedPrecon
 import qualified Hix.Managed.EnvResult
 import qualified Hix.Managed.EnvResult as EnvResult
 import Hix.Managed.EnvResult (
+  BoundsModification (BoundsModification),
   DepModification (DepAdded, DepUpdated),
   DepResult (DepResult),
   DepResultDetail (..),
@@ -84,17 +85,46 @@ formatDepLine :: MutableDep -> Text -> Text -> (Text, Text, Text)
 formatDepLine package version bounds =
   ([exon|📦 #{color colors.blue (showP package)}|], version, [exon|↕ #{bounds}|])
 
-formatDep :: MutableDep -> Version -> VersionBounds -> (Text, Text, Text)
-formatDep package version VersionBounds {..} =
-  formatDepLine package (showP version) (printBounds showP showP lower upper)
+formatBoundsModification :: VersionBounds -> BoundsModification -> Text
+formatBoundsModification VersionBounds {lower = lowerNew, upper = upperNew} (BoundsModification bm) =
+  [exon|#{original} -> #{new}|]
+  where
+
+    original = interval lowerOriginal upperOriginal colors.red lowerChanged upperChanged
+    new = interval lowerNew upperNew colors.green lowerChanged upperChanged
+
+    lowerOriginal = fromMaybe lowerNew lowerDiff
+    upperOriginal = fromMaybe upperNew upperDiff
+
+    lowerChanged = isJust lowerDiff
+    upperChanged = isJust upperDiff
+
+    lowerDiff = justHere bm
+    upperDiff = justThere bm
+
+    interval l u col colL colU =
+      printBounds (bound col colL) (bound col colU) l u
+
+    bound col useCol v
+      | useCol
+      = color col (showP v)
+      | otherwise
+      = showP v
+
+formatDep :: MutableDep -> Version -> VersionBounds -> Maybe BoundsModification -> (Text, Text, Text)
+formatDep package version bounds boundsMod =
+  formatDepLine package (showP version) (maybe unchangedBounds changedBounds boundsMod)
+  where
+    changedBounds = formatBoundsModification bounds
+    unchangedBounds = printBounds showP showP bounds.lower bounds.upper
 
 formatDepUpdate ::
   MutableDep ->
   Version ->
   VersionBounds ->
-  These Version (These (Maybe Version) (Maybe Version)) ->
+  These Version BoundsModification ->
   (Text, Text, Text)
-formatDepUpdate package version bounds@VersionBounds {lower = ln, upper = un} update =
+formatDepUpdate package version bounds update =
   formatDepLine package versionDesc boundsDesc
   where
     versionDesc = case justHere update of
@@ -105,28 +135,8 @@ formatDepUpdate package version bounds@VersionBounds {lower = ln, upper = un} up
       [exon|#{color colors.red (showP original)} -> #{color colors.green (showP new)}|]
 
     boundsDesc = case justThere update of
-      Just d -> boundsDiff (originalBounds d)
+      Just boundsMod -> formatBoundsModification bounds boundsMod
       Nothing -> showP bounds
-
-    boundsDiff (lo, uo) =
-      [exon|#{org} -> #{nw}|]
-      where
-        org = interval (fromMaybe ln lo) (fromMaybe un uo) colors.red lowerChanged upperChanged
-        nw = interval ln un colors.green lowerChanged upperChanged
-        lowerChanged = isJust lo
-        upperChanged = isJust uo
-
-    originalBounds d =
-      (justHere d, justThere d)
-
-    interval l u col colL colU =
-      printBounds (bound col colL) (bound col colU) l u
-
-    bound col useCol v
-      | useCol
-      = color col (showP v)
-      | otherwise
-      = showP v
 
 printAligned :: [(Text, Text, Text)] -> M ()
 printAligned deps =
@@ -142,7 +152,7 @@ printAligned deps =
 formatDepResult :: DepResult -> Maybe (Text, Text, Text)
 formatDepResult DepResult {..} =
   case detail of
-    DepModified DepAdded -> Just (formatDep package version bounds)
+    DepModified (DepAdded boundsMod) -> Just (formatDep package version bounds boundsMod)
     DepModified (DepUpdated update) -> Just (formatDepUpdate package version bounds update)
     DepUnmodified -> Nothing
 

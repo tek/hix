@@ -55,7 +55,7 @@ modifiedId result =
   where
     range = case result.detail of
       DepModified (DepUpdated (justThere -> Just _)) -> Just result.bounds
-      DepModified DepAdded -> Just result.bounds
+      DepModified (DepAdded _) -> Just result.bounds
       _ -> Nothing
 
 buildOutput :: ProjectResult -> BuildOutput

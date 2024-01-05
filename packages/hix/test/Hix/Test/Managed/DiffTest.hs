@@ -10,6 +10,7 @@ import Hix.Managed.Data.Diff (BoundsChange, VersionChange)
 import Hix.Managed.Diff (boundsChange, versionChange)
 import qualified Hix.Managed.EnvResult
 import Hix.Managed.EnvResult (
+  BoundsModification (BoundsModification),
   DepModification (DepUpdated),
   DepResult (DepResult),
   DepResultDetail (DepModified),
@@ -36,7 +37,7 @@ target1 =
     package = "dep",
     version = [1, 5],
     bounds = versionBounds [1, 5] [2, 0],
-    detail = DepModified (DepUpdated (These [1, 0] (This (Just [1, 0]))))
+    detail = DepModified (DepUpdated (These [1, 0] (BoundsModification (This (Just [1, 0])))))
   }
 
 test_boundsDiffDepResult :: UnitTest

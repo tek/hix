@@ -346,7 +346,7 @@ logTarget =
 [35m[1m>>>[0m [33mlower-main[0m
 [35m[1m>>>[0m Found initial lower bounds for all deps after 2 iterations.
 [35m[1m>>>[0m Added new versions:
-    📦 [34mdirect4[0m   1.0.3   ↕ >=1.0.3
+    📦 [34mdirect4[0m   1.0.3   ↕ [no bounds] -> >=[32m1.0.3[0m
 [35m[1m>>>[0m Updated versions:
     📦 [34mdirect1[0m   [31m1.0.1[0m -> [32m1.0.5[0m   ↕ [no bounds] -> >=[32m1.0.5[0m
     📦 [34mdirect2[0m   [31m4.3.1[0m -> [32m5.0.5[0m   ↕ [[31m4.0[0m, 5.1] -> [[32m5.0.5[0m, 5.1]
@@ -354,7 +354,7 @@ logTarget =
 [35m[1m>>>[0m [33mlower-special[0m
 [35m[1m>>>[0m Found initial lower bounds for all deps after 1 iteration.
 [35m[1m>>>[0m Added new versions:
-    📦 [34mdirect2[0m   5.0   ↕ >=5.0
+    📦 [34mdirect2[0m   5.0   ↕ [no bounds] -> >=[32m5.0[0m
 |]
 
 -- | Goals for these deps:

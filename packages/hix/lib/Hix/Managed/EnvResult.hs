@@ -25,10 +25,14 @@ import Hix.Managed.Data.StageResult (stageFailures)
 import Hix.Managed.Diff (diffOriginal, reifyBoundsChange, reifyVersionChange)
 import Hix.These (maybeThese)
 
+newtype BoundsModification =
+  BoundsModification (These (Maybe Version) (Maybe Version))
+  deriving stock (Eq, Show, Generic)
+
 data DepModification =
-  DepAdded
+  DepAdded (Maybe BoundsModification)
   |
-  DepUpdated (These Version (These (Maybe Version) (Maybe Version)))
+  DepUpdated (These Version BoundsModification)
   deriving stock (Eq, Show, Generic)
 
 data DepResultDetail =
@@ -61,7 +65,7 @@ depResult package versionChange boundsChange = do
   }
   where
     detail = case versionChange of
-      Changed (DiffAdded _) -> DepModified DepAdded
+      Changed (DiffAdded _) -> DepModified (DepAdded boundsUpdate)
       Changed (DiffChanged original _ _) ->
         DepModified (DepUpdated (maybe This (flip These) boundsUpdate original))
       Unchanged _
@@ -69,10 +73,9 @@ depResult package versionChange boundsChange = do
         -> DepModified (DepUpdated (That b))
       _ -> DepUnmodified
 
-
     boundsUpdate = case boundsChange of
       Changed (DiffChanged _ _ (BoundsDiffDetail det)) ->
-        maybeThese (diffOriginal <$> justHere det) (diffOriginal <$> justThere det)
+        BoundsModification <$> maybeThese (diffOriginal <$> justHere det) (diffOriginal <$> justThere det)
       _ -> Nothing
 
 deps :: EnvResult -> [DepResult]
@@ -110,7 +113,7 @@ grouped result =
 
     step (a, up, un) dep =
       case dep.detail of
-        DepModified DepAdded -> (dep : a, up, un)
+        DepModified DepAdded {} -> (dep : a, up, un)
         DepModified DepUpdated {} -> (a, dep : up, un)
         DepUnmodified -> (a, up, dep : un)
 
