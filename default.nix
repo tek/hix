@@ -22,7 +22,9 @@ let
     spec = import ./lib/deps/spec.nix { inherit (self) lib; };
   });
 
-  localOutputs = import ./local.nix { inherit inputs; hix = api; };
+  testConfig = import ./ops/test-config.nix;
+  localModule = import ./local.nix { inherit inputs; };
+  localOutputs = api.pro [localModule testConfig];
 
 in localOutputs // {
   lib = api;

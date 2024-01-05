@@ -1,6 +1,5 @@
-{inputs, hix}:
-
-hix.pro [({config, lib, util, ...}: let
+{inputs}:
+{config, lib, util, ...}: let
   pkgs = config.pkgs;
 
   release = import ./lib/release.nix { inherit config util; };
@@ -164,4 +163,4 @@ in {
     envApps = false;
   };
 
-}) (import ./ops/test-config.nix)]
+}
