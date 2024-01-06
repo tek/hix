@@ -70,7 +70,7 @@ test_candidatesOptimize = do
     for majors \ mut ->
       processMutationLower def lowerOptimizeMode lowerOptimizeUpdate initialState mut (build buildRef)
   mutationResults <- evalEither result
-  Just (MutationSuccess candidate mstate (updateSolverState (const newConstraints) initialState)) === mutationResults
+  Just (MutationSuccess candidate True mstate (updateSolverState (const newConstraints) initialState)) === mutationResults
   triedVersions <- liftIO (readIORef buildRef)
   (Just <$> targets) === triedVersions
   where

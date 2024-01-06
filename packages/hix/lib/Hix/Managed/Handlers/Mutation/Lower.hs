@@ -30,6 +30,8 @@ import Hix.Pretty (showP)
 
 -- TODO would be nice if the deps that succeed as transitive deps would have their candidates trimmed so that it
 -- immediately returns success when the version is encountered that succeeded most recently that way.
+--
+-- TODO Can we get a sensible value for @changed@?
 processMutationLower ::
   BuildConfig ->
   LowerMode ->
@@ -40,8 +42,8 @@ processMutationLower ::
   M (MutationResult SolverState)
 processMutationLower conf mode update solver DepMutation {package, retract, mutation = Lower {majors}} build = do
   foldM buildMajor (Right 0, Nothing) majors <&> \case
-    (_, Just (candidate, newSolver, newState)) ->
-      MutationSuccess candidate newState newSolver
+    (_, Just (candidate, ext, state)) ->
+      MutationSuccess {candidate, changed = True, state, ext}
     (_, Nothing) ->
       mode.noSuccess
   where

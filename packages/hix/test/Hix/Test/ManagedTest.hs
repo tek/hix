@@ -24,7 +24,7 @@ test_managed =
         unitTest "optimize" test_candidatesOptimize
       ],
       testGroup "mutation build" [
-        unitTest "bump" test_bumpMutation,
+        test_bumpMutation,
         unitTest "lower.init" test_lowerInitMutation,
         unitTest "lower.optimize" test_lowerOptimizeMutation,
         unitTest "lower.stabilize" test_lowerStabilizeMutation,

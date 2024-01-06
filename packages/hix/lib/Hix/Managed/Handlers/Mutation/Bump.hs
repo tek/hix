@@ -17,7 +17,7 @@ import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (
   BuildMutation,
   DepMutation (DepMutation),
-  MutationResult (MutationFailed, MutationKeep, MutationSuccess),
+  MutationResult (MutationFailed, MutationSuccess),
   )
 import Hix.Managed.Data.MutationState (MutationState)
 import qualified Hix.Managed.Handlers.Mutation
@@ -31,9 +31,7 @@ updateConstraintsBump _ PackageId {version} MutationConstraints {..} =
 updateBound :: Version -> VersionBounds -> VersionBounds
 updateBound = VersionBounds.withUpper . nextMajor
 
--- | If the new version isn't newer than the existing override, we don't want to report a bump, but we still want to
--- ensure that the same version builds, since the user might have changed the code in a way that makes it incompatible
--- with the latest version, which may differ from the dev env.
+-- TODO Avoid building unchanged candidates after the first build of the same set of deps.
 processMutationBump ::
   SolverState ->
   DepMutation Bump ->
@@ -41,11 +39,8 @@ processMutationBump ::
   M (MutationResult SolverState)
 processMutationBump solver DepMutation {package, mutation = Bump {version, changed}} build =
   builder version <&> \case
-    Just (candidate, newSolver, newState)
-      | changed ->
-        MutationSuccess candidate newState newSolver
-      | otherwise ->
-        MutationKeep
+    Just (candidate, ext, state) ->
+      MutationSuccess {candidate, changed, state, ext}
     Nothing ->
       MutationFailed
   where

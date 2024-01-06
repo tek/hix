@@ -104,7 +104,7 @@ candidatesInit fetchVersions pre dep
     logInitConfig dep.package conf
     candidates fetchVersions dep False (selectionInit conf)
   where
-    conf = initConfig dep.version
+    conf = initConfig dep.bounds
 
 data OptimizeConfig =
   OptimizeMajorsBefore Int Int
@@ -147,7 +147,7 @@ candidatesOptimize fetchVersions initial dep = do
   logOptimizeConfig dep.package conf
   candidates fetchVersions dep False (selectionOptimize conf)
   where
-    conf = optimizeConfig (join (initial !! dep.package)) dep.version
+    conf = optimizeConfig (join (initial !! dep.package)) dep.bounds
 
 data StabilizeConfig =
   StabilizeFromVersion Version (Maybe Version)
@@ -189,7 +189,7 @@ candidatesStabilize fetchVersions dep initialBound = do
   logStabilizeConfig dep.package conf
   candidates fetchVersions dep (isRetract conf) (selectionStabilize conf)
   where
-    conf = stabilizeConfig dep.version initialBound
+    conf = stabilizeConfig dep.bounds initialBound
 
     isRetract = \case
       StabilizeFromVersion _ _ -> True

@@ -3,6 +3,7 @@ module Hix.Test.Managed.Bump.MutationTest where
 import qualified Data.Text as Text
 import Exon (exon)
 import Hedgehog ((===))
+import Test.Tasty (TestTree, testGroup)
 
 import Hix.Data.Error (Error (Fatal))
 import Hix.Data.PackageId (PackageId)
@@ -21,8 +22,8 @@ import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
 import qualified Hix.Test.Managed.Run
-import Hix.Test.Managed.Run (Result (Result), TestParams (..), lowerTest, testParams)
-import Hix.Test.Utils (UnitTest)
+import Hix.Test.Managed.Run (Result (Result), TestParams (..), bumpTest, testParams)
+import Hix.Test.Utils (UnitTest, unitTest)
 
 packages :: Packages ManagedPackageProto
 packages =
@@ -225,9 +226,9 @@ logTarget =
 --   It has an existing entry in @initial@, which will be preserved.
 --
 -- - @direct5@ has an existing override for version 1.1.1, which will be replaced by the successful candidate 1.2.1.
-test_bumpMutation :: UnitTest
-test_bumpMutation = do
-  Result {stateFile, log} <- lowerTest params bumpOptimizeMain
+test_bumpMutationBasic :: UnitTest
+test_bumpMutationBasic = do
+  Result {stateFile, log} <- bumpTest params bumpOptimizeMain
   eqLines stateFileTarget (renderRootExpr stateFile)
   logTarget === drop 12 (reverse log)
   where
@@ -238,3 +239,96 @@ test_bumpMutation = do
       state,
       build
     }
+
+packages_upToDate :: Packages ManagedPackageProto
+packages_upToDate =
+  managedPackages [(("local1", "1.0"), ["direct1"])]
+
+installed_upToDate :: [(PackageId, [PackageId])]
+installed_upToDate =
+  [("direct1-1.0.0", [])]
+
+packageDb_upToDate :: SourcePackages
+packageDb_upToDate =
+  [("direct1", [([1, 0, 1], [])])]
+
+ghcPackages_upToDate :: GhcPackages
+ghcPackages_upToDate = GhcPackages {installed = installed_upToDate, available = packageDb_upToDate}
+
+state_upToDate :: ProjectStateProto
+state_upToDate =
+  ProjectStateProto {
+    bounds = [("local1", [("direct1", ">=0.1 && <1.1")])],
+    versions = [],
+    overrides = [("latest", [("direct1", "direct1-1.0.1")])],
+    initial = [],
+    resolving = False
+  }
+
+build_upToDate :: Versions -> M BuildStatus
+build_upToDate = \case
+  [("direct1", [1, 0, 1])] -> pure Success
+  versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
+
+stateFileTarget_upToDate :: Text
+stateFileTarget_upToDate =
+  [exon|{
+  bounds = {
+    local1 = {
+      direct1 = {
+        lower = "0.1";
+        upper = "1.1";
+      };
+    };
+  };
+  versions = {
+    latest = {
+      direct1 = "1.0.1";
+    };
+  };
+  initial = {
+    latest = {};
+  };
+  overrides = {
+    latest = {
+      direct1 = {
+        version = "1.0.1";
+        hash = "direct1-1.0.1";
+      };
+    };
+  };
+  resolving = false;
+}
+|]
+
+-- | This has a minimal configuration: Only one target with one dep with one version.
+-- The version is already in the overrides and bounds.
+-- The only thing missing is the entry in @versions@.
+--
+-- In the final state, the version should have been added.
+--
+-- This is a bugfix test, since at some point, the versions would not have been written back if _all_ candidates
+-- resulted in @MutationKeep@ because they had been classified as up to date based on the comparison of the candidate
+-- version and the preexisting override.
+-- Comparing with the override was wrong to begin with, since that would fail to notice an up to date version if it was
+-- installed.
+-- But in general, versions from successful builds should be written to the mutation state even for @MutationKeep@.
+-- However, this is only significant if the state has been tampered with between runs, since a preexisting override
+-- should have a corresponding version entry.
+test_bumpMutationUpToDate :: UnitTest
+test_bumpMutationUpToDate = do
+  Result {stateFile} <- bumpTest params bumpOptimizeMain
+  eqLines stateFileTarget_upToDate (renderRootExpr stateFile)
+  where
+    params = (testParams False packages_upToDate) {
+      ghcPackages = ghcPackages_upToDate,
+      state = state_upToDate,
+      build = build_upToDate
+    }
+
+test_bumpMutation :: TestTree
+test_bumpMutation =
+  testGroup "bump" [
+    unitTest "basic" test_bumpMutationBasic,
+    unitTest "up to date" test_bumpMutationUpToDate
+  ]

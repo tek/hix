@@ -17,7 +17,7 @@ import Hix.Version (nextMajor)
 -- | We only want to report a bump if the new version actually changes the build.
 isBump :: Version -> Maybe Version -> Bool
 isBump version = \case
-  Just override -> version > override
+  Just current -> version > current
   Nothing -> True
 
 -- | Decide whether the latest version of a dependency requires changes to the currently specified bound.
@@ -36,12 +36,12 @@ candidatesBump ::
   BuildHandlers ->
   QueryDep ->
   M (Maybe (DepMutation Bump))
-candidatesBump handlers QueryDep {package, override} = do
+candidatesBump handlers QueryDep {package, current} = do
   fmap mutation <$> handlers.latestVersion (depName package)
   where
     mutation version =
       DepMutation {
         package,
         retract = False,
-        mutation = Bump {version, bound = nextMajor version, changed = isBump version override}
+        mutation = Bump {version, bound = nextMajor version, changed = isBump version current}
       }

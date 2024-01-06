@@ -10,7 +10,8 @@ data QueryDep =
   QueryDep {
     package :: MutableDep,
     -- | Used to constrain the spectrum of candidate versions in some modes.
-    version :: VersionBounds,
+    bounds :: VersionBounds,
+    current :: Maybe Version,
     installed :: Maybe Version,
     override :: Maybe Version
   }

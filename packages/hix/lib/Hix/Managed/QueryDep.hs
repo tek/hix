@@ -21,13 +21,16 @@ queryDep ::
   MutableDep ->
   QueryDep
 queryDep cabal (Initial state) bounds package =
-  QueryDep {..}
+  QueryDep {
+    package,
+    installed = cabal.installedVersion name,
+    current = join (state.versions !! package),
+    override = (.version) <$> state.overrides !! name,
+    bounds = fold (bounds !! package)
+  }
   where
-    installed = cabal.installedVersion name
-    override = (.version) <$> state.overrides !! name
-    version = fold (bounds !! package)
     name = depName package
 
 simpleQueryDep :: MutableDep -> VersionBounds -> QueryDep
-simpleQueryDep package version =
-  QueryDep {installed = Nothing, override = Nothing, ..}
+simpleQueryDep package bounds =
+  QueryDep {installed = Nothing, current = Nothing, override = Nothing, ..}

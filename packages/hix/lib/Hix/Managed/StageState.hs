@@ -13,12 +13,15 @@ updateStageState ::
   MutationResult s ->
   StageState a s
 updateStageState old mutation = \case
-  MutationSuccess candidate state ext ->
+  MutationSuccess candidate changed state ext ->
     old {
-      success = Map.insert candidate.name (CandidateBuilt candidate) old.success,
+      success = Map.insert candidate.name buildSuccess old.success,
       state,
       ext
     }
+    where
+      buildSuccess | changed = CandidateBuilt candidate
+                   | otherwise = Unmodified mutation.package
   MutationKeep ->
     old {success = Map.insert mutation.package (Unmodified mutation.package) old.success}
   MutationFailed ->

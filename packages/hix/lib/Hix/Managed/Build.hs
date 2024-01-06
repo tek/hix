@@ -126,10 +126,12 @@ logMutationResult ::
   MutationResult s ->
   M ()
 logMutationResult package = \case
-  MutationSuccess candidate _ _ ->
+  MutationSuccess candidate True _ _ ->
     Log.verbose [exon|Build succeeded for #{showP candidate}|]
-  MutationKeep ->
+  MutationSuccess _ False _ _ ->
     Log.verbose [exon|Build is up to date for '##{package}'|]
+  MutationKeep ->
+    Log.verbose [exon|No better version found for '##{package}'|]
   MutationFailed ->
     Log.verbose [exon|Could not find a buildable version of '##{package}'|]
 

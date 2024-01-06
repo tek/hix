@@ -36,7 +36,7 @@ data BuildMutation =
   deriving stock (Generic)
 
 data MutationResult s =
-  MutationSuccess MutableId MutationState s
+  MutationSuccess { candidate :: MutableId, changed :: Bool, state :: MutationState, ext :: s }
   |
   MutationKeep
   |
