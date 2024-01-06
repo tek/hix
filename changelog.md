@@ -4,11 +4,7 @@
 * Fix environment not being set when using `direnv`.
 * Add an app, `bump`, that updates dependency versions and tests the build before writing new bounds and overrides to
   a file that's incorporated into the build.
-* Add an app, `lower.init`, that generates overrides for the environment `lower`, which builds with the lowest version
-  within the specified dependency bounds.
-* Add an app, `lower.optimize`, that attempts to find the lowest possible bounds for the project starting with the state
-  created by `lower.init`.
-* Add an app, `lower.stabilize`, that attempts to repair the lower bounds after breaking changes to the code.
+* Add an app, `lower`, that  determines the lowest dependency versions with which the project builds.
 * Add the option `envs.<name>.hoogle` to pass `withHoogle` to `ghcWithPackages`.
 * Change the semantics of the option `profiled` to enable executable profiling.
   The old behavior has been moved to the option `libraryProfiling`.

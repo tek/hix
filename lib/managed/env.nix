@@ -4,18 +4,16 @@
 
   modules = let
 
-    lowerEnvConfigExtra = {
-      ghc.compiler = lib.mkOverride 500 config.managed.lower.compiler;
-    };
-
-    envFor = packages: config.managed.envConfig // {
+    envFor = packages: special: {
       inherit packages;
-    };
+      ghc.compiler = lib.mkOverride 500 special.compiler;
+      internal.overridesSolver = special.envs.solverOverrides;
+    } // special.envs.verbatim;
 
     envsFor = suf: packages: {
-      ${"latest${suf}"} = envFor packages;
+      ${"latest${suf}"} = envFor packages config.managed.latest;
     } // lib.optionalAttrs conf.lower.enable {
-      ${"lower${suf}"} = envFor packages // lowerEnvConfigExtra;
+      ${"lower${suf}"} = envFor packages config.managed.lower;
     };
 
     envsAll = envsFor "" null;

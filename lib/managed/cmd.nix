@@ -13,7 +13,7 @@
 
   quiet = lib.optionalString conf.quiet "--quiet";
 
-  readUpperBounds = lib.optionalString conf.readUpperBounds "--read-upper-bounds";
+  readUpperBounds = lib.optionalString conf.latest.readFlakeBounds "--read-upper-bounds";
 
   mergeBounds = lib.optionalString conf.mergeBounds "--merge-bounds";
 

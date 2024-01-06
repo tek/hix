@@ -8,10 +8,7 @@
   lib.optionalAttrs (config.managed.enable && lib.pathExists file) (import file);
 
   managedEnvGhc =
-    if config.managed.internal.localsInPackageDb
-    then util.ghc.packageDbLocal
-    else util.ghc.packageDbVanilla
-    ;
+    util.ghc.packageDbSolver (!config.managed.internal.localsInPackageDb);
 
   cliConfig = let
     package = name: comps: let

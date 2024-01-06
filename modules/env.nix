@@ -549,6 +549,12 @@ in {
         default = [];
       };
 
+      overridesSolver = mkOption {
+        description = mdDocs "Overrides for this env for use with the solver in managed dependency apps.";
+        type = util.types.cabalOverridesVia "computed env ${config.name} solver";
+        default = [];
+      };
+
       resolvedServices = mkOption {
         description = mdDoc "Magic modules that allow merging env-specific service config with their base config.";
         type = attrsOf (submodule resolveServiceModule);
@@ -634,7 +640,7 @@ in {
           inherit (config) ifd localPackage libraryProfiling profiling;
         };
 
-        overridesEnvUnmanaged = lib.toList [config.overrides];
+        overridesEnvUnmanaged = lib.toList config.overrides;
 
         overridesEnv = util.concatOverrides ([config.overrides] ++ optional config.managed managedOverrides);
 

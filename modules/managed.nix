@@ -1,6 +1,9 @@
 {config, lib, util, ...}:
-with lib;
-{
+with lib; let
+
+  envConfigModule = sort: import ./managed/env.nix { global = config; inherit sort util; };
+
+in {
   options = with types; {
     managed = {
 
@@ -74,22 +77,14 @@ with lib;
         default = false;
       };
 
-      envConfig = mkOption {
+      envs = mkOption {
         description = mdDoc ''
-        Default config for environments generated for managed dependencies.
-        These can be overriden per-environment by specifying `envs.lower.<attr>` like for any other environment.
+        Options for environments generated for managed dependencies.
+        These apply to both `latest` and `lower` environments; the modules [](#opt-managed-managed.latest.envs) and
+        [](#opt-managed-managed.lower.envs) have precedence over them.
         '';
-        type = unspecified;
-        default = {
-          managed = mkDefault true;
-          hide = mkDefault true;
-        };
-      };
-
-      readUpperBounds = mkOption {
-        description = mdDoc "Use the upper bounds from the flake for the first run.";
-        type = bool;
-        default = false;
+        type = submodule (envConfigModule "common");
+        default = {};
       };
 
       mergeBounds = mkOption {
@@ -102,6 +97,38 @@ with lib;
         default = false;
       };
 
+      latest = {
+
+        compiler = mkOption {
+          description = mdDoc ''
+          The GHC version (as the attribute name in `haskell.packages`) that should be used for latest versions
+          environments.
+          The default is to use the last entry in [](#opt-general-ghcVersions), or [](#opt-general-compiler) if the
+          former is empty.
+          It is advisable to use the latest GHC version that you want to support, since boot libraries will fail to
+          build with different GHCs.
+          '';
+          type = str;
+          default = if config.ghcVersions == [] then config.compiler else last config.ghcVersions;
+        };
+
+        readFlakeBounds = mkOption {
+          description = mdDoc "Use the upper bounds from the flake for the first run.";
+          type = bool;
+          default = false;
+        };
+
+        envs = mkOption {
+          description = mdDoc ''
+          Options for environments generated for latest versions.
+          These default to the values in [](#opt-managed-managed.envs).
+          '';
+          type = submodule (envConfigModule "latest");
+          default = {};
+        };
+
+      };
+
       lower = {
 
         enable = mkOption {
@@ -112,15 +139,24 @@ with lib;
 
         compiler = mkOption {
           description = mdDoc ''
-          The GHC version (as the attribute name in `haskell.packages`) that should be used for the lower bounds
-          environment.
+          The GHC version (as the attribute name in `haskell.packages`) that should be used for lower bounds
+          environments.
           The default is to use the first entry in [](#opt-general-ghcVersions), or [](#opt-general-compiler) if the
           former is empty.
           It is advisable to use the lowest GHC version that you want to support, since boot libraries will fail to
-          build with newer GHCs.
+          build with different GHCs.
           '';
           type = str;
           default = if config.ghcVersions == [] then config.compiler else head config.ghcVersions;
+        };
+
+        envs = mkOption {
+          description = mdDoc ''
+          Options for environments generated for lower bounds.
+          These default to the values in [](#opt-managed-managed.envs).
+          '';
+          type = submodule (envConfigModule "latest");
+          default = {};
         };
 
       };
