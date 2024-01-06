@@ -17,6 +17,7 @@ import Hix.Managed.Data.EnvResult (EnvResult (EnvResult))
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))
+import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (FailedMutation)
 import qualified Hix.Managed.Data.ProjectResult as ProjectResult
 import Hix.Managed.Data.ProjectResult (ProjectResult)
@@ -40,7 +41,7 @@ blankLine = Log.infoPlain ""
 listFailed ::
   FailedMutation ->
   Text
-listFailed mutation = [exon|📦 #{showP mutation}|]
+listFailed mutation = [exon|📦 #{showP mutation.package}|]
 
 reportFailed ::
   NonEmpty FailedMutation ->
