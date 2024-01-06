@@ -2,12 +2,14 @@
   inherit (util) config lib;
   conf = config.managed;
 
+  envDefault = lib.mkOverride 500;
+
   modules = let
 
     envFor = packages: special: {
       inherit packages;
-      ghc.compiler = lib.mkOverride 500 special.compiler;
-      internal.overridesSolver = special.envs.solverOverrides;
+      ghc.compiler = envDefault special.compiler;
+      internal.overridesSolver = envDefault special.envs.solverOverrides;
     } // special.envs.verbatim;
 
     envsFor = suf: packages: {

@@ -11,5 +11,6 @@
     check "nix run .#cmd.number -- -f $PWD/app/Main.hs" 2 'Wrong output for command with file selection'
     check 'nix run .#env.three.number-nocomp --' 3 'Wrong output for command with env selection via flake app attr'
     check 'nix run .#cmd.run -- "ghc --version"' 'The Glorious Glasgow Haskell Compilation System, version 9.4.7' 'Wrong output for run command'
+    check 'nix run .#cmd.run -- "cabal --version 2>&1 | head"' 'cabal-install version 3.10.1.0' 'Wrong output for run command'
   '';
 }

@@ -37,7 +37,6 @@ in {
         the managed apps from starting.
         '';
         type = util.types.cabalOverridesVia desc;
-        default = [];
       };
 
   };
@@ -48,6 +47,8 @@ in {
       managed = mkDefault true;
       hide = mkDefault true;
     };
+
+    solverOverrides = default "solverOverrides" [];
 
   };
 

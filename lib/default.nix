@@ -65,6 +65,8 @@ let
   then updateManyAttrsByPath [{ inherit path; update = f; }] attrs
   else attrs;
 
+  mapValues = f: lib.mapAttrs (_: f);
+
   mergeAttr = a: b:
   if isDerivation a
   then throw "'mergeAuto' can not be used with sets containing competing derivations! Derivation name: ${a.pname}"
@@ -203,6 +205,7 @@ in {
   mapListCatAttrs
   foldMapAttrs
   over
+  mapValues
   mergeAttr
   mergeAttrset
   mergeAuto

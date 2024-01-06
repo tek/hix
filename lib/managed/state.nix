@@ -10,18 +10,31 @@
   managedEnvGhc =
     util.ghc.packageDbSolver (!config.managed.internal.localsInPackageDb);
 
-  cliConfig = let
-    package = name: comps: let
-      meta = util.hpack.conf.meta.${name};
-    in {
-      inherit name;
-      inherit (meta) version;
-      deps = map util.version.normalize (lib.concatMap (c: c.dependencies) (lib.concatLists (lib.mapAttrsToList (name: comp: if name == "library" then [comp] else lib.attrValues comp) comps)));
-    };
+  packageDeps = comps: let
+    handleMainLib = name: comp:
+    if name == "library"
+    then [comp]
+    else lib.attrValues comp;
+  in
+    lib.concatMap (c: c.dependencies) (lib.concatLists (lib.mapAttrsToList handleMainLib comps));
+
+  package = name: comps: let
+    meta = util.hpack.conf.meta.${name};
   in {
+    inherit name;
+    inherit (meta) version;
+    deps = map util.version.normalize (packageDeps comps);
+  };
+
+  envConfig = env: {
+    ghc = managedEnvGhc env;
+    targets = util.env.targets env;
+  };
+
+  cliConfig = {
     packages = lib.mapAttrs package util.hpack.conf.components;
     state = util.managed.state.current;
-    envs = lib.mapAttrs (_: env: { ghc = managedEnvGhc env; targets = util.env.targets env; }) util.managed.env.envs;
+    envs = util.mapValues envConfig util.managed.env.envs;
     inherit (config) buildOutputsPrefix;
   };
 
