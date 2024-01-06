@@ -2,7 +2,7 @@ module Hix.Managed.ProjectContextProto where
 
 import Exon (exon)
 
-import Hix.Class.Map (nBy, nGenWith, nKeysSet, nTo, (!!))
+import Hix.Class.Map (nBy, nKeys, nKeysSet, nMap, nTo, (!!), (!?))
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
@@ -24,7 +24,7 @@ import Hix.Managed.Data.Query (RawQuery (RawQuery))
 import Hix.Managed.EnvContext (envContexts)
 import qualified Hix.Managed.ManagedPackageProto as ManagedPackageProto
 import qualified Hix.Managed.ProjectStateProto as ProjectStateProto
-import Hix.Monad (clientError)
+import Hix.Monad (clientError, noteClient)
 
 validateQuery ::
   Packages ManagedPackage ->
@@ -40,11 +40,25 @@ validateQuery packages (RawQuery deps) =
     mutables = nBy mutablesSet depName
     mutablesSet = mconcat (nTo packages \ _ ManagedPackage {mutable} -> nKeysSet mutable)
 
-envDepMap :: NonEmpty (Either (EnvName, EnvDeps) EnvContext) -> Envs EnvDeps
-envDepMap =
-  nGenWith \case
-    Right context -> (context.env, context.deps)
-    Left a -> a
+noEnvs :: Text
+noEnvs =
+  [exon|The flake config contains no managed envs.
+Most likely this means that you ran the CLI directly.
+Please use one of the flake apps '.#bump', .#lower.init', '.#lower.optimize' or '.#lower.stabilize'.|]
+
+unknownEnv :: EnvName -> Text
+unknownEnv name =
+  [exon|You requested to update the env '##{name}', but it is not present in the managed deps config.
+Maybe this env is not enabled for managed dependencies.|]
+
+selectEnvs ::
+  Envs (Either EnvDeps EnvContext) ->
+  [EnvName] ->
+  M (NonEmpty (Either EnvName EnvContext))
+selectEnvs envs specified =
+  traverse valid =<< noteClient noEnvs (nonEmpty specified <|> nonEmpty (nKeys envs))
+  where
+    valid env = noteClient (unknownEnv env) (first (const env) <$> envs !? env)
 
 projectContext ::
   BuildConfig ->
@@ -67,8 +81,9 @@ validate ::
 validate opts proto = do
   query <- validateQuery packages opts.query
   contexts <- envContexts opts packages proto.envs query
-  let envDeps = envDepMap contexts
+  let envDeps = nMap (either id (.deps)) contexts
   state <- ProjectStateProto.validateProjectState opts packages envDeps proto.state
-  pure (projectContext opts.build state packages (first fst <$> contexts))
+  envTargets <- selectEnvs contexts opts.envs
+  pure (projectContext opts.build state packages envTargets)
   where
     packages = ManagedPackageProto.validate proto.packages

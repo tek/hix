@@ -185,7 +185,7 @@ logTarget =
   Text.lines [exon|
 [35m[1m>>>[0m [33mfancy[0m
 [35m[1m>>>[0m Couldn't find working latest versions for some deps after 2 iterations.
-    📦 direct3 1.2.1 (<1.3) [x]
+    📦 direct3
 [35m[1m>>>[0m Added new versions:
     📦 [34mbase[0m      4.12.0.0   ↕ [no bounds] -> <[32m4.13[0m
     📦 [34mdirect1[0m   1.2.1      ↕ >=0.1 -> [0.1, [32m1.3[0m]

@@ -44,7 +44,8 @@ packages =
     (("local4", "1.0"), ["direct4"]),
     (("local5", "1.0"), ["direct5"]),
     (("local6", "1.0"), ["direct3"]),
-    (("local7", "1.0"), ["local6 <2", "direct2"])
+    (("local7", "1.0"), ["local6 <2", "direct2"]),
+    (("local8", "1.0"), ["direct1", "direct6"])
   ]
 
 packageDb :: SourcePackages
@@ -72,6 +73,12 @@ packageDb =
       ([1, 0, 3], []),
       ([1, 0, 4], [])
     ]),
+    ("direct5", [
+      ([1, 5, 1], [])
+    ]),
+    ("direct6", [
+      ([1, 0, 1], [])
+    ]),
     ("transitive1", [([1, 0, 1], [])]),
     ("transitive2", [([1, 0, 1], [])]),
     ("transitive3", [([1, 0, 1], [])]),
@@ -96,6 +103,10 @@ state =
         ("direct1", [1, 0, 1]),
         ("direct2", [4, 3, 1]),
         ("direct3", [1, 0, 1])
+      ]),
+      ("lower-unused", [
+        ("direct1", [1, 0, 1]),
+        ("direct6", [1, 0, 1])
       ])
     ],
     overrides = [
@@ -261,6 +272,16 @@ stateFileTarget =
         upper = null;
       };
     };
+    local8 = {
+      direct1 = {
+        lower = null;
+        upper = null;
+      };
+      direct6 = {
+        lower = null;
+        upper = null;
+      };
+    };
   };
   versions = {
     lower-main = {
@@ -271,6 +292,10 @@ stateFileTarget =
     };
     lower-special = {
       direct2 = "5.0";
+    };
+    lower-unused = {
+      direct1 = "1.0.1";
+      direct6 = "1.0.1";
     };
   };
   initial = {
@@ -283,6 +308,7 @@ stateFileTarget =
     lower-special = {
       direct2 = "5.0";
     };
+    lower-unused = {};
   };
   overrides = {
     latest = {
@@ -400,7 +426,8 @@ test_lowerInitMutation = do
       (testParams False packages) {
         envs = [
           ("lower-main", ["local1", "local2", "local3", "local4", "local6"]),
-          ("lower-special", ["local7"])
+          ("lower-special", ["local7"]),
+          ("lower-unused", ["local8"])
         ],
         cabalLog = True,
         log = True,

@@ -56,11 +56,11 @@ validateBounds ::
   Bounds ->
   M MutableBounds
 validateBounds readUpper package ManagedPackage {mutable} bounds =
-  toMutable <$> nMergeA boundMissing depMissing convertBound deps bounds
+  toMutable <$> nMergeA stateMissing depMissing convertBound deps bounds
   where
     deps = packageDepsForMerge mutable
 
-    boundMissing = mapMissing \ _ (name, range) -> (name, handleUpper range anyBounds)
+    stateMissing = mapMissing \ _ (name, range) -> (name, handleUpper range anyBounds)
 
     depMissing = traverseMaybeMissing (invalidDep package)
 
@@ -83,8 +83,8 @@ validateProjectBounds readUpper =
   where
     boundsMissing = traverseMissing \ name package -> validateBounds readUpper name package mempty
 
-invalidInitDep :: Text -> EnvName -> PackageName -> a -> M (Maybe b)
-invalidInitDep desc env package _ =
+invalidStateDep :: Text -> EnvName -> PackageName -> a -> M (Maybe b)
+invalidStateDep desc env package _ =
   Nothing <$ Log.warn [exon|Discarding #{desc} for unknown dep '##{package}' of env '##{env}'|]
 
 validateVersions ::
@@ -95,10 +95,10 @@ validateVersions ::
   Versions ->
   M map
 validateVersions desc env deps bounds =
-  toMutable <$> nMergeA boundMissing envMissing matching deps bounds
+  toMutable <$> nMergeA stateMissing envMissing matching deps bounds
   where
-    boundMissing = mapMissing \ _ dep -> (dep, Nothing)
-    envMissing = traverseMaybeMissing (invalidInitDep desc env)
+    stateMissing = mapMissing \ _ dep -> (dep, Nothing)
+    envMissing = traverseMaybeMissing (invalidStateDep desc env)
     matching = zipWithMatched \ _ dep version -> (dep, Just version)
 
 -- TODO ugly
@@ -120,9 +120,9 @@ validateProjectVersions ::
   Envs Versions ->
   M (Envs map)
 validateProjectVersions desc =
-  nMergeA initMissing envMissing matching
+  nMergeA stateMissing envMissing matching
   where
-    initMissing = mapMissing (const emptyVersions)
+    stateMissing = mapMissing (const emptyVersions)
     envMissing = traverseMaybeMissing (invalidVersions desc)
     matching = zipWithAMatched (validateVersions desc)
 
@@ -134,6 +134,8 @@ validateProjectState ::
   M ProjectState
 validateProjectState opts packages envDeps proto = do
   bounds <- validateProjectBounds opts.readUpperBounds packages proto.bounds
-  versions <- validateProjectVersions "bound versions" (envDepsForMerge envDeps) proto.versions
-  initial <- validateProjectVersions "initial versions" (envDepsForMerge envDeps) proto.initial
+  versions <- validateProjectVersions "bound versions" depSets proto.versions
+  initial <- validateProjectVersions "initial versions" depSets proto.initial
   pure ProjectState {overrides = proto.overrides, resolving = False, ..}
+  where
+    depSets = envDepsForMerge envDeps
