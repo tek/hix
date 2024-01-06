@@ -35,6 +35,26 @@ let
     };
   };
 
+  boundsModule = {
+    options = {
+
+      lower = mkOption {
+        description = mdDoc "The lower bound, inclusive.";
+        type = nullOr str;
+        default = null;
+        example = literalExpression ''"1.4.8"'';
+      };
+
+      upper = mkOption {
+        description = mdDoc "The upper bound, exclusive.";
+        type = nullOr str;
+        default = null;
+        example = literalExpression ''"1.7"'';
+      };
+
+    };
+  };
+
   nestedPackages = lazyAttrsOf (either package nestedPackages);
 
   flakeApp = mkOptionType {
@@ -85,6 +105,8 @@ in {
   };
 
   cabalDep = either str (submodule cabalDepModule);
+
+  bounds = submodule boundsModule;
 
   componentSort = enum ["library" "executable" "test" "benchmark"];
 

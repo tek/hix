@@ -14,6 +14,7 @@
         other = ["local2"];
       };
       latest.compiler = "ghc94";
+      forceBounds.base.upper = "5";
     };
     compat.enable = false;
     packages = {

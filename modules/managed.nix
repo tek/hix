@@ -92,9 +92,27 @@ in {
         Add the flake bounds to the managed bounds.
         Aside from going in the Cabal file, they are added to Cabal's dependency solver when finding new bounds.
         This can be used to avoid problematic versions that have dependencies with a high tendency to break the build.
+        The ranges defined here are intersected with the managed bounds.
+        If you want to relax bounds, use [](#opt-managed-managed.latest.forceBounds).
         '';
         type = bool;
         default = false;
+      };
+
+      forceBounds = mkOption {
+        description = mdDoc ''
+        Concrete bounds that fully override those computed by the app when generating Cabal files.
+        This is useful to relax the bounds of packages that cannot be managed, like `base`, for example when the GHC
+        used for the latest env isn't the newest one because the dependencies are all broken right after release, but
+        you want it to build with that version anyway.
+        '';
+        type = attrsOf util.types.bounds;
+        default = {};
+        example = literalExpression ''
+        {
+          base = { upper = "4.21"; };
+        }
+        '';
       };
 
       latest = {

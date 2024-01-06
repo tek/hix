@@ -19,13 +19,26 @@
   mkPathsBlocker = name:
   { when = { condition = false; generated-other-modules = "Paths_${lib.replaceStrings ["-"] ["_"] name}"; }; };
 
+  addForcedBounds = pkg: managed: let
+    forced = config.managed.forceBounds.${pkg} or null;
+  in
+  if managed == null || !(lib.isAttrs managed)
+  then forced
+  else if forced == null
+  then managed
+  else {
+    lower = if forced.lower == null then managed.lower or null else forced.lower;
+    upper = if forced.upper == null then managed.upper or null else forced.upper;
+  };
+
   replaceManagedBounds = managedBounds: resolving: dep: let
     norm = util.version.normalize dep;
     pkg = util.version.mainLibName norm.name;
-    managed = util.version.normalizeManaged (managedBounds.${pkg} or null);
+    managed = util.version.normalizeManaged (addForcedBounds pkg (managedBounds.${pkg} or null));
 
     version =
-      # `resolving` means that the project is currently being built for a mutation, so we need to jailbreak everything.
+      # `resolving` means that the project is currently being built for a managed dependency mutation, so we need to
+      # jailbreak everything.
       if resolving
       then ">=0"
       else
