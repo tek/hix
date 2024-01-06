@@ -66,7 +66,6 @@ in {
       };
 
       profiled = {
-        hide = true;
         profiling = true;
       };
 
