@@ -49,7 +49,7 @@
       contents: write
       pull-requests: write
     jobs:
-      bump-pr:
+      ${sort}-pr:
         runs-on: ubuntu-latest
         steps:
         - uses: actions/checkout@v4
@@ -58,19 +58,21 @@
             extra-conf: |
               access-tokens = github.com=''${{ secrets.GITHUB_TOKEN }}
         - uses: DeterminateSystems/magic-nix-cache-action@main
-        - id: bump
+        - id: bounds
           run: nix run .#${sort} -- --output=ga-pr
         - name: pr
-          if: steps.bump.outputs.commit-message
+          if: steps.bounds.outputs.commit-message
           uses: peter-evans/create-pull-request@v5
-          with: ''${{ steps.bump.outputs }}
+          with: ''${{ steps.bounds.outputs }}
   '';
 
   genGaWorkflow = sort: let
     script = config.pkgs.writeScript "gen-managed-ga-workflow" ''
-    dir=$PWD/.github/workflows
+    dir="$PWD/.github/workflows"
+    target="$dir/${sort}.yaml"
     mkdir -p $dir
-    cp ${gaWorkflow sort} $dir/${sort}.yaml
+    cp ${gaWorkflow sort} $target
+    chmod 600 $target
     '';
   in app script;
 
@@ -78,7 +80,7 @@
     managed = {
       gen.ga = {
         bump = genGaWorkflow "bump";
-        lower.optimize = genGaWorkflow "lower.optimize";
+        lower = genGaWorkflow "lower";
       };
     };
   };
