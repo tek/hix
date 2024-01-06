@@ -20,5 +20,7 @@ jobs:
       with:
         name: tek
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+    - run: git config --global user.name hix
+    - run: git config --global user.email hix@github.com
     - run: nix run .#test-basic
     - run: nix flake check
