@@ -122,7 +122,8 @@ mainFlags conf =
     configFlags =
       (defaultConfigFlags defaultProgramDb) {
         configHcPath = pathFlag [relfile|ghc|],
-        configHcPkg = pathFlag [relfile|ghc-pkg|]
+        configHcPkg = pathFlag [relfile|ghc-pkg|],
+        configVerbosity = toFlag conf.verbosity
       }
 
     pathFlag exe = maybeToFlag (ghcPath exe <$> conf.ghc)
