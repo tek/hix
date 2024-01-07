@@ -574,17 +574,26 @@ in {
 
     services.ssh.enable = config.defaults;
 
-    ghc = {
-      name = mkDefault config.name;
+    ghc = let
 
-      overrides = mkDefault (
-        util.concatOverrides [
+      overrideSources =
+        if config.managed
+        then [
+          (util.overridesFromDeps ["local"])
+          config.internal.overridesLocal
+          config.internal.overridesEnv
+        ]
+        else [
           config.internal.overridesInherited
           config.internal.overridesLocal
           global.overrides
           config.internal.overridesEnv
-        ]
-      );
+        ];
+
+    in {
+      name = mkDefault config.name;
+
+      overrides = mkDefault (util.concatOverrides overrideSources);
 
       gen-overrides = mkDefault true;
     };
@@ -642,7 +651,7 @@ in {
 
         overridesEnvUnmanaged = lib.toList config.overrides;
 
-        overridesEnv = util.concatOverrides ([config.overrides] ++ optional config.managed managedOverrides);
+        overridesEnv = util.concatOverrides (optional config.managed managedOverrides ++ [config.overrides]);
 
         overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
 

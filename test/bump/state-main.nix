@@ -31,9 +31,13 @@
       base = "4.17.2.0";
       extra = "1.7.14";
     };
+    latest-other = {
+      base = "4.17.2.0";
+    };
   };
   initial = {
     latest-main = {};
+    latest-other = {};
   };
   overrides = {
     latest-main = {

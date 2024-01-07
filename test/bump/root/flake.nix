@@ -39,6 +39,11 @@
     };
     outputs.legacyPackages.checkNames = lib.attrNames self.checks.${config.system};
 
+    # This should not be evaluated, since only env-local overrides are used for managed envs
+    overrides = {...}: {
+      extra = throw "global overrides";
+    };
+
     # TODO remove
     internal.hixCli.dev = true;
   });
