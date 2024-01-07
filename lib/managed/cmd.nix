@@ -51,7 +51,7 @@
     initial=true
   fi
   ${cli} ${verbose} ${debug} ${quiet} ${cmd} $@ ${args}
-  ${lib.optionalString conf.generate (util.runBuildApp "gen${lib.optionalString util.managed.minVerbose "-quiet"}")}
+  ${lib.optionalString conf.generate (util.runBuildApp "gen${lib.optionalString (!util.managed.minVerbose) "-quiet"}")}
   ${lib.optionalString conf.gitAdd ''
     if ${config.pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]] && [[ -f ${conf.file} ]]
     then
