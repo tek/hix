@@ -1,6 +1,6 @@
 {util, ...}:
 {
-  ghcVersions = ["ghc92" "ghc94"];
+  ghcVersions = ["ghc92" "ghc94" "ghc96"];
 
   internal.cabal-extra = {
 
