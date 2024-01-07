@@ -5,6 +5,8 @@
   release = import ./lib/release.nix { inherit config util; };
 in {
   compiler = "ghc94";
+  ghcVersions = [];
+  compat.enable = false;
 
   hackage = {
     versionFile = "ops/version.nix";
