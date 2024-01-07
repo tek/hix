@@ -72,7 +72,7 @@ lowerInit handlers conf buildConf context = do
 
     mutationHandlers = Mutation.handlersLower buildConf lowerInitMode lowerInitUpdate
 
-    ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper keep)
+    ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper keep) def
 
     keep | conf.reset = mempty
          | otherwise = context.initial

@@ -27,6 +27,7 @@ library
   build-depends:
       Cabal
     , base >=4.12 && <5
+    , semigroups >=1
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)

@@ -23,19 +23,19 @@ import Hix.Managed.Data.Packages (Deps)
 import Hix.Pretty (showP)
 
 candidateMutation ::
-  EnvConstraints ->
+  SolverState ->
   MutableId ->
   (Version -> VersionBounds -> VersionBounds) ->
   BuildMutation
-candidateMutation constraints candidate updateBound =
+candidateMutation solverState candidate updateBound =
   BuildMutation {
     description = showP candidate,
-    constraints,
+    solverState,
     updateBound
   }
 
-candidateConstraints :: EnvConstraints -> MutableId -> EnvConstraints
-candidateConstraints constraints MutableId {..} =
+candidateConstraints :: MutableId -> EnvConstraints -> EnvConstraints
+candidateConstraints MutableId {..} constraints =
   nAdjust (depName name) constraints (#mutation .~ exactVersion version)
 
 updateConstraints ::
@@ -64,14 +64,14 @@ buildCandidate ::
   Version ->
   M (Maybe (MutableId, SolverState, MutationState))
 buildCandidate build updateStateBound updateConstraintBound solverState package version = do
-  Log.debug [exon|Mutation constraints for #{showP candidate}: #{showP constraints}|]
-  fmap result <$> build (candidateMutation constraints candidate updateStateBound)
+  Log.debug [exon|Mutation constraints for #{showP candidate}: #{showP mutationSolverState.constraints}|]
+  fmap result <$> build (candidateMutation mutationSolverState candidate updateStateBound)
   where
     result newState = (candidate, newSolverState newState, newState)
 
     candidate = MutableId {name = package, version}
 
-    constraints = candidateConstraints solverState.constraints candidate
+    mutationSolverState = updateSolverState (candidateConstraints candidate) solverState
 
     newSolverState newState =
       updateSolverState (updateConstraints updateConstraintBound candidate newState) solverState

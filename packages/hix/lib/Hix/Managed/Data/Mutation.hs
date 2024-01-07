@@ -6,7 +6,7 @@ import Text.PrettyPrint (parens, (<+>))
 
 import Hix.Data.Version (Version)
 import Hix.Data.VersionBounds (VersionBounds)
-import Hix.Managed.Data.Constraints (EnvConstraints)
+import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import Hix.Managed.Data.Mutable (MutableDep)
 import Hix.Managed.Data.MutableId (MutableId)
 import Hix.Managed.Data.MutationState (MutationState)
@@ -30,7 +30,7 @@ instance Pretty a => Pretty (DepMutation a) where
 data BuildMutation =
   BuildMutation {
     description :: Text,
-    constraints :: EnvConstraints,
+    solverState :: SolverState,
     updateBound :: Version -> VersionBounds -> VersionBounds
   }
   deriving stock (Generic)

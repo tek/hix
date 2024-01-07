@@ -104,7 +104,7 @@ lowerStabilize handlers conf context =
 
     mutationHandlers = Mutation.handlersLower conf lowerStabilizeMode lowerStabilizeUpdate
 
-    ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper context.initial)
+    ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper context.initial) def
 
 stabilizeStage ::
   BuildHandlers ->

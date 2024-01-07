@@ -8,7 +8,7 @@ import Distribution.PackageDescription (
   LibraryVisibility (LibraryVisibilityPublic),
   PackageDescription (..),
   emptyLibrary,
-  emptyPackageDescription,
+  emptyPackageDescription, BuildInfo (targetBuildDepends),
   )
 import Distribution.Simple (Version)
 import qualified Distribution.Solver.Types.PackageIndex as PackageIndex
@@ -56,6 +56,9 @@ queryPackagesLatest packages =
   where
     versions = sourcePackageVersions packages
 
+-- | This _must_ have the dependencies in both 'targetBuildDepends' and 'condTreeConstraints', otherwise they will be
+-- ignored or deleted depending on what resolver params are used.
+-- This is also evidenced by looking at a parsed Cabal file, see @CabalTest@.
 mockSourcePackage :: PackageName -> Version -> [Dep] -> UnresolvedSourcePackage
 mockSourcePackage name version deps =
   SourcePackage {
@@ -74,11 +77,12 @@ mockSourcePackage name version deps =
       mempty {
         condTreeData = emptyLibrary {
           libVisibility = LibraryVisibilityPublic,
-          libBuildInfo = mempty
+          libBuildInfo = mempty {targetBuildDepends = cabalDeps}
         },
-        condTreeConstraints = Dep.toCabal <$> deps
+        condTreeConstraints = cabalDeps
       }
     cabalId = PackageId.toCabal PackageId {..}
+    cabalDeps = Dep.toCabal <$> deps
 
 mockSourcePackageDb :: SourcePackages -> SourcePackageDb
 mockSourcePackageDb packages =

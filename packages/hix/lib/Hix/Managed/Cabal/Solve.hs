@@ -1,6 +1,7 @@
 module Hix.Managed.Cabal.Solve where
 
 import Distribution.Client.Dependency (
+  DepResolverParams,
   PackagePreference,
   PackageSpecifier,
   addPreferences,
@@ -23,10 +24,11 @@ import Hix.Managed.Cabal.Changes (SolverPlan, solverPlan)
 import qualified Hix.Managed.Cabal.Data.Config
 import qualified Hix.Managed.Cabal.Data.SolveResources
 import Hix.Managed.Cabal.Data.SolveResources (SolveResources)
-import Hix.Managed.Cabal.Targets (solveTargets)
-import Hix.Managed.Data.Constraints (EnvConstraints)
 import qualified Hix.Managed.Cabal.Data.SolveTarget
 import Hix.Managed.Cabal.Data.SolveTarget (SolveTarget)
+import qualified Hix.Managed.Cabal.Data.SolverState
+import Hix.Managed.Cabal.Data.SolverState (SolverState (SolverState), compileSolverFlags)
+import Hix.Managed.Cabal.Targets (solveTargets)
 import Hix.Monad (M, tryIOMAs)
 
 newtype Unresolvable =
@@ -40,14 +42,16 @@ logMsg verbosity message rest =
 
 solveSpecifiers ::
   SolveResources ->
+  (DepResolverParams -> DepResolverParams) ->
   [PackageSpecifier UnresolvedSourcePackage] ->
   [PackagePreference] ->
   IO (Either String SolverInstallPlan)
-solveSpecifiers res pkgSpecifiers prefs =
+solveSpecifiers res mapParams pkgSpecifiers prefs =
   foldProgress (logMsg res.conf.verbosity) (pure . Left) (pure . Right) $
   resolveDependencies res.platform res.compiler res.pkgConfigDb Modular params
   where
     params =
+      mapParams $
       res.solverParams $
       setAllowBootLibInstalls (AllowBootLibInstalls res.conf.allowBoot) $
       addPreferences prefs $
@@ -55,24 +59,25 @@ solveSpecifiers res pkgSpecifiers prefs =
 
 solveForTargets ::
   SolveResources ->
+  (DepResolverParams -> DepResolverParams) ->
   [SolveTarget] ->
   M (Either Unresolvable SolverInstallPlan)
-solveForTargets res targets =
-  first fromString <$> tryIOMAs (Fatal "Cabal solver crashed.") (solveSpecifiers res pkgSpecifiers prefs)
+solveForTargets res mapParams targets =
+  first fromString <$> tryIOMAs (Fatal "Cabal solver crashed.") (solveSpecifiers res mapParams pkgSpecifiers prefs)
   where
     pkgSpecifiers = (.dep) <$> targets
     prefs = (.prefs) =<< targets
 
 solveWithCabal ::
   SolveResources ->
-  EnvConstraints ->
+  SolverState ->
   M (Maybe SolverPlan)
-solveWithCabal solveResources solverParams = do
-  solveForTargets solveResources targets >>= \case
+solveWithCabal solveResources SolverState {constraints, flags} = do
+  solveForTargets solveResources (compileSolverFlags flags) targets >>= \case
     Right plan ->
       pure (Just (solverPlan plan))
     Left err -> do
       Log.debug [exon|Solver found no plan: ##{err}|]
       pure Nothing
   where
-    targets = solveTargets solverParams
+    targets = solveTargets constraints

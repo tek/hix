@@ -8,7 +8,8 @@ import qualified Hix.Data.Overrides
 import Hix.Data.VersionBounds (fromLower)
 import Hix.Managed.Build (processQuery)
 import Hix.Managed.Bump.Candidates (candidatesBump)
-import Hix.Managed.Cabal.Data.SolverState (solverState)
+import qualified Hix.Managed.Cabal.Data.SolverState
+import Hix.Managed.Cabal.Data.SolverState (SolverFlags (SolverFlags), solverState)
 import Hix.Managed.Constraints (fromVersions, preferInstalled, preferVersions)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
@@ -81,7 +82,8 @@ bumpBuild handlers conf stage@StageContext {env, builder, state} = do
   result <- processQuery (candidatesBump handlers) handlersBump conf stage ext
   pure (stageResult success failure result)
   where
-    ext = solverState env.solverBounds env.deps (bumpSolverParams env.deps builder.cabal state)
+    ext = solverState env.solverBounds env.deps (bumpSolverParams env.deps builder.cabal state) flags
+    flags = SolverFlags {allowNewer = True}
 
 bumpBuildStage ::
   BuildHandlers ->

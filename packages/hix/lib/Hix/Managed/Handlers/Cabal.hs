@@ -7,12 +7,13 @@ import Hix.Data.Monad (M)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Version)
 import Hix.Managed.Cabal.Changes (SolverPlan)
+import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import Hix.Managed.Data.Mutable (MutableDep, MutableVersions, depName)
 
 data CabalHandlers =
   CabalHandlers {
-    solveForVersion :: EnvConstraints -> M (Maybe SolverPlan),
+    solveForVersion :: SolverState -> M (Maybe SolverPlan),
     installedVersion :: PackageName -> Maybe Version
   }
 
@@ -34,7 +35,7 @@ logCabal :: IORef [(EnvConstraints, Maybe SolverPlan)] -> CabalHandlers -> Cabal
 logCabal ref CabalHandlers {..} =
   CabalHandlers {solveForVersion = solve, ..}
   where
-    solve solverParams = do
-      plan <- solveForVersion solverParams
-      liftIO (modifyIORef' ref ((solverParams, plan) :))
+    solve state = do
+      plan <- solveForVersion state
+      liftIO (modifyIORef' ref ((state.constraints, plan) :))
       pure plan

@@ -14,7 +14,7 @@ import Hix.Data.Version (packageIdVersions)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Changes (SolverChanges (SolverChanges), SolverPlan (SolverPlan))
-import Hix.Managed.Data.Constraints (EnvConstraints)
+import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvDeps)
 import Hix.Managed.Data.Mutable (depName)
@@ -45,7 +45,7 @@ processSolverPlan deps SolverPlan {..} = do
 solveMutation ::
   CabalHandlers ->
   EnvDeps ->
-  EnvConstraints ->
+  SolverState ->
   M (Maybe SolverChanges)
-solveMutation cabal deps params =
-  traverse (processSolverPlan deps) =<< cabal.solveForVersion params
+solveMutation cabal deps state =
+  traverse (processSolverPlan deps) =<< cabal.solveForVersion state

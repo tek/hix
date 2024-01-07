@@ -7,7 +7,8 @@ import Hedgehog (evalEither, (===))
 import Hix.Data.PackageName (PackageName)
 import qualified Hix.Data.VersionBounds
 import Hix.Data.VersionBounds (fromLower, fromUpper)
-import Hix.Managed.Cabal.Data.SolverState (solverState, updateSolverState)
+import qualified Hix.Managed.Cabal.Data.SolverState
+import Hix.Managed.Cabal.Data.SolverState (SolverState (SolverState), solverState, updateSolverState)
 import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints), mutation)
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.MutableId
@@ -45,7 +46,7 @@ candidateVersion :: Version
 candidateVersion = [1, 9, 2]
 
 build :: IORef [Maybe Version] -> BuildMutation -> M (Maybe MutationState)
-build buildRef BuildMutation {constraints = [("dep", MutationConstraints {mutation})]} = do
+build buildRef BuildMutation {solverState = SolverState {constraints = [("dep", MutationConstraints {mutation})]}} = do
   liftIO (modifyIORef' buildRef (mutation.lower :))
   pure (result =<< mutation.lower)
   where
@@ -86,7 +87,7 @@ test_candidatesOptimize = do
 
     newConstraints = [(package, mempty {mutation = fromUpper candidateVersion})]
 
-    initialState = solverState mempty mempty constraints
+    initialState = solverState mempty mempty constraints def
 
     constraints = [(package, mempty)]
 

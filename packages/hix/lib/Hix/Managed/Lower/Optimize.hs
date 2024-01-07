@@ -59,7 +59,7 @@ lowerOptimize handlers conf context@StageContext {env, state = Initial MutationS
 
     mutationHandlers = Mutation.handlersLower conf lowerOptimizeMode lowerOptimizeUpdate
 
-    ext = solverState env.solverBounds env.deps (fromVersions fromUpper versions)
+    ext = solverState env.solverBounds env.deps (fromVersions fromUpper versions) def
 
 lowerOptimizeStage ::
   BuildHandlers ->

@@ -78,7 +78,7 @@ packageDb =
     ("direct5", [
       ([1, 0, 1], []),
       ([1, 1, 1], []),
-      ([1, 2, 1], [])
+      ([1, 2, 1], ["direct4 <1.2"])
     ])
   ]
 
@@ -226,6 +226,8 @@ logTarget =
 --   It has an existing entry in @initial@, which will be preserved.
 --
 -- - @direct5@ has an existing override for version 1.1.1, which will be replaced by the successful candidate 1.2.1.
+--   It has a dependency on @direct4@ with an upper bound of <1.2, which would prevent it from being selected by the
+--   solver if we didn't use @AllowNewer@.
 test_bumpMutationBasic :: UnitTest
 test_bumpMutationBasic = do
   Result {stateFile, log} <- bumpTest params bumpOptimizeMain

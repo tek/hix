@@ -16,9 +16,9 @@ import qualified Hix.Log as Log
 import Hix.Managed.Build.Solve (solveMutation)
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Config (isNonReinstallableDep, isReinstallableId)
+import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
-import Hix.Managed.Data.Constraints (EnvConstraints)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext)
 import Hix.Managed.Data.Mutable (MutableDep, addBuildVersions)
@@ -100,10 +100,10 @@ buildConstraints ::
   EnvBuilder ->
   EnvContext ->
   Text ->
-  EnvConstraints ->
+  SolverState ->
   M (Maybe (Versions, Overrides, BuildStatus))
-buildConstraints builder context description constraints =
-  solveMutation builder.cabal context.deps constraints >>= traverse \ changes -> do
+buildConstraints builder context description state =
+  solveMutation builder.cabal context.deps state >>= traverse \ changes -> do
     (overrides, status) <- buildVersions builder context description changes.versions changes.overrides
     pure (changes.versions, overrides, status)
 
@@ -113,8 +113,8 @@ buildMutation ::
   MutationState ->
   BuildMutation ->
   M (Maybe MutationState)
-buildMutation builder context state BuildMutation {description, constraints, updateBound} =
-  result <$> buildConstraints builder context description constraints
+buildMutation builder context state BuildMutation {description, solverState, updateBound} =
+  result <$> buildConstraints builder context description solverState
   where
     result = \case
       Just (versions, overrides, status) ->
