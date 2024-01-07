@@ -21,11 +21,6 @@ in {
     else "";
   };
 
-  overrides = {hackage, ...}: {
-    exon = hackage "1.6.0.1" "0wnjywsxsmfqhyymzxlk8zzc5k4jr15y8rgl3lcdw48jl80i6ix9";
-  };
-  gen-overrides.enable = true;
-
   cabal = {
     prelude = {
       enable = true;

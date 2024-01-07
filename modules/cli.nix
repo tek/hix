@@ -58,10 +58,11 @@ in {
         meta = import ../ops/cli-dep.nix;
       in jailbreak (hackage meta.version meta.sha256);
 
-      hix = if config.internal.hixCli.dev then devSrc else prodSrc ;
+      hix = if config.internal.hixCli.dev then devSrc else prodSrc;
 
     in {
       hix = minimal hix;
+    } // optionalAttrs (!config.internal.hixCli.dev) {
       exon = hackage "1.6.0.1" "0wnjywsxsmfqhyymzxlk8zzc5k4jr15y8rgl3lcdw48jl80i6ix9";
     };
 
