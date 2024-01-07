@@ -16,6 +16,7 @@
     };
   };
   versions = {
+    latest = {};
     lower = {
       base = "4.15.1.0";
       microlens = "0.4.0.1";
@@ -23,6 +24,7 @@
     };
   };
   initial = {
+    latest = {};
     lower = {
       base = "4.15.1.0";
       microlens = "0.4.13.1";

@@ -22,6 +22,8 @@
     };
   };
   versions = {
+    latest-local1 = {};
+    latest-local2 = {};
     lower-local1 = {
       base = "4.15.1.0";
       containers = "0.7";
@@ -32,6 +34,8 @@
     };
   };
   initial = {
+    latest-local1 = {};
+    latest-local2 = {};
     lower-local1 = {
       containers = "0.7";
     };

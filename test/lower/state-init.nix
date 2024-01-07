@@ -16,6 +16,7 @@
     };
   };
   versions = {
+    latest-main = {};
     lower-main = {
       aeson = "2.2.0.0";
       base = "4.15.1.0";
@@ -23,6 +24,7 @@
     };
   };
   initial = {
+    latest-main = {};
     lower-main = {
       aeson = "2.2.0.0";
       extra = "1.7.7";
