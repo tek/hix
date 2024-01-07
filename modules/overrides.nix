@@ -74,7 +74,7 @@ with lib;
 
       gitAdd = mkOption {
         description = mdDoc ''
-        Git-add [the overrides file](#opt-overrides.gen-overrides.file) after the first run.
+        Git-add [the overrides file](#opt-general-gen-overrides.file) after the first run.
         Since nix ignores untracked files in flakes, the next command would complain if the file wasn't added.
         '';
         type = bool;

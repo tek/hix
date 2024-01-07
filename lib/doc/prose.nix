@@ -1240,7 +1240,7 @@ in {
   envs, respectively.
   The option [](#opt-managed-managed.envs.solverOverrides) is used only for the solver package set (with the usual
   [](#overrides-combinators) protocol).
-  The actual build overrides can be defined at [](#opt-managed-managed.envs.verbatim.overrides), which is equivalent to
+  The actual build overrides can be defined at [](#opt-managed-managed.envs.verbatim), which is equivalent to
   specifying regular env-specific overrides for all managed (or latest/lower) environments individually.
   Note that at the moment, the config in `latest`/`lower` completely overrides the more general one; they are not
   combined.

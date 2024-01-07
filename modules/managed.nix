@@ -36,8 +36,7 @@ in {
 
       generate = mkOption {
         description = mdDoc ''
-        Whether to regenerate cabal files and override derivations after [updating](#opt-managed-managed.update) the
-        project.
+        Whether to regenerate cabal files and override derivations after updating the project.
         '';
         type = bool;
         default = true;
@@ -93,7 +92,7 @@ in {
         Aside from going in the Cabal file, they are added to Cabal's dependency solver when finding new bounds.
         This can be used to avoid problematic versions that have dependencies with a high tendency to break the build.
         The ranges defined here are intersected with the managed bounds.
-        If you want to relax bounds, use [](#opt-managed-managed.latest.forceBounds).
+        If you want to relax bounds, use [](#opt-managed-managed.forceBounds).
         '';
         type = bool;
         default = false;
