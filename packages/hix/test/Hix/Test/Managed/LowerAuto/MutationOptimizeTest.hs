@@ -7,10 +7,9 @@ import Hix.Class.Map (nGen, (!!))
 import Hix.Data.Error (Error (Fatal))
 import qualified Hix.Data.Overrides
 import Hix.Data.Overrides (Override (Override))
-import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
-import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
+import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Data.LowerConfig (reset)
 import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
@@ -23,7 +22,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Run (Result (..), TestParams (..), testParams, lowerTest)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
 import Hix.Test.Utils (UnitTest, unitTest)
 
 packages :: Packages ManagedPackageProto
@@ -69,7 +68,7 @@ initialState =
         Override {version = [1, 0], hash = SourceHash [exon|direct#{show num}-1.0|]}
       )
 
-installed :: [(PackageId, [PackageId])]
+installed :: InstalledPackages
 installed =
   [
     ("direct1-1.2", []),

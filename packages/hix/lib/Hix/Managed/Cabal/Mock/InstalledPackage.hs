@@ -7,6 +7,7 @@ import Distribution.Simple.PackageIndex (InstalledPackageIndex)
 
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId)
+import Hix.Managed.Cabal.Data.Packages (InstalledPackages (InstalledPackages))
 import Hix.Pretty (showP)
 
 mockUnitId :: PackageId -> UnitId
@@ -20,7 +21,8 @@ installedPackageInfo package depends =
     depends
   }
 
-mockInstalledPackageIndex :: [(PackageId, [PackageId])] -> InstalledPackageIndex
+mockInstalledPackageIndex :: InstalledPackages -> InstalledPackageIndex
 mockInstalledPackageIndex =
   PackageIndex.fromList .
-  fmap (uncurry installedPackageInfo . second (fmap mockUnitId))
+  fmap (uncurry installedPackageInfo . second (fmap mockUnitId)) .
+  coerce

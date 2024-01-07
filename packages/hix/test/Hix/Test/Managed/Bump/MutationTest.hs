@@ -6,11 +6,10 @@ import Hedgehog ((===))
 import Test.Tasty (TestTree, testGroup)
 
 import Hix.Data.Error (Error (Fatal))
-import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import qualified Hix.Managed.Cabal.Data.Packages
-import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
+import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
@@ -36,7 +35,7 @@ packages =
     "direct5"
   ])]
 
-installed :: [(PackageId, [PackageId])]
+installed :: InstalledPackages
 installed =
   [
     ("base-4.12.0.0", []),
@@ -246,7 +245,7 @@ packages_upToDate :: Packages ManagedPackageProto
 packages_upToDate =
   managedPackages [(("local1", "1.0"), ["direct1"])]
 
-installed_upToDate :: [(PackageId, [PackageId])]
+installed_upToDate :: InstalledPackages
 installed_upToDate =
   [("direct1-1.0.0", [])]
 

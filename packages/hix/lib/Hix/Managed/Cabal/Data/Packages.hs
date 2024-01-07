@@ -1,7 +1,14 @@
 module Hix.Managed.Cabal.Data.Packages where
 
+import GHC.Exts (IsList)
+
 import Hix.Data.PackageId (PackageId)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
+
+newtype InstalledPackages =
+  InstalledPackages [(PackageId, [PackageId])]
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsList, Semigroup, Monoid)
 
 -- | Mock data for package indexes for the solver.
 --
@@ -10,7 +17,7 @@ import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 -- initializer, so these here correspond only to Hackage packages.
 data GhcPackages =
   GhcPackages {
-    installed :: [(PackageId, [PackageId])],
+    installed :: InstalledPackages,
     available :: SourcePackages
   }
   deriving stock (Eq, Show, Generic)

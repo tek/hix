@@ -1186,6 +1186,90 @@ in {
 
   The default value for `sets` is `"all"`, which processes all packages at once as described above.
   If your packages are dependent on each other, this might be more desirable, since it reduces the build time.
+
+  ### Fine tuning {#managed-tuning}
+
+  This feature is incredibly complicated and suffers from vulnerabilities to myriad failure scenarios, some of which
+  might be mitigated by configuration.
+
+  The app uses the Cabal solver to optimize the selection of overrides, which requires two package indexes:
+
+  - A source package database of available packages with their versions and dependencies, which is read from Hackage.
+  - An installed package index of concrete versions of packages that are considered to be bundled with the compiler,
+    which is provided as the executable of a nixpkgs [GHC](#ghc) with a selection of packages.
+
+  The latter of those is a very difficult mechanism that serves multiple independent purposes.
+
+  In order to make installed packages visible to Cabal, the Nix GHC has to be outfitted with a package DB, which is the
+  same structure used for development shells with GHCi, obtained by calling `ghcWithPackages` and specifying the
+  dependencies from the flake config as the working set.
+  This results in a GHC executable that has those dependencies "built in", meaning that you can just import them without
+  any additional efforts, and the solver can query them by executing `ghc-pkg list`.
+
+  Since we're required to ultimately build the project with Nix, a major concern is to avoid rebuilding dependencies
+  that are already available in the central cache.
+  If a version selected by the solver matches the one present in the GHC set, we therefore don't want to specify an
+  override (to pull the version from Hackage and build it), since that version is very likely cached.
+
+  However, the GHC package set from nixpkgs always has the potential of containing broken packages, most often due to
+  incompatible version bounds, or simply because a package fails to build with a bleeding-edge GHC (not to mention any
+  requirements for custom build flags that your project might have).
+  Even though this is a problem that the Cabal solver is intended to, uh, solve, the GHC set must be fully working
+  before starting the app, since that is how Nix works – we pass a store path to the GHC with packages to the app as a
+  CLI option (roughly).
+
+  Now, the set of installed packages should resemble the "vanilla" Nixpkgs as closely as possible because of the
+  aforementioned benefit of avoiding builds of cached versions, but if a broken package requires on override, parts of
+  the package set will differ from the vanilla state!
+
+  To complicate matters even more, the same issue arises twice when building the project with the computed overrides –
+  once when the app tests the build, and again when the final state has been written and the environment is built by a
+  flake check or manual invocation.
+
+  At least for test builds and bound mismatches there's a partial mitigation in place, since the app forces a jailbreak
+  (removal of most bounds) of all overridden dependencies, but this only covers a tiny part of the problem space.
+
+  For more direct control, you can specify overrides in the flake config.
+  However, since the solver is supposed to work on vanilla package sets, most of the usual override sources are ignored,
+  so there is a special option for this purpose.
+  In addition, a project might contain several managed environments with different requirements, so each must be
+  configurable individually, but we also don't want to be forced to specify a common override multiple times.
+
+  To achieve this, the modules [](#opt-managed-managed.envs), [](#opt-managed-managed.latest.envs) and
+  [](#opt-managed-managed.lower.envs) allow you to specify configuration for all managed envs and all latest and lower
+  envs, respectively.
+  The option [](#opt-managed-managed.envs.solverOverrides) is used only for the solver package set (with the usual
+  [](#overrides-combinators) protocol).
+  The actual build overrides can be defined at [](#opt-managed-managed.envs.verbatim.overrides), which is equivalent to
+  specifying regular env-specific overrides for all managed (or latest/lower) environments individually.
+  Note that at the moment, the config in `latest`/`lower` completely overrides the more general one; they are not
+  combined.
+
+  For example, if your project depends on `type-errors`, which has an insufficient upper bound on a dependency in the
+  current Nipxkgs set for the latest GHC that prevents the set from building, you might want to specify:
+
+  ```
+  {
+    managed.latest.envs = {
+      solverOverrides = {jailbreak, ...}: { type-errors = jailbreak; };
+      verbatim.overrides = {jailbreak, ...}: { type-errors = jailbreak; };
+    };
+  };
+  ```
+
+  This will only use those overrides for `latest` envs used by `.#bump` – if some overrides should be used for lower
+  bounds envs as well, you'd set this on `managed.envs` instead of `managed.latest.envs`.
+  The "verbatim" config is copied to all envs that are generated for [](#managed-targets), so with the setup from that
+  section, this config would be equivalent to:
+
+  ```
+  {
+    envs = {
+      latest-main.overrides = {jailbreak, ...}: { type-errors = jailbreak; };
+      latest-other.overrides = {jailbreak, ...}: { type-errors = jailbreak; };
+    };
+  };
+  ```
   '';
 
   misc = ''
