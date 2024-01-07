@@ -6,7 +6,7 @@ import qualified Distribution.Client.NixStyleOptions
 import Distribution.Client.Setup (configCompilerAux', withRepoContext)
 import Distribution.Simple (PackageDB (GlobalPackageDB), PackageDBStack, compilerInfo)
 import Distribution.Solver.Types.PkgConfigDb (readPkgConfigDb)
-import Distribution.Verbosity (silent, verbose)
+import Distribution.Verbosity (lessVerbose, silent, verbose)
 
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M (M))
@@ -69,7 +69,7 @@ acquire packages = \case
   GhcDbSystem ghc -> do
     verbosity <- M (asks (.debug)) <&> \case
       True -> verbose
-      False -> silent
+      False -> lessVerbose silent
     resources packages def {verbosity, ghc}
   GhcDbSynthetic db ->
     pure (mockSolveResources packages db)
