@@ -30,7 +30,7 @@ jobs:
         run: nix build .#hix
       - name: 'build static'
         run: nix build .#hix.static
-      - uses: marvinpinto/action-automatic-releases@latest
+      - uses: crowbarmaster/GH-Automatic-Releases@latest
         name: 'create release'
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"

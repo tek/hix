@@ -11,7 +11,7 @@ jobs:
     name: 'Release'
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -25,15 +25,15 @@ jobs:
       - uses: cachix/cachix-action@v14
         with:
           name: tek
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - name: 'build dynamic'
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+      - name: build dynamic
         run: nix build .#hix
-      - name: 'build static'
+      - name: build static
         run: nix build .#hix.static
-      - uses: 'marvinpinto/action-automatic-releases@latest'
-        name: 'create release'
+      - uses: crowbarmaster/GH-Automatic-Releases@latest
+        name: create release
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           automatic_release_tag: 'latest'
           prerelease: true
           files: |
