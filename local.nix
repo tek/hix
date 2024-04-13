@@ -102,6 +102,8 @@ in {
 
   };
 
+  internal.cabal-extra.default-extensions = ["StrictData"];
+
   outputs = {
 
     packages = let

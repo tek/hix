@@ -191,6 +191,7 @@ library
   hs-source-dirs:
       lib
   default-extensions:
+      StrictData
       AllowAmbiguousTypes
       ApplicativeDo
       BlockArguments
@@ -269,6 +270,7 @@ executable hix
   hs-source-dirs:
       app
   default-extensions:
+      StrictData
       AllowAmbiguousTypes
       ApplicativeDo
       BlockArguments
@@ -347,6 +349,7 @@ test-suite hix-test
   hs-source-dirs:
       test
   default-extensions:
+      StrictData
       AllowAmbiguousTypes
       ApplicativeDo
       BlockArguments
