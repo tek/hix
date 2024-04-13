@@ -1,5 +1,5 @@
 ---
-name: 'Release'
+name: Release
 
 on:
   push:
@@ -8,11 +8,11 @@ on:
 
 jobs:
   release:
-    name: 'Release'
+    name: Release
     runs-on: ubuntu-latest
     permissions:
-      id-token: 'write'
-      contents: 'write'
+      id-token: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
@@ -25,19 +25,19 @@ jobs:
       - uses: cachix/cachix-action@v14
         with:
           name: tek
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - name: 'build dynamic'
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+      - name: build dynamic
         run: nix build .#hix
-      - name: 'build static'
+      - name: build static
         run: nix build .#hix.static
       - uses: crowbarmaster/GH-Automatic-Releases@latest
-        name: 'create release'
+        name: create release
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
           files: |
             result/bin/hix
       - uses: DeterminateSystems/flakehub-push@main
         name: 'Publish to flakehub'
         with:
-          visibility: "public"
+          visibility: public

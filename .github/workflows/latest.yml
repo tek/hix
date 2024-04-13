@@ -1,14 +1,14 @@
 ---
-name: 'Nightly'
+name: Nightly
 
 on:
   push:
     branches:
-      - 'main'
+      - main
 
 jobs:
   release:
-    name: 'Release'
+    name: Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
