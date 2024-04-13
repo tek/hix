@@ -23,7 +23,7 @@ lowerCli ::
   M ()
 lowerCli main opts@LowerOptions {common} = do
   context <- jsonConfigE Client common.context
-  handlers <- chooseHandlers common.stateFile context.envs context.buildOutputsPrefix common.handlers
+  handlers <- chooseHandlers common.stateFile context.envs context.buildOutputsPrefix common.cabal common.handlers
   withProjectContext handlers common.project context (main conf handlers)
   where
     conf = lowerConfig opts

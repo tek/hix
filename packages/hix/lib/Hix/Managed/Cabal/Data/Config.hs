@@ -1,6 +1,7 @@
 module Hix.Managed.Cabal.Data.Config where
 
 import Data.Aeson (FromJSON (parseJSON))
+import Distribution.Client.IndexUtils.Timestamp (Timestamp)
 import Distribution.Verbosity (Verbosity, verbose)
 import Path (Abs, Dir, Path)
 
@@ -28,12 +29,27 @@ data GhcDb =
 instance FromJSON GhcDb where
   parseJSON = fmap GhcDbSystem . parseJSON
 
+newtype HackageIndexState =
+  HackageIndexState Timestamp
+  deriving stock (Eq, Show, Generic)
+
+data CabalConfig =
+  CabalConfig {
+    indexState :: Maybe HackageIndexState
+  }
+  deriving stock (Eq, Show, Generic)
+
+instance Default CabalConfig where
+  def =
+    CabalConfig {indexState = Nothing}
+
 data SolveConfig =
   SolveConfig {
     hackageRepoName :: HackageRepoName,
     verbosity :: Verbosity,
     ghc :: Maybe GhcPath,
-    allowBoot :: Bool
+    allowBoot :: Bool,
+    cabal :: CabalConfig
   }
   deriving stock (Eq, Show, Generic)
 
@@ -43,5 +59,6 @@ instance Default SolveConfig where
       hackageRepoName = def,
       verbosity = verbose,
       ghc = Nothing,
-      allowBoot = False
+      allowBoot = False,
+      cabal = def
     }

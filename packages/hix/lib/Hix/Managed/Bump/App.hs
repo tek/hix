@@ -13,5 +13,5 @@ import Hix.Managed.ProjectContext (withProjectContext)
 bumpCli :: BumpOptions -> M ()
 bumpCli BumpOptions {common = opts} = do
   context <- jsonConfigE Client opts.context
-  handlers <- liftIO (chooseHandlers opts.stateFile context.envs context.buildOutputsPrefix opts.handlers)
+  handlers <- liftIO (chooseHandlers opts.stateFile context.envs context.buildOutputsPrefix opts.cabal opts.handlers)
   withProjectContext handlers opts.project context (bumpOptimizeMain handlers)

@@ -10,6 +10,7 @@ import Hix.Data.GlobalOptions (GlobalOptions)
 import Hix.Data.NewProjectConfig (NewProjectConfig)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
+import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import Hix.Managed.Data.Query (RawQuery)
@@ -146,6 +147,7 @@ data ManagedOptions =
     context :: Either ProjectContextProto JsonConfig,
     project :: ProjectOptions,
     stateFile :: StateFileConfig,
+    cabal :: CabalConfig,
     handlers :: Maybe SpecialBuildHandlers
   }
   deriving stock (Show, Generic)

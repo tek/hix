@@ -13,7 +13,7 @@ import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
-import Hix.Managed.Cabal.Data.Config (GhcDb)
+import Hix.Managed.Cabal.Data.Config (GhcDb, CabalConfig)
 import qualified Hix.Managed.Cabal.Data.SolveResources as SolveResources
 import Hix.Managed.Cabal.Data.SolveResources (SolveResources (SolveResources), solverParams)
 import Hix.Managed.Cabal.Installed (installedVersion)
@@ -26,12 +26,13 @@ import Hix.Zip (zipApplyL)
 
 handlersWith ::
   (SolveResources -> SolveResources) ->
+  CabalConfig ->
   Bool ->
   Packages ManagedPackage ->
   GhcDb ->
   M CabalHandlers
-handlersWith trans oldest packages ghc = do
-  solveResources <- trans <$> SolveResources.acquire packages ghc
+handlersWith trans cabalConf oldest packages ghc = do
+  solveResources <- trans <$> SolveResources.acquire packages cabalConf ghc
   pure CabalHandlers {
     solveForVersion = solveWithCabal solveResources {solverParams},
     installedVersion = installedVersion solveResources.installedPkgIndex
@@ -41,6 +42,7 @@ handlersWith trans oldest packages ghc = do
                  | otherwise = id
 
 handlersProd ::
+  CabalConfig ->
   Bool ->
   Packages ManagedPackage ->
   GhcDb ->
@@ -76,6 +78,7 @@ testResources SolveResources {..} =
       }
 
 handlersTest ::
+  CabalConfig ->
   Bool ->
   Packages ManagedPackage ->
   GhcDb ->

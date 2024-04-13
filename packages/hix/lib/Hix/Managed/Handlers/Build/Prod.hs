@@ -31,6 +31,7 @@ import Hix.Data.Version (Versions)
 import Hix.Error (pathText)
 import Hix.Hackage (latestVersionHackage, versionsHackage)
 import qualified Hix.Log as Log
+import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import Hix.Managed.Data.EnvConfig (EnvConfig)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext (EnvContext))
@@ -170,16 +171,17 @@ handlersProd ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  CabalConfig ->
   Bool ->
   m BuildHandlers
-handlersProd stateFileConf envsConf buildOutputsPrefix oldest = do
+handlersProd stateFileConf envsConf buildOutputsPrefix cabalConf oldest = do
   manager <- liftIO (newManager tlsManagerSettings)
   hackage <- HackageHandlers.handlersProd
   let stateFile = StateFileHandlers.handlersProd stateFileConf
   pure BuildHandlers {
     stateFile,
     report = ReportHandlers.handlersProd,
-    cabal = CabalHandlers.handlersProd oldest,
+    cabal = CabalHandlers.handlersProd cabalConf oldest,
     withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix,
     versions = versionsHackage manager,
     latestVersion = latestVersionHackage manager

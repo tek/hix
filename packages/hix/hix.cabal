@@ -87,6 +87,7 @@ library
       Hix.Managed.Cabal.Mock.InstalledPackage
       Hix.Managed.Cabal.Mock.SourcePackage
       Hix.Managed.Cabal.Print
+      Hix.Managed.Cabal.Repo
       Hix.Managed.Cabal.Resources
       Hix.Managed.Cabal.Solve
       Hix.Managed.Cabal.Targets
@@ -253,6 +254,7 @@ library
     , pretty
     , random ==1.2.*
     , these ==1.2.*
+    , time
     , transformers
     , typed-process ==0.2.*
     , unix

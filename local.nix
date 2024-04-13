@@ -1,7 +1,5 @@
 {inputs}:
 {config, lib, util, ...}: let
-  pkgs = config.pkgs;
-
   release = import ./lib/release.nix { inherit config util; };
 in {
   compiler = "ghc94";
@@ -79,6 +77,7 @@ in {
       "pretty"
       "random ^>= 1.2"
       "these ^>=1.2"
+      "time"
       "typed-process ^>= 0.2"
       "transformers"
       "unix"

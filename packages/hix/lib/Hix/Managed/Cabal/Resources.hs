@@ -11,7 +11,7 @@ import Distribution.Verbosity (lessVerbose, silent, verbose)
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M (M))
 import qualified Hix.Log as Log
-import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSynthetic, GhcDbSystem), SolveConfig (..))
+import Hix.Managed.Cabal.Data.Config (CabalConfig, GhcDb (GhcDbSynthetic, GhcDbSystem), SolveConfig (..))
 import qualified Hix.Managed.Cabal.Data.SolveResources
 import Hix.Managed.Cabal.Data.SolveResources (SolveResources (SolveResources))
 import qualified Hix.Managed.Cabal.Init
@@ -63,13 +63,14 @@ resources packages conf = do
 -- just add the managed packages to the result.
 acquire ::
   Packages ManagedPackage ->
+  CabalConfig ->
   GhcDb ->
   M SolveResources
-acquire packages = \case
+acquire packages cabal = \case
   GhcDbSystem ghc -> do
     verbosity <- M (asks (.debug)) <&> \case
       True -> verbose
       False -> lessVerbose silent
-    resources packages def {verbosity, ghc}
+    resources packages def {verbosity, ghc, cabal}
   GhcDbSynthetic db ->
     pure (mockSolveResources packages db)

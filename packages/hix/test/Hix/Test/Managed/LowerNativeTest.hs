@@ -233,7 +233,7 @@ lowerNativeTest = do
       projectRoot = Just root
     }
     envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
-  handlers <- Build.handlersProd stateFileConf envsConfig Nothing False
+  handlers <- Build.handlersProd stateFileConf envsConfig Nothing def False
   let
     opts = projectOptions ["lower"]
 

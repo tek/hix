@@ -70,6 +70,8 @@ import Hix.Data.Options (
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
 import Hix.Data.PackageName (PackageName (PackageName))
+import qualified Hix.Managed.Cabal.Data.Config
+import Hix.Managed.Cabal.Data.Config (CabalConfig (CabalConfig))
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig))
 import Hix.Managed.Data.Query (RawQuery (RawQuery))
@@ -80,6 +82,7 @@ import Hix.Optparse (
   absDirOption,
   absFileOption,
   buildHandlersOption,
+  indexStateOption,
   jsonOption,
   outputFormatOption,
   outputTargetOption,
@@ -238,6 +241,13 @@ stateFileConfigParser = do
   projectRoot <- optional (option absDirOption (long "root" <> help "The root directory of the project"))
   pure StateFileConfig {..}
 
+cabalConfigParser :: Parser CabalConfig
+cabalConfigParser = do
+  indexState <- optional (option indexStateOption (long "index-state" <> help indexStateHelp))
+  pure CabalConfig {..}
+  where
+    indexStateHelp = "The index state for Hackage, Unix stamp or date string"
+
 buildConfigParser :: Parser BuildConfig
 buildConfigParser = do
   maxIterations <- option auto (long "max-iterations" <> help maxIterationsHelp <> value 3 <> showDefault)
@@ -268,6 +278,7 @@ managedOptionsParser = do
   project <- projectOptionsParser
   stateFile <- stateFileConfigParser
   handlers <- optional (option buildHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  cabal <- cabalConfigParser
   pure ManagedOptions {..}
 
 bumpParser :: Parser BumpOptions

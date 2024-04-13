@@ -9,6 +9,7 @@ import Hix.Data.NixExpr (Expr)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Version, Versions)
+import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages)
 import Hix.Managed.Cabal.Mock.SourcePackage (queryVersions, queryVersionsLatest, sourcePackageVersions)
@@ -51,7 +52,7 @@ handlersUnitTest ghcPackages builder = do
       }
   pure (handlers, stateFileRef, mutationsRef)
   where
-    cabal = CabalHandlers.handlersProd False
+    cabal = CabalHandlers.handlersProd def False
     versions = sourcePackageVersions ghcPackages.available
 
 latestVersionNixTestBump :: PackageName -> M (Maybe Version)
@@ -66,12 +67,13 @@ handlersBumpTest ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  CabalConfig ->
   Bool ->
   m BuildHandlers
-handlersBumpTest stateFileConf envsConf buildOutputsPrefix oldest = do
-  handlers <- handlersProd stateFileConf envsConf buildOutputsPrefix oldest
+handlersBumpTest stateFileConf envsConf buildOutputsPrefix cabalConf oldest = do
+  handlers <- handlersProd stateFileConf envsConf buildOutputsPrefix cabalConf oldest
   pure handlers {
-    cabal = CabalHandlers.handlersTest oldest,
+    cabal = CabalHandlers.handlersTest cabalConf oldest,
     latestVersion = latestVersionNixTestBump
   }
 
@@ -80,10 +82,11 @@ chooseHandlers ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  CabalConfig ->
   Maybe SpecialBuildHandlers ->
   m BuildHandlers
-chooseHandlers stateFileConf envsConf buildOutputsPrefix = \case
-  Just TestBumpHandlers -> handlersBumpTest stateFileConf envsConf buildOutputsPrefix oldest
-  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix oldest
+chooseHandlers stateFileConf envsConf buildOutputsPrefix cabalConf = \case
+  Just TestBumpHandlers -> handlersBumpTest stateFileConf envsConf buildOutputsPrefix cabalConf oldest
+  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix cabalConf oldest
   where
     oldest = False

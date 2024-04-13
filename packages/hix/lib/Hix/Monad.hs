@@ -5,7 +5,7 @@ module Hix.Monad (
 ) where
 
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (runExceptT, throwE)
+import Control.Monad.Trans.Except (runExceptT, throwE, ExceptT (ExceptT))
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask, asks)
 import Control.Monad.Trans.State.Strict (StateT, get, put, runStateT)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
@@ -178,3 +178,8 @@ mapAccumM ::
   m (s, t b)
 mapAccumM f s as =
   swap <$> runStateT (traverse (stateM f) as) s
+
+withLower :: (∀ b . (M a -> IO b) -> IO b) -> M a
+withLower f = do
+  res <- M ask
+  liftE (ExceptT (f \ (M ma) -> runExceptT (runReaderT ma res)))
