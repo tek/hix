@@ -22,7 +22,7 @@ let
     params = ["path"];
   };
 
-  genAll = quiet: config.pkgs.writeScript "hix-gen-all" ''
+  genAll = quiet: util.script "hix-gen-all" ''
   ${if quiet then config.hpack.scriptQuiet else config.hpack.script}
   ${if config.gen-overrides.enable then genOverrides.script else ""}
   '';

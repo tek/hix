@@ -95,6 +95,12 @@ let
 
   unlessDev = conf: v: mkIf (conf.name != "dev") (mkDefault v);
 
+  script = name: text: pkgs.writeScript name ''
+  #!${pkgs.runtimeShell}
+  set -e
+  ${text}
+  '';
+
   downloadStaticCli = ''
   tmp=$(mktemp -d)
   quit()
@@ -109,9 +115,7 @@ let
 
   nixC = "${config.pkgs.nix}/bin/nix --option extra-substituters 'https://tek.cachix.org' --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk='";
 
-  bootstrapWithStaticCli = name: pre: post: pkgs.writeScript name ''
-  #!${pkgs.bashInteractive}/bin/bash
-  set -e
+  bootstrapWithStaticCli = name: pre: post: script name ''
   ${downloadStaticCli}
   ${pre}
   if ! git status &>/dev/null
@@ -179,6 +183,7 @@ let
     minGhcs
     conf
     unlessDev
+    script
     downloadStaticCli
     nixC
     bootstrapWithStaticCli
