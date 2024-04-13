@@ -11,8 +11,6 @@ let
 
   inherit (config) pkgs;
 
-  dollar = "$";
-
   param = i: p: ''$(arg "${p}" ${toString i})'';
 
   paramLines = concatStringsSep "\n  " (imap1 param params);
@@ -28,8 +26,7 @@ let
   });
 
   appScript =
-    pkgs.writeScript "${name}-app" ''
-      #!${pkgs.zsh}/bin/zsh
+    util.zscriptErr "${name}-app" ''
       num_args=$#
       argstr="$@"
       args=($@)

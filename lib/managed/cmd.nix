@@ -22,7 +22,7 @@
   withCheckFor = flag: name: main:
     if lib.attrByPath flag false conf
     then main
-    else config.pkgs.writeScript "managed-disabled" ''
+    else util.scriptErr "managed-disabled" ''
     ${util.loadConsole}
     die "Set $(blue 'managed.${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
     '';
@@ -41,9 +41,7 @@
 
     desc = if lib.length envs == 1 then lib.head envs else "${cmd}-multi";
   in
-  config.pkgs.writeScript "managed-${desc}" ''
-  #!${config.pkgs.zsh}/bin/zsh
-  setopt err_exit
+  util.zscript "managed-${desc}" ''
   if [[ -e "${conf.file}" ]]
   then
     initial=false

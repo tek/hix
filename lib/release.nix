@@ -5,8 +5,7 @@
   git = "${pkgs.git}/bin/git";
 
   preamble = ''
-  #!${pkgs.zsh}/bin/zsh
-  setopt err_exit no_unset pipefail
+  setopt no_unset pipefail
   ${util.loadConsole}
 
   if [[ $# == 0 ]]
@@ -45,7 +44,7 @@
   ${git} tag -m "Release $version" "$version"
   '';
 
-  nix = pkgs.writeScript "hix-release-nix" ''
+  nix = util.zscript "hix-release-nix" ''
   ${preamble}
   ${updateVersions}
   ${commitAndTag}
@@ -54,7 +53,7 @@
   # TODO updateVersions should probably run after the CLI release so that tests that don't use devCli can validate the
   # new version.
   # Also grep for devCli tests and suggest that they be changed to use the release.
-  all = pkgs.writeScript "hix-release-all" ''
+  all = util.zscript "hix-release-all" ''
   ${preamble}
   ${updateVersions}
 

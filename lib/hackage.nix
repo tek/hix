@@ -146,9 +146,8 @@ let
   map (docCommand publish) allTargets;
 
   mkScript = name: script:
-    pkgs.writeScript name ''
-    #!${pkgs.zsh}/bin/zsh
-    setopt err_exit no_unset
+    util.zscript name ''
+    setopt no_unset
     ${script}
     '';
 

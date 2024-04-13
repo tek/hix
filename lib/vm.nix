@@ -4,7 +4,7 @@ let
   display = vm:
   if vm.headless then "-display none" else "";
 
-  ensure = basePort: vm: pkgs.writeScript "ensure-vm" ''
+  ensure = basePort: vm: util.zscript "ensure-vm" ''
     #!${pkgs.zsh}/bin/zsh
     if ${pkgs.procps}/bin/pgrep -F ${vm.pidfile} -L -f ${vm.pidfile} &>/dev/null
     then
@@ -17,8 +17,7 @@ let
     fi
   '';
 
-  kill = vm: pkgs.writeScript "kill-vm" ''
-    #!${pkgs.zsh}/bin/zsh
+  kill = vm: util.zscriptErr "kill-vm" ''
     pid=$(${pkgs.procps}/bin/pgrep -F ${vm.pidfile} -L -f ${vm.pidfile})
     if [[ $? == 0 ]]
     then

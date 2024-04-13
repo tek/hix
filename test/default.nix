@@ -48,8 +48,7 @@ let
   ${tools.runtest}
   '';
 
-  script = name: set: pkgs.writeScript "hix-tests-${name}" ''
-  #!${pkgs.zsh}/bin/zsh
+  script = name: set: util.zscriptErr "hix-tests-${name}" ''
   source ${setup}
   ${tools.loadTargets set}
   ${tools.main}

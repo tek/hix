@@ -86,8 +86,7 @@ let
     fi
   '';
 
-  runner = global.pkgs.writeScript "env-${config.name}-runner.bash" ''
-  #!${global.pkgs.bashInteractive}/bin/bash
+  runner = util.scriptErr "env-${config.name}-runner.bash" ''
    ${config.code}
    $@
   '';

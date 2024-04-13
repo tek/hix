@@ -95,9 +95,23 @@ let
 
   unlessDev = conf: v: mkIf (conf.name != "dev") (mkDefault v);
 
-  script = name: text: pkgs.writeScript name ''
+  scriptErr = name: text: pkgs.writeScript name ''
   #!${pkgs.runtimeShell}
+  ${text}
+  '';
+
+  script = name: text: scriptErr name ''
   set -e
+  ${text}
+  '';
+
+  zscriptErr = name: text: pkgs.writeScript name ''
+  #!${pkgs.zsh}/bin/zsh
+  ${text}
+  '';
+
+  zscript = name: text: zscriptErr name ''
+  setopt err_exit
   ${text}
   '';
 
@@ -128,9 +142,7 @@ let
   ${post}
   '';
 
-  bootstrapWithDynamicCli = name: pre: post: pkgs.writeScript name ''
-  #!${pkgs.bashInteractive}/bin/bash
-  set -e
+  bootstrapWithDynamicCli = name: pre: post: script name ''
   exe="${config.outputs.packages.hix}/bin/hix"
   ${pre}
   if ! ${pkgs.git}/bin/git status &>/dev/null
@@ -143,7 +155,7 @@ let
   ${post}
   '';
 
-  cacheWrapper = self: name: app: pkgs.writeScript name ''
+  cacheWrapper = self: name: app: script name ''
   ${nixC} run ${self}#${app} -- "$@"
   '';
 
@@ -153,7 +165,7 @@ let
   runBuildApp = name:
   "nix run .#${config.buildOutputsPrefix}.${name}";
 
-  dummyAppScript = pre: sub: pkgs.writeScript "hix-dummy-app" ''
+  dummyAppScript = pre: sub: script "hix-dummy-app" ''
   ${basic.loadConsole}
   message "This app cannot be run, it is a namespace node with contents:"
   ${basic.unlinesMap (n: ''echo " $(yellow '*') $(blue .#${concatStringsSep "." (pre ++ [n])})"'') sub}
@@ -183,7 +195,10 @@ let
     minGhcs
     conf
     unlessDev
+    scriptErr
     script
+    zscriptErr
+    zscript
     downloadStaticCli
     nixC
     bootstrapWithStaticCli

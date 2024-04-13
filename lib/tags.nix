@@ -1,4 +1,4 @@
-{config}:
+{config, util}:
 let
 
   inherit (config.envs.dev.ghc) compiler pkgs ghc;
@@ -26,9 +26,7 @@ in {
   inherit projectTags;
 
   app =
-    pkgs.writeScript "tags" ''
-      #!${pkgs.zsh}/bin/zsh
-      setopt err_exit
+    util.zscript "tags" ''
       destination=''${1:-.tags}
       cp ${projectTags}/tags $destination
       chmod u+w $destination

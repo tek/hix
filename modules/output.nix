@@ -3,7 +3,7 @@ let
   inherit (lib) optionalAttrs mkOption mdDoc;
   inherit (util) app;
 
-  tags = import ../lib/tags.nix { inherit config; };
+  tags = import ../lib/tags.nix { inherit config util; };
 
   showConfig = import ../lib/show-config.nix { inherit config lib util; };
 

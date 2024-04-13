@@ -132,7 +132,7 @@ in {
       in util.app prog;
 
       new = let
-        prog = pkgs.writeScript "hix-new" ''${util.nixC} run ${inputs.self}#new-nocache -- "$@"'';
+        prog = util.script "hix-new" ''${util.nixC} run ${inputs.self}#new-nocache -- "$@"'';
       in util.app prog;
 
       bootstrap-nocache = let
@@ -144,7 +144,7 @@ in {
       in util.app prog;
 
       bootstrap = let
-        prog = pkgs.writeScript "hix-bootstrap" ''${util.nixC} run ${inputs.self}#bootstrap-nocache -- "$@"'';
+        prog = util.script "hix-bootstrap" ''${util.nixC} run ${inputs.self}#bootstrap-nocache -- "$@"'';
       in util.app prog;
 
       release-nix = util.app release.nix;

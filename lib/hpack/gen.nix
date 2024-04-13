@@ -1,4 +1,4 @@
-{config}:
+{config, util}:
 {verbose}:
 with builtins;
 let
@@ -13,9 +13,8 @@ let
   packageCalls =
     pkgs.lib.mapAttrsToList packageCall config.internal.relativePackages;
 
-in pkgs.writeScript "hpack.zsh" ''
-  #!${pkgs.zsh}/bin/zsh
-  setopt err_exit no_unset
+in util.zscript "hpack.zsh" ''
+  setopt no_unset
 
   base=''${1-''$PWD}
 

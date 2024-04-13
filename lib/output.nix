@@ -101,8 +101,8 @@ let
     env = lib.mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; ghc0 = e.ghc.vanillaGhc; } // fullEnvOutputs n) envs;
   };
 
-  appimage = env: name: config.pkgs.writeScript "hix-appimage-${name}" ''
-  set -eu
+  appimage = env: name: util.script "hix-appimage-${name}" ''
+  set -u
   outlink="hix-appimage-tmp-${name}"
   ${config.pkgs.nix}/bin/nix \
     --extra-experimental-features 'nix-command flakes' \

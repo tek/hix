@@ -189,8 +189,7 @@ let
 
   palette = "Colors: ${concatStringsSep " | " (mapAttrsToList (flip color) colors)}";
 
-in pkgs.writeScript "show-config" ''
-  #!${pkgs.zsh}/bin/zsh
+in util.zscript "show-config" ''
   print "${palette}"
   print ""
   while IFS='\n' read -r line; do echo -e $line; done < ${stringifyRoot}

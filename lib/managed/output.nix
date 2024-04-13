@@ -67,7 +67,7 @@
   '';
 
   genGaWorkflow = sort: let
-    script = config.pkgs.writeScript "gen-managed-ga-workflow" ''
+    script = util.script "gen-managed-ga-workflow" ''
     dir="$PWD/.github/workflows"
     target="$dir/${sort}.yaml"
     mkdir -p $dir

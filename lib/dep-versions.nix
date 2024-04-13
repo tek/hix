@@ -34,7 +34,6 @@ let
   packagesDeps =
     pkgs.writeText "dep-versions" (util.unlines (util.concatMapAttrsToList packageDeps config.packages));
 
-in pkgs.writeScript "print-dep-versions" ''
-  #!${pkgs.zsh}/bin/zsh
+in util.zscript "print-dep-versions" ''
   echo -e "$(cat ${packagesDeps})"
 ''

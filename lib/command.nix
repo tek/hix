@@ -2,8 +2,6 @@
 {command, env}:
 let
 
-  inherit (config.internal) pkgs;
-
   cli = config.internal.hixCli.exe;
 
   splitArgs = ''
@@ -23,7 +21,7 @@ let
   done
   '';
 
-  exe = pkgs.writeScript "command-${command.name}" command.command;
+  exe = util.scriptErr "command-${command.name}" command.command;
 
   json = util.json.envFile env;
 
@@ -43,9 +41,8 @@ in {
 
   inherit script;
 
-  path = pkgs.writeScript "hix-command-${command.name}" ''
-  #!${pkgs.bashInteractive}/bin/bash
-  set -eu
+  path = util.script "hix-command-${command.name}" ''
+  set -u
   ${script}
   '';
 

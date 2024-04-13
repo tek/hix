@@ -41,9 +41,7 @@ let
 
   envsA = concatStringsSep " " (mapAttrsToList envA envs);
 
-in pkgs.writeScript "show-overrides" ''
-  #!${pkgs.zsh}/bin/zsh
-
+in util.zscriptErr "show-overrides" ''
   typeset -A envs
   set -A envs ${envsA}
 

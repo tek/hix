@@ -23,8 +23,7 @@ let
 
   file = pkgs.writeText "overrides.nix" expr;
 
-  script = pkgs.writeScript "gen-overrides" ''
-    #!${pkgs.bashInteractive}/bin/bash
+  script = util.scriptErr "gen-overrides" ''
     if [[ -e "${overridesFile}" ]]
     then
       initial=false
