@@ -29,6 +29,8 @@
 
     check_appimage()
     {
+      setopt local_options err_return
+      check_exit "nix run $1" "Building the AppImage for $1 failed"
       check "$(nix run $1 2>/dev/null)" 'string' "Running the AppImage for $1 produced the wrong output"
     }
 

@@ -72,6 +72,17 @@ let
     fi
   }
 
+  check_exit()
+  {
+    setopt local_options no_err_return no_unset
+    out=$(eval $1 2>&1)
+    if [[ $? != 0 ]]
+    then
+      fail "$2: $out"
+      return 1
+    fi
+  }
+
   ghci_match()
   {
     check_match "nix run $1 <<< ':quit'" $2 $3
