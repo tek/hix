@@ -94,7 +94,7 @@ in {
 
       devShells = mkOption {
         description = mdDoc "The flake output attribute `devShells`.";
-        type = unspecified;
+        type = lazyAttrsOf unspecified;
       };
 
       apps = mkOption {
