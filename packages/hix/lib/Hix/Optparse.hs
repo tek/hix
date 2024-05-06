@@ -21,19 +21,19 @@ pathOption desc parse =
   eitherReader \ raw ->
     first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw)
 
--- |An absolute file path option for @optparse-applicative@.
+-- | An absolute file path option for @optparse-applicative@.
 absFileOption :: ReadM (Path Abs File)
 absFileOption = pathOption "absolute file" parseAbsFile
 
--- |A relative file path option for @optparse-applicative@.
+-- | A relative file path option for @optparse-applicative@.
 relFileOption :: ReadM (Path Rel File)
 relFileOption = pathOption "relative file" parseRelFile
 
--- |A relative dir path option for @optparse-applicative@.
+-- | A relative dir path option for @optparse-applicative@.
 absDirOption :: ReadM (Path Abs Dir)
 absDirOption = pathOption "absolute dir" parseAbsDir
 
--- |A relative dir path option for @optparse-applicative@.
+-- | A relative dir path option for @optparse-applicative@.
 relDirOption :: ReadM (Path Rel Dir)
 relDirOption = pathOption "relative dir" parseRelDir
 
