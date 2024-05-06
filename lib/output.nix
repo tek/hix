@@ -20,14 +20,16 @@ let
   withStatic = pkg: pkg // onlyStatic pkg;
 
   # TODO this needs to be refactored into the core
-  allExes = pkg: lib.optionalAttrs pkg.executable.enable { ${pkg.name} = pkg.executable; } //
+  allExes = pkg: lib.optionalAttrs pkg.executable.enable { ${pkg.executable.name} = pkg.executable; } //
   lib.filterAttrs (_: e: e.enable) pkg.executables;
 
   pkgMainExe = pkg: let
     all = allExes pkg;
     names = lib.attrNames all;
   in
-  if lib.length names > 0
+  if pkg.executable.enable
+  then pkg.executable
+  else if lib.length names > 0
   then all.${lib.head names}
   else null;
 

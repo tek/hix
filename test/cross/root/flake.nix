@@ -8,8 +8,9 @@
     packages.root = {
       src = ./.;
       library.enable = true;
-      executables.exe = {
+      executable = {
         enable = true;
+        name = "exe";
         source-dirs = "app";
       };
       executables.alias = {
