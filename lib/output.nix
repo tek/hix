@@ -108,7 +108,7 @@ let
   outlink="hix-appimage-tmp-${name}"
   ${config.pkgs.nix}/bin/nix \
     --extra-experimental-features 'nix-command flakes' \
-    bundle -o $outlink --bundler github:ralismark/nix-appimage '${config.base}#env.${env}.executables.static.${name}'
+    bundle -o $outlink --bundler github:ralismark/nix-appimage/8811055025f836f67092a7831993c0b25d485661 '${config.base}#env.${env}.executables.static.${name}'
   store_path=$(${config.pkgs.coreutils}/bin/readlink $outlink)
   rm $outlink
   echo -e "${console.chevrons} AppImage bundle for ${console.bold (console.color console.colors.blue name)} created at:" >&2
