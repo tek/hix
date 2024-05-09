@@ -1,4 +1,4 @@
-name: Run Tests
+name: Tests basic 1
 on:
   push:
     branches:
@@ -24,6 +24,6 @@ jobs:
         name: tek
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
     - run: git config --global user.name hix
-    - run: git config --global user.email hix@github.com
-    - run: nix run .#test-basic
+    - run: git config --global user.email hix@tryp.io
+    - run: nix run .#test-basic-1
     - run: nix flake check

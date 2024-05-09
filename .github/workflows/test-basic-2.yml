@@ -1,4 +1,4 @@
-name: Tests for managed bounds
+name: Tests basic 2
 on:
   push:
     branches:
@@ -25,4 +25,5 @@ jobs:
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
     - run: git config --global user.name hix
     - run: git config --global user.email hix@tryp.io
-    - run: nix run .#test-managed
+    - run: nix run .#test-basic-2
+    - run: nix flake check

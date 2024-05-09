@@ -117,7 +117,8 @@ in {
       tests = import ./test/default.nix { inherit util; };
 
     in {
-      test-basic = util.app tests.sets.test-basic;
+      test-basic-1 = util.app tests.sets.test-basic-1;
+      test-basic-2 = util.app tests.sets.test-basic-2;
       test-vm = util.app tests.sets.test-vm;
       test-managed = util.app tests.sets.test-managed;
       test = util.app tests.sets.test;
