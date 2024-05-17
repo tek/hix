@@ -1,4 +1,4 @@
-{ pkgs }:
+{pkgs, util}:
 with pkgs.lib;
 let
   display = vm:

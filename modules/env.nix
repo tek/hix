@@ -11,7 +11,7 @@ let
 
   ghcModule = import ./ghc.nix { inherit global util; };
 
-  vmLib = import ../lib/vm.nix { inherit (global) pkgs; };
+  vmLib = import ../lib/vm.nix { inherit (global) pkgs; inherit util; };
 
   mkBuildInputs = def:
     if isFunction def
