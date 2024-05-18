@@ -219,8 +219,8 @@ renderComponent HixComponent {..} =
     preludePackageAttrs p
       | Just dep <- p.dep =
         ExprAttrs [
-          (ExprAttr "name" (ExprString (toText p.prelude.preludePackage))),
-          (ExprAttr "version" (ExprString (show (pretty (depVerRange dep)))))
+          ExprAttr "name" (ExprString (toText p.prelude.preludePackage)),
+          ExprAttr "version" (ExprString (show (pretty (depVerRange dep))))
         ]
       | otherwise = ExprString (toText p.prelude.preludePackage)
     key = case special of
@@ -238,7 +238,7 @@ flakePackage pkg =
   where
     attrs = ExprAttrs (src : pkg.description : ExprAttr "cabal" cabalConfig : comps)
     src = ExprAttr "src" (ExprLit [exon|./#{Text.dropWhileEnd ('/' ==) (pathText pkg.src)}|])
-    cabalConfig = ExprAttrs (pkg.known <> (if null pkg.meta then [] else [ExprAttr "meta" (ExprAttrs pkg.meta)]))
+    cabalConfig = ExprAttrs (pkg.known <> [ExprAttr "meta" (ExprAttrs pkg.meta) | not (null pkg.meta)])
     comps = renderComponent <$> pkg.components
 
 mainPackage :: [HixPackage] -> ExprAttr
@@ -249,12 +249,12 @@ mainPackage = \case
 flake :: BootstrapProjectConfig -> [HixPackage] -> Expr
 flake conf pkgs =
   ExprAttrs [
-    (ExprAttr "description" (ExprString "A Haskell project")),
-    (ExprAttr "inputs.hix.url" (ExprString conf.hixUrl.unHixUrl)),
-    (ExprAttr "outputs" (ExprPrefix "{hix, ...}: hix.lib.flake" (ExprAttrs [
-      (ExprAttr "packages" (ExprAttrs (flakePackage <$> pkgs))),
+    ExprAttr "description" (ExprString "A Haskell project"),
+    ExprAttr "inputs.hix.url" (ExprString conf.hixUrl.unHixUrl),
+    ExprAttr "outputs" (ExprPrefix "{hix, ...}: hix.lib.flake" (ExprAttrs [
+      ExprAttr "packages" (ExprAttrs (flakePackage <$> pkgs)),
       mainPackage pkgs
-    ])))
+    ]))
   ]
 
 bootstrapFiles :: BootstrapProjectConfig -> M [ProjectFile]
