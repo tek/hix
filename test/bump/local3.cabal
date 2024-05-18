@@ -1,0 +1,24 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.36.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           local3
+version:        0.1.0.0
+description:    See https://hackage.haskell.org/package/local3/docs/Local3.html
+license:        GPL-3
+build-type:     Simple
+
+library
+  exposed-modules:
+      Local3
+  other-modules:
+      Paths_local3
+  hs-source-dirs:
+      lib
+  build-depends:
+      base <5
+    , local2 ==0.1.0.0
+    , path
+  default-language: Haskell2010

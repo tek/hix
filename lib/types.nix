@@ -10,18 +10,18 @@ let
     options = {
 
       name = mkOption {
-        description = "Name of the package.";
+        description = mdDoc "Name of the package.";
         type = str;
       };
 
       version = mkOption {
-        description = "Version of the package.";
+        description = mdDoc "Version of the package.";
         type = nullOr (either int str);
         default = null;
       };
 
       mixin = mkOption {
-        description = "List of Cabal mixins that allow renaming and hiding modules.";
+        description = mdDoc "List of Cabal mixins that allow renaming and hiding modules.";
         type = listOf str;
         default = [];
         example = literalExpression ''
@@ -30,6 +30,15 @@ let
             "hiding (IncipitBase)"
           ]
         '';
+      };
+
+      local = mkOption {
+        description = mdDoc ''
+        Whether this package is part of this build.
+        When this is set, the version is used when managed dependencies are enabled and this dep has no managed version.
+        '';
+        type = bool;
+        default = false;
       };
 
     };

@@ -46,6 +46,10 @@
       # managed bound or not.
       if config.managed.mergeBounds
       then util.version.intersect norm.version managed
+      else
+      # We only want managed bounds, but local packages need manual versions
+      if managed == null && norm.local
+      then norm.version
       else managed
       ;
 

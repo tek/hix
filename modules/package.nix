@@ -44,7 +44,6 @@ let
           '';
           type = util.types.hpackDep;
           readOnly = true;
-          default = { name = "${pkgConfig.name}:${config.name}"; version = "^>= ${pkgConfig.cabal-config.version}"; };
         };
 
         exact = mkOption {
@@ -54,9 +53,24 @@ let
           '';
           type = util.types.hpackDep;
           readOnly = true;
-          default = { name = "${pkgConfig.name}:${config.name}"; version = "== ${pkgConfig.cabal-config.version}"; };
         };
 
+      };
+
+    };
+
+    config.dep = {
+
+      minor = {
+        name = "${pkgConfig.name}:${config.name}";
+        version = "^>= ${pkgConfig.cabal-config.version}";
+        local = true;
+      };
+
+      exact = {
+        name = "${pkgConfig.name}:${config.name}";
+        version = "== ${pkgConfig.cabal-config.version}";
+        local = true;
       };
 
     };
@@ -332,7 +346,6 @@ in {
         '';
         type = util.types.hpackDep;
         readOnly = true;
-        default = { name = config.name; version = "^>= ${config.cabal-config.version}"; };
       };
 
       exact = mkOption {
@@ -342,7 +355,6 @@ in {
         '';
         type = util.types.hpackDep;
         readOnly = true;
-        default = { name = config.name; version = "== ${config.cabal-config.version}"; };
       };
 
     };
@@ -373,6 +385,22 @@ in {
       ;
 
     subpath = util.packageSubpath global.base config.src;
+
+    dep = {
+
+      minor = {
+        name = config.name;
+        version = "^>= ${config.cabal-config.version}";
+        local = true;
+      };
+
+      exact = {
+        name = config.name;
+        version = "== ${config.cabal-config.version}";
+        local = true;
+      };
+
+    };
 
   };
 

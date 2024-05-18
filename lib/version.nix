@@ -2,7 +2,7 @@
 
   normalize = spec:
   if lib.isAttrs spec
-  then { mixin = []; } // spec
+  then { mixin = []; local = false; version = null; } // spec
   else let
     result = builtins.split "^([[:graph:]]+) (.*)$" spec;
     parts = lib.head (lib.drop 1 result);
@@ -10,8 +10,8 @@
     version = lib.head (lib.drop 1 parts);
   in
   if lib.length result >= 3
-  then { inherit name version; mixin = []; }
-  else { name = spec; version = null; mixin = []; };
+  then { inherit name version; mixin = []; local = false; }
+  else { name = spec; version = null; mixin = []; local = false; };
 
   mainLibName = full: let
     result = builtins.split "^(.*):.*$" full;

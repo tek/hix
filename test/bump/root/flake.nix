@@ -11,7 +11,7 @@
       quiet = true;
       sets = {
         main = ["local1"];
-        other = ["local2"];
+        other = ["local2" "local3"];
       };
       latest.compiler = "ghc94";
       forceBounds.base.upper = "5";
@@ -34,6 +34,13 @@
         library = {
           enable = true;
           dependencies = ["path"];
+        };
+      };
+      local3 = {
+        src = ./packages/local3;
+        library = {
+          enable = true;
+          dependencies = ["path" config.packages.local2.dep.exact];
         };
       };
     };

@@ -24,6 +24,16 @@
         upper = "0.10";
       };
     };
+    local3 = {
+      base = {
+        lower = null;
+        upper = "4.18";
+      };
+      path = {
+        lower = null;
+        upper = "0.10";
+      };
+    };
   };
   versions = {
     latest-main = {

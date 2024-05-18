@@ -27,7 +27,7 @@ in {
 
       dev = mkOption {
         description = mdDoc ''
-        Whether to build the CLI from the sources in this checkout rather than from Hackage.
+        Whether to build the CLI from the sources in the Hix input rather than from Hackage.
         For testing purposes.
         '';
         type = bool;
