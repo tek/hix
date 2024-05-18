@@ -3,6 +3,7 @@
   inherit (config.internal) pkgs;
 
   git = "${pkgs.git}/bin/git";
+  grep = "${pkgs.gnugrep}/bin/grep";
 
   preamble = ''
   setopt no_unset pipefail
@@ -34,35 +35,76 @@
   if ! ask 'Versions updated. Continue?'
   then
     ${git} reset --hard
-    die "Aborting."
+    die 'Aborting.'
   fi
   ${git} add .
   '';
 
   commitAndTag = ''
+  if [[ -n ''${hix_release_dry_run-} ]]
+  then
+    message 'Dry run, skipping commit.'
+    exit 0
+  fi
   ${git} commit --allow-empty -m "Release $version"
   ${git} tag -m "Release $version" "$version"
+  '';
+
+  checkDevCliTests = ''
+  dev_cli_test_flakes=($(${grep} --files-with-matches 'hixCli\.dev = true' test/**/flake.nix))
+  if [[ -n $dev_cli_test_flakes ]]
+  then
+    dev_cli_test_names=(''${''${dev_cli_test_flakes#test/}%%/*})
+    message 'Some tests still use the development version of the CLI:'
+    for dc_test in $dev_cli_test_names
+    do
+      echo " $(yellow '*') $dc_test"
+    done
+    if ask 'Update and rerun tests?'
+    then
+      sed -i 's#hixCli\.dev = true#hixCli\.dev = false#' $=dev_cli_test_flakes
+      if nix run .#test -- $=dev_cli_test_names
+      then
+        message 'Tests succeeded, committing updated test flakes.'
+      else
+        die 'Tests failed, aborting.'
+      fi
+      ${git} add $dev_cli_test_flakes
+    elif ! ask 'Release anyway?'
+    then
+      die 'Aborting.'
+    fi
+  fi
   '';
 
   nix = util.zscript "hix-release-nix" ''
   ${preamble}
   ${updateVersions}
+  ${checkDevCliTests}
   ${commitAndTag}
   '';
 
   # TODO updateVersions should probably run after the CLI release so that tests that don't use devCli can validate the
   # new version.
-  # Also grep for devCli tests and suggest that they be changed to use the release.
   all = util.zscript "hix-release-all" ''
   ${preamble}
   ${updateVersions}
 
-  nix run .#release -- -v $version
+  if [[ -n ''${hix_release_dry_run-} ]]
+  then
+    message 'Dry run, skipping CLI release.'
+  else
+    nix run .#release -- -v $version
+  fi
   if ! ask 'Update CLI version in overrides. Continue?'
   then
-    die "Aborting."
+    die 'Aborting.'
   fi
-  ${git} add modules/cli.nix
+  if ! ${git} add modules/cli.nix
+  then
+    die 'modules/cli.nix unchanged, aborting.'
+  fi
+  ${checkDevCliTests}
   ${commitAndTag}
   '';
 
