@@ -52,7 +52,6 @@ let
     dst=$out/share/doc/hix
     mkdir -p $dst
     cp ${nixpkgsDoc + "/style.css"} $dst/style.css
-    cp ${nixpkgsDoc + "/overrides.css"} $dst/overrides.css
     cp -r ${pkgs.documentation-highlighter} $dst/highlightjs
     nixos-render-docs -j $NIX_BUILD_CORES manual html \
       --manpage-urls ${manpageUrls} \
