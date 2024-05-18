@@ -11,7 +11,7 @@ in {
   options.hackage = with types; {
 
     packages = mkOption {
-      description = mdDoc ''
+      description = ''
         The set of packages that will be published to Hackage when the release command is run without arguments.
         If it is `null`, all packages are published.
         The items in the list should be Cabal package names as defined in `options.packages`.
@@ -21,7 +21,7 @@ in {
     };
 
     allPackages = mkOption {
-      description = mdDoc ''
+      description = ''
         There are two modes for versioning: Either all packages share the same version, in which case the release app
         will publish all packages at the same time, or each package has an individual version, in which case the release
         app expects the name of a package to be specified.
@@ -31,7 +31,7 @@ in {
     };
 
     versionFile = mkOption {
-      description = mdDoc ''
+      description = ''
         If multiple packages use the same file for the version (like when using shared hpack files) this option may
         point to that file.
         If `hackage.allPackages` is `true` and this option is `null`, the version will not be modified by the release
@@ -48,7 +48,7 @@ in {
     };
 
     versionFileExtract = mkOption {
-      description = mdDoc ''
+      description = ''
       A function that returns a shell script fragment that extracts the current version from a version file.
       The default assumes hpack/cabal format, like `version: 5`, unless the file has the extension
       `.nix`, in which case it is assumed the file only contains a string.
@@ -61,7 +61,7 @@ in {
     };
 
     versionFileUpdate = mkOption {
-      description = mdDoc ''
+      description = ''
       A function that returns a shell script fragment that updates the current version in a version file.
       The new version is stored in the environment variable `$new_version` in the surrounding shell
       script.
@@ -76,13 +76,13 @@ in {
     };
 
     setChangelogVersion = mkOption {
-      description = mdDoc "Whether to substitute the word 'Unreleased' with the new version in changelogs.";
+      description = "Whether to substitute the word 'Unreleased' with the new version in changelogs.";
       type = bool;
       default = false;
     };
 
     check = mkOption {
-      description = mdDoc ''
+      description = ''
         Whether to run `nix flake check` before the release process.
       '';
       type = bool;
@@ -90,7 +90,7 @@ in {
     };
 
     commit = mkOption {
-      description = mdDoc ''
+      description = ''
         After successfully uploading a new release, the changes to the version file, cabal files and changelog will be
         committed unless this is set to `false`.
       '';
@@ -99,13 +99,13 @@ in {
     };
 
     commitExtraArgs = mkOption {
-      description = mdDoc "Extra CLI options for `git commit`.";
+      description = "Extra CLI options for `git commit`.";
       type = str;
       default = "";
     };
 
     add = mkOption {
-      description = mdDoc ''
+      description = ''
       When [](#opt-hackage-hackage.add) is set to `false`, this option can be enabled to git-add the files but not
       commit them.
       '';
@@ -114,7 +114,7 @@ in {
     };
 
     tag = mkOption {
-      description = mdDoc ''
+      description = ''
         After successfully uploading a new release, a tag with the version name will be created unless this is set to
         `false`.
       '';
@@ -123,13 +123,13 @@ in {
     };
 
     tagExtraArgs = mkOption {
-      description = mdDoc "Extra CLI options for `git tag`.";
+      description = "Extra CLI options for `git tag`.";
       type = str;
       default = "";
     };
 
     formatTag = mkOption {
-      description = mdDoc "Function that creates a tag name from a version and an optional package name.";
+      description = "Function that creates a tag name from a version and an optional package name.";
       type = functionTo str;
       default = { name, version }: let
         vtag = "v${version}";
@@ -137,7 +137,7 @@ in {
     };
 
     uploadCommand = mkOption {
-      description = mdDoc ''
+      description = ''
         The command used to upload a tarball, specified as a function that takes a set as a parameter with the
         attributes:
         ```
@@ -154,13 +154,13 @@ in {
     };
 
     askVersion = mkOption {
-      description = mdDoc "Whether to interactively query the user for a new version when releasing.";
+      description = "Whether to interactively query the user for a new version when releasing.";
       type = bool;
       default = true;
     };
 
     confirm = mkOption {
-      description = mdDoc "Whether to ask for confirmation before uploading.";
+      description = "Whether to ask for confirmation before uploading.";
       type = bool;
       default = true;
     };
@@ -168,7 +168,7 @@ in {
     hooks = {
 
       postUploadAll = mkOption {
-        description = mdDoc ''
+        description = ''
         Shell script lines (zsh) to run after uploading all packages.
 
         Value is a function that gets the set `{source, publish}`, two booleans that indicate whether the sources (or
@@ -179,7 +179,7 @@ in {
       };
 
       preCommitAll = mkOption {
-        description = mdDoc ''
+        description = ''
         Shell script lines (zsh) to run before commiting the version change after publishing all packages.
         '';
         type = lines;
@@ -187,7 +187,7 @@ in {
       };
 
       postCommitAll = mkOption {
-        description = mdDoc ''
+        description = ''
         Shell script lines (zsh) to run after commiting the version change after publishing all packages.
         '';
         type = lines;
@@ -199,12 +199,12 @@ in {
     output = {
 
       packages = mkOption {
-        description = mdDoc "Internal option";
+        description = "Internal option";
         type = unspecified;
       };
 
       apps = mkOption {
-        description = mdDoc "Internal option";
+        description = "Internal option";
         type = unspecified;
       };
 

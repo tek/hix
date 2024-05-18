@@ -43,7 +43,7 @@ in {
   options = {
 
     base = mkOption {
-      description = mdDoc ''
+      description = ''
       The project's base directory.
 
       Will be inferred from package source directories if unset.
@@ -55,7 +55,7 @@ in {
     };
 
     packages = mkOption {
-      description = mdDoc ''
+      description = ''
       The project's Cabal packages, with Cabal package names as keys and package config as values.
       The config is processed with [HPack](https://github.com/sol/hpack).
       '';
@@ -70,7 +70,7 @@ in {
     };
 
     main = mkOption {
-      description = mdDoc ''
+      description = ''
         The name of a key in `packages` that is considered to be the main package.
         This package will be assigned to the `defaultPackage` flake output that is built by a plain
         `nix build`.
@@ -81,7 +81,7 @@ in {
     };
 
     cabal = mkOption {
-      description = mdDoc ''
+      description = ''
       Cabal options that are applied to all packages and components.
 
       If you define any options here, they will be merged with definitions that are set in packages or components.
@@ -102,7 +102,7 @@ in {
     };
 
     cabal-config = mkOption {
-      description = mdDoc ''
+      description = ''
       Evaluated version of {option}`cabal`, for referencing in other config values.
       May not be set by the user.
       '';
@@ -113,7 +113,7 @@ in {
 
     # TODO cli must be able to resolve components from metadata by reading cabal.project and *.cabal
     manualCabal = mkOption {
-      description = mdDoc ''
+      description = ''
       Don't use the options in [](#opt-general-packages) as Cabal configuration for the ghci preprocessor.
       '';
       type = bool;
@@ -121,14 +121,14 @@ in {
     };
 
     forceCabal2nix = mkOption {
-      description = mdDoc "Whether to use cabal2nix even if there is no Cabal file.";
+      description = "Whether to use cabal2nix even if there is no Cabal file.";
       type = bool;
       default = false;
     };
 
     # TODO is this effective and desired?
     forceCabalGen = mkOption {
-      description = mdDoc ''
+      description = ''
       Whether to generate a Cabal file from Nix config even if there is one in the source directory.
       '';
       type = bool;
@@ -136,7 +136,7 @@ in {
     };
 
     ifd = mkOption {
-      description = mdDoc ''
+      description = ''
       Whether to use `cabal2nix`, which uses Import From Derivation, or to generate simple derivations, for local
       packages.
       '';
@@ -145,7 +145,7 @@ in {
     };
 
     compiler = mkOption {
-      description = mdDoc ''
+      description = ''
       The GHC version used for internal tasks and for the default environment.
       This is an attribute name in the nixpkgs set `haskell.packages`, which is usually in the format `ghc96`.
       '';
@@ -156,7 +156,7 @@ in {
     compat = {
 
       enable = mkOption {
-        description = mdDoc ''
+        description = ''
           Create derivations in [](#opt-general-outputs.checks) that build the packages with different GHC versions.
           The set of versions is configured by [](#opt-general-compat.versions).
         '';
@@ -165,7 +165,7 @@ in {
       };
 
       versions = mkOption {
-        description = mdDoc ''
+        description = ''
         The GHC versions for which to create compat checks. Defaults to [](#opt-general-ghcVersions).
         There has to be an env in [](#opt-general-envs) with the version as its name for each of these.
         '';
@@ -174,7 +174,7 @@ in {
       };
 
       ifd = mkOption {
-        description = mdDoc ''
+        description = ''
         Whether to allow IFD for compat checks.
         '';
         type = bool;
@@ -186,7 +186,7 @@ in {
     deps = mkOption {
       type = listOf path;
       default = [];
-      description = mdDoc ''
+      description = ''
         Flake inputs containing hix projects whose overrides are merged into this project's.
         The `local` overrides are ignored to prevent the dependencies' project packages from being
         injected into the compat checks.
@@ -196,14 +196,14 @@ in {
     depsFull = mkOption {
       type = listOf path;
       default = [];
-      description = mdDoc ''
+      description = ''
         Flake inputs containing hix projects whose overrides are merged into this project's.
         Unlike `deps`, this includes the `local` overrides.
       '';
     };
 
     haskellTools = mkOption {
-      description = mdDoc ''
+      description = ''
       Function returning a list of names of Haskell packages that should be included in every environment's `$PATH`.
       This is a convenience variant of [](#opt-env-buildInputs) that provides the environment's GHC package set (without
       overrides) as a function argument.
@@ -215,7 +215,7 @@ in {
     };
 
     buildOutputsPrefix = mkOption {
-      description = mdDoc ''
+      description = ''
       Some of Hix's features are exposed as top level outputs, like `nix run .#release`.
       Since these are quite numerous, it becomes increasingly likely that these clash with some of the project's package
       or command names, making them inaccessible.
@@ -233,7 +233,7 @@ in {
 
     pkgs = mkOption {
       type = util.types.pkgs;
-      description = mdDoc ''
+      description = ''
         The nixpkgs attrset used by the default GHC.
       '';
       readOnly = true;
@@ -272,13 +272,13 @@ in {
       };
 
       hixVersion = mkOption {
-        description = mdDoc "The Hix version used by this project.";
+        description = "The Hix version used by this project.";
         type = str;
         readOnly = true;
       };
 
       hixUrl = mkOption {
-        description = mdDoc "The URL to the Hix release tag used by this project.";
+        description = "The URL to the Hix release tag used by this project.";
         type = str;
         default = "github:tek/hix?ref=${config.internal.hixVersion}";
       };

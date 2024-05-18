@@ -130,13 +130,13 @@ let
   in {
     options = with types; {
       name = mkOption {
-        description = mdDoc "";
+        description = "";
         type = str;
         default = name;
       };
 
       resolve = mkOption {
-        description = mdDoc "";
+        description = "";
         type = submoduleWith {
           modules = optionals (name != "‹name›") ([
             serviceModule
@@ -164,28 +164,28 @@ let
 in {
   options = with types; {
 
-    enable = mkEnableOption (mdDoc "this environment");
+    enable = mkEnableOption ("this environment");
 
     name = mkOption {
-      description = mdDoc "Name of this environment.";
+      description = "Name of this environment.";
       type = str;
       default = name;
     };
 
     services = mkOption {
-      description = mdDoc "Services for this environment.";
+      description = "Services for this environment.";
       type = attrsOf (submodule envServiceModule);
       default = {};
     };
 
     env = mkOption {
-      description = mdDoc "Environment variables to set when running scripts in this environment.";
+      description = "Environment variables to set when running scripts in this environment.";
       type = attrsOf (either int str);
       default = {};
     };
 
     packages = mkOption {
-      description = mdDoc ''
+      description = ''
       The subset of local [packages](#opt-general-packages) that should be built by this environment.
 
       Entries must correspond to existing keys in [](#opt-general-packages).
@@ -205,31 +205,31 @@ in {
     };
 
     ghc = mkOption {
-      description = mdDoc "The GHC configuration for this environment.";
+      description = "The GHC configuration for this environment.";
       type = submodule ghcModule;
       default = {};
     };
 
     ghcWithPackages = mkOption {
-      description = mdDoc "The fully configured GHC package exposing this environment's dependencies.";
+      description = "The fully configured GHC package exposing this environment's dependencies.";
       type = package;
       readOnly = true;
     };
 
     ghcWithPackagesArgs = mkOption {
-      description = mdDoc "Additional arguments to pass to `ghcWithPackages`.";
+      description = "Additional arguments to pass to `ghcWithPackages`.";
       type = attrsOf unspecified;
       default = {};
     };
 
     hoogle = mkOption {
-      description = mdDoc "Whether to enable Hoogle in this environment.";
+      description = "Whether to enable Hoogle in this environment.";
       type = bool;
       default = false;
     };
 
     overrides = mkOption {
-      description = mdDoc ''
+      description = ''
       Like [](#opt-general-overrides), but used only when this environment is used to build packages.
       '';
       type = util.types.cabalOverridesVia "env ${config.name}";
@@ -237,7 +237,7 @@ in {
     };
 
     buildInputs = mkOption {
-      description = mdDoc ''
+      description = ''
       Additional system package dependencies for this environment.
       ::: {.note}
       These are only made available to shells and commands, not added to packages, like when they are set in overrides.
@@ -248,7 +248,7 @@ in {
     };
 
     haskellPackages = mkOption {
-      description = mdDoc ''
+      description = ''
       Names of Haskell packages that should be added to this environment's GHC's package db, making them available for
       import.
       These may include the local packages.
@@ -258,7 +258,7 @@ in {
     };
 
     haskellTools = mkOption {
-      description = mdDoc ''
+      description = ''
       Function returning a list of names of Haskell packages that should be included in the environment's `$PATH`.
       This is a convenience variant of [](#opt-env-buildInputs) that provides the environment's GHC package set (without
       overrides) as a function argument.
@@ -270,37 +270,37 @@ in {
     };
 
     localDeps = mkOption {
-      description = mdDoc "Whether to add the dependencies of the env's local packages to GHC's package db.";
+      description = "Whether to add the dependencies of the env's local packages to GHC's package db.";
       type = bool;
       default = true;
     };
 
     setup-pre = mkOption {
-      description = mdDoc "Commands to run before the service VM has started.";
+      description = "Commands to run before the service VM has started.";
       type = str;
       default = "";
     };
 
     setup = mkOption {
-      description = mdDoc "Commands to run after the service VM has started.";
+      description = "Commands to run after the service VM has started.";
       type = str;
       default = "";
     };
 
     exit-pre = mkOption {
-      description = mdDoc "Command to run before the service VM is shut down.";
+      description = "Command to run before the service VM is shut down.";
       type = str;
       default = "";
     };
 
     exit = mkOption {
-      description = mdDoc "Command to run when the env exits.";
+      description = "Command to run when the env exits.";
       type = str;
       default = "";
     };
 
     code = mkOption {
-      description = mdDoc ''
+      description = ''
       The shell script code that starts this env's services and sets its environment variables.
       '';
       type = str;
@@ -308,7 +308,7 @@ in {
     };
 
     shell = mkOption {
-      description = mdDoc ''
+      description = ''
       The shell derivation for this environment, starting the service VM in the `shellHook`.
 
       ::: {.note}
@@ -320,7 +320,7 @@ in {
     };
 
     runner = mkOption {
-      description = mdDoc ''
+      description = ''
       An executable script file that sets up the environment and executes its command line arguments.
       '';
       type = path;
@@ -328,58 +328,58 @@ in {
     };
 
     basePort = mkOption {
-      description = mdDoc "The number used as a base for ports in this env's VM, like ssh getting `basePort + 22`.";
+      description = "The number used as a base for ports in this env's VM, like ssh getting `basePort + 22`.";
       type = port;
       default = 20000;
     };
 
     defaults = mkOption {
-      description = mdDoc "Whether to use the common NixOS options for VMs.";
+      description = "Whether to use the common NixOS options for VMs.";
       type = bool;
       default = true;
     };
 
     wait = mkOption {
       description =
-        mdDoc "Wait for the VM to complete startup within the given number of seconds. 0 disables the feature.";
+        "Wait for the VM to complete startup within the given number of seconds. 0 disables the feature.";
       type = int;
       default = 30;
     };
 
     ghcid = {
-      enable = mkEnableOption (mdDoc "GHCid for this env") // { default = true; };
+      enable = mkEnableOption ("GHCid for this env") // { default = true; };
 
       package = mkOption {
-        description = mdDoc "The package for GHCid, defaulting to the one from the env's GHC without overrides.";
+        description = "The package for GHCid, defaulting to the one from the env's GHC without overrides.";
         type = package;
         default = ghcidMod config.ghc.vanillaGhc.ghcid;
       };
     };
 
     hls = {
-      enable = mkEnableOption (mdDoc "HLS for this env");
+      enable = mkEnableOption ("HLS for this env");
 
       package = mkOption {
-        description = mdDoc "The package for HLS, defaulting to the one from the env's GHC without overrides.";
+        description = "The package for HLS, defaulting to the one from the env's GHC without overrides.";
         type = package;
         default = config.ghc.vanillaGhc.haskell-language-server;
       };
     };
 
     hide = mkOption {
-      description = mdDoc "Skip this env for `devShells`.";
+      description = "Skip this env for `devShells`.";
       type = bool;
       default = false;
     };
 
     hideApps = mkOption {
-      description = mdDoc "Skip this env for `apps.env`.";
+      description = "Skip this env for `apps.env`.";
       type = bool;
       default = false;
     };
 
     derivations = mkOption {
-      description = mdDoc ''
+      description = ''
       The derivations for the local Cabal packages using this env's GHC, as well as the
       [](#opt-general-output.extraPackages).
       '';
@@ -387,7 +387,7 @@ in {
     };
 
     localPackage = mkOption {
-      description = mdDoc ''
+      description = ''
         A function that takes override combinators and a derivation and returns a modified version of that derivation.
         Called for each cabal2nix derivation of the local packages before inserting it into the overrides.
         Like [](#opt-general-overrides), but applies too all packages when building with this env.
@@ -402,7 +402,7 @@ in {
     libraryProfiling = mkOption {
       type = bool;
       default = true;
-      description = mdDoc ''
+      description = ''
         Whether to build local libraries with profiling enabled.
         This is the default mode for Haskell derivations.
       '';
@@ -411,7 +411,7 @@ in {
     profiling = mkOption {
       type = bool;
       default = false;
-      description = mdDoc ''
+      description = ''
         Whether to build local libraries and executables with profiling enabled.
       '';
     };
@@ -419,13 +419,13 @@ in {
     ifd = mkOption {
       type = bool;
       default = global.ifd;
-      description = mdDoc ''
+      description = ''
       Whether to use cabal2nix, which uses Import From Derivation, or to generate simple derivations.
       '';
     };
 
     hostPorts = mkOption {
-      description = mdDoc ''
+      description = ''
       The effective ports of the VM services in the host system.
       Computed from [](#opt-env-basePort) and [](#opt-service-ports).
       '';
@@ -434,7 +434,7 @@ in {
     };
 
     systems = mkOption {
-      description = mdDoc ''
+      description = ''
       The architecture/system identifiers like `x86_64-linux` for which this environment works.
       This is used to exclude environments from being exposed as shells when they are system-specific, for example when
       using a VM that only works with Linux.
@@ -448,7 +448,7 @@ in {
     };
 
     managed = mkOption {
-      description = mdDoc ''
+      description = ''
       Whether this env's dependencies are [](#managed).
       This has the effect that its bounds and overrides are read from the managed state in
       [](#opt-managed-managed.file).
@@ -459,46 +459,46 @@ in {
 
     vm = {
 
-      enable = mkEnableOption (mdDoc "the service VM for this env");
+      enable = mkEnableOption ("the service VM for this env");
 
       name = mkOption {
-        description = mdDoc "Name of the VM, used in the directory housing the image file.";
+        description = "Name of the VM, used in the directory housing the image file.";
         type = str;
         default = config.name;
       };
 
       dir = mkOption {
-        description = mdDoc "";
+        description = "";
         type = str;
         default = "/tmp/hix-vm/$USER/${config.vm.name}";
       };
 
       pidfile = mkOption {
         type = str;
-        description = mdDoc "The file storing the qemu process' process ID.";
+        description = "The file storing the qemu process' process ID.";
         default = "${config.vm.dir}/vm.pid";
       };
 
       image = mkOption {
         type = str;
-        description = mdDoc "The path to the image file.";
+        description = "The path to the image file.";
         default = "${config.vm.dir}/vm.qcow2";
       };
 
       monitor = mkOption {
-        description = mdDoc "The monitor socket for the VM.";
+        description = "The monitor socket for the VM.";
         type = str;
         default = "${config.vm.dir}/monitor";
       };
 
       system = mkOption {
-        description = mdDoc "The system architecture string used for this VM, defaulting to [](#opt-general-system).";
+        description = "The system architecture string used for this VM, defaulting to [](#opt-general-system).";
         type = str;
         default = global.system;
       };
 
       headless = mkOption {
-        description = mdDoc ''
+        description = ''
         VMs are run without a graphical connection to their console.
         For debugging purposes, this option can be disabled to show the window.
         '';
@@ -507,17 +507,17 @@ in {
       };
 
       setup = mkOption {
-        description = mdDoc "Commands for starting the VM.";
+        description = "Commands for starting the VM.";
         type = str;
       };
 
       exit = mkOption {
-        description = mdDoc "Commands for shutting down the VM.";
+        description = "Commands for shutting down the VM.";
         type = str;
       };
 
       derivation = mkOption {
-        description = mdDoc "The VM derivation";
+        description = "The VM derivation";
         type = path;
       };
 
@@ -526,36 +526,36 @@ in {
     internal = {
 
       overridesLocal = mkOption {
-        description = mdDocs "The local packages, encoded as overrides.";
+        description = "The local packages, encoded as overrides.";
         type = util.types.cabalOverridesVia "project";
       };
 
       overridesEnvUnmanaged = mkOption {
-        description = mdDocs "Overrides for this env, excluding extras like managed dependencies.";
+        description = "Overrides for this env, excluding extras like managed dependencies.";
         type = util.types.cabalOverridesVia "computed env ${config.name} unmanaged";
         readOnly = true;
       };
 
       overridesEnv = mkOption {
-        description = mdDocs "Overrides for this env, including extras like managed dependencies.";
+        description = "Overrides for this env, including extras like managed dependencies.";
         type = util.types.cabalOverridesVia "computed env ${config.name}";
         readOnly = true;
       };
 
       overridesInherited = mkOption {
-        description = mdDoc "The inherited overrides used for this env.";
+        description = "The inherited overrides used for this env.";
         type = util.types.cabalOverrides;
         default = [];
       };
 
       overridesSolver = mkOption {
-        description = mdDocs "Overrides for this env for use with the solver in managed dependency apps.";
+        description = "Overrides for this env for use with the solver in managed dependency apps.";
         type = util.types.cabalOverridesVia "computed env ${config.name} solver";
         default = [];
       };
 
       resolvedServices = mkOption {
-        description = mdDoc "Magic modules that allow merging env-specific service config with their base config.";
+        description = "Magic modules that allow merging env-specific service config with their base config.";
         type = attrsOf (submodule resolveServiceModule);
         default = mapAttrs (_: _: {}) config.services;
         readOnly = true;

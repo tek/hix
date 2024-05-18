@@ -4,7 +4,7 @@ with lib;
   options = with types; {
 
     overrides = mkOption {
-      description = mdDoc ''
+      description = ''
       Cabal package specifications and overrides injected into GHC package sets.
       Each override spec is a function that takes a set of combinators and resources like nixpkgs and should return an
       attrset containing either derivations or a transformation built from those combinators.
@@ -22,13 +22,13 @@ with lib;
     };
 
     buildInputs = mkOption {
-      description = mdDoc "Additional non-Haskell dependencies provided to all packages and environments.";
+      description = "Additional non-Haskell dependencies provided to all packages and environments.";
       type = either (functionTo (listOf package)) (listOf package);
       default = [];
     };
 
     exportedOverrides = mkOption {
-      description = mdDoc ''
+      description = ''
       These overrides are exposed from the flake for integration in downstream projects via the options
       [](#opt-general-deps) and [](#opt-general-depsFull).
 
@@ -42,7 +42,7 @@ with lib;
     };
 
     inheritSystemDependentOverrides = mkOption {
-      description = mdDoc ''
+      description = ''
       Overrides can be exported without a dependency on a system, such that a dependent could use them even if the
       dependency wasn't declared for the desired system.
       However, if [](#opt-general-ifd) is `false` in the dependency, the local packages will need the `system` option,
@@ -55,7 +55,7 @@ with lib;
     gen-overrides = {
 
       enable = mkOption {
-        description = mdDoc ''
+        description = ''
         The flake app `.#gen-overrides` collects all cabal2nix-based derivations from the [overrides](#ghc) that would
         require IFD when computed on the fly.
 
@@ -67,13 +67,13 @@ with lib;
       };
 
       file = mkOption {
-        description = mdDoc "The relative path of the file in which the overrides are stored.";
+        description = "The relative path of the file in which the overrides are stored.";
         type = str;
         default = "ops/overrides.nix";
       };
 
       gitAdd = mkOption {
-        description = mdDoc ''
+        description = ''
         Git-add [the overrides file](#opt-general-gen-overrides.file) after the first run.
         Since nix ignores untracked files in flakes, the next command would complain if the file wasn't added.
         '';
@@ -100,7 +100,7 @@ with lib;
     in {
 
       overridesDeps = mkOption {
-        description = mdDoc ''
+        description = ''
         The overrides inherited from dependency flakes via [](#opt-general-deps) and [](#opt-general-depsFull).
         '';
         type = attrsOf util.types.cabalOverrides;

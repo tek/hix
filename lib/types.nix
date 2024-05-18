@@ -10,18 +10,18 @@ let
     options = {
 
       name = mkOption {
-        description = mdDoc "Name of the package.";
+        description = "Name of the package.";
         type = str;
       };
 
       version = mkOption {
-        description = mdDoc "Version of the package.";
+        description = "Version of the package.";
         type = nullOr (either int str);
         default = null;
       };
 
       mixin = mkOption {
-        description = mdDoc "List of Cabal mixins that allow renaming and hiding modules.";
+        description = "List of Cabal mixins that allow renaming and hiding modules.";
         type = listOf str;
         default = [];
         example = literalExpression ''
@@ -33,7 +33,7 @@ let
       };
 
       local = mkOption {
-        description = mdDoc ''
+        description = ''
         Whether this package is part of this build.
         When this is set, the version is used when managed dependencies are enabled and this dep has no managed version.
         '';
@@ -48,14 +48,14 @@ let
     options = {
 
       lower = mkOption {
-        description = mdDoc "The lower bound, inclusive.";
+        description = "The lower bound, inclusive.";
         type = nullOr str;
         default = null;
         example = literalExpression ''"1.4.8"'';
       };
 
       upper = mkOption {
-        description = mdDoc "The upper bound, exclusive.";
+        description = "The upper bound, exclusive.";
         type = nullOr str;
         default = null;
         example = literalExpression ''"1.7"'';

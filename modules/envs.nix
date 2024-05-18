@@ -23,13 +23,13 @@ in {
   options = with types; {
 
     envs = mkOption {
-      description = mdDoc "All environments for this project.";
+      description = "All environments for this project.";
       type = attrsOf (submodule envModule);
       default = {};
     };
 
     ghcVersions = mkOption {
-      description = mdDoc ''
+      description = ''
       The GHC versions for which to create envs, specified by their attribute names in `pkgs.haskell.packages`.
       '';
       type = listOf str;
@@ -38,7 +38,7 @@ in {
 
     # TODO deprecate
     devGhc = mkOption {
-      description = mdDoc "Backwards-compat alias for `envs.dev.ghc`.";
+      description = "Backwards-compat alias for `envs.dev.ghc`.";
       type = submodule ghcModule;
       readOnly = true;
     };

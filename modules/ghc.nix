@@ -5,17 +5,17 @@ with lib;
   options = with types; {
     name = mkOption {
       type = str;
-      description = mdDoc "A unique identifier of the package set.";
+      description = "A unique identifier of the package set.";
     };
 
     compiler = mkOption {
       type = str;
-      description = mdDoc "The attribute name for a GHC version in the set `haskell.packages`.";
+      description = "The attribute name for a GHC version in the set `haskell.packages`.";
     };
 
     overrides = mkOption {
       type = util.types.cabalOverrides;
-      description = mdDoc ''
+      description = ''
       The overrides used for this package set – see [](#ghc) for an explanation.
 
       This option is set by environments (see [](#envs)), but GHC modules can be used outside of environments, so this
@@ -26,7 +26,7 @@ with lib;
 
     nixpkgs = mkOption {
       type = util.types.nixpkgs;
-      description = mdDoc ''
+      description = ''
       The path to a nixpkgs source tree, used as the basis for the package set.
 
       This can be a flake input or a regular type of path, like the result of `fetchGit`.
@@ -35,17 +35,17 @@ with lib;
 
     nixpkgsOptions = mkOption {
       type = attrsOf unspecified;
-      description = mdDoc "Additional options to pass to nixpkgs when importing.";
+      description = "Additional options to pass to nixpkgs when importing.";
     };
 
     pkgs = mkOption {
       type = util.types.pkgs;
-      description = mdDoc "The nixpkgs set used for this GHC.";
+      description = "The nixpkgs set used for this GHC.";
     };
 
     crossPkgs = mkOption {
       type = util.types.pkgs;
-      description = mdDoc ''
+      description = ''
       This option can be used to override the pkgs set used for the Haskell package set, for example an element of
       `pkgsCross`: `envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64`
       '';
@@ -53,29 +53,29 @@ with lib;
 
     overlays = mkOption {
       type = listOf util.types.overlay;
-      description = mdDoc "Additional nixpkgs overlays.";
+      description = "Additional nixpkgs overlays.";
     };
 
     vanillaGhc = mkOption {
       type = util.types.ghc;
-      description = mdDoc "The package set without overrides.";
+      description = "The package set without overrides.";
       readOnly = true;
     };
 
     ghc = mkOption {
       type = util.types.ghc;
-      description = mdDoc "The package set with overrides.";
+      description = "The package set with overrides.";
       readOnly = true;
     };
 
     version = mkOption {
-      description = mdDoc "The GHC version as a canonical string, like `9.2.5`, for use in conditions.";
+      description = "The GHC version as a canonical string, like `9.2.5`, for use in conditions.";
       type = str;
       readOnly = true;
     };
 
     gen-overrides = mkOption {
-      description = mdDoc ''
+      description = ''
       Allow this GHC to use pregenerated overrides.
       Has no effect when [](#opt-general-gen-overrides.enable) is `false`.
 

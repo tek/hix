@@ -23,14 +23,14 @@ let
     options = with types; {
 
       reexported-modules = mkOption {
-        description = mdDoc "Modules from dependencies that this library exposes for downstream projects to import.";
+        description = "Modules from dependencies that this library exposes for downstream projects to import.";
         type = listOf str;
         example = literalExpression ''["Control.Concurrent.STM" "Data.Text"]'';
         default = [];
       };
 
       public = mkOption {
-        description = mdDoc "Whether to expose an internal library.";
+        description = "Whether to expose an internal library.";
         type = bool;
         default = true;
       };
@@ -38,7 +38,7 @@ let
       dep = {
 
         minor = mkOption {
-          description = mdDoc ''
+          description = ''
           Dependency string for referencing this library with its version from other Cabal package.
           Like [](#opt-package-dep.minor), but for sublibraries.
           '';
@@ -47,7 +47,7 @@ let
         };
 
         exact = mkOption {
-          description = mdDoc ''
+          description = ''
           Dependency string for referencing this library with its version from other Cabal package.
           Like [](#opt-package-libraries._name_.dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
           '';
@@ -83,7 +83,7 @@ let
 
       main = mkOption {
         type = str;
-        description = mdDoc "The file name of the main module.";
+        description = "The file name of the main module.";
         default = "Main.hs";
       };
 
@@ -131,20 +131,20 @@ in {
   options = with types; {
 
     name = mkOption {
-      description = mdDoc "The name of the package, determined by the attribute name in the config.";
+      description = "The name of the package, determined by the attribute name in the config.";
       type = str;
       default = name;
       readOnly = true;
     };
 
     src = mkOption {
-      description = mdDoc "The root directory of the package.";
+      description = "The root directory of the package.";
       type = path;
       example = literalExpression "./packages/api";
     };
 
     library = mkOption {
-      description = mdDoc ''
+      description = ''
       The library for this package.
       '';
       type = libSubmodule true;
@@ -152,7 +152,7 @@ in {
     };
 
     libraries = mkOption {
-      description = mdDoc ''
+      description = ''
       The sublibraries of this package.
       Unlike [](#opt-package-library), these are treated specially by cabal.
       To depend on them, use `<pkg>:<lib>`.
@@ -164,7 +164,7 @@ in {
     };
 
     executable = mkOption {
-      description = mdDoc ''
+      description = ''
       The single executable for this package.
       To define multiple executables, use [](#opt-package-executables).
       '';
@@ -173,7 +173,7 @@ in {
     };
 
     executables = mkOption {
-      description = mdDoc ''
+      description = ''
       Executables for this package.
       If [](#opt-package-executable) is defined, it will be added.
       '';
@@ -182,7 +182,7 @@ in {
     };
 
     test = mkOption {
-      description = mdDoc ''
+      description = ''
       The single test suite for this package.
       To define multiple test suites, use [](#opt-package-tests).
       '';
@@ -191,7 +191,7 @@ in {
     };
 
     tests = mkOption {
-      description = mdDoc ''
+      description = ''
       Test suites for this package.
       If [](#opt-package-test) is defined, it will be added.
       '';
@@ -200,7 +200,7 @@ in {
     };
 
     benchmark = mkOption {
-      description = mdDoc ''
+      description = ''
       The single benchmark for this package.
       To define multiple benchmarks, use [](#opt-package-benchmarks).
       '';
@@ -209,7 +209,7 @@ in {
     };
 
     benchmarks = mkOption {
-      description = mdDoc ''
+      description = ''
       Benchmarks for this package.
       If [](#opt-package-benchmark) is defined, it will be added.
       '';
@@ -218,7 +218,7 @@ in {
     };
 
     rootModule = mkOption {
-      description = mdDoc ''
+      description = ''
       A convenience option that is used to generate a Hackage link.
       It should denote the module that represents the most high-level API of the package, if applicable.
       The default is to replace dashes in the name with dots.
@@ -227,14 +227,14 @@ in {
     };
 
     hackageLink = mkOption {
-      description = mdDoc ''
+      description = ''
       A convenience option containing the URL to the Hackage page using the package name.
       '';
       type = str;
     };
 
     hackageRootLink = mkOption {
-      description = mdDoc ''
+      description = ''
       A convenience option containing the URL to the root module's documentation on Hackage using the package name and
       [](#opt-package-rootModule).
       '';
@@ -242,7 +242,7 @@ in {
     };
 
     description = mkOption {
-      description = mdDoc ''
+      description = ''
       The Cabal description of this packages.
       The default is a link to the [](#opt-package-rootModule) on Hackage, using the option
       [](#opt-package-hackageRootLink).
@@ -253,7 +253,7 @@ in {
     };
 
     versionFile = mkOption {
-      description = mdDoc ''
+      description = ''
       The version file for this package, defaulting to the global [](#opt-hackage-hackage.versionFile) if `null`.
       When generating Cabal files, the version field will be set to the content of this file, unless
       [](#opt-cabal-version) is set explicitly.
@@ -265,13 +265,13 @@ in {
     };
 
     buildInputs = mkOption {
-      description = mdDoc "Additional non-Haskell dependencies required by this package.";
+      description = "Additional non-Haskell dependencies required by this package.";
       type = either (functionTo (listOf package)) (listOf package);
       default = [];
     };
 
     override = mkOption {
-      description = mdDoc ''
+      description = ''
       Manipulate the package's derivation using the combinators described in [](#overrides-combinators).
       '';
       type = functionTo (functionTo unspecified);
@@ -280,7 +280,7 @@ in {
 
     cabal = mkOption {
       type = deferredModule;
-      description = mdDoc ''
+      description = ''
       Cabal options that are applied to all components.
 
       **Note**: In order to enable cascading of these options, the definitions are not evaluated in-place, but when
@@ -304,7 +304,7 @@ in {
         description = "submodule of cabal-options";
       };
       readOnly = true;
-      description = mdDoc ''
+      description = ''
       Evaluated version of [](#opt-package-cabal), for referencing in other config values.
       May not be set by the user.
       '';
@@ -312,12 +312,12 @@ in {
     };
 
     internal.componentsSet = mkOption {
-      description = mdDoc "Internal option";
+      description = "Internal option";
       type = attrsOf unspecified;
     };
 
     subpath = mkOption {
-      description = mdDoc "The computed relative path of the package root directory.";
+      description = "The computed relative path of the package root directory.";
       type = str;
       readOnly = true;
     };
@@ -325,7 +325,7 @@ in {
     dep = {
 
       minor = mkOption {
-        description = mdDoc ''
+        description = ''
         Dependency string for referencing this package with its version from other Cabal package.
         Uses the minor version dependency bound, strictly greater than the precise version.
 
@@ -349,7 +349,7 @@ in {
       };
 
       exact = mkOption {
-        description = mdDoc ''
+        description = ''
         Dependency string for referencing this package with its version from other Cabal package.
         Like [](#opt-package-dep.minor), but uses exact version equality, like `core ==0.4.1.0`.
         '';

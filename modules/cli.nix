@@ -9,24 +9,24 @@ in {
     options.internal.hixCli = with types; {
 
       ghc = mkOption {
-        description = mdDoc "The GHC config used for the Hix CLI, defaulting to the dev GHC without overrides.";
+        description = "The GHC config used for the Hix CLI, defaulting to the dev GHC without overrides.";
         type = submodule ghcModule;
       };
 
       overrides = mkOption {
-        description = mdDoc "The overrides used for the CLI client.";
+        description = "The overrides used for the CLI client.";
         type = util.types.cabalOverrides;
       };
 
       package = mkOption {
-        description = mdDoc ''
+        description = ''
         The package for the Hix CLI, defaulting to the local package in the input repository using the dev GHC.
         '';
         type = package;
       };
 
       dev = mkOption {
-        description = mdDoc ''
+        description = ''
         Whether to build the CLI from the sources in the Hix input rather than from Hackage.
         For testing purposes.
         '';
@@ -35,13 +35,13 @@ in {
       };
 
       exe = mkOption {
-        description = mdDoc "The executable in the `bin/` directory of [](#opt-hixCli-package).";
+        description = "The executable in the `bin/` directory of [](#opt-hixCli-package).";
         type = path;
         default = "${config.internal.hixCli.package}/bin/hix";
       };
 
       staticExeUrl = mkOption {
-        description = mdDoc "The URL to the Github Actions-built static executable.";
+        description = "The URL to the Github Actions-built static executable.";
         type = str;
         default = "https://github.com/tek/hix/releases/download/${config.internal.hixVersion}/hix";
       };

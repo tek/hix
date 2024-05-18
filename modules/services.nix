@@ -8,7 +8,7 @@ in {
   options = with types; {
 
     services = mkOption {
-      description = mdDoc ''
+      description = ''
       Services are fragments of NixOS config that can be added to an environment to be started as virtual machines when
       the environment is used in a command or shell.
       '';
@@ -19,7 +19,7 @@ in {
     internal.services = {
 
       postgres = mkOption {
-        description = mdDoc "A PostgreSQL server.";
+        description = "A PostgreSQL server.";
         type = deferredModule;
         readOnly = true;
       };

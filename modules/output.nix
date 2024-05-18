@@ -1,6 +1,6 @@
 { lib, config, util, ... }:
 let
-  inherit (lib) optionalAttrs mkOption mdDoc;
+  inherit (lib) optionalAttrs mkOption;
   inherit (util) app;
 
   tags = import ../lib/tags.nix { inherit config util; };
@@ -33,7 +33,7 @@ in {
     output = {
 
       extraPackages = mkOption {
-        description = mdDoc ''
+        description = ''
         Names of packages that will be added to the flake outputs, despite not being declared in
         [](#opt-general-packages).
 
@@ -45,7 +45,7 @@ in {
       };
 
       final = mkOption {
-        description = mdDoc ''
+        description = ''
         The final flake outputs computed by Hix, defaulting to the set in `outputs`.
         May be overriden for unusual customizations.
         '';
@@ -53,7 +53,7 @@ in {
       };
 
       commandApps = mkOption {
-        description = mdDoc ''
+        description = ''
         Whether to expose all commands in the attrset `apps.cmd.*`.
 
         This means that you can run `nix run .#cmd.do-stuff` to access the command defined as `commands.do-stuff`, but
@@ -64,7 +64,7 @@ in {
       };
 
       envApps = mkOption {
-        description = mdDoc ''
+        description = ''
         Whether to expose all commands in the attrset `apps.env.<env>.*`.
 
         Like [](#opt-general-output.commandApps), but commands are executed in the selected environment.
@@ -78,27 +78,27 @@ in {
     outputs = {
 
       packages = mkOption {
-        description = mdDoc "The flake output attribute `packages`.";
+        description = "The flake output attribute `packages`.";
         type = lazyAttrsOf raw;
       };
 
       checks = mkOption {
-        description = mdDoc "The flake output attribute `checks`.";
+        description = "The flake output attribute `checks`.";
         type = lazyAttrsOf raw;
       };
 
       legacyPackages = mkOption {
-        description = mdDoc "The flake output attribute `legacyPackages`.";
+        description = "The flake output attribute `legacyPackages`.";
         type = lazyAttrsOf raw;
       };
 
       devShells = mkOption {
-        description = mdDoc "The flake output attribute `devShells`.";
+        description = "The flake output attribute `devShells`.";
         type = lazyAttrsOf raw;
       };
 
       apps = mkOption {
-        description = mdDoc "The flake output attribute `apps`.";
+        description = "The flake output attribute `apps`.";
         type = lazyAttrsOf raw;
       };
 

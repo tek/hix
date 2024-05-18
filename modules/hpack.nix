@@ -1,6 +1,6 @@
 { lib, config, util, ... }:
 let
-  inherit (lib) types mkOption mdDoc;
+  inherit (lib) types mkOption;
 
   libOutput = import ../lib/output.nix { inherit config lib util; };
 
@@ -30,7 +30,7 @@ in {
 
     defaultApp = mkOption {
       type = types.str;
-      description = mdDoc ''
+      description = ''
       The name of an executable in [](#opt-general-packages) that should be assigned to `packages.default`.
       '';
     };
@@ -44,7 +44,7 @@ in {
 
       script = mkOption {
         type = types.path;
-        description = mdDoc ''
+        description = ''
           The script that generates a Cabal file in each of the directories configured in `packages` by
           executing `hpack`.
           It is intended to be run manually in the package directory using `nix run .#hpack`.
@@ -55,7 +55,7 @@ in {
 
       scriptQuiet = mkOption {
         type = types.path;
-        description = mdDoc ''
+        description = ''
           Same as `script`, but suppress all output.
         '';
       };

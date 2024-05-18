@@ -8,13 +8,13 @@ in {
     managed = {
 
       enable = mkOption {
-        description = mdDoc "Enable managed dependencies.";
+        description = "Enable managed dependencies.";
         type = bool;
         default = false;
       };
 
       sets = mkOption {
-        description = mdDoc ''
+        description = ''
         Select how to group packages for processing by the managed deps tool.
         `all` for a single set, `each` for one set per package, and an attrset for custom grouping.
         '';
@@ -29,13 +29,13 @@ in {
       };
 
       file = mkOption {
-        description = mdDoc "Relative path to the file in which dependency versions should be stored.";
+        description = "Relative path to the file in which dependency versions should be stored.";
         type = str;
         default = "ops/managed.nix";
       };
 
       generate = mkOption {
-        description = mdDoc ''
+        description = ''
         Whether to regenerate cabal files and override derivations after updating the project.
         '';
         type = bool;
@@ -43,13 +43,13 @@ in {
       };
 
       check = mkOption {
-        description = mdDoc "Add builds with latest versions and lower bounds to the flake checks.";
+        description = "Add builds with latest versions and lower bounds to the flake checks.";
         type = bool;
         default = true;
       };
 
       gitAdd = mkOption {
-        description = mdDoc ''
+        description = ''
         Git-add [the managed deps](#opt-managed-managed.file) after the first run.
         Since nix ignores untracked files in flakes, the state wouldn't be loaded if you forgot to add the file
         yourself.
@@ -59,25 +59,25 @@ in {
       };
 
       verbose = mkOption {
-        description = mdDoc "Print verbose messages when managing dependencies.";
+        description = "Print verbose messages when managing dependencies.";
         type = bool;
         default = false;
       };
 
       debug = mkOption {
-        description = mdDoc "Print debug messages when managing dependencies.";
+        description = "Print debug messages when managing dependencies.";
         type = bool;
         default = false;
       };
 
       quiet = mkOption {
-        description = mdDoc "Suppress informational messages when managing dependencies.";
+        description = "Suppress informational messages when managing dependencies.";
         type = bool;
         default = false;
       };
 
       envs = mkOption {
-        description = mdDoc ''
+        description = ''
         Options for environments generated for managed dependencies.
         These apply to both `latest` and `lower` environments; the modules [](#opt-managed-managed.latest.envs) and
         [](#opt-managed-managed.lower.envs) have precedence over them.
@@ -87,7 +87,7 @@ in {
       };
 
       mergeBounds = mkOption {
-        description = mdDoc ''
+        description = ''
         Add the flake bounds to the managed bounds.
         Aside from going in the Cabal file, they are added to Cabal's dependency solver when finding new bounds.
         This can be used to avoid problematic versions that have dependencies with a high tendency to break the build.
@@ -99,7 +99,7 @@ in {
       };
 
       forceBounds = mkOption {
-        description = mdDoc ''
+        description = ''
         Concrete bounds that fully override those computed by the app when generating Cabal files.
         This is useful to relax the bounds of packages that cannot be managed, like `base`, for example when the GHC
         used for the latest env isn't the newest one because the dependencies are all broken right after release, but
@@ -117,7 +117,7 @@ in {
       latest = {
 
         compiler = mkOption {
-          description = mdDoc ''
+          description = ''
           The GHC version (as the attribute name in `haskell.packages`) that should be used for latest versions
           environments.
           The default is to use the last entry in [](#opt-general-ghcVersions), or [](#opt-general-compiler) if the
@@ -130,13 +130,13 @@ in {
         };
 
         readFlakeBounds = mkOption {
-          description = mdDoc "Use the upper bounds from the flake for the first run.";
+          description = "Use the upper bounds from the flake for the first run.";
           type = bool;
           default = false;
         };
 
         envs = mkOption {
-          description = mdDoc ''
+          description = ''
           Options for environments generated for latest versions.
           These default to the values in [](#opt-managed-managed.envs).
           '';
@@ -149,13 +149,13 @@ in {
       lower = {
 
         enable = mkOption {
-          description = mdDoc "Enable an environment for testing lower bounds.";
+          description = "Enable an environment for testing lower bounds.";
           type = bool;
           default = false;
         };
 
         compiler = mkOption {
-          description = mdDoc ''
+          description = ''
           The GHC version (as the attribute name in `haskell.packages`) that should be used for lower bounds
           environments.
           The default is to use the first entry in [](#opt-general-ghcVersions), or [](#opt-general-compiler) if the
@@ -168,7 +168,7 @@ in {
         };
 
         envs = mkOption {
-          description = mdDoc ''
+          description = ''
           Options for environments generated for lower bounds.
           These default to the values in [](#opt-managed-managed.envs).
           '';
@@ -182,7 +182,7 @@ in {
 
         localsInPackageDb = mkOption {
           description =
-            mdDoc "Whether to include local packages as source derivations in the package db used for the solver";
+            "Whether to include local packages as source derivations in the package db used for the solver";
           type = bool;
           default = false;
         };

@@ -2,7 +2,7 @@
 {config, ...}: let
 
   inherit (util) lib;
-  inherit (lib) mkOption mdDoc mkDefault types;
+  inherit (lib) mkOption mkDefault types;
 
   common = sort == "common";
 
@@ -22,7 +22,7 @@ in {
   options = {
 
       verbatim = mkOption {
-        description = mdDoc ''
+        description = ''
         Default config for environments generated for managed dependencies.
         These can be overriden per-environment by specifying `envs.*.<attr>` like for any other environment.
         '';
@@ -30,7 +30,7 @@ in {
       };
 
       solverOverrides = mkOption {
-        description = mdDoc ''
+        description = ''
         [Dependency overrides](#overrides-combinators) for the package set used only by the solver while finding new
         versions.
         Specifying these should only be necessary if the vanilla package set contains broken packages that would prevent

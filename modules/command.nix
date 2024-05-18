@@ -27,24 +27,24 @@ in {
   options = with types; {
 
     name = mkOption {
-      description = mdDoc "Name";
+      description = "Name";
       type = str;
       default = name;
     };
 
     env = mkOption {
-      description = mdDoc "The default env for the command.";
+      description = "The default env for the command.";
       type = util.types.env;
       default = "dev";
     };
 
     command = mkOption {
-      description = mdDoc "The script executed by this command.";
+      description = "The script executed by this command.";
       type = str;
     };
 
     component = mkOption {
-      description = mdDoc ''
+      description = ''
       Whether this command should determine the env based on a target component specified by command line arguments.
 
       ::: {.note}
@@ -58,20 +58,20 @@ in {
     };
 
     expose = mkOption {
-      description = mdDoc "Whether this command should be a top-level flake app.";
+      description = "Whether this command should be a top-level flake app.";
       type = bool;
       default = false;
     };
 
     path = mkOption {
-      description = mdDoc "The final executable.";
+      description = "The final executable.";
       type = path;
       readOnly = true;
     };
 
     ghci = {
       enable = mkOption {
-        description = mdDoc ''
+        description = ''
         Create a command that runs GHCi (like the built-in command) with some static options.
         For example, you can specify a [runner](#opt-ghci-ghci.run), and the app will be equivalent to running
         `nix run .#ghci -r <runner>`.
@@ -81,31 +81,31 @@ in {
       };
 
       ghcid = mkOption {
-        description = mdDoc "Whether to run this command with GHCid instead of plain GHCi.";
+        description = "Whether to run this command with GHCid instead of plain GHCi.";
         type = bool;
         default = false;
       };
 
       runner = mkOption {
-        description = mdDoc "The name of a runner in [](#opt-ghci-ghci.run) and [](#opt-ghci-ghci.run).";
+        description = "The name of a runner in [](#opt-ghci-ghci.run) and [](#opt-ghci-ghci.run).";
         type = nullOr str;
         default = null;
       };
 
       package = mkOption {
-        description = mdDoc "The name of the package passed to the GHCi runner with `-p`.";
+        description = "The name of the package passed to the GHCi runner with `-p`.";
         type = nullOr str;
         default = null;
       };
 
       module = mkOption {
-        description = mdDoc "The name of the module passed to the GHCi runner with `-m`.";
+        description = "The name of the module passed to the GHCi runner with `-m`.";
         type = nullOr str;
         default = null;
       };
 
       component = mkOption {
-        description = mdDoc "The name of the component passed to the GHCi runner with `-c`.";
+        description = "The name of the component passed to the GHCi runner with `-c`.";
         type = nullOr str;
         default = null;
       };

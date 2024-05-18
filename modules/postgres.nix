@@ -5,30 +5,30 @@ with lib;
   options = with types; {
 
     package = mkOption {
-      description = mdDoc "The postgresql package to use.";
+      description = "The postgresql package to use.";
       type = package;
       default = global.pkgs.postgresql_13;
     };
 
     name = mkOption {
-      description = mdDoc "Database name.";
+      description = "Database name.";
       type = str;
     };
 
     port = mkOption {
-      description = mdDoc "Port on which to listen in the host system, added to the environment's `basePort`.";
+      description = "Port on which to listen in the host system, added to the environment's `basePort`.";
       type = port;
       default = 32;
     };
 
     creds = {
       user = mkOption {
-        description = mdDoc "Database user, defaulting to the database name.";
+        description = "Database user, defaulting to the database name.";
         type = str;
         default = config.name;
       };
       password = mkOption {
-        description = mdDoc "Password for the user, defaulting to the user name.";
+        description = "Password for the user, defaulting to the user name.";
         type = str;
         default = config.creds.user;
       };

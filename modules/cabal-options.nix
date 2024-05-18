@@ -7,16 +7,16 @@ let
   preludeModule = {
 
     options = with types; {
-      enable = mkEnableOption (mdDoc "an alternative Prelude");
+      enable = mkEnableOption ("an alternative Prelude");
 
       package = mkOption {
-        description = mdDoc "The package containing the alternative Prelude.";
+        description = "The package containing the alternative Prelude.";
         type = util.types.cabalDep;
         example = literalExpression ''"relude"'';
       };
 
       module = mkOption {
-        description = mdDoc "The module name of the alternative Prelude.";
+        description = "The module name of the alternative Prelude.";
         type = str;
         default = "Prelude";
         example = literalExpression ''"Relude"'';
@@ -30,7 +30,7 @@ in {
   options = with types; {
 
     license = mkOption {
-      description = mdDoc ''
+      description = ''
       The license for all packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -39,7 +39,7 @@ in {
     };
 
     license-file = mkOption {
-      description = mdDoc ''
+      description = ''
       The name of the file containing the license text for all packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -48,7 +48,7 @@ in {
     };
 
     version = mkOption {
-      description = mdDoc ''
+      description = ''
       The version for all packages in this option tree.
       '';
       type = str;
@@ -61,7 +61,7 @@ in {
     };
 
     author = mkOption {
-      description = mdDoc ''
+      description = ''
       The author of the packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -70,7 +70,7 @@ in {
     };
 
     copyrightYear = mkOption {
-      description = mdDoc ''
+      description = ''
       The year for the copyright string.
       '';
       type = str;
@@ -78,7 +78,7 @@ in {
     };
 
     copyright = mkOption {
-      description = mdDoc ''
+      description = ''
       The copyright string for the packages in this option tree.
       The default is to combine [](#opt-cabal-copyrightYear) and {option}`author`;
       May be `null` to omit it from the config.
@@ -88,7 +88,7 @@ in {
     };
 
     build-type = mkOption {
-      description = mdDoc ''
+      description = ''
       The build type for the packages in this option tree.
       May be `null` to omit it from the config.
       '';
@@ -97,14 +97,14 @@ in {
     };
 
     ghc-options = mkOption {
-      description = mdDoc "GHC options for all components in this option tree.";
+      description = "GHC options for all components in this option tree.";
       type = listOf str;
       example = literalExpression ''["-Wunused-imports" "-j6"]'';
       default = [];
     };
 
     ghc-options-exe = mkOption {
-      description = mdDoc ''
+      description = ''
       GHC options for all executables in this option tree.
       The purpose of this is to allow [](#opt-cabal-ghc-options) to use it as the default for executables without requiring
       complicated overrides to disable it.
@@ -121,14 +121,14 @@ in {
     };
 
     default-extensions = mkOption {
-      description = mdDoc "GHC extensions for all components in this option tree.";
+      description = "GHC extensions for all components in this option tree.";
       type = listOf str;
       example = literalExpression ''["DataKinds" "FlexibleContexts" "OverloadedLists"]'';
       default = [];
     };
 
     language = mkOption {
-      description = mdDoc ''
+      description = ''
       The default extension set used for all components in this option tree.
       It is set to `GHC2021` if the GHC versions of all defined envs are 9.2 or greater, and `Haskell2010` otherwise.
       '';
@@ -140,20 +140,20 @@ in {
     };
 
     dependencies = mkOption {
-      description = mdDoc "Cabal dependencies used for all components in this option tree.";
+      description = "Cabal dependencies used for all components in this option tree.";
       type = listOf util.types.hpackDep;
       example = literalExpression ''["aeson" "containers"]'';
       default = [];
     };
 
     base = mkOption {
-      description = mdDoc "The dependency spec for the `base` package.";
+      description = "The dependency spec for the `base` package.";
       type = util.types.cabalDep;
       default = "base >= 4 && < 5";
     };
 
     baseHide = mkOption {
-      description = mdDoc "The dependency spec for the `base` package used when [](#opt-cabal-prelude) is set.";
+      description = "The dependency spec for the `base` package used when [](#opt-cabal-prelude) is set.";
       type = util.types.cabalDep;
       default = {
         name = "base";
@@ -163,13 +163,13 @@ in {
     };
 
     prelude = mkOption {
-      description = mdDoc "Configure an alternative Prelude package.";
+      description = "Configure an alternative Prelude package.";
       type = nullOr (submodule preludeModule);
       default = {};
     };
 
     paths = mkOption {
-      description = mdDoc ''
+      description = ''
       Cabal generates the module `Paths_packagename` for each component, which provides access to data
       files included in a package, but is rarely used.
       This may cause trouble if [](#opt-cabal-prelude) is configured to use an alternative Prelude that does not export some
@@ -181,7 +181,7 @@ in {
     };
 
     dependOnLibrary = mkOption {
-      description = mdDoc ''
+      description = ''
       Convenience feature that automatically adds a dependency on the library component to all executable components, if
       the library exists.
       '';
@@ -190,7 +190,7 @@ in {
     };
 
     testSuffix = mkOption {
-      description = mdDoc ''
+      description = ''
       This string is appended to the package name to form the single test component.
       For example, given the config:
       ```
@@ -207,7 +207,7 @@ in {
     };
 
     exeSuffix = mkOption {
-      description = mdDoc ''
+      description = ''
       This string is appended to the package name to form the single executable component.
       See [](#opt-cabal-testSuffix) for an example.
       The default is to use no suffix, resulting in the same name as the package and library.
@@ -217,7 +217,7 @@ in {
     };
 
     benchSuffix = mkOption {
-      description = mdDoc ''
+      description = ''
       This string is appended to the package name to form the single benchmark component.
       See [](#opt-cabal-testSuffix) for an example.
       '';
@@ -226,7 +226,7 @@ in {
     };
 
     meta = mkOption {
-      description = mdDoc ''
+      description = ''
       Verbatim top-level Cabal configuration in [HPack](https://github.com/sol/hpack) format.
       Values defined here will not be applied to components, only packages.
 
@@ -240,7 +240,7 @@ in {
     };
 
     component = mkOption {
-      description = mdDoc ''
+      description = ''
       Verbatim Cabal configuration in [HPack](https://github.com/sol/hpack) format.
       Values defined here will be applied to components, not packages.
 

@@ -7,7 +7,7 @@ in {
 
   options.systems = mkOption {
     type = listOf str;
-    description = mdDoc "The systems for which to create outputs.";
+    description = "The systems for which to create outputs.";
     default = util.flake-utils.defaultSystems;
   };
 
