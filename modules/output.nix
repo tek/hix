@@ -79,27 +79,27 @@ in {
 
       packages = mkOption {
         description = mdDoc "The flake output attribute `packages`.";
-        type = lazyAttrsOf unspecified;
+        type = lazyAttrsOf raw;
       };
 
       checks = mkOption {
         description = mdDoc "The flake output attribute `checks`.";
-        type = lazyAttrsOf unspecified;
+        type = lazyAttrsOf raw;
       };
 
       legacyPackages = mkOption {
         description = mdDoc "The flake output attribute `legacyPackages`.";
-        type = lazyAttrsOf unspecified;
+        type = lazyAttrsOf raw;
       };
 
       devShells = mkOption {
         description = mdDoc "The flake output attribute `devShells`.";
-        type = lazyAttrsOf unspecified;
+        type = lazyAttrsOf raw;
       };
 
       apps = mkOption {
         description = mdDoc "The flake output attribute `apps`.";
-        type = lazyAttrsOf unspecified;
+        type = lazyAttrsOf raw;
       };
 
     };
