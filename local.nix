@@ -123,7 +123,7 @@ in {
       test-managed = util.app tests.sets.test-managed;
       test = util.app tests.sets.test;
 
-      cli = lib.mkForce (util.app "${config.outputs.packages.hix}/bin/hix");
+      cli = util.app "${config.outputs.packages.hix}/bin/hix";
 
       new-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''

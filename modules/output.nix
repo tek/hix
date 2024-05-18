@@ -182,18 +182,18 @@ in {
           config.hpack.apps;
       };
 
-      merge = name:
-      optionalAttrs (lib.hasAttr name lowPrio) (
-        util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; }
-      ) //
-      highPrio.${name};
+      withPrio = name: let
+        low = util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; };
+      in optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
+
+      asDefault = name: util.mapValues lib.mkDefault (withPrio name);
 
     in {
-      packages = merge "packages";
-      checks = merge "checks";
-      legacyPackages = merge "legacyPackages";
-      devShells = merge "devShells";
-      apps = libOutput.addDummyApps (merge "apps");
+      packages = asDefault "packages";
+      checks = asDefault "checks";
+      legacyPackages = asDefault "legacyPackages";
+      devShells = asDefault "devShells";
+      apps = util.mapValues lib.mkDefault (libOutput.addDummyApps (withPrio "apps"));
     };
 
   };
