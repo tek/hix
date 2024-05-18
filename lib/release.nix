@@ -96,14 +96,6 @@
   else
     nix run .#release -- -v $version
   fi
-  if ! ask 'Update CLI version in overrides. Continue?'
-  then
-    die 'Aborting.'
-  fi
-  if ! ${git} add modules/cli.nix
-  then
-    die 'modules/cli.nix unchanged, aborting.'
-  fi
   ${checkDevCliTests}
   ${commitAndTag}
   '';
