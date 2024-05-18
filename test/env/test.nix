@@ -10,6 +10,6 @@
     check 'nix run .#cmd.number -- -p root -c app' 2 'Wrong output for command with component selection'
     check "nix run .#cmd.number -- -f $PWD/app/Main.hs" 2 'Wrong output for command with file selection'
     check 'nix run .#env.three.number-nocomp --' 3 'Wrong output for command with env selection via flake app attr'
-    check 'nix run .#cmd.run -- "ghc --version"' 'The Glorious Glasgow Haskell Compilation System, version 9.4.7' 'Wrong output for run command'
+    check 'nix run .#cmd.run -- "ghc --version"' 'The Glorious Glasgow Haskell Compilation System, version 9.4.8' 'Wrong output for run command'
   '';
 }

@@ -23,9 +23,9 @@
   };
   versions.latest-main = {
     aeson = "2.1.0.0";
-    base = "4.17.2.0";
+    base = "4.17.2.1";
   };
   versions.latest-other = {
-    base = "4.17.2.0";
+    base = "4.17.2.1";
   };
 }

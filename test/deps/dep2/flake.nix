@@ -1,7 +1,7 @@
 {
   description = "hix test dep 2";
 
-  inputs.hix.url = path:HIX;
+  inputs.hix.url = "path:HIX";
 
   outputs = { hix, ... }: hix.lib.flake {
     packages.dep2 = {

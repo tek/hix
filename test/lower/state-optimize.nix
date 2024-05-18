@@ -52,6 +52,10 @@
         version = "0.3.7.0";
         hash = "09iwj0snmx7vj7x03l4vdcn76zylcgxd9pyz0yxkydgfnn3lvc08";
       };
+      th-abstraction = {
+        version = "0.4.5.0";
+        hash = "19nh7a9b4yif6sijp6xns6xlxcr1mcyrqx3cfbp5bdm7mkbda7a9";
+      };
       vector = {
         version = "0.12.3.1";
         hash = "17jadyf0qkk1g0d1qnp8hi2aaf0ydc79ncrhswnv1dw9vrpp74w4";

@@ -14,12 +14,12 @@
       fail 'lower.init failed'
     fi
 
-    check_diff ${./state-init.nix} 'ops/managed.nix' 'ops/managed.nix is wrong after init'
+    check_diff ${./state-init.nix} 'ops/managed.nix' 'ops/managed.nix is wrong after init (state-init.nix)'
     check_eq "$out_init" "$target_out_init" 'init json is wrong'
     check 'git status --short --porcelain -- ops/managed.nix' 'A  ops/managed.nix' 'ops/managed.nix was not git-added'
 
     nix run .#lower.optimize.main -- --root $PWD || fail 'lower.optimize failed'
 
-    check_diff ${./state-optimize.nix} 'ops/managed.nix' 'ops/managed.nix is wrong after optimize'
+    check_diff ${./state-optimize.nix} 'ops/managed.nix' 'ops/managed.nix is wrong after optimize (state-optimize.nix)'
   '';
 }

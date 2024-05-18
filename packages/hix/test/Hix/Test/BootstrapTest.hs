@@ -75,7 +75,7 @@ test-suite red-panda-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       base ==4.*
-    , hedgehog >=1.1 && <1.3
+    , hedgehog >=1.1 && <1.5
     , red-panda
     , tasty ==1.4.*
     , tasty-hedgehog >=1.3 && <1.5
@@ -152,7 +152,7 @@ flakeTarget =
         };
         tests.red-panda-test = {
           dependencies = [
-            "hedgehog >=1.1 && <1.3"
+            "hedgehog >=1.1 && <1.5"
             "red-panda"
             "tasty >=1.4 && <1.5"
             "tasty-hedgehog >=1.3 && <1.5"
