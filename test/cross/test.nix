@@ -15,6 +15,10 @@
       fi
     }
 
+    check_musl ".#root.musl"
+
+    check_musl ".#root.musl.static"
+
     check_musl ".#root.cross.musl64"
 
     check_musl ".#root.cross.musl64.static"

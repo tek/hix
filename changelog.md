@@ -10,6 +10,8 @@
   The old behavior has been moved to the option `libraryProfiling`.
 * Add an environment `profiled` whose executables, with profiling enabled, are exposed as flake outputs like
   `.#hix.profiled` and `.#env.profiled.hix`.
+* Add a new attribute to package outputs, `musl`, that uses the natively built toolchain available in `pkgsMusl`, as an
+  alternative to the existing `cross.musl64`.
 
 # 0.6.9
 

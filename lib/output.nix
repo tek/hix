@@ -61,9 +61,12 @@ let
     mkCross = cname: cpkgs: withStatic cpkgs.hixPackages.${name};
   in lib.mapAttrs mkCross ghc.pkgs.pkgsCross;
 
+  nativeMusl = ghc: name:
+  withStatic ghc.pkgs.pkgsMusl.hixPackages.${name};
+
   withCross = env: name: let
     ghc = env.ghc;
-  in withStatic ghc.ghc.${name} // { cross = cross ghc name; };
+  in withStatic ghc.ghc.${name} // { cross = cross ghc name; musl = nativeMusl ghc name; };
 
   envOutputs = v: let
     env = config.envs.${v};

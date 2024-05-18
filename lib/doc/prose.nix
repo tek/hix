@@ -1036,7 +1036,7 @@ in {
   nix build .#parser.cross.musl64
   ```
 
-  In addition, the package may also be built statically:
+  In addition, the package may also be linked statically:
 
   ```
   nix build .#parser.cross.musl64.static
@@ -1048,6 +1048,13 @@ in {
   {
     envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
   }
+  ```
+
+  For `musl`, there even is a native package set in nixpkgs that is supported by Hix:
+
+  ```
+  nix build .#parser.musl
+  nix build .#parser.musl.static
   ```
 
   ### AppImage bundles {#appimage}
