@@ -242,7 +242,7 @@ let
         upload = { "${type}-${n}" = upload n; };
         bump = { "${type}-${n}" = version n; };
       };
-    in { hackage = util.mergeAll (map target allTargets); };
+    in { hackage = util.mergeAllAttrs (map target allTargets); };
 
   uploadCandidates =
     uploadPackageApps true false "candidate";
@@ -269,7 +269,7 @@ let
 
 in {
   apps =
-    util.mergeAll [
+    util.mergeAllAttrs [
       uploadCandidates
       uploadReleases
       uploadDocs

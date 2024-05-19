@@ -66,42 +66,76 @@ let
 
   nestedPackages = lazyAttrsOf (either package nestedPackages);
 
+  checkFlakeApp = a:
+    isAttrs a &&
+    a ? type &&
+    isString a.type &&
+    a ? program &&
+    isString a.program;
+
   flakeApp = mkOptionType {
     name = "flake-app";
-    description = "A flake output of type 'app'";
+    description = "flake output of type 'app'";
     descriptionClass = "noun";
-    check = a: isAttrs a && a ? type && a ? program;
+    check = checkFlakeApp;
     merge = mergeOneOption;
   };
 
-  nestedFlakeApps = lazyAttrsOf (either flakeApp nestedFlakeApps);
+  appRecErr = loc: allInvalid:
+    throw (
+      "A definition for option `${showOption loc}' is not a valid flake app tree." +
+      " It must have the attributes 'type' and 'program', both of which must be strings, or neither of them." +
+      " Definition values:${options.showDefs allInvalid}"
+    );
+
+  attrsOfFlakeAppRec = lazyAttrsOf flakeAppRec;
+
+  flakeAppRec = mkOptionType {
+    name = "flake-app-rec";
+    description = "flake app tree";
+    descriptionClass = "noun";
+    check = isAttrs;
+
+    merge = loc: defs: let
+
+      maybeApps = lib.filter (a: a.value ? program || a.value ? type) defs;
+      validatedApps = lib.partition (a: checkFlakeApp a.value) maybeApps;
+      apps =
+        if validatedApps.wrong != []
+        then appRecErr loc validatedApps.wrong
+        else map (a: a // { value = { inherit (a.value) type program; }; }) validatedApps.right;
+      nested = map (a: a // { value = removeAttrs a.value ["type" "program"]; }) defs;
+      app = if apps == [] then {} else mergeEqualOption loc apps;
+
+    in attrsOfFlakeAppRec.merge loc nested // app;
+  };
 
   cabalOverridesVia = desc: mkOptionType {
     name = "cabal-overrides";
-    description = "A Haskell package override function specified in the Hix DSL";
+    description = "Haskell package override function specified in the Hix DSL";
     descriptionClass = "noun";
     check = a: isFunction a || (isList a && all isFunction a);
     merge = _: defs: util.overridesVia desc (concatLists (map (a: toList a.value) defs));
   };
 
 in {
-  inherit nestedPackages flakeApp nestedFlakeApps cabalOverridesVia;
+  inherit nestedPackages flakeApp flakeAppRec cabalOverridesVia app;
 
   nixpkgs = mkOptionType {
     name = "nixpkgs";
-    description = "A nixpkgs snapshot";
+    description = "nixpkgs snapshot";
     merge = mergeOneOption;
   };
 
   pkgs = mkOptionType {
     name = "pkgs";
-    description = "A nixpkgs attrset";
+    description = "nixpkgs attrset";
     merge = mergeOneOption;
   };
 
   overlay = mkOptionType {
     name = "overlay";
-    description = "An overlay";
+    description = "overlay";
     merge = mergeOneOption;
   };
 
@@ -109,7 +143,7 @@ in {
 
   ghc = mkOptionType {
     name = "ghc";
-    description = "A Haskell package set";
+    description = "Haskell package set";
     merge = mergeOneOption;
   };
 

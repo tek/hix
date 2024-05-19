@@ -99,7 +99,7 @@ in {
 
       apps = mkOption {
         description = "The flake output attribute `apps`.";
-        type = lazyAttrsOf raw;
+        type = util.types.flakeAppRec;
       };
 
     };

@@ -101,6 +101,11 @@ let
   then throw "Internal error: passed empty list to 'mergeAll'."
   else mergeAll' (head items) (tail items);
 
+  mergeAllAttrs = items:
+  if length items == 0
+  then {}
+  else mergeAll' (head items) (tail items);
+
   toTitle = s:
   if stringLength s == 0
   then s
@@ -211,6 +216,7 @@ in {
   mergeAuto
   mergeAll'
   mergeAll
+  mergeAllAttrs
   toTitle
   versionAtLeast
   minGhc

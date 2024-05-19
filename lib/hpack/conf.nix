@@ -81,7 +81,7 @@
 
     paths = if conf.paths then {} else mkPathsBlocker pkg.name;
 
-    full = util.mergeAll [
+    full = util.mergeAllAttrs [
       preludeDeps
       basic
       paths
@@ -120,7 +120,7 @@
   lib.optionalAttrs conf.enable (wrap isLib mainLib conf comp);
 
   packageComponents = pkg:
-  util.mergeAll (lib.mapAttrsToList (componentFull pkg) pkg.internal.componentsSet);
+  util.mergeAllAttrs (lib.mapAttrsToList (componentFull pkg) pkg.internal.componentsSet);
 
   packageMeta = conf: let
     cabal = conf.cabal-config;
@@ -138,7 +138,7 @@
     opt = util.mapListCatAttrs (a: let v = cabal.${a}; in lib.optionalAttrs (v != null) { ${a} = v; }) optAttrs;
 
     desc = lib.optionalAttrs (conf.description != null) { inherit (conf) description; };
-  in util.mergeAll [
+  in util.mergeAllAttrs [
     cabal.meta
     basic
     opt
@@ -146,7 +146,7 @@
   ];
 
   assemblePackages = meta: comps:
-  lib.zipAttrsWith (_: util.mergeAll) [meta comps];
+  lib.zipAttrsWith (_: util.mergeAllAttrs) [meta comps];
 
   meta = lib.mapAttrs (_: packageMeta) config.packages;
 

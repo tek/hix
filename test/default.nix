@@ -18,6 +18,7 @@ let
     dep-versions = test "dep-versions";
     update-cli-version = test "update-cli-version";
     direnv = test "direnv";
+    app-rec = test "app-rec";
   };
 
   tests-basic-2 = {
