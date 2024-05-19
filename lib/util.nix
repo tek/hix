@@ -8,7 +8,7 @@ let
 
   paramApp = import ./param-app.nix { inherit config lib util; };
 
-  types = import ./types.nix { inherit config lib; };
+  types = import ./types.nix { inherit config lib util; };
 
   hsLib = config.pkgs.haskell.lib;
 

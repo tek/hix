@@ -1,10 +1,8 @@
-{ config, lib, }:
+{ config, lib, util, ... }:
 with lib;
 with types;
 
 let
-
-  util = import ./default.nix { inherit lib; };
 
   cabalDepModule = {
     options = {
@@ -105,9 +103,10 @@ let
         then appRecErr loc validatedApps.wrong
         else map (a: a // { value = { inherit (a.value) type program; }; }) validatedApps.right;
       nested = map (a: a // { value = removeAttrs a.value ["type" "program"]; }) defs;
-      app = if apps == [] then {} else mergeEqualOption loc apps;
+      merged = attrsOfFlakeAppRec.merge loc nested;
+      app = if apps == [] then util.dummyApp loc (attrNames merged) else mergeEqualOption loc apps;
 
-    in attrsOfFlakeAppRec.merge loc nested // app;
+    in merged // app;
   };
 
   cabalOverridesVia = desc: mkOptionType {

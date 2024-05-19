@@ -193,7 +193,7 @@ in {
       checks = asDefault "checks";
       legacyPackages = asDefault "legacyPackages";
       devShells = asDefault "devShells";
-      apps = util.mapValues lib.mkDefault (libOutput.addDummyApps (withPrio "apps"));
+      apps = asDefault "apps";
     };
 
   };

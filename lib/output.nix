@@ -142,7 +142,8 @@ let
   commandApps = lib.mapAttrs (_: c: app c.path);
 
   # We have lots of nested attrsets in the apps output, and since Nix requires all top-level apps attrs to implement the
-  # app interface, we add a dummy app to each attr (and recursively, though not strictly necessary).
+  # app interface, we add a dummy app to each attr (and recursively, though not strictly necessary) that prints an
+  # informational message.
   addDummyApps = let
     isAppAttr = n: n == "type" || n == "program";
     add = pre: name: a: let

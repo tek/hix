@@ -17,20 +17,24 @@
   in hix.lib.flake [
     (mod ({lib, app}: {
       a = lib.mkDefault (app "a" 1);
-      sub = {
-        b = app "b" 1;
-        c = app "c" 1 // {
-          d = app "d" 1;
+      b = {
+        c = app "c" 1;
+        d = app "d" 1 // {
           e = app "e" 1;
+          f = app "f" 1;
         };
+        g.h = app "h" 1;
+        g.i = app "i" 1;
       };
     }))
     (mod ({lib, app}: {
       a = app "a" 2;
-      sub = {
-        b = lib.mkForce (app "b" 2);
-        c.d = lib.mkForce (app "d" 2);
-        c.e = app "e" 2;
+      b = {
+        c = lib.mkForce (app "c" 2);
+        d.e = lib.mkForce (app "e" 2);
+        d.f = app "f" 2;
+        g.h = app "h" 1;
+        g.i = app "i" 1;
       };
     }))
   ];
