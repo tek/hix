@@ -8,7 +8,7 @@
     mod = f: {config, util, ...}: let
       app = name: num: {
         type = "app";
-        program = "${config.pkgs.writeScript name "echo '${name} ${toString num}'"}";
+        program = "${util.zscript name "echo '${name} ${toString num}'"}";
       };
     in {
       outputs.apps = f { inherit app; inherit (util) lib; };
