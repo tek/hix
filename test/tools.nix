@@ -27,7 +27,13 @@ let
   {
     if [[ $1 != $2 ]]
     then
-      fail "$3:\n$1"
+      fail "$3:"
+      print ""
+      diff <(print $1) <(print $2)
+      print ""
+      print "< $(green 'expected')
+  ---
+  > $(red 'actual')"
       return 1
     fi
   }
