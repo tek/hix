@@ -1,4 +1,4 @@
-# Unreleased
+# 0.7.0
 
 * Fetch `thax` from a static URL, removing the flake input.
 * Fix environment not being set when using `direnv`.

@@ -34,6 +34,6 @@
     envs.lower-main.localPackage = api: api.minimal;
 
     # TODO remove
-    internal.hixCli.dev = true;
+    internal.hixCli.dev = false;
   });
 }

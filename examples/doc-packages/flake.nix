@@ -1,6 +1,6 @@
 {
   description = "Example";
-  inputs.hix.url = "github:tek/hix?ref=0.6.9";
+  inputs.hix.url = "github:tek/hix?ref=0.7.0";
   outputs = {hix, ...}: hix {
     packages.parser = {
       src = ./.;
