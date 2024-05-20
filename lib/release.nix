@@ -33,10 +33,6 @@
   {
     if ! ask $1
     then
-      if (( $# > 1 ))
-      then
-        eval $@[1,$]
-      fi
       abort
     fi
   }
@@ -115,7 +111,7 @@
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
   sed -i "s/Unreleased/$version/" changelog.md
   ${git} --no-pager diff
-  ask_abort 'Versions updated. Continue?' ${git} reset --hard
+  ask_abort 'Versions updated. Continue?'
   ${git} add .
   '';
 
