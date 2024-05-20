@@ -50,8 +50,5 @@
     overrides = {...}: {
       extra = throw "global overrides";
     };
-
-    # TODO remove
-    internal.hixCli.dev = false;
   });
 }

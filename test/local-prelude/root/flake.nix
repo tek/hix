@@ -19,6 +19,5 @@
         };
       };
     };
-    internal.hixCli.dev = false;
   };
 }

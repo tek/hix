@@ -31,8 +31,5 @@
     };
 
     envs.lower.localPackage = api: api.minimal;
-
-    # TODO remove
-    internal.hixCli.dev = false;
   });
 }
