@@ -64,12 +64,12 @@ let
 
   nestedPackages = lazyAttrsOf (either package nestedPackages);
 
+  # Not checking that `program` is a string because it would evaluate it
   checkFlakeApp = a:
     isAttrs a &&
     a ? type &&
     isString a.type &&
-    a ? program &&
-    isString a.program;
+    a ? program;
 
   flakeApp = mkOptionType {
     name = "flake-app";
@@ -104,7 +104,12 @@ let
         else map (a: a // { value = { inherit (a.value) type program; }; }) validatedApps.right;
       nested = map (a: a // { value = removeAttrs a.value ["type" "program"]; }) defs;
       merged = attrsOfFlakeAppRec.merge loc nested;
-      app = if apps == [] then util.dummyApp loc (attrNames merged) else mergeEqualOption loc apps;
+      # TODO improve this
+      dummyUnlessRoot =
+        if loc == ["outputs" "apps"]
+        then {}
+        else util.dummyApp loc (attrNames merged);
+      app = if apps == [] then dummyUnlessRoot else mergeEqualOption loc apps;
 
     in merged // app;
   };
