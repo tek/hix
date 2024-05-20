@@ -84,8 +84,6 @@
   ${commitAndTag}
   '';
 
-  # TODO updateVersions should probably run after the CLI release so that tests that don't use devCli can validate the
-  # new version.
   all = util.zscript "hix-release-all" ''
   ${preamble}
   ${updateVersions}
