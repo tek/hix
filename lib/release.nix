@@ -7,14 +7,14 @@
   semver = "${pkgs.semver-tool}/bin/semver";
 
   preamble = ''
-  setopt no_unset pipefail
+  setopt no_unset
   ${util.loadConsole}
 
   reset()
   {
     if [[ -n $need_reset ]]
     then
-      ${git} reset --hard
+      ${git} reset --quiet --hard
       if [[ -n $stashed ]]
       then
         ${git} stash pop --quiet --index
@@ -29,11 +29,14 @@
     die ''${1:-Aborting.}
   }
 
+  trap abort INT
+  trap abort TERM
+
   ask_abort()
   {
     if ! ask $1
     then
-      abort
+      abort ''${2-}
     fi
   }
 
@@ -88,13 +91,13 @@
   then
     if ! ${git} diff --quiet
     then
-      ${git} stash push --include-untracked
+      ${git} stash push --quiet --include-untracked
       stashed=1
     fi
   else
     if ! ${git} diff --quiet
     then
-      die 'Worktree is dirty'
+      abort 'Worktree is dirty.'
     fi
   fi
   need_reset=1
@@ -103,8 +106,18 @@
   updateVersions = ''
   if ask 'Run tests?'
   then
-    nix build .#docs
-    nix run .#test
+    if ! nix build .#docs
+    then
+      abort 'Docs failed.'
+    fi
+    if ! nix --quiet flake show --all-systems >/dev/null
+    then
+      abort 'Evaluation of outputs failed.'
+    fi
+    if ! nix run .#test
+    then
+      abort 'Tests failed.'
+    fi
   fi
   sed -i 's/ref=[^"#]\+/ref='"$version/" readme.md examples/*/flake.nix
   sed -Ei 's/~[[:digit:]]+\.[[:digit:]]+\.tar/~'"''${version%.*}.tar/" readme.md
@@ -118,8 +131,7 @@
   commitAndTag = ''
   if dry_run
   then
-    message 'Dry run, skipping commit.'
-    abort
+    abort 'Dry run, skipping commit.'
   fi
   ask_abort 'Ready to commit. Continue?'
   ${git} commit --allow-empty -m "Release $version"
@@ -143,7 +155,7 @@
       then
         message 'Tests succeeded, adding updated test flakes.'
       else
-        die 'Tests failed, aborting.'
+        abort 'Tests failed.'
       fi
       ${git} add $dev_cli_test_flakes
     else
@@ -152,14 +164,14 @@
   fi
   '';
 
-  nix = util.zscript "hix-release-nix" ''
+  nix = util.zscriptErr "hix-release-nix" ''
   ${preamble}
   ${updateVersions}
   ${checkDevCliTests}
   ${commitAndTag}
   '';
 
-  all = util.zscript "hix-release-all" ''
+  all = util.zscriptErr "hix-release-all" ''
   ${preamble}
   ${updateVersions}
 
@@ -167,7 +179,10 @@
   then
     message 'Dry run, skipping CLI release.'
   else
-    nix run .#release -- -v $version
+    if ! nix run .#release -- -v $version
+    then
+      abort 'CLI release failed.'
+    fi
   fi
   ${checkDevCliTests}
   ${commitAndTag}
