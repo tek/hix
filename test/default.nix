@@ -24,11 +24,14 @@ let
   tests-basic-2 = {
     cross = test "cross";
     env = test "env";
+    overrides = test "overrides";
+  };
+
+  tests-basic-3 = {
     new = test "new";
     bootstrap = test "bootstrap";
     new-static = test "new-static";
     new-static-github = test "new-static-github";
-    overrides = test "overrides";
   };
 
   tests-vm = {
@@ -44,7 +47,7 @@ let
     lower-local = test "lower-local";
   };
 
-  tests = tests-basic-1 // tests-basic-2 // tests-vm // tests-managed;
+  tests = tests-basic-1 // tests-basic-2 // tests-basic-3 // tests-vm // tests-managed;
 
   setup = pkgs.writeText "hix-tests-setup" ''
   ${tools.preamble}
@@ -62,6 +65,7 @@ in {
   sets = {
     test-basic-1 = script "basic-1" tests-basic-1;
     test-basic-2 = script "basic-2" tests-basic-2;
+    test-basic-3 = script "basic-3" tests-basic-3;
     test-vm = script "vm" tests-vm;
     test-managed = script "managed" tests-managed;
     test = script "all" tests;

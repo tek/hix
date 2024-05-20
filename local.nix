@@ -119,6 +119,7 @@ in {
     in {
       test-basic-1 = util.app tests.sets.test-basic-1;
       test-basic-2 = util.app tests.sets.test-basic-2;
+      test-basic-3 = util.app tests.sets.test-basic-3;
       test-vm = util.app tests.sets.test-vm;
       test-managed = util.app tests.sets.test-managed;
       test = util.app tests.sets.test;
