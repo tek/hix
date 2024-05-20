@@ -1,5 +1,5 @@
 ---
-name: Release
+name: Tag release
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   release:
-    name: Release
+    name: Tag release
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -26,15 +26,13 @@ jobs:
         with:
           name: tek
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
-      - name: build dynamic
-        run: nix build .#hix
       - name: build static
         run: nix build .#hix.static
-      - uses: crowbarmaster/GH-Automatic-Releases@latest
-        name: create release
+      - uses: softprops/action-gh-release@v2
+        name: Create release
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
+          make_latest: true
           files: |
             result/bin/hix
       - uses: DeterminateSystems/flakehub-push@main
