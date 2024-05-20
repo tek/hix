@@ -4,21 +4,104 @@
 
   git = "${pkgs.git}/bin/git";
   grep = "${pkgs.gnugrep}/bin/grep";
+  semver = "${pkgs.semver-tool}/bin/semver";
 
   preamble = ''
   setopt no_unset pipefail
   ${util.loadConsole}
 
+  reset()
+  {
+    if [[ -n $need_reset ]]
+    then
+      ${git} reset --hard
+      if [[ -n $stashed ]]
+      then
+        ${git} stash pop --quiet --index
+      fi
+    fi
+  }
+
+  abort()
+  {
+    setopt local_options unset no_pipefail
+    reset
+    die ''${1:-Aborting.}
+  }
+
+  ask_abort()
+  {
+    if ! ask $1
+    then
+      if (( $# > 1 ))
+      then
+        eval $@[1,$]
+      fi
+      abort
+    fi
+  }
+
+  dry_run()
+  {
+    [[ -n ''${hix_release_dry_run-} ]]
+  }
+
+  invalid_version()
+  {
+    message "Invalid version spec $(magenta $1), must be $(green X.Y.Z) or $(green ''${(j., .)valid_args})."
+    abort
+  }
+
+  if [[ $1 == '-n' ]]
+  then
+    export hix_release_dry_run=1
+    shift
+  fi
+
+  current_version="${config.internal.hixVersion}"
+  valid_args=(major minor patch)
+
   if [[ $# == 0 ]]
   then
-    die 'Please specify version'
+    message "No version specified, bumping patch."
+    version=$(${semver} bump patch $current_version)
+  else
+    spec="$1"
+    if [[ $spec =~ '[\d.]+' ]]
+    then
+      if [[ $(${semver} validate $spec 2>/dev/null) == 'invalid' ]]
+      then
+        invalid_version $spec
+      elif [[ $(${semver} compare $spec $current_version) != 1 ]]
+      then
+        message "Specified version $(magenta $spec) isn't newer than current version $(magenta $current_version)."
+        abort
+      else
+        version="$spec"
+      fi
+    elif [[ -n ''${valid_args[(r)$spec]-} ]]
+    then
+      version=$(${semver} bump $spec $current_version)
+    else
+      invalid_version $spec
+    fi
   fi
-  version="$1"
+  ask_abort "New version is $(magenta $version). Continue?"
 
-  if ! ${git} diff --quiet
+  if dry_run
   then
-    die 'Worktree is dirty'
+    if ! ${git} diff --quiet
+    then
+      ${git} stash push --include-untracked
+      stashed=1
+    fi
+  else
+    if ! ${git} diff --quiet
+    then
+      die 'Worktree is dirty'
+    fi
   fi
+  need_reset=1
   '';
 
   updateVersions = ''
@@ -32,27 +115,24 @@
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
   sed -i "s/Unreleased/$version/" changelog.md
   ${git} --no-pager diff
-  if ! ask 'Versions updated. Continue?'
-  then
-    ${git} reset --hard
-    die 'Aborting.'
-  fi
+  ask_abort 'Versions updated. Continue?' ${git} reset --hard
   ${git} add .
   '';
 
   commitAndTag = ''
-  if [[ -n ''${hix_release_dry_run-} ]]
+  if dry_run
   then
     message 'Dry run, skipping commit.'
-    exit 0
+    abort
   fi
+  ask_abort 'Ready to commit. Continue?'
   ${git} commit --allow-empty -m "Release $version"
   ${git} tag -m "Release $version" "$version"
   '';
 
   checkDevCliTests = ''
   dev_cli_test_flakes=($(${grep} --files-with-matches 'hixCli\.dev = true' test/**/flake.nix))
-  if [[ -n $dev_cli_test_flakes ]]
+  if [[ -n ''${dev_cli_test_flakes-} ]]
   then
     dev_cli_test_names=(''${''${dev_cli_test_flakes#test/}%%/*})
     message 'Some tests still use the development version of the CLI:'
@@ -70,9 +150,8 @@
         die 'Tests failed, aborting.'
       fi
       ${git} add $dev_cli_test_flakes
-    elif ! ask 'Release anyway?'
-    then
-      die 'Aborting.'
+    else
+      ask_abort 'Release anyway?'
     fi
   fi
   '';
@@ -88,7 +167,7 @@
   ${preamble}
   ${updateVersions}
 
-  if [[ -n ''${hix_release_dry_run-} ]]
+  if dry_run
   then
     message 'Dry run, skipping CLI release.'
   else
