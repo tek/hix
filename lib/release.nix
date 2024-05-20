@@ -145,7 +145,7 @@
       sed -i 's#hixCli\.dev = true#hixCli\.dev = false#' $=dev_cli_test_flakes
       if nix run .#test -- $=dev_cli_test_names
       then
-        message 'Tests succeeded, committing updated test flakes.'
+        message 'Tests succeeded, adding updated test flakes.'
       else
         die 'Tests failed, aborting.'
       fi
