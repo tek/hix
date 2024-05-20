@@ -5,6 +5,8 @@
 
   mapComponents = f: lib.mapAttrs (name: comp: if name == "library" then f name comp else lib.mapAttrs f comp);
 
+  normalizeDeps = c: c // { dependencies = map util.version.normalize c.dependencies or []; };
+
   mkPrelude = prelude: base: let
     mod = prelude.module;
     preludePackageBase = if lib.isAttrs prelude.package then prelude.package else { name = prelude.package; };
@@ -48,7 +50,7 @@
       then util.version.intersect norm.version managed
       else
       # We only want managed bounds, but local packages need manual versions
-      if managed == null && norm.local
+      if managed == null && lib.isAttrs dep && dep.local or false
       then norm.version
       else managed
       ;
@@ -145,20 +147,22 @@
     desc
   ];
 
-  assemblePackages = meta: comps:
-  lib.zipAttrsWith (_: util.mergeAllAttrs) [meta comps];
-
   meta = lib.mapAttrs (_: packageMeta) config.packages;
 
-  components = lib.mapAttrs (_: packageComponents) config.packages;
+  assemblePackages = comps:
+  lib.zipAttrsWith (_: util.mergeAllAttrs) [meta comps];
+
+  componentsRaw = lib.mapAttrs (_: packageComponents) config.packages;
+
+  components = util.mapValues (mapComponents (_: normalizeDeps)) componentsRaw;
 
   # TODO This needs some intermediate representation that is easier to traverse
-  componentsWithManaged = lib.mapAttrs (pkg: mapComponents (_: componentWithManaged pkg)) (components);
+  componentsWithManaged = lib.mapAttrs (pkg: mapComponents (_: componentWithManaged pkg)) componentsRaw;
 
-  packages = assemblePackages meta components;
+  packages = assemblePackages components;
 
   # TODO I think this won't work if the user specified dependencies in freeform cabal options
-  packagesWithManaged = assemblePackages meta componentsWithManaged;
+  packagesWithManaged = assemblePackages componentsWithManaged;
 
 in {
   inherit meta components packages packagesWithManaged;
