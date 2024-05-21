@@ -25,6 +25,6 @@ test_solve =
     state = solverState [] (EnvDeps ["containers", "text"] mempty) constraints def
     constraints =
       [
-        ("text", mempty {mutation = ">=2.1.1"}),
-        ("containers", mempty)
+        ("text", mempty {mutation = ">=2.1.1", installed = Just True}),
+        ("containers", mempty {mutation = "==0.7", installed = Just True})
       ]
