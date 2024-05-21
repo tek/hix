@@ -1,10 +1,26 @@
 {inputs}:
 {config, lib, util, ...}: let
+
   release = import ./lib/release.nix { inherit config util; };
+
+  # As of GHC 9.6, `Cabal-syntax` is included in GHC, so the special package `Cabal-syntax_3_10_3_0` is somehow added to
+  # the package db twice by `ghcWithPackages`.
+  # Works fine for the derivation though.
+  cabalHack = env: {
+    haskellPackages = env.ghc.ghc.override (old: {
+      overrides = util.lib.composeExtensions old.overrides or (_: _: {}) (_: super: {
+        Cabal_3_10_3_0 = null;
+        Cabal-syntax_3_10_3_0 = null;
+      });
+    });
+  };
+
 in {
   compiler = "ghc94";
   ghcVersions = [];
   compat.enable = false;
+
+  envs.ghc96.ghcWithPackagesArgs = cabalHack config.envs.ghc96;
 
   hackage = {
     versionFile = "ops/version.nix";
