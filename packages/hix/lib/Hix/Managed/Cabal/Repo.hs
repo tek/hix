@@ -1,20 +1,26 @@
 module Hix.Managed.Cabal.Repo where
 
-import Data.Time (UTCTime (..), showGregorian, timeToTimeOfDay)
+import Data.Time (
+  NominalDiffTime,
+  UTCTime (..),
+  diffUTCTime,
+  getCurrentTime,
+  nominalDay,
+  showGregorian,
+  timeToTimeOfDay,
+  )
 import Distribution.Client.CmdUpdate (updateAction)
 import qualified Distribution.Client.GlobalFlags
 import Distribution.Client.GlobalFlags (GlobalFlags (..))
 import Distribution.Client.IndexUtils (currentIndexTimestamp, indexBaseName)
-import Distribution.Client.IndexUtils.Timestamp (timestampToUTCTime)
+import Distribution.Client.IndexUtils.Timestamp (Timestamp, timestampToUTCTime)
 import Distribution.Client.NixStyleOptions (NixStyleFlags (..))
 import Distribution.Client.Setup (RepoContext, withRepoContext)
 import Distribution.Client.Types (RemoteRepo (..), Repo (RepoSecure), RepoName (RepoName))
 import qualified Distribution.Client.Types.Repo
-import Distribution.Compat.Time (getFileAge)
 import Distribution.Verbosity (Verbosity)
 import Exon (exon)
-import Path (Abs, File, Path, addExtension, parseAbsFile, toFilePath)
-import Path.IO (doesFileExist)
+import Path (Abs, File, Path, addExtension, parseAbsFile)
 
 import Hix.Data.Error (Error (Fatal))
 import Hix.Error (pathText)
@@ -26,8 +32,8 @@ import Hix.Managed.Cabal.Data.Config (
   HackageRepoName (HackageRepoName),
   SolveConfig (SolveConfig),
   )
-import Hix.Maybe (justIf)
 import Hix.Monad (M, catchIOM, eitherFatalShow, noteFatal, tryIOM, tryIOMWith, withLower)
+import Hix.Pretty (showP)
 
 withRepoContextM ::
   SolveConfig ->
@@ -51,14 +57,18 @@ fullHackageRepo SolveConfig {hackageRepoName = HackageRepoName (toString -> hack
 data IndexProblem =
   IndexMissing
   |
-  IndexOutdated
+  IndexOutdated NominalDiffTime
   |
   IndexMismatch
+  |
+  IndexCorrupt Timestamp
   deriving stock (Eq, Show, Generic)
 
-indexOutdated :: Path Abs File -> IO Bool
-indexOutdated (toFilePath -> index) =
-  (> 7) <$> getFileAge index
+data ValidIndex =
+  IndexMatch HackageIndexState
+  |
+  IndexRecent NominalDiffTime
+  deriving stock (Eq, Show, Generic)
 
 updateRequest ::
   SolveConfig ->
@@ -72,6 +82,12 @@ updateRequest SolveConfig {hackageRepoName, cabal = CabalConfig {indexState}} =
 
     HackageRepoName (toString -> hackage) = hackageRepoName
 
+maxIndexAgeDays :: Int
+maxIndexAgeDays = 7
+
+maxIndexAge :: NominalDiffTime
+maxIndexAge = nominalDay * fromIntegral maxIndexAgeDays
+
 updateIndex ::
   SolveConfig ->
   GlobalFlags ->
@@ -80,13 +96,14 @@ updateIndex ::
   M ()
 updateIndex conf global main problem = do
   Log.verbose [exon|Hackage snapshot #{message}, fetching...|]
-  tryIOMWith (\ err -> Fatal [exon|Fetching hackage snapshot failed: #{err}|]) do
+  tryIOMWith (\ err -> Fatal [exon|Fetching Hackage snapshot failed: #{err}|]) do
     updateAction main [updateRequest conf] global
   where
     message = case problem of
       IndexMissing -> "doesn't exist"
-      IndexOutdated -> "is older than 7 days"
+      IndexOutdated age -> [exon|is older than #{show maxIndexAgeDays} days (#{show age})|]
       IndexMismatch -> "differs from requested index state"
+      IndexCorrupt stamp -> [exon|has corrupt timestamp (#{show stamp})|]
 
 indexPath :: Repo -> M (Path Abs File)
 indexPath repo =
@@ -96,33 +113,58 @@ indexPath repo =
   where
     err = "Bad Hackage repo config"
 
-matchIndexState ::
+currentIndexState ::
   Verbosity ->
   RepoContext ->
   Repo ->
-  HackageIndexState ->
-  M (Maybe IndexProblem)
-matchIndexState verbosity ctx repo (HackageIndexState target) =
-  catchIOM (match <$> currentIndexTimestamp verbosity ctx repo) (\ _ -> pure (Just IndexMissing))
-  where
-    match current | current == target = Nothing
-                  | otherwise = Just IndexMismatch
+  M (Maybe HackageIndexState)
+currentIndexState verbosity ctx repo =
+  catchIOM (Just . HackageIndexState <$> currentIndexTimestamp verbosity ctx repo) (const (pure Nothing))
 
 indexProblem ::
   SolveConfig ->
   RepoContext ->
   Repo ->
   Path Abs File ->
-  M (Maybe IndexProblem)
+  M (Either IndexProblem ValidIndex)
 indexProblem SolveConfig {verbosity, cabal} ctx repo path = do
-  Log.debug [exon|Checking hackage snapshot at #{pathText path}|]
-  tryIOM (doesFileExist path) >>= \case
-    False -> pure (Just IndexMissing)
-    True
+  now <- tryIOM getCurrentTime
+  Log.debug [exon|Checking Hackage snapshot at #{pathText path}|]
+  currentIndexState verbosity ctx repo <&> \case
+    -- There is no index, so the target is irrelevant.
+    Nothing -> Left IndexMissing
+    Just currentState
+      -- If a target index state was specified, we only care whether it matches exactly.
+      -- The later conditions are irrelevant.
       | Just target <- cabal.indexState
-      -> matchIndexState verbosity ctx repo target
+      -> if currentState == target
+         then Right (IndexMatch target)
+         else Left IndexMismatch
+      -- If no target was specified, the age of the current index must be below the threshold.
+      -- The guard expresses that the timestamp could be parsed.
+      | Just current <- currentUTC
+      , let age = diffUTCTime now current
+      -> if diffUTCTime now current > maxIndexAge
+         then Left (IndexOutdated age)
+         else Right (IndexRecent age)
+      -- If the current state's timestamp can't be converted to UTCTime, it may be corrupt, so we update.
       | otherwise
-      -> flip justIf IndexOutdated <$> tryIOM (indexOutdated path)
+      -> Left (IndexCorrupt (coerce currentState))
+      where
+        currentUTC = timestampToUTCTime (coerce currentState)
+
+logValid ::
+  ValidIndex ->
+  M ()
+logValid = \case
+  IndexMatch (HackageIndexState ts) -> Log.debug [exon|Snapshot matches target: #{showP ts}|]
+  IndexRecent age ->
+    Log.debug [exon|Snapshot is less than #{desc} old (maximum #{show maxIndexAgeDays}).|]
+    where
+      desc | days == 1 = "a day"
+           | otherwise = [exon|#{show days} days|]
+      days :: Int
+      days = maybe 0 ceiling (age / nominalDay)
 
 -- TODO currentIndexTimestamp has a different signature in later versions
 ensureHackageIndex ::
@@ -134,4 +176,4 @@ ensureHackageIndex conf global main =
   withRepoContextM conf global \ ctx -> do
     repo <- fullHackageRepo conf ctx
     path <- indexPath repo
-    traverse_ (updateIndex conf global main) =<< indexProblem conf ctx repo path
+    either (updateIndex conf global main) logValid =<< indexProblem conf ctx repo path

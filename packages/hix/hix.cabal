@@ -340,6 +340,7 @@ test-suite hix-test
       Hix.Test.Managed.LowerStabilize.MutationTest
       Hix.Test.Managed.ProjectContextProtoTest
       Hix.Test.Managed.Run
+      Hix.Test.Managed.SolveTest
       Hix.Test.Managed.UnsafeIsString
       Hix.Test.ManagedTest
       Hix.Test.NewTest
