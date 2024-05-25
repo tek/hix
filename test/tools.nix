@@ -25,6 +25,7 @@ let
 
   check_eq()
   {
+    setopt local_options no_err_return
     if [[ $1 != $2 ]]
     then
       fail "$3:"
@@ -43,7 +44,6 @@ let
     if [[ ! $1 =~ $2 ]]
     then
       fail "$3:\n$1"
-      return 1
     fi
   }
 
