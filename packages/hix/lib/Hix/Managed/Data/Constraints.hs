@@ -8,7 +8,7 @@ import Text.PrettyPrint (Doc, parens, (<+>))
 
 import Hix.Class.Map (LookupMaybe, NMap, nPretty)
 import Hix.Data.PackageName (PackageName)
-import Hix.Data.VersionBounds (VersionBounds, anyBounds)
+import Hix.Data.VersionBounds (VersionBounds, anyBounds, inclusiveRange)
 import Hix.Pretty (prettyL)
 
 -- | Left-biased semigroup op.
@@ -37,7 +37,7 @@ data MutationConstraints =
 
 instance Pretty MutationConstraints where
   pretty MutationConstraints {mutation, oldest, installed, force, prefer} =
-    pretty mutation <+>
+    pretty (inclusiveRange mutation) <+>
     flags [("oldest", oldest), ("installed", installed)] <+>
     foldMap pref prefer <+>
     foldMap spec force

@@ -8,6 +8,7 @@ import Distribution.Version (
   VersionRange,
   earlierVersion,
   intersectVersionRanges,
+  orEarlierVersion,
   orLaterVersion,
   simplifyVersionRange,
   thisVersion,
@@ -117,6 +118,15 @@ majorRange = fromMaybe range0 . maybeMajorRange
 
 instance Pretty VersionBounds where
   pretty = pretty . majorRange
+
+maybeInclusiveRange :: VersionBounds -> Maybe VersionRange
+maybeInclusiveRange =
+  maybeRange \case
+    BoundLower -> orLaterVersion
+    BoundUpper -> orEarlierVersion
+
+inclusiveRange :: VersionBounds -> VersionRange
+inclusiveRange = fromMaybe range0 . maybeInclusiveRange
 
 anyBounds :: VersionBounds
 anyBounds =
