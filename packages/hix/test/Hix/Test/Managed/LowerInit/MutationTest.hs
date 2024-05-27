@@ -27,7 +27,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines, listEqZip)
-import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams, nosortOptions)
 import Hix.Test.Utils (UnitTest)
 
 packages :: Packages ManagedPackageProto
@@ -433,6 +433,6 @@ test_lowerInitMutation = do
         log = True,
         ghcPackages,
         state,
-        projectOptions = def {envs = ["lower-main", "lower-special"], readUpperBounds = True},
+        projectOptions = nosortOptions {envs = ["lower-main", "lower-special"], readUpperBounds = True},
         build
       }

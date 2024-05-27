@@ -9,10 +9,10 @@ import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import Hix.Managed.Cabal.Data.SolverState (solverState)
 import qualified Hix.Managed.Cabal.Resources as SolveResources
 import Hix.Managed.Cabal.Solve (solveWithCabal)
-import Hix.Managed.Data.Constraints (MutationConstraints (..))
+import Hix.Managed.Cabal.Sort (sortDeps)
 import Hix.Managed.Data.EnvContext (EnvDeps (EnvDeps))
 import Hix.Managed.Data.Mutable (unsafeMutableDep)
-import Hix.Pretty (prettyL, showP)
+import Hix.Pretty (prettyL, showP, showPL)
 import Hix.Test.Managed.UnsafeIsString ()
 import Hix.Test.Utils (UnitTest, runMTest)
 
@@ -20,8 +20,9 @@ test_solve :: UnitTest
 test_solve =
   evalEither =<< liftIO do
     runMTest True do
-      solveResources <- SolveResources.acquire mempty def (GhcDbSystem Nothing)
-      result <- solveWithCabal solveResources state
+      res <- SolveResources.acquire mempty def (GhcDbSystem Nothing)
+      result <- solveWithCabal res state
+      sorted <- sortDeps res id (nKeys constraints)
       liftIO do
         putStrLn ""
         putStrLn "Constraints:"
@@ -29,9 +30,17 @@ test_solve =
         putStrLn ""
         putStrLn "Changes:"
         putStrLn (maybe "no plan" (show . prettyL . (.changes)) result)
+        putStrLn ""
+        putStrLn "Sorted:"
+        putStrLn (showPL sorted)
   where
     state = solverState [] (EnvDeps (Set.fromList (unsafeMutableDep <$> nKeys constraints)) mempty) constraints def
     constraints =
       [
-        ("path", mempty {mutation = "==0.9.0"})
+        ("ansi-terminal", mempty),
+        ("async", mempty),
+        ("polysemy-conc", mempty),
+        ("polysemy-time", mempty),
+        ("stm", mempty),
+        ("time", mempty)
       ]

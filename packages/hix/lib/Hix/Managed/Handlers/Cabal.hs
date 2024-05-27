@@ -10,18 +10,21 @@ import Hix.Managed.Cabal.Changes (SolverPlan)
 import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import Hix.Managed.Data.Mutable (MutableDep, MutableVersions, depName)
+import Hix.Managed.Data.Mutation (DepMutation)
 
 data CabalHandlers =
   CabalHandlers {
     solveForVersion :: SolverState -> M (Maybe SolverPlan),
-    installedVersion :: PackageName -> Maybe Version
+    installedVersion :: PackageName -> Maybe Version,
+    sortMutations :: ∀ a . [DepMutation a] -> M [DepMutation a]
   }
 
 handlersNull :: CabalHandlers
 handlersNull =
   CabalHandlers {
     solveForVersion = \ _ -> pure Nothing,
-    installedVersion = const Nothing
+    installedVersion = const Nothing,
+    sortMutations = pure
   }
 
 installedVersions ::

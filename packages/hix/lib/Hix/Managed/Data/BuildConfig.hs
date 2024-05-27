@@ -7,7 +7,8 @@ data BuildConfig =
     maxFailedPost :: Natural,
     lookup :: Bool,
     validate :: Bool,
-    buildOutput :: Bool
+    buildOutput :: Bool,
+    toposortMutations :: Bool
   }
   deriving stock (Eq, Show, Generic)
 
@@ -18,5 +19,6 @@ instance Default BuildConfig where
     maxFailedPost = 0,
     lookup = False,
     validate = False,
-    buildOutput = False
+    buildOutput = False,
+    toposortMutations = True
   }

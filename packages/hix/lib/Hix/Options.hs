@@ -262,6 +262,7 @@ buildConfigParser = do
     maxFailedPreHelp = maxFailedHelp "prior to the first"
     maxFailedPostHelp = maxFailedHelp "after the last"
     maxFailedHelp variant = [exon|Number of majors that may fail before aborting, #{variant} success|]
+    toposortMutations = True
 
 projectOptionsParser :: Parser ProjectOptions
 projectOptionsParser = do

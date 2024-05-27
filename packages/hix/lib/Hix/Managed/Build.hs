@@ -42,10 +42,12 @@ import Hix.Managed.Data.StageState (
   )
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (EnvBuilder)
+import qualified Hix.Managed.Handlers.Cabal
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
 import Hix.Managed.StageState (updateStageState)
 import Hix.Pretty (prettyL, showP, showPL)
+import Hix.Managed.Handlers.Cabal (CabalHandlers(CabalHandlers))
 
 logBuildInputs ::
   EnvName ->
@@ -210,7 +212,10 @@ processQuery ::
   s ->
   M (StageState a s)
 processQuery candidates handlers conf StageContext {env, builder, state, query = query} ext = do
-  mutations <- reinstallableCandidates candidates query
+  mutations <- postprocess =<< reinstallableCandidates candidates query
   convergeMutations handlers conf builder env stageState mutations
   where
+    postprocess | conf.toposortMutations = sortMutations
+                | otherwise = pure
     stageState = initStageState state ext
+    CabalHandlers {sortMutations} = builder.cabal

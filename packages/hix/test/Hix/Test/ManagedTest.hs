@@ -12,6 +12,7 @@ import Hix.Test.Managed.LowerInit.MutationTest (test_lowerInitMutation)
 import Hix.Test.Managed.LowerNativeTest ()
 import Hix.Test.Managed.LowerOptimize.CandidatesTest (test_candidatesOptimize)
 import Hix.Test.Managed.LowerOptimize.MutationTest (test_lowerOptimizeMutation)
+import Hix.Test.Managed.LowerOptimize.OrderTest (test_mutationOrder)
 import Hix.Test.Managed.LowerStabilize.MutationTest (test_lowerStabilizeMutation)
 import Hix.Test.Managed.ProjectContextProtoTest (test_parseProjectContextProto)
 import Hix.Test.Utils (unitTest)
@@ -29,7 +30,8 @@ test_managed =
         unitTest "lower.optimize" test_lowerOptimizeMutation,
         unitTest "lower.stabilize" test_lowerStabilizeMutation,
         unitTest "lower.auto stabilize" test_lowerAutoMutationStabilize,
-        test_lowerAutoMutationOptimize
+        test_lowerAutoMutationOptimize,
+        unitTest "mutation ordering" test_mutationOrder
       ],
       unitTest "parse ProjectContext" test_parseProjectContextProto,
       test_buildOutput,

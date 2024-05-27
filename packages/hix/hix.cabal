@@ -90,6 +90,7 @@ library
       Hix.Managed.Cabal.Repo
       Hix.Managed.Cabal.Resources
       Hix.Managed.Cabal.Solve
+      Hix.Managed.Cabal.Sort
       Hix.Managed.Cabal.Targets
       Hix.Managed.Constraints
       Hix.Managed.Data.BuildConfig
@@ -337,6 +338,7 @@ test-suite hix-test
       Hix.Test.Managed.LowerNativeTest
       Hix.Test.Managed.LowerOptimize.CandidatesTest
       Hix.Test.Managed.LowerOptimize.MutationTest
+      Hix.Test.Managed.LowerOptimize.OrderTest
       Hix.Test.Managed.LowerStabilize.MutationTest
       Hix.Test.Managed.ProjectContextProtoTest
       Hix.Test.Managed.Run

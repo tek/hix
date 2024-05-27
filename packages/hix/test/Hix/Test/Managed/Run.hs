@@ -7,6 +7,7 @@ import Hix.Class.Map (nFromList, nKeys)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr)
+import qualified Hix.Data.Options as ProjectOptions
 import Hix.Data.Options (ProjectOptions)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
@@ -14,6 +15,7 @@ import Hix.Managed.Cabal.Changes (SolverPlan)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSynthetic))
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
+import Hix.Managed.Data.BuildConfig (BuildConfig (toposortMutations))
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
@@ -45,6 +47,9 @@ data TestParams =
     build :: Versions -> M BuildStatus
   }
 
+nosortOptions :: ProjectOptions
+nosortOptions = def {ProjectOptions.build = def {toposortMutations = False}}
+
 testParams ::
   Bool ->
   Packages ManagedPackageProto ->
@@ -58,15 +63,16 @@ testParams debug packages =
     packages,
     ghcPackages = GhcPackages {installed = [], available = []},
     state = def,
-    projectOptions = def,
+    projectOptions = nosortOptions,
     build = const (pure Failure)
   }
 
-data Result =
+data Result a =
   Result {
     stateFile :: Expr,
     cabalLog :: [(EnvConstraints, Maybe SolverPlan)],
-    log :: [Text]
+    log :: [Text],
+    result :: a
   }
 
 testProjectContext ::
@@ -85,12 +91,12 @@ testProjectContext defaultEnvName params =
 
     defaultEnv = [(defaultEnvName, nKeys params.packages)]
 
-managedTest ::
+managedTest' ::
   EnvName ->
   TestParams ->
-  (BuildHandlers -> ProjectContext -> M ProjectResult) ->
-  TestT IO Result
-managedTest defaultEnvName params main =
+  (BuildHandlers -> ProjectOptions -> ProjectContextProto -> M a) ->
+  TestT IO (Result a)
+managedTest' defaultEnvName params main =
   withFrozenCallStack do
     (handlers0, stateFileRef, _) <- BuildHandlers.handlersUnitTest params.ghcPackages params.build
     (cabalRef, handlers1) <-
@@ -102,8 +108,8 @@ managedTest defaultEnvName params main =
         if params.log
         then handlers1 {report = ReportHandlers.handlersProd}
         else handlers1
-    (log, result) <- liftIO (runner (withProjectContext handlers params.projectOptions context (main handlers)))
-    evalEither result
+    (log, e_result) <- liftIO (runner (main handlers params.projectOptions context))
+    result <- evalEither e_result
     stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
     cabalLog <- fold <$> for cabalRef \ ref -> reverse <$> liftIO (readIORef ref)
     pure Result {..}
@@ -113,10 +119,20 @@ managedTest defaultEnvName params main =
 
     context = testProjectContext defaultEnvName params
 
+managedTest ::
+  EnvName ->
+  TestParams ->
+  (BuildHandlers -> ProjectContext -> M ProjectResult) ->
+  TestT IO (Result ())
+managedTest defaultEnvName params main =
+  withFrozenCallStack do
+    managedTest' defaultEnvName params \ handlers options context ->
+      withProjectContext handlers options context (main handlers)
+
 lowerTest ::
   TestParams ->
   (BuildHandlers -> ProjectContext -> M ProjectResult) ->
-  TestT IO Result
+  TestT IO (Result ())
 lowerTest params main =
   withFrozenCallStack do
     managedTest "lower" params main
@@ -124,7 +140,7 @@ lowerTest params main =
 bumpTest ::
   TestParams ->
   (BuildHandlers -> ProjectContext -> M ProjectResult) ->
-  TestT IO Result
+  TestT IO (Result ())
 bumpTest params main =
   withFrozenCallStack do
     managedTest "latest" params main
