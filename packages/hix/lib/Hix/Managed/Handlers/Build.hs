@@ -16,7 +16,7 @@ import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Initial (Initial)
 import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
-import Hix.Managed.Data.StageState (BuildStatus (Failure))
+import Hix.Managed.Data.StageState (BuildResult (Finished), BuildStatus (Failure))
 import qualified Hix.Managed.Handlers.Cabal as Solve
 import qualified Hix.Managed.Handlers.Cabal as Cabal
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
@@ -32,10 +32,15 @@ newtype BuildOutputsPrefix =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord, FromJSON)
 
+newtype BuildTimeout =
+  BuildTimeout Int
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (Num, Real, Enum, Integral, Ord, FromJSON)
+
 data EnvBuilder =
   EnvBuilder {
     cabal :: CabalHandlers,
-    buildWithState :: Versions -> [PackageId] -> M (Overrides, BuildStatus)
+    buildWithState :: Versions -> [PackageId] -> M (Overrides, BuildResult)
   }
 
 data Builder =
@@ -56,11 +61,11 @@ data BuildHandlers =
     latestVersion :: PackageName -> M (Maybe Version)
   }
 
-testBuilder :: (Versions -> [PackageId] -> M (Overrides, BuildStatus)) -> (Builder -> M a) -> M a
+testBuilder :: (Versions -> [PackageId] -> M (Overrides, BuildResult)) -> (Builder -> M a) -> M a
 testBuilder buildWithState use =
   use Builder {withEnvBuilder = \ cabal _ _ useE -> useE EnvBuilder {cabal, buildWithState}}
 
-versionsBuilder :: HackageHandlers -> (Versions -> M BuildStatus) -> (Builder -> M a) -> M a
+versionsBuilder :: HackageHandlers -> (Versions -> M BuildResult) -> (Builder -> M a) -> M a
 versionsBuilder hackage build =
   testBuilder \ versions overrideVersions -> do
     overrides <- packageOverrides hackage overrideVersions
@@ -73,7 +78,7 @@ handlersNull =
     stateFile = StateFileHandlers.handlersNull,
     report = Report.handlersNull,
     cabal = \ _ _ -> pure Solve.handlersNull,
-    withBuilder = testBuilder \ _ _ -> pure (mempty, Failure),
+    withBuilder = testBuilder \ _ _ -> pure (mempty, Finished Failure),
     versions = \ _ -> pure [],
     latestVersion = \ _ -> pure Nothing
   }

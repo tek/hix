@@ -1,5 +1,7 @@
 module Hix.Managed.Data.BuildConfig where
 
+import Hix.Managed.Handlers.Build (BuildTimeout)
+
 data BuildConfig =
   BuildConfig {
     maxIterations :: Natural,
@@ -8,7 +10,8 @@ data BuildConfig =
     lookup :: Bool,
     validate :: Bool,
     buildOutput :: Bool,
-    toposortMutations :: Bool
+    toposortMutations :: Bool,
+    timeout :: Maybe BuildTimeout
   }
   deriving stock (Eq, Show, Generic)
 
@@ -20,5 +23,6 @@ instance Default BuildConfig where
     lookup = False,
     validate = False,
     buildOutput = False,
-    toposortMutations = True
+    toposortMutations = True,
+    timeout = Nothing
   }

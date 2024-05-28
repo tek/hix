@@ -77,6 +77,7 @@ import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig))
 import Hix.Managed.Data.Query (RawQuery (RawQuery))
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
+import Hix.Managed.Handlers.Build (BuildTimeout (BuildTimeout))
 import Hix.Optparse (
   JsonConfig,
   absDirOption,
@@ -256,12 +257,14 @@ buildConfigParser = do
   lookup <- switch (long "lookup" <> short 'n' <> help "Only print latest versions (bump)")
   validate <- switch (long "validate" <> help "Validate new versions, but don't update the project state")
   buildOutput <- switch (long "build-output" <> help "Show output from Nix builds")
+  timeout <- fmap BuildTimeout <$> optional (option auto (long "build-timeout" <> help buildTimeoutHelp))
   pure BuildConfig {..}
   where
     maxIterationsHelp = "Number of restarts when some dependencies fail"
     maxFailedPreHelp = maxFailedHelp "prior to the first"
     maxFailedPostHelp = maxFailedHelp "after the last"
     maxFailedHelp variant = [exon|Number of majors that may fail before aborting, #{variant} success|]
+    buildTimeoutHelp = "Kill Nix builds after this duration in seconds"
     toposortMutations = True
 
 projectOptionsParser :: Parser ProjectOptions

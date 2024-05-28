@@ -16,11 +16,12 @@ import Hix.Managed.Cabal.Mock.SourcePackage (queryVersions, queryVersionsLatest,
 import Hix.Managed.Data.EnvConfig (EnvConfig)
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Mutation (FailedMutation)
-import Hix.Managed.Data.StageState (BuildStatus)
+import Hix.Managed.Data.StageState (BuildResult)
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 import Hix.Managed.Handlers.Build (
   BuildHandlers (..),
   BuildOutputsPrefix,
+  BuildTimeout,
   SpecialBuildHandlers (TestBumpHandlers),
   versionsBuilder,
   )
@@ -35,7 +36,7 @@ import Hix.Monad (clientError)
 handlersUnitTest ::
   MonadIO m =>
   GhcPackages ->
-  (Versions -> M BuildStatus) ->
+  (Versions -> M BuildResult) ->
   m (BuildHandlers, IORef [Expr], IORef [FailedMutation])
 handlersUnitTest ghcPackages builder = do
   (stateFile, stateFileRef) <- StateFile.handlersUnitTest
@@ -67,11 +68,12 @@ handlersBumpTest ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  Maybe BuildTimeout ->
   CabalConfig ->
   Bool ->
   m BuildHandlers
-handlersBumpTest stateFileConf envsConf buildOutputsPrefix cabalConf oldest = do
-  handlers <- handlersProd stateFileConf envsConf buildOutputsPrefix cabalConf oldest
+handlersBumpTest stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf oldest = do
+  handlers <- handlersProd stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf oldest
   pure handlers {
     cabal = CabalHandlers.handlersTest cabalConf oldest,
     latestVersion = latestVersionNixTestBump
@@ -82,11 +84,12 @@ chooseHandlers ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  Maybe BuildTimeout ->
   CabalConfig ->
   Maybe SpecialBuildHandlers ->
   m BuildHandlers
-chooseHandlers stateFileConf envsConf buildOutputsPrefix cabalConf = \case
-  Just TestBumpHandlers -> handlersBumpTest stateFileConf envsConf buildOutputsPrefix cabalConf oldest
-  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix cabalConf oldest
+chooseHandlers stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf = \case
+  Just TestBumpHandlers -> handlersBumpTest stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf oldest
+  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf oldest
   where
     oldest = False

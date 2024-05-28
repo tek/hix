@@ -60,12 +60,11 @@ buildLowerInit = do
   execStatelessStage "stabilize-initial" \ StageContext {env, initial, builder} ->
     buildVersions builder env "initial lower bounds" initial <&> \case
       Success -> StageNoAction (Just "Env builds successfully with the initial bounds.")
-      Failure ->
-        StageFailure (FailedPrecondition msg)
+      Failure -> StageFailure (FailedPrecondition msg)
   where
     msg =
       [
-        "Cannot stabilize since the build with initial bounds failed.",
+        [exon|Cannot stabilize since the build with initial bounds failed.|],
         "Please run 'lower.init --reset' or fix the build manually."
       ]
 
@@ -136,7 +135,7 @@ lowerStabilizeStages ::
 lowerStabilizeStages handlers conf =
   validateCurrent >>= \case
     Success -> unit
-    Failure -> stabilizeIfPossible handlers conf
+    _ -> stabilizeIfPossible handlers conf
 
 lowerStabilizeMain ::
   BuildHandlers ->

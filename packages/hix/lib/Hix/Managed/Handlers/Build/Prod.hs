@@ -14,11 +14,13 @@ import System.Process.Typed (
   inherit,
   nullStream,
   proc,
-  runProcess,
   setStderr,
   setStdout,
   setWorkingDir,
+  waitExitCode,
+  withProcessTerm,
   )
+import System.Timeout (timeout)
 
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
@@ -38,12 +40,18 @@ import Hix.Managed.Data.EnvContext (EnvContext (EnvContext))
 import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Initial (Initial)
-import Hix.Managed.Data.StageState (BuildStatus, buildStatus)
+import Hix.Managed.Data.StageState (BuildResult (Finished, TimedOut), BuildStatus (Failure, Success), buildUnsuccessful)
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
-import Hix.Managed.Data.Targets (allMTargets)
+import Hix.Managed.Data.Targets (firstMTargets)
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (BuildHandlers (..), BuildOutputsPrefix, Builder (Builder), EnvBuilder (EnvBuilder))
+import Hix.Managed.Handlers.Build (
+  BuildHandlers (..),
+  BuildOutputsPrefix,
+  BuildTimeout,
+  Builder (Builder),
+  EnvBuilder (EnvBuilder),
+  )
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
 import qualified Hix.Managed.Handlers.Cabal.Prod as CabalHandlers
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
@@ -62,7 +70,8 @@ data BuilderResources =
     stateFileHandlers :: StateFileHandlers,
     envsConf :: Envs EnvConfig,
     buildOutputsPrefix :: Maybe BuildOutputsPrefix,
-    root :: Path Abs Dir
+    root :: Path Abs Dir,
+    buildTimeout :: Maybe BuildTimeout
   }
 
 data EnvBuilderResources =
@@ -103,17 +112,22 @@ nixProc root cmd installable extra = do
     args = toString <$> cmd ++ [exon|path:#{".#"}#{installable}|] : extra
 
 buildPackage ::
+  Maybe BuildTimeout ->
   Path Abs Dir ->
   EnvName ->
   LocalPackage ->
-  M Bool
-buildPackage root env target = do
+  M BuildResult
+buildPackage processTimeout root env target = do
   debug <- M (asks (.debug))
   conf <- nixProc root ["-L", "build"] [exon|env.##{env}.##{target}|] []
-  tryIOM (runProcess (err debug conf)) <&> \case
-    ExitSuccess -> True
-    ExitFailure _ -> False
+  tryIOM (withProcessTerm (err debug conf) (limit . waitExitCode)) <&> \case
+    Just ExitSuccess -> Finished Success
+    Just (ExitFailure _) -> Finished Failure
+    Nothing -> TimedOut
   where
+    limit | Just t <- processTimeout = timeout (coerce t * 1_000_000)
+          | otherwise = fmap Just
+
     err = \case
       True -> setStdout inherit
       False -> id
@@ -122,11 +136,11 @@ buildWithState ::
   EnvBuilderResources ->
   Versions ->
   [PackageId] ->
-  M (Overrides, BuildStatus)
+  M (Overrides, BuildResult)
 buildWithState EnvBuilderResources {global, context = context@EnvContext {env, targets}} _ overrideVersions = do
   overrides <- packageOverrides global.hackage overrideVersions
   writeBuildStateFor "current build" global.stateFileHandlers global.root context overrides
-  status <- buildStatus <$> allMTargets (buildPackage global.root env) targets
+  status <- firstMTargets (Finished Success) buildUnsuccessful (buildPackage global.buildTimeout global.root env) targets
   pure (overrides, status)
 
 -- | This used to have the purpose of reading an updated GHC package db using the current managed state, but this has
@@ -159,9 +173,10 @@ withBuilder ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  Maybe BuildTimeout ->
   (Builder -> M a) ->
   M a
-withBuilder hackage stateFileHandlers stateFileConf envsConf buildOutputsPrefix use =
+withBuilder hackage stateFileHandlers stateFileConf envsConf buildOutputsPrefix buildTimeout use =
   withTempProject stateFileConf.projectRoot \ root -> do
     let resources = BuilderResources {..}
     use Builder {withEnvBuilder = withEnvBuilder resources}
@@ -171,10 +186,11 @@ handlersProd ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
+  Maybe BuildTimeout ->
   CabalConfig ->
   Bool ->
   m BuildHandlers
-handlersProd stateFileConf envsConf buildOutputsPrefix cabalConf oldest = do
+handlersProd stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf oldest = do
   manager <- liftIO (newManager tlsManagerSettings)
   hackage <- HackageHandlers.handlersProd
   let stateFile = StateFileHandlers.handlersProd stateFileConf
@@ -182,7 +198,7 @@ handlersProd stateFileConf envsConf buildOutputsPrefix cabalConf oldest = do
     stateFile,
     report = ReportHandlers.handlersProd,
     cabal = CabalHandlers.handlersProd cabalConf oldest,
-    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix,
+    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix buildTimeout,
     versions = versionsHackage manager,
     latestVersion = latestVersionHackage manager
   }

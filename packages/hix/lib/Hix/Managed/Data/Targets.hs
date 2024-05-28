@@ -6,6 +6,7 @@ module Hix.Managed.Data.Targets (
   singleTarget,
   sortTargets,
   allMTargets,
+  firstMTargets,
   overTargets,
 ) where
 
@@ -78,6 +79,22 @@ sortTargets deps targets =
     simple :: Packages [LocalPackage]
     simple = nMap (onlyFrom targetSet) (nRestrictKeys targetSet deps)
     targetSet = Set.fromList targets
+
+firstMTargets ::
+  Monad m =>
+  a ->
+  (a -> Bool) ->
+  (LocalPackage -> m a) ->
+  Targets ->
+  m a
+firstMTargets success cond f (Targets targets) =
+  foldr chain (pure success) targets
+  where
+    chain a z = do
+      res <- f a
+      if cond res
+      then pure res
+      else z
 
 allMTargets ::
   Monad m =>

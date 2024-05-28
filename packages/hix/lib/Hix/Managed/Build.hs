@@ -33,8 +33,10 @@ import qualified Hix.Managed.Data.StageContext
 import Hix.Managed.Data.StageContext (StageContext (StageContext))
 import qualified Hix.Managed.Data.StageState
 import Hix.Managed.Data.StageState (
+  BuildResult (Finished, TimedOut),
   BuildStatus (Failure, Success),
   StageState,
+  buildStatus,
   failed,
   initStageState,
   iterations,
@@ -43,11 +45,11 @@ import Hix.Managed.Data.StageState (
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (EnvBuilder)
 import qualified Hix.Managed.Handlers.Cabal
+import Hix.Managed.Handlers.Cabal (CabalHandlers (CabalHandlers))
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
 import Hix.Managed.StageState (updateStageState)
 import Hix.Pretty (prettyL, showP, showPL)
-import Hix.Managed.Handlers.Cabal (CabalHandlers(CabalHandlers))
 
 logBuildInputs ::
   EnvName ->
@@ -58,13 +60,14 @@ logBuildInputs env description overrides = do
   Log.info [exon|Building targets in '##{env}' with #{description}...|]
   Log.debugP (vcat ["Overrides:", prettyL overrides])
 
-logBuildResult :: Text -> BuildStatus -> M ()
-logBuildResult description status =
-  Log.info [exon|Build with ##{description} #{result status}|]
+logBuildResult :: Text -> BuildResult -> M ()
+logBuildResult description result =
+  Log.info [exon|Build with ##{description} #{describeResult result}|]
   where
-    result = \case
-      Success -> "succeeded"
-      Failure -> "failed"
+    describeResult = \case
+      Finished Success -> "succeeded"
+      Finished Failure -> "failed"
+      TimedOut -> "timed out"
 
 updateMutationState ::
   (Version -> VersionBounds -> VersionBounds) ->
@@ -94,7 +97,7 @@ buildVersions builder context description versions overrideVersions = do
   logBuildInputs context.env description reinstallable
   (overrides, status) <- builder.buildWithState versions reinstallable
   logBuildResult description status
-  pure (overrides, status)
+  pure (overrides, buildStatus status)
   where
     reinstallable = filter isReinstallableId overrideVersions
 

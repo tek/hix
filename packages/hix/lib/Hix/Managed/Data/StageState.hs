@@ -18,10 +18,22 @@ justSuccess a = \case
   Success -> Just a
   Failure -> Nothing
 
-buildStatus :: Bool -> BuildStatus
+data BuildResult =
+  Finished BuildStatus
+  |
+  TimedOut
+  deriving stock (Eq, Show, Generic)
+
+buildUnsuccessful :: BuildResult -> Bool
+buildUnsuccessful = \case
+  Finished Success -> False
+  Finished Failure -> True
+  TimedOut -> True
+
+buildStatus :: BuildResult -> BuildStatus
 buildStatus = \case
-  True -> Success
-  False -> Failure
+  Finished s -> s
+  TimedOut -> Failure
 
 data BuildSuccess =
   CandidateBuilt MutableId
