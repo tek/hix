@@ -21,9 +21,9 @@ let
     fi
 
     output=$(git tag -l --points-at=HEAD)
-    if [[ $output != "v$pristine_version" ]]
+    if [[ $output != $pristine_version ]]
     then
-      fail "No tag with name "v$pristine_version" points at HEAD for release-all-pristine-version:\n$output"
+      fail "No tag with name '$pristine_version' points at HEAD for release-all-pristine-version:\n$output"
     fi
 
     check 'cat new-version' '0.1.0.0' 'postUploadAll hook'
@@ -48,9 +48,9 @@ let
     fi
 
     output=$(git tag -l --points-at=HEAD)
-    if [[ $output != "v$version" ]]
+    if [[ $output != $version ]]
     then
-      fail "No tag with name "v$version" points at HEAD for release-all-version:\n$output"
+      fail "No tag with name '$version' points at HEAD for release-all-version:\n$output"
     fi
 
     sed -i "s/^version:\(\s*\).*/version:\1$manual_version/" root.cabal
@@ -70,9 +70,9 @@ let
     fi
 
     output=$(git tag -l --points-at=HEAD)
-    if [[ $output != "v$manual_version" ]]
+    if [[ $output != $manual_version ]]
     then
-      fail "No tag with name "v$manual_version" points at HEAD for release-all-version-manual:\n$output"
+      fail "No tag with name '$manual_version' points at HEAD for release-all-version-manual:\n$output"
     fi
 
     git reset --quiet --hard @^^^
@@ -96,9 +96,9 @@ let
     fi
 
     output=$(git tag -l --points-at=HEAD)
-    if [[ $output != "root-v$version" ]]
+    if [[ $output != "root-$version" ]]
     then
-      fail "No tag with name "root-v$version" points at HEAD for release-one:\n$output"
+      fail "No tag with name "root-$version" points at HEAD for release-one:\n$output"
     fi
 
     git reset --quiet --hard @^

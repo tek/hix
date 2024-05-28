@@ -131,9 +131,8 @@ in {
     formatTag = mkOption {
       description = "Function that creates a tag name from a version and an optional package name.";
       type = functionTo str;
-      default = { name, version }: let
-        vtag = "v${version}";
-      in if name == null then vtag else "${name}-${vtag}";
+      default = { name, version }:
+      if name == null then version else "${name}-${version}";
     };
 
     uploadCommand = mkOption {
