@@ -51,7 +51,7 @@
     abort
   }
 
-  if [[ $1 == '-n' ]]
+  if [[ ''${1-} == '-n' ]]
   then
     export hix_release_dry_run=1
     shift
