@@ -5,7 +5,6 @@ import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (LowerOptions (LowerOptions))
 import Hix.Json (jsonConfigE)
-import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.LowerConfig (LowerConfig, lowerConfig)
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import qualified Hix.Managed.Data.ProjectContextProto
@@ -24,8 +23,8 @@ lowerCli ::
   M ()
 lowerCli main opts@LowerOptions {common} = do
   context <- jsonConfigE Client common.context
-  handlers <- chooseHandlers common.stateFile context.envs context.buildOutputsPrefix common.project.build.timeout
-    common.cabal common.handlers
+  handlers <- chooseHandlers common.stateFile context.envs context.buildOutputsPrefix common.project.build common.cabal
+    common.handlers
   withProjectContext handlers common.project context (main conf handlers)
   where
     conf = lowerConfig opts

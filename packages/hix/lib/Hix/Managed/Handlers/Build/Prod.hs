@@ -34,6 +34,8 @@ import Hix.Error (pathText)
 import Hix.Hackage (latestVersionHackage, versionsHackage)
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Data.Config (CabalConfig)
+import qualified Hix.Managed.Data.BuildConfig
+import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.EnvConfig (EnvConfig)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext (EnvContext))
@@ -45,13 +47,7 @@ import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 import Hix.Managed.Data.Targets (firstMTargets)
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (
-  BuildHandlers (..),
-  BuildOutputsPrefix,
-  BuildTimeout,
-  Builder (Builder),
-  EnvBuilder (EnvBuilder),
-  )
+import Hix.Managed.Handlers.Build (BuildHandlers (..), BuildOutputsPrefix, Builder (Builder), EnvBuilder (EnvBuilder))
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
 import qualified Hix.Managed.Handlers.Cabal.Prod as CabalHandlers
 import Hix.Managed.Handlers.Hackage (HackageHandlers)
@@ -71,7 +67,7 @@ data BuilderResources =
     envsConf :: Envs EnvConfig,
     buildOutputsPrefix :: Maybe BuildOutputsPrefix,
     root :: Path Abs Dir,
-    buildTimeout :: Maybe BuildTimeout
+    buildConfig :: BuildConfig
   }
 
 data EnvBuilderResources =
@@ -94,38 +90,41 @@ withTempProject rootOverride use = do
     \ (err :: IOError) -> throwM (Fatal (show err))
 
 nixProc ::
+  Bool ->
   Path Abs Dir ->
   [Text] ->
   Text ->
   [Text] ->
   M (ProcessConfig () () ())
-nixProc root cmd installable extra = do
+nixProc showOutput root cmd installable extra = do
   Log.debug [exon|Running nix at '#{pathText root}' with args #{show args}|]
   conf <$> M (asks (.debug))
   where
     conf debug = err debug (setWorkingDir (toFilePath root) (proc "nix" args))
 
-    err = \case
-      True -> setStderr inherit
-      False -> setStderr nullStream
+    err debug
+      | debug || showOutput
+      = setStderr inherit
+      | otherwise
+      = setStderr nullStream
 
     args = toString <$> cmd ++ [exon|path:#{".#"}#{installable}|] : extra
 
 buildPackage ::
-  Maybe BuildTimeout ->
+  BuildConfig ->
   Path Abs Dir ->
   EnvName ->
   LocalPackage ->
   M BuildResult
-buildPackage processTimeout root env target = do
+buildPackage buildConf root env target = do
   debug <- M (asks (.debug))
-  conf <- nixProc root ["-L", "build"] [exon|env.##{env}.##{target}|] []
+  conf <- nixProc buildConf.buildOutput root ["-L", "build"] [exon|env.##{env}.##{target}|] []
   tryIOM (withProcessTerm (err debug conf) (limit . waitExitCode)) <&> \case
     Just ExitSuccess -> Finished Success
     Just (ExitFailure _) -> Finished Failure
     Nothing -> TimedOut
   where
-    limit | Just t <- processTimeout = timeout (coerce t * 1_000_000)
+    limit | Just t <- buildConf.timeout = timeout (coerce t * 1_000_000)
           | otherwise = fmap Just
 
     err = \case
@@ -140,7 +139,7 @@ buildWithState ::
 buildWithState EnvBuilderResources {global, context = context@EnvContext {env, targets}} _ overrideVersions = do
   overrides <- packageOverrides global.hackage overrideVersions
   writeBuildStateFor "current build" global.stateFileHandlers global.root context overrides
-  status <- firstMTargets (Finished Success) buildUnsuccessful (buildPackage global.buildTimeout global.root env) targets
+  status <- firstMTargets (Finished Success) buildUnsuccessful (buildPackage global.buildConfig global.root env) targets
   pure (overrides, status)
 
 -- | This used to have the purpose of reading an updated GHC package db using the current managed state, but this has
@@ -173,10 +172,10 @@ withBuilder ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
-  Maybe BuildTimeout ->
+  BuildConfig ->
   (Builder -> M a) ->
   M a
-withBuilder hackage stateFileHandlers stateFileConf envsConf buildOutputsPrefix buildTimeout use =
+withBuilder hackage stateFileHandlers stateFileConf envsConf buildOutputsPrefix buildConfig use =
   withTempProject stateFileConf.projectRoot \ root -> do
     let resources = BuilderResources {..}
     use Builder {withEnvBuilder = withEnvBuilder resources}
@@ -186,11 +185,11 @@ handlersProd ::
   StateFileConfig ->
   Envs EnvConfig ->
   Maybe BuildOutputsPrefix ->
-  Maybe BuildTimeout ->
+  BuildConfig ->
   CabalConfig ->
   Bool ->
   m BuildHandlers
-handlersProd stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf oldest = do
+handlersProd stateFileConf envsConf buildOutputsPrefix buildConfig cabalConf oldest = do
   manager <- liftIO (newManager tlsManagerSettings)
   hackage <- HackageHandlers.handlersProd
   let stateFile = StateFileHandlers.handlersProd stateFileConf
@@ -198,7 +197,7 @@ handlersProd stateFileConf envsConf buildOutputsPrefix buildTimeout cabalConf ol
     stateFile,
     report = ReportHandlers.handlersProd,
     cabal = CabalHandlers.handlersProd cabalConf oldest,
-    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix buildTimeout,
+    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix buildConfig,
     versions = versionsHackage manager,
     latestVersion = latestVersionHackage manager
   }

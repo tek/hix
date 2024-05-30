@@ -233,7 +233,8 @@ lowerNativeTest = do
       projectRoot = Just root
     }
     envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
-  handlers <- Build.handlersProd stateFileConf envsConfig Nothing Nothing def False
+    buildConfig = def
+  handlers <- Build.handlersProd stateFileConf envsConfig Nothing buildConfig def False
   let
     opts = projectOptions ["lower"]
 
@@ -256,7 +257,7 @@ lowerNativeTest = do
   context0 <- ProjectContextProto.validate opts proto0
   (state1, stateFileContentInit) <- run context0 (lowerInitMain def)
   -- TODO the packages here aren't updated with the result from the first run
-  let context1 = projectContext def state1 context0.packages context0.envs
+  let context1 = projectContext buildConfig state1 context0.packages context0.envs
   (_, stateFileContentOptimize) <- run context1 lowerOptimizeMain
   pure (stateFileContentInit, stateFileContentOptimize)
 
