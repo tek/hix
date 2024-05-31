@@ -1,3 +1,7 @@
+# Unreleased
+
+* Add a reusable workflow for managed bounds updates.
+
 # 0.7.0: Hix Unbound: Majors Apart
 
 * Fetch `thax` from a static URL, removing the flake input.
