@@ -124,7 +124,9 @@ buildPackage buildConf root env target = do
     Just (ExitFailure _) -> Finished Failure
     Nothing -> TimedOut
   where
-    limit | Just t <- buildConf.timeout = timeout (coerce t * 1_000_000)
+    limit | Just t <- buildConf.timeout
+          , t > 0
+          = timeout (coerce t * 1_000_000)
           | otherwise = fmap Just
 
     err = \case
