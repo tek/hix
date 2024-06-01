@@ -19,7 +19,7 @@ jobs:
           extra-substituters = https://tek.cachix.org
           extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
     - uses: DeterminateSystems/magic-nix-cache-action@main
-    - uses: cachix/cachix-action@v14
+    - uses: cachix/cachix-action@v15
       with:
         name: tek
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
