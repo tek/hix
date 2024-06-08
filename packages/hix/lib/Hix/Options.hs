@@ -258,6 +258,7 @@ buildConfigParser = do
   validate <- switch (long "validate" <> help "Validate new versions, but don't update the project state")
   buildOutput <- switch (long "build-output" <> help "Show output from Nix builds")
   timeout <- fmap BuildTimeout <$> optional (option auto (long "build-timeout" <> help buildTimeoutHelp))
+  disableNixMonitor <- switch (long "disable-nix-monitor" <> help "Don't parse Nix build output")
   pure BuildConfig {..}
   where
     maxIterationsHelp = "Number of restarts when some dependencies fail"

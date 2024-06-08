@@ -26,7 +26,7 @@ import qualified Hix.Managed.Data.ProjectContextProto as ProjectContextProto
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto)
-import Hix.Managed.Data.StageState (BuildResult (Finished), BuildStatus (Failure))
+import Hix.Managed.Data.StageState (BuildStatus (Failure), resultFromStatus)
 import qualified Hix.Managed.Handlers.Build as BuildHandlers
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
@@ -98,7 +98,8 @@ managedTest' ::
   TestT IO (Result a)
 managedTest' defaultEnvName params main =
   withFrozenCallStack do
-    (handlers0, stateFileRef, _) <- BuildHandlers.handlersUnitTest params.ghcPackages (fmap Finished . params.build)
+    (handlers0, stateFileRef, _) <-
+      BuildHandlers.handlersUnitTest params.ghcPackages (fmap resultFromStatus . params.build)
     (cabalRef, handlers1) <-
       if params.cabalLog
       then first Just <$> BuildHandlers.logCabal handlers0

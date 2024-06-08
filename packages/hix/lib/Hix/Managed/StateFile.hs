@@ -38,7 +38,7 @@ writeStateFile ::
   ProjectState ->
   M ()
 writeStateFile purpose handlers tmpRoot state = do
-  Log.debug [exon|writing managed stated file for #{purpose}: #{renderRootExpr expr}|]
+  Log.debug [exon|writing managed state file for #{purpose}: #{renderRootExpr expr}|]
   handlers.writeFile tmpRoot expr
   where
     expr = encodeNix state

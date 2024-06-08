@@ -1,16 +1,20 @@
 module Hix.Managed.Handlers.Build.Prod where
 
 import Control.Monad.Catch (catch)
-import Control.Monad.Trans.Reader (asks)
+import Control.Monad.Trans.Reader (ask, asks)
+import qualified Data.ByteString.Char8 as ByteString
 import Exon (exon)
 import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Path (Abs, Dir, Path, toFilePath)
 import Path.IO (copyDirRecur')
-import System.IO.Error (IOError)
+import System.IO (BufferMode (LineBuffering), Handle, hSetBuffering)
+import System.IO.Error (IOError, tryIOError)
 import System.Process.Typed (
   ExitCode (ExitFailure, ExitSuccess),
   ProcessConfig,
+  createPipe,
+  getStderr,
   inherit,
   nullStream,
   proc,
@@ -33,6 +37,7 @@ import Hix.Data.Version (Versions)
 import Hix.Error (pathText)
 import Hix.Hackage (latestVersionHackage, versionsHackage)
 import qualified Hix.Log as Log
+import Hix.Managed.Build.NixOutput (OutputResult (OutputResult), outputParse, runOutputState)
 import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
@@ -42,7 +47,7 @@ import Hix.Managed.Data.EnvContext (EnvContext (EnvContext))
 import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Initial (Initial)
-import Hix.Managed.Data.StageState (BuildResult (Finished, TimedOut), BuildStatus (Failure, Success), buildUnsuccessful)
+import Hix.Managed.Data.StageState (BuildFailure (..), BuildResult (..), buildUnsuccessful)
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 import Hix.Managed.Data.Targets (firstMTargets)
@@ -58,7 +63,7 @@ import qualified Hix.Managed.Handlers.StateFile.Prod as StateFileHandlers
 import Hix.Managed.Overrides (packageOverrides)
 import Hix.Managed.Path (rootOrCwd)
 import Hix.Managed.StateFile (writeBuildStateFor, writeInitialEnvState)
-import Hix.Monad (throwM, tryIOM, withTempDir)
+import Hix.Monad (runMUsing, throwM, tryIOM, withTempDir)
 
 data BuilderResources =
   BuilderResources {
@@ -89,49 +94,133 @@ withTempProject rootOverride use = do
         use tmpRoot
     \ (err :: IOError) -> throwM (Fatal (show err))
 
+data OutputConfig =
+  OutputDebug
+  |
+  OutputParse
+  |
+  OutputIgnore
+
+data NixProcResult =
+  NixProcSuccess [Text]
+  |
+  NixProcFailure Text
+  deriving stock (Eq, Show, Generic)
+
+outputLines ::
+  MonadIO m =>
+  (ByteString -> m ()) ->
+  Handle ->
+  m (Maybe Text)
+outputLines parse handle = do
+  liftIO (hSetBuffering handle LineBuffering)
+  spin mempty
+  where
+    spin buf = do
+      liftIO (tryIOError (ByteString.hGet handle 4096)) >>= \case
+        Left err -> pure (Just (show err))
+        Right new ->
+          join <$> for (completeLines buf new) \ (lns, newBuf) -> do
+            for_ lns parse
+            spin newBuf
+
+    completeLines = \cases
+      -- Empty output means the handle was closed, empty buffer means we can terminate
+      "" "" ->
+        Nothing
+      -- First iteration after handle was closed, need to emit the last line
+      buf "" ->
+        Just ([buf], "")
+      buf new ->
+        Just (breakNl [] (buf <> new))
+
+    breakNl acc s =
+      case ByteString.break (== '\n') s of
+        (rest, "") -> (reverse acc, rest)
+        (ln, rest) -> breakNl (ln : acc) (ByteString.drop 1 rest)
+
 nixProc ::
-  Bool ->
+  OutputConfig ->
   Path Abs Dir ->
   [Text] ->
   Text ->
   [Text] ->
-  M (ProcessConfig () () ())
-nixProc showOutput root cmd installable extra = do
+  M (ProcessConfig () () (Maybe Handle))
+nixProc output root cmd installable extra = do
   Log.debug [exon|Running nix at '#{pathText root}' with args #{show args}|]
-  conf <$> M (asks (.debug))
+  pure conf
   where
-    conf debug = err debug (setWorkingDir (toFilePath root) (proc "nix" args))
+    conf = err (setWorkingDir (toFilePath root) (proc "nix" args))
 
-    err debug
-      | debug || showOutput
-      = setStderr inherit
-      | otherwise
-      = setStderr nullStream
+    err = case output of
+      OutputParse -> setStderr (Just <$> createPipe)
+      OutputDebug -> setStdout inherit . setStderr (Nothing <$ inherit)
+      OutputIgnore -> setStderr (Nothing <$ nullStream)
 
-    args = toString <$> cmd ++ [exon|path:#{".#"}#{installable}|] : extra
+    args = toString <$> cmd ++ [exon|path:#{".#"}#{installable}|] : extra ++ logArgs
 
-buildPackage ::
+    logArgs = case output of
+      OutputParse -> ["--log-format", "internal-json"]
+      OutputDebug -> ["-L"]
+      OutputIgnore -> []
+
+runProc ::
   BuildConfig ->
-  Path Abs Dir ->
-  EnvName ->
-  LocalPackage ->
-  M BuildResult
-buildPackage buildConf root env target = do
-  debug <- M (asks (.debug))
-  conf <- nixProc buildConf.buildOutput root ["-L", "build"] [exon|env.##{env}.##{target}|] []
-  tryIOM (withProcessTerm (err debug conf) (limit . waitExitCode)) <&> \case
-    Just ExitSuccess -> Finished Success
-    Just (ExitFailure _) -> Finished Failure
-    Nothing -> TimedOut
+  (Handle -> IO a) ->
+  ProcessConfig () () (Maybe Handle) ->
+  M (Maybe (Maybe a, ExitCode))
+runProc buildConf pipeHandler conf =
+  tryIOM (withProcessTerm conf interact)
   where
+    interact prc =
+      limit do
+        err <- traverse pipeHandler (getStderr prc)
+        res <- waitExitCode prc
+        pure (err, res)
+
     limit | Just t <- buildConf.timeout
           , t > 0
           = timeout (coerce t * 1_000_000)
           | otherwise = fmap Just
 
-    err = \case
-      True -> setStdout inherit
-      False -> id
+outputResult ::
+  Maybe (Either Error (Maybe Text, OutputResult)) ->
+  ExitCode ->
+  M BuildResult
+outputResult result = \case
+  ExitSuccess -> pure BuildSuccess
+  ExitFailure _ -> pure (BuildFailure (maybe UnknownFailure PackageFailure failedPackage))
+  where
+    failedPackage =
+      result >>= \case
+        Right (_, OutputResult pkg) -> pkg
+        Left _ -> Nothing
+
+buildTarget ::
+  BuildConfig ->
+  Path Abs Dir ->
+  EnvName ->
+  LocalPackage ->
+  M BuildResult
+buildTarget buildConf root env target = do
+  appRes <- M ask
+  debug <- M (asks (.debug))
+  conf <- nixProc (outputHandler debug) root ["build"] [exon|env.##{env}.##{target}|] []
+  runProc buildConf (runOutput appRes) conf >>= \case
+    Just (output, code) ->
+      outputResult output code
+    Nothing -> pure (BuildFailure (TimeoutFailure Nothing))
+  where
+    runOutput appRes handle =
+      runMUsing appRes (runOutputState (outputLines outputParse handle))
+
+    outputHandler debug
+      | buildConf.buildOutput || (buildConf.disableNixMonitor && debug)
+      = OutputDebug
+      | buildConf.disableNixMonitor
+      = OutputIgnore
+      | otherwise
+      = OutputParse
 
 buildWithState ::
   EnvBuilderResources ->
@@ -141,8 +230,8 @@ buildWithState ::
 buildWithState EnvBuilderResources {global, context = context@EnvContext {env, targets}} _ overrideVersions = do
   overrides <- packageOverrides global.hackage overrideVersions
   writeBuildStateFor "current build" global.stateFileHandlers global.root context overrides
-  status <- firstMTargets (Finished Success) buildUnsuccessful (buildPackage global.buildConfig global.root env) targets
-  pure (overrides, status)
+  result <- firstMTargets BuildSuccess buildUnsuccessful (buildTarget global.buildConfig global.root env) targets
+  pure (overrides, result)
 
 -- | This used to have the purpose of reading an updated GHC package db using the current managed state, but this has
 -- become obsolete.

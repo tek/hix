@@ -1,0 +1,15 @@
+name:           multi-failNUM
+version:        0.1.0
+synopsis:       test package
+author:         Torsten Schmits
+maintainer:     haskell@tryp.io
+copyright:      2021 Torsten Schmits
+build-type:     Simple
+
+library
+  exposed-modules:
+      MultiFail
+  hs-source-dirs:
+      lib
+  build-depends:
+      base ==4.*

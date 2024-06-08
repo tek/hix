@@ -65,6 +65,7 @@ library
       Hix.Log
       Hix.Managed.Build
       Hix.Managed.Build.Mutation
+      Hix.Managed.Build.NixOutput
       Hix.Managed.Build.Single
       Hix.Managed.Build.Solve
       Hix.Managed.BuildOutput

@@ -96,10 +96,14 @@ withLogIORef use = do
   log <- readIORef logRef
   pure (log, result)
 
+runMUsing :: AppResources -> M a -> IO (Either Error a)
+runMUsing res (M ma) =
+  runExceptT (runReaderT ma res)
+
 runMLoggerWith :: (LogLevel -> Text -> IO ()) -> GlobalOptions -> M a -> IO (Either Error a)
-runMLoggerWith logger GlobalOptions {..} (M ma) =
+runMLoggerWith logger GlobalOptions {..} ma =
   withSystemTempDir "hix-cli" \ tmp ->
-    runExceptT (runReaderT ma AppResources {logger = logWith logger, ..})
+    runMUsing AppResources {logger = logWith logger, ..} ma
 
 runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
 runMLogWith opts ma =

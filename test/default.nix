@@ -45,6 +45,7 @@ let
     lower = test "lower";
     lower-stabilize = test "lower-stabilize";
     lower-local = test "lower-local";
+    managed-nom = test "managed-nom";
   };
 
   tests = tests-basic-1 // tests-basic-2 // tests-basic-3 // tests-vm // tests-managed;

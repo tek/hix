@@ -11,7 +11,8 @@ data BuildConfig =
     validate :: Bool,
     buildOutput :: Bool,
     toposortMutations :: Bool,
-    timeout :: Maybe BuildTimeout
+    timeout :: Maybe BuildTimeout,
+    disableNixMonitor :: Bool
   }
   deriving stock (Eq, Show, Generic)
 
@@ -24,5 +25,6 @@ instance Default BuildConfig where
     validate = False,
     buildOutput = False,
     toposortMutations = True,
-    timeout = Nothing
+    timeout = Nothing,
+    disableNixMonitor = False
   }

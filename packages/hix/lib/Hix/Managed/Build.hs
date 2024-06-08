@@ -6,10 +6,13 @@ import Distribution.Pretty (Pretty)
 import Exon (exon)
 import Text.PrettyPrint (vcat)
 
-import Hix.Data.EnvName (EnvName)
+import qualified Hix.Console
+import Hix.Console (color, colors)
+import Hix.Data.EnvName (EnvName (EnvName))
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
-import Hix.Data.PackageId (PackageId)
+import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId (PackageId))
 import Hix.Data.Version (Version, Versions)
 import Hix.Data.VersionBounds (VersionBounds)
 import qualified Hix.Log as Log
@@ -33,8 +36,9 @@ import qualified Hix.Managed.Data.StageContext
 import Hix.Managed.Data.StageContext (StageContext (StageContext))
 import qualified Hix.Managed.Data.StageState
 import Hix.Managed.Data.StageState (
-  BuildResult (Finished, TimedOut),
-  BuildStatus (Failure, Success),
+  BuildFailure (PackageFailure, TimeoutFailure),
+  BuildResult (BuildFailure, BuildSuccess),
+  BuildStatus,
   StageState (failed, iterations),
   buildStatus,
   initStageState,
@@ -55,17 +59,24 @@ logBuildInputs ::
   [PackageId] ->
   M ()
 logBuildInputs env description overrides = do
-  Log.info [exon|Building targets in '##{env}' with #{description}...|]
+  Log.info [exon|Building targets in #{color colors.yellow (coerce env)} with #{description}...|]
   Log.debugP (vcat ["Overrides:", prettyL overrides])
 
 logBuildResult :: Text -> BuildResult -> M ()
 logBuildResult description result =
-  Log.info [exon|Build with ##{description} #{describeResult result}|]
+  Log.info [exon|Build with ##{description} #{describeResult result}#{describePackage result}|]
   where
     describeResult = \case
-      Finished Success -> "succeeded"
-      Finished Failure -> "failed"
-      TimedOut -> "timed out"
+      BuildSuccess -> "succeeded"
+      BuildFailure (TimeoutFailure _) -> "timed out"
+      BuildFailure _ -> "failed"
+
+    describePackage = \case
+      BuildFailure (TimeoutFailure (Just p)) -> packageFragment p
+      BuildFailure (PackageFailure p) -> packageFragment p
+      _ -> ""
+
+    packageFragment PackageId {name} = [exon| in #{color colors.blue (showP name)}|]
 
 updateMutationState ::
   (Version -> VersionBounds -> VersionBounds) ->
@@ -82,8 +93,6 @@ updateMutationState updateBound newVersions overrides MutationState {bounds, ver
   }
 
 -- | /Note/: This quietly discards non-reinstallable packages.
---
--- TODO Discard installed versions, for builds with initial versions.
 buildVersions ::
   EnvBuilder ->
   EnvContext ->
@@ -93,9 +102,9 @@ buildVersions ::
   M (Overrides, BuildStatus)
 buildVersions builder context description versions overrideVersions = do
   logBuildInputs context.env description reinstallable
-  (overrides, status) <- builder.buildWithState versions reinstallable
-  logBuildResult description status
-  pure (overrides, buildStatus status)
+  (overrides, result) <- builder.buildWithState versions reinstallable
+  logBuildResult description result
+  pure (overrides, buildStatus result)
   where
     reinstallable = filter isReinstallableId overrideVersions
 
@@ -136,7 +145,7 @@ logMutationResult package = \case
   MutationKeep ->
     Log.verbose [exon|No better version found for '##{package}'|]
   MutationFailed ->
-    Log.verbose [exon|Could not find a buildable version of '##{package}'|]
+    Log.verbose [exon|Could not find a buildable version of #{color colors.blue (showP package)}|]
 
 validateMutation ::
   EnvBuilder ->

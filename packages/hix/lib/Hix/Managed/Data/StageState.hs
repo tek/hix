@@ -6,6 +6,7 @@ import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))
 import Hix.Managed.Data.Mutation (DepMutation)
 import Hix.Managed.Data.MutationState (MutationState)
+import Hix.Data.PackageId (PackageId)
 
 data BuildStatus =
   Success
@@ -18,22 +19,34 @@ justSuccess a = \case
   Success -> Just a
   Failure -> Nothing
 
-data BuildResult =
-  Finished BuildStatus
+data BuildFailure =
+  UnknownFailure
   |
-  TimedOut
+  PackageFailure PackageId
+  |
+  TimeoutFailure (Maybe PackageId)
+  deriving stock (Eq, Show, Generic)
+
+data BuildResult =
+  BuildSuccess
+  |
+  BuildFailure BuildFailure
   deriving stock (Eq, Show, Generic)
 
 buildUnsuccessful :: BuildResult -> Bool
 buildUnsuccessful = \case
-  Finished Success -> False
-  Finished Failure -> True
-  TimedOut -> True
+  BuildSuccess -> False
+  BuildFailure _ -> True
 
 buildStatus :: BuildResult -> BuildStatus
 buildStatus = \case
-  Finished s -> s
-  TimedOut -> Failure
+  BuildSuccess -> Success
+  BuildFailure _ -> Failure
+
+resultFromStatus :: BuildStatus -> BuildResult
+resultFromStatus = \case
+  Success -> BuildSuccess
+  Failure -> BuildFailure UnknownFailure
 
 data BuildSuccess =
   CandidateBuilt MutableId

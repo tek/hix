@@ -16,7 +16,7 @@ import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Initial (Initial)
 import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
-import Hix.Managed.Data.StageState (BuildResult (Finished), BuildStatus (Failure))
+import Hix.Managed.Data.StageState (BuildFailure (UnknownFailure), BuildResult (BuildFailure))
 import qualified Hix.Managed.Handlers.Cabal as Solve
 import qualified Hix.Managed.Handlers.Cabal as Cabal
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
@@ -78,7 +78,7 @@ handlersNull =
     stateFile = StateFileHandlers.handlersNull,
     report = Report.handlersNull,
     cabal = \ _ _ -> pure Solve.handlersNull,
-    withBuilder = testBuilder \ _ _ -> pure (mempty, Finished Failure),
+    withBuilder = testBuilder \ _ _ -> pure (mempty, BuildFailure UnknownFailure),
     versions = \ _ -> pure [],
     latestVersion = \ _ -> pure Nothing
   }

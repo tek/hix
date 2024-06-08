@@ -61,7 +61,9 @@ testPackagesBump =
     PackageId {name = "base", version = [4, 17, 2, 0]},
     PackageId {name = "extra", version = [1, 7, 14]},
     PackageId {name = "th-abstraction", version = [0, 5, 0, 0]},
-    PackageId {name = "path", version = [0, 9, 5]}
+    PackageId {name = "path", version = [0, 9, 5]},
+    PackageId {name = "multi-fail1", version = [0, 1, 0]},
+    PackageId {name = "multi-fail2", version = [0, 1, 0]}
   ]
 
 removeLaterVersions ::

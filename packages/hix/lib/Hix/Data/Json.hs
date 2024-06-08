@@ -31,3 +31,14 @@ foldMissing ::
   Parser a
 foldMissing o k =
   fold <$> o .:? k
+
+newtype JsonEither a b =
+  JsonEither (Either a b)
+  deriving stock (Eq, Show)
+
+jsonEither :: JsonEither a b -> Either a b
+jsonEither = coerce
+
+instance (FromJSON a, FromJSON b) => FromJSON (JsonEither a b) where
+  parseJSON v =
+    JsonEither <$> ((Right <$> parseJSON v) <|> (Left <$> parseJSON v))
