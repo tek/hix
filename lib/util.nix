@@ -93,6 +93,9 @@ let
   minGhcs = version:
   all (basic.minGhc version) (attrValues config.envs);
 
+  minGhcDev = version:
+  basic.minGhc version config.envs.dev;
+
   unlessDev = conf: v: mkIf (conf.name != "dev") (mkDefault v);
 
   scriptErr = name: text: pkgs.writeScript name ''
@@ -193,6 +196,7 @@ let
     visibleEnvs
     visibleAppEnvs
     minGhcs
+    minGhcDev
     conf
     unlessDev
     scriptErr
