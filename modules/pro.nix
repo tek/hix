@@ -1,4 +1,4 @@
-{util, ...}:
+{util, lib, ...}:
 {
   ghcVersions = util.lib.mkOverride 500 ["ghc92" "ghc94" "ghc96"];
 
@@ -87,7 +87,7 @@
 
   };
 
-  ghci.ghcOptions = ["-Werror"];
+  ghci.ghcOptions = ["-Werror"] ++ lib.optional (util.minGhcDev "9.8") "-Wno-show-error-context";
 
   hackage.setChangelogVersion = true;
 
