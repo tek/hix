@@ -32,9 +32,9 @@ let
       print ""
       diff <(print $1) <(print $2)
       print ""
-      print "< $(green 'expected')
+      print "< $(red 'actual')
   ---
-  > $(red 'actual')"
+  > $(green 'expected')"
       return 1
     fi
   }
