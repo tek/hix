@@ -25,8 +25,8 @@ packages :: Packages ManagedPackageProto
 packages =
   managedPackages [(("local1", "1.0"), ["direct1", "direct2"])]
 
-packageDb :: SourcePackages
-packageDb =
+available :: SourcePackages
+available =
   [
     ("direct1", allDep "transitive1 >=1.0" [
       ([1, 8, 1], []),
@@ -46,7 +46,7 @@ packageDb =
   ]
 
 ghcPackages :: GhcPackages
-ghcPackages = GhcPackages {installed = [], available = packageDb}
+ghcPackages = GhcPackages {installed = [], available}
 
 state :: ProjectStateProto
 state =

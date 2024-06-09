@@ -48,8 +48,8 @@ packages =
     (("local8", "1.0"), ["direct1", "direct6"])
   ]
 
-packageDb :: SourcePackages
-packageDb =
+available :: SourcePackages
+available =
   [
     ("direct1", [
       ([1, 0, 3], ["transitive1 >=1"]),
@@ -86,7 +86,7 @@ packageDb =
   ]
 
 ghcPackages :: GhcPackages
-ghcPackages = GhcPackages {installed = [], available = packageDb}
+ghcPackages = GhcPackages {installed = [], available}
 
 state :: ProjectStateProto
 state =

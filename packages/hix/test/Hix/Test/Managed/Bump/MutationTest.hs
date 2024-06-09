@@ -46,8 +46,8 @@ installed =
     ("direct5-1.0.1", [])
   ]
 
-packageDb :: SourcePackages
-packageDb =
+available :: SourcePackages
+available =
   [
     ("base", [
       ([4, 11, 0, 0], []),
@@ -82,7 +82,7 @@ packageDb =
   ]
 
 ghcPackages :: GhcPackages
-ghcPackages = GhcPackages {installed, available = packageDb}
+ghcPackages = GhcPackages {installed, available}
 
 build :: Versions -> M BuildStatus
 build = \case

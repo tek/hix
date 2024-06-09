@@ -22,8 +22,8 @@ import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Managed.Run (TestParams (..), Result (..), testParams, lowerTest)
 import Hix.Test.Utils (UnitTest)
 
-packageDb :: SourcePackages
-packageDb =
+available :: SourcePackages
+available =
   [
     ("direct1", [
       ([1, 8, 1], []),
@@ -38,7 +38,7 @@ packageDb =
   ]
 
 ghcPackages :: GhcPackages
-ghcPackages = GhcPackages {installed = [], available = packageDb}
+ghcPackages = GhcPackages {installed = [], available}
 
 packages :: Packages ManagedPackageProto
 packages =

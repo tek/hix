@@ -76,8 +76,8 @@ installed =
     ("direct3-1.2", [])
   ]
 
-packageDb :: SourcePackages
-packageDb =
+available :: SourcePackages
+available =
   [
     ("direct1", versions),
     ("direct2", versions),
@@ -94,7 +94,7 @@ packageDb =
       ]
 
 ghcPackages :: GhcPackages
-ghcPackages = GhcPackages {installed, available = packageDb}
+ghcPackages = GhcPackages {installed, available}
 
 buildVersionsBasic :: Versions -> M BuildStatus
 buildVersionsBasic = \case
