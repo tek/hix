@@ -83,7 +83,7 @@ bumpBuild handlers conf stage@StageContext {env, builder, state} = do
   pure (stageResult success failure result)
   where
     ext = solverState env.solverBounds env.deps (bumpSolverParams env.deps builder.cabal state) flags
-    flags = SolverFlags {allowNewer = True}
+    flags = SolverFlags {allowNewer = True, forceRevisions = False}
 
 bumpBuildStage ::
   BuildHandlers ->

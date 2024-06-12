@@ -68,16 +68,23 @@ solveForTargets res mapParams targets =
     pkgSpecifiers = (.dep) <$> targets
     prefs = (.prefs) =<< targets
 
-solveWithCabal ::
+solveWithCabal' ::
   SolveResources ->
   SolverState ->
-  M (Maybe SolverPlan)
-solveWithCabal solveResources SolverState {constraints, flags} = do
+  M (Maybe SolverInstallPlan)
+solveWithCabal' solveResources SolverState {constraints, flags} = do
   solveForTargets solveResources (compileSolverFlags flags) targets >>= \case
     Right plan ->
-      pure (Just (solverPlan plan))
+      pure (Just plan)
     Left err -> do
       Log.debug [exon|Solver found no plan: ##{err}|]
       pure Nothing
   where
     targets = solveTargets constraints
+
+solveWithCabal ::
+  SolveResources ->
+  SolverState ->
+  M (Maybe SolverPlan)
+solveWithCabal solveResources solverState =
+  fmap solverPlan <$> solveWithCabal' solveResources solverState

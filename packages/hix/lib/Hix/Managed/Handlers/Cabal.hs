@@ -1,9 +1,11 @@
 module Hix.Managed.Handlers.Cabal where
 
 import Data.IORef (IORef, modifyIORef')
+import Distribution.PackageDescription (PackageDescription)
 
 import Hix.Class.Map (nFromKeys)
 import Hix.Data.Monad (M)
+import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Version)
 import Hix.Managed.Cabal.Changes (SolverPlan)
@@ -16,6 +18,7 @@ data CabalHandlers =
   CabalHandlers {
     solveForVersion :: SolverState -> M (Maybe SolverPlan),
     installedVersion :: PackageName -> Maybe Version,
+    sourcePackage :: PackageId -> Maybe PackageDescription,
     sortMutations :: ∀ a . [DepMutation a] -> M [DepMutation a]
   }
 
@@ -24,6 +27,7 @@ handlersNull =
   CabalHandlers {
     solveForVersion = \ _ -> pure Nothing,
     installedVersion = const Nothing,
+    sourcePackage = const Nothing,
     sortMutations = pure
   }
 

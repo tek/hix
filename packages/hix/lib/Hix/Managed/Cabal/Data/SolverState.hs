@@ -22,12 +22,13 @@ import Hix.Managed.Data.Mutable (MutableDep, depName)
 
 data SolverFlags =
   SolverFlags {
-    allowNewer :: Bool
+    allowNewer :: Bool,
+    forceRevisions :: Bool
   }
   deriving stock (Eq, Show, Generic)
 
 instance Default SolverFlags where
-  def = SolverFlags {allowNewer = False}
+  def = SolverFlags {allowNewer = False, forceRevisions = False}
 
 flagAllowNewer :: DepResolverParams -> DepResolverParams
 flagAllowNewer =

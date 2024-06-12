@@ -20,6 +20,7 @@ import Hix.Managed.Cabal.Installed (installedVersion)
 import qualified Hix.Managed.Cabal.Resources as SolveResources
 import Hix.Managed.Cabal.Solve (solveWithCabal)
 import Hix.Managed.Cabal.Sort (sortMutations)
+import Hix.Managed.Cabal.Source (sourcePackage)
 import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Handlers.Cabal (CabalHandlers (..))
@@ -37,6 +38,7 @@ handlersWith trans cabalConf oldest packages ghc = do
   pure CabalHandlers {
     solveForVersion = solveWithCabal solveResources {solverParams},
     installedVersion = installedVersion solveResources.installedPkgIndex,
+    sourcePackage = sourcePackage solveResources.sourcePkgDb,
     sortMutations = sortMutations solveResources
   }
   where

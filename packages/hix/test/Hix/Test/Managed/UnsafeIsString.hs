@@ -18,6 +18,7 @@ import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (SourceHash (SourceHash), Version)
 import qualified Hix.Data.VersionBounds
 import Hix.Data.VersionBounds (VersionBounds (VersionBounds), fromLower, unsafeVersionBoundsFromRange, versionBounds)
+import Hix.Managed.Cabal.Data.SourcePackage (SourcePackageId (..))
 import Hix.Managed.Data.Constraints (MutationConstraints (mutation))
 import Hix.Managed.Data.Mutable (MutableDep, unsafeMutableDep)
 import qualified Hix.Managed.Data.MutableId
@@ -71,3 +72,10 @@ instance IsString (PackageName, MutationConstraints) where
     (package, mempty {mutation = unsafeVersionBoundsFromRange version})
     where
       Dep {package, version} = fromString s
+
+instance IsList SourcePackageId where
+  type Item SourcePackageId = Dep
+
+  fromList s = SourcePackageId {deps = fromList s, description = Nothing}
+
+  toList = (.deps)

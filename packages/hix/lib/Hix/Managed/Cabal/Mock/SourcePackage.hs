@@ -3,39 +3,42 @@ module Hix.Managed.Cabal.Mock.SourcePackage where
 import qualified Data.Map.Strict as Map
 import Distribution.Client.Types (PackageLocation (LocalTarballPackage), SourcePackageDb (..), UnresolvedSourcePackage)
 import Distribution.PackageDescription (
+  BuildInfo (targetBuildDepends),
   CondTree (..),
   Library (libBuildInfo),
   LibraryVisibility (LibraryVisibilityPublic),
   PackageDescription (..),
   emptyLibrary,
-  emptyPackageDescription, BuildInfo (targetBuildDepends),
+  emptyPackageDescription,
   )
 import Distribution.Simple (Version)
 import qualified Distribution.Solver.Types.PackageIndex as PackageIndex
 import Distribution.Solver.Types.PackageIndex (PackageIndex)
-import Distribution.Solver.Types.SourcePackage (SourcePackage (..))
+import qualified Distribution.Solver.Types.SourcePackage as Cabal
 import Distribution.Types.GenericPackageDescription (GenericPackageDescription (..), emptyGenericPackageDescription)
 import Distribution.Types.Library (libVisibility)
 import Exon (exon)
 
-import Hix.Class.Map (nGet, nKeys, nMap, nTo1, nTransform, nVia, (!!))
+import Hix.Class.Map (nGet, nKeys, nMap, nTo1, nTransform, (!!))
 import qualified Hix.Data.Dep as Dep
 import Hix.Data.Dep (Dep)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
 import Hix.Data.PackageName (LocalPackage (LocalPackage), PackageName, localPackageName)
-import Hix.Managed.Cabal.Data.SourcePackage (SourcePackageDeps, SourcePackageVersions, SourcePackages)
+import Hix.Managed.Cabal.Data.SourcePackage (SourcePackage, SourcePackageId (..), SourcePackageVersions, SourcePackages)
 import qualified Hix.Managed.Data.ManagedPackage as ManagedPackage
 import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Monad (noteClient)
 
-allDeps :: [Dep] -> SourcePackageDeps -> SourcePackageDeps
-allDeps deps = nVia (fmap (deps ++))
+allDeps :: [Dep] -> SourcePackage -> SourcePackage
+allDeps deps =
+  nMap \ p -> p {deps = deps ++ p.deps}
+  where
 
-allDep :: Dep -> SourcePackageDeps -> SourcePackageDeps
-allDep dep = nVia (fmap (dep :))
+allDep :: Dep -> SourcePackage -> SourcePackage
+allDep = allDeps . pure
 
 sourcePackageVersions :: SourcePackages -> SourcePackageVersions
 sourcePackageVersions = nMap (sort . nKeys)
@@ -59,12 +62,12 @@ queryPackagesLatest packages =
 -- | This _must_ have the dependencies in both 'targetBuildDepends' and 'condTreeConstraints', otherwise they will be
 -- ignored or deleted depending on what resolver params are used.
 -- This is also evidenced by looking at a parsed Cabal file, see @CabalTest@.
-mockSourcePackage :: PackageName -> Version -> [Dep] -> UnresolvedSourcePackage
-mockSourcePackage name version deps =
-  SourcePackage {
+mockSourcePackage :: PackageName -> Version -> SourcePackageId -> UnresolvedSourcePackage
+mockSourcePackage name version SourcePackageId {description, deps} =
+  Cabal.SourcePackage {
     srcpkgPackageId = cabalId,
     srcpkgDescription = emptyGenericPackageDescription {
-      packageDescription = emptyPackageDescription {
+      packageDescription = (fromMaybe emptyPackageDescription description) {
         package = cabalId
       },
       condLibrary = Just library
@@ -97,7 +100,9 @@ managedSourcePackageVersions =
 
 managedSourcePackage :: ManagedPackage -> UnresolvedSourcePackage
 managedSourcePackage package =
-  mockSourcePackage (localPackageName package.package) package.version (ManagedPackage.deps package)
+  mockSourcePackage (localPackageName package.package) package.version pid
+  where
+    pid = SourcePackageId {deps = ManagedPackage.deps package, description = Nothing}
 
 managedPackageIndex :: Packages ManagedPackage -> PackageIndex UnresolvedSourcePackage
 managedPackageIndex packages =

@@ -91,6 +91,7 @@ library
       Hix.Managed.Cabal.Resources
       Hix.Managed.Cabal.Solve
       Hix.Managed.Cabal.Sort
+      Hix.Managed.Cabal.Source
       Hix.Managed.Cabal.Targets
       Hix.Managed.Constraints
       Hix.Managed.Data.BuildConfig

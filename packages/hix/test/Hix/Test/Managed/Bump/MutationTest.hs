@@ -1,8 +1,8 @@
 module Hix.Test.Managed.Bump.MutationTest where
 
 import qualified Data.Text as Text
+import Distribution.Types.PackageDescription (emptyPackageDescription, customFieldsPD)
 import Exon (exon)
-import Hedgehog ((===))
 import Test.Tasty (TestTree, testGroup)
 
 import Hix.Data.Error (Error (Fatal))
@@ -10,7 +10,7 @@ import Hix.Data.Version (Versions)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
-import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
+import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages, description)
 import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectStateProto
@@ -19,7 +19,7 @@ import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
-import Hix.Test.Hedgehog (eqLines)
+import Hix.Test.Hedgehog (eqLines, listEqTail)
 import qualified Hix.Test.Managed.Run
 import Hix.Test.Managed.Run (Result (Result), TestParams (..), bumpTest, testParams)
 import Hix.Test.Utils (UnitTest, unitTest)
@@ -32,7 +32,9 @@ packages =
     "direct2",
     "direct3",
     "direct4",
-    "direct5"
+    "direct5",
+    "direct6",
+    "direct7"
   ])]
 
 installed :: InstalledPackages
@@ -43,55 +45,80 @@ installed =
     ("direct2-1.0.1", []),
     ("direct3-1.0.1", []),
     ("direct4-1.0.1", []),
-    ("direct5-1.0.1", [])
+    ("direct5-1.0.1", []),
+    ("direct6-1.0.1", []),
+    ("direct7-1.0.1", ["transitive1-1.0.1"]),
+    ("transitive1-1.0.1", ["direct6-1.0.1"])
   ]
 
 available :: SourcePackages
 available =
-  [
-    ("base", [
-      ([4, 11, 0, 0], []),
-      ([4, 12, 0, 0], []),
-      ([4, 13, 0, 0], [])
-    ]),
-    ("direct1", [
-      ([1, 0, 1], []),
-      ([1, 1, 1], []),
-      ([1, 2, 1], ["direct2 ==1.2.1"])
-    ]),
-    ("direct2", [
-      ([1, 0, 1], []),
-      ([1, 1, 1], []),
-      ([1, 2, 1], [])
-    ]),
-    ("direct3", [
-      ([1, 0, 1], []),
-      ([1, 1, 1], []),
-      ([1, 2, 1], [])
-    ]),
-    ("direct4", [
-      ([1, 0, 1], []),
-      ([1, 1, 1], []),
-      ([1, 2, 1], [])
-    ]),
-    ("direct5", [
-      ([1, 0, 1], []),
-      ([1, 1, 1], []),
-      ([1, 2, 1], ["direct4 <1.2"])
-    ])
-  ]
+  pkgs
+  where
+    pkgs =
+      [
+        ("base", [
+          ([4, 11, 0, 0], []),
+          ([4, 12, 0, 0], []),
+          ([4, 13, 0, 0], [])
+        ]),
+        ("direct1", [
+          ([1, 0, 1], []),
+          ([1, 1, 1], []),
+          ([1, 2, 1], ["direct2 ==1.2.1"])
+        ]),
+        ("direct2", [
+          ([1, 0, 1], []),
+          ([1, 1, 1], []),
+          ([1, 2, 1], [])
+        ]),
+        ("direct3", [
+          ([1, 0, 1], []),
+          ([1, 1, 1], []),
+          ([1, 2, 1], [])
+        ]),
+        ("direct4", [
+          ([1, 0, 1], []),
+          ([1, 1, 1], []),
+          ([1, 2, 1], [])
+        ]),
+        ("direct5", [
+          ([1, 0, 1], []),
+          ([1, 1, 1], []),
+          ([1, 2, 1], ["direct4 <1.2"])
+        ]),
+        ("direct6", [
+          ([1, 0, 1], []),
+          ([1, 1, 1], [])
+        ]),
+        ("direct7", [
+          ([1, 0, 1], ["transitive1 <1.1"])
+        ]),
+        ("transitive1", [
+          ([1, 0, 1], ["direct6 <1.2"] {
+            description = Just (emptyPackageDescription {customFieldsPD = [("x-revision", "2")]})
+          })
+        ])
+      ]
 
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed, available}
 
 build :: Versions -> M BuildStatus
 build = \case
-  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, 1]), ("direct5", [1, 1, 1])] -> pure Success
-  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 2, 1]), ("direct4", [1, 0, 1]), ("direct5", [1, 1, 1])] -> pure Failure
-  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 1, 1])] -> pure Success
-  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 2, 1])] -> pure Success
-  -- second iteration
-  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 2, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 2, 1])] -> pure Failure
+  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 0, 1]), ("direct5", [1, 1, 1]), ("direct6", [1, 0, 1]), ("direct7", [1, 0, 1]), ("transitive1", [1, 0, 1])] -> pure Success
+
+  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 2, 1]), ("direct4", [1, 0, 1]), ("direct5", [1, 1, 1]), ("direct6", [1, 0, 1]), ("direct7", [1, 0, 1]), ("transitive1", [1, 0, 1])] -> pure Failure
+
+  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 1, 1]), ("direct6", [1, 0, 1]), ("direct7", [1, 0, 1]), ("transitive1", [1, 0, 1])] -> pure Success
+
+  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 2, 1]), ("direct6", [1, 0, 1]), ("direct7", [1, 0, 1]), ("transitive1", [1, 0, 1])] -> pure Success
+
+  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 0, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 2, 1]), ("direct6", [1, 1, 1]), ("direct7", [1, 0, 1]), ("transitive1", [1, 0, 1])] -> pure Success
+
+--   -- second iteration
+  [("base", [4, 12, 0, 0]), ("direct1", [1, 2, 1]), ("direct2", [1, 2, 1]), ("direct3", [1, 2, 1]), ("direct4", [1, 2, 1]), ("direct5", [1, 2, 1]), ("direct6", [1, 1, 1]), ("direct7", [1, 0, 1]), ("transitive1", [1, 0, 1])] -> pure Failure
+
   versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
 
 state :: ProjectStateProto
@@ -101,7 +128,8 @@ state =
       ("local1", [
         ("direct1", ">=0.1"),
         ("direct2", ">=0.1"),
-        ("direct4", "^>=1.0")
+        ("direct4", "^>=1.0"),
+        ("direct6", "<1.1")
       ])
     ],
     versions = [("fancy", [("direct4", "1.0.1")])],
@@ -141,6 +169,14 @@ stateFileTarget =
         lower = null;
         upper = "1.3";
       };
+      direct6 = {
+        lower = null;
+        upper = "1.2";
+      };
+      direct7 = {
+        lower = null;
+        upper = "1.1";
+      };
     };
   };
   versions = {
@@ -151,6 +187,8 @@ stateFileTarget =
       direct3 = "1.0.1";
       direct4 = "1.2.1";
       direct5 = "1.2.1";
+      direct6 = "1.1.1";
+      direct7 = "1.0.1";
     };
   };
   initial = {
@@ -174,6 +212,18 @@ stateFileTarget =
         version = "1.2.1";
         hash = "direct5-1.2.1";
       };
+      direct6 = {
+        version = "1.1.1";
+        hash = "direct6-1.1.1";
+      };
+      direct7 = {
+        version = "1.0.1";
+        hash = "direct7-1.0.1";
+      };
+      transitive1 = {
+        version = "1.0.1";
+        hash = "transitive1-1.0.1";
+      };
     };
   };
   resolving = false;
@@ -192,6 +242,8 @@ logTarget =
     📦 [34mdirect2[0m   1.2.1      ↕ >=0.1 -> [0.1, [32m1.3[0m]
     📦 [34mdirect3[0m   1.0.1      ↕ [no bounds] -> <[32m1.1[0m
     📦 [34mdirect5[0m   1.2.1      ↕ [no bounds] -> <[32m1.3[0m
+    📦 [34mdirect6[0m   1.1.1      ↕ <[31m1.1[0m -> <[32m1.2[0m
+    📦 [34mdirect7[0m   1.0.1      ↕ [no bounds] -> <[32m1.1[0m
 [35m[1m>>>[0m Updated versions:
     📦 [34mdirect4[0m   [31m1.0.1[0m -> [32m1.2.1[0m   ↕ [1.0, [31m1.1[0m] -> [1.0, [32m1.3[0m]
 |]
@@ -231,7 +283,7 @@ test_bumpMutationBasic :: UnitTest
 test_bumpMutationBasic = do
   Result {stateFile, log} <- bumpTest params bumpOptimizeMain
   eqLines stateFileTarget (renderRootExpr stateFile)
-  logTarget === drop 12 (reverse log)
+  listEqTail logTarget (reverse log)
   where
     params = (testParams False packages) {
       log = True,
