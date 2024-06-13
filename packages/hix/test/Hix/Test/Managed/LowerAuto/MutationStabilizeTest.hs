@@ -10,7 +10,7 @@ import Hix.Data.Version (SourceHash (SourceHash), Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
-import Hix.Managed.Data.LowerConfig (stabilize)
+import Hix.Managed.Data.LowerConfig (LowerConfig (stabilize))
 import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectStateProto

@@ -35,11 +35,9 @@ import qualified Hix.Managed.Data.StageState
 import Hix.Managed.Data.StageState (
   BuildResult (Finished, TimedOut),
   BuildStatus (Failure, Success),
-  StageState,
+  StageState (failed, iterations),
   buildStatus,
-  failed,
   initStageState,
-  iterations,
   justSuccess,
   )
 import qualified Hix.Managed.Handlers.Build

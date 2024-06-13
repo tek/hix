@@ -6,7 +6,7 @@ import Hedgehog ((===))
 
 import Hix.Class.Map ((!!))
 import Hix.Data.Error (Error (Fatal))
-import Hix.Data.Options (envs, readUpperBounds)
+import Hix.Data.Options (ProjectOptions (envs, readUpperBounds))
 import qualified Hix.Data.Overrides
 import Hix.Data.Overrides (Override (Override))
 import Hix.Data.Version (SourceHash (SourceHash), Versions)
@@ -27,7 +27,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines, listEqZip)
-import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams, nosortOptions)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, nosortOptions, testParams)
 import Hix.Test.Utils (UnitTest)
 
 packages :: Packages ManagedPackageProto

@@ -1,7 +1,7 @@
 module Hix.Test.Managed.Bump.MutationTest where
 
 import qualified Data.Text as Text
-import Distribution.Types.PackageDescription (emptyPackageDescription, customFieldsPD)
+import Distribution.Types.PackageDescription (customFieldsPD, emptyPackageDescription)
 import Exon (exon)
 import Test.Tasty (TestTree, testGroup)
 
@@ -10,7 +10,7 @@ import Hix.Data.Version (Versions)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
-import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages, description)
+import Hix.Managed.Cabal.Data.SourcePackage (SourcePackageId (description), SourcePackages)
 import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectStateProto

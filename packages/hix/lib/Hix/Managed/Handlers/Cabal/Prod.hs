@@ -15,7 +15,7 @@ import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, GhcDb)
 import qualified Hix.Managed.Cabal.Data.SolveResources as SolveResources
-import Hix.Managed.Cabal.Data.SolveResources (SolveResources (SolveResources), solverParams)
+import Hix.Managed.Cabal.Data.SolveResources (SolveResources (SolveResources, solverParams))
 import Hix.Managed.Cabal.Installed (installedVersion)
 import qualified Hix.Managed.Cabal.Resources as SolveResources
 import Hix.Managed.Cabal.Solve (solveWithCabal)

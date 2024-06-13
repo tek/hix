@@ -9,7 +9,7 @@ import qualified Hix.Data.VersionBounds
 import Hix.Data.VersionBounds (fromLower, fromUpper)
 import qualified Hix.Managed.Cabal.Data.SolverState
 import Hix.Managed.Cabal.Data.SolverState (SolverState (SolverState), solverState, updateSolverState)
-import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints), mutation)
+import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints, mutation))
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))

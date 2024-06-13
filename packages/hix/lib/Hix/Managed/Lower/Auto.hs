@@ -15,7 +15,7 @@ import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import Hix.Managed.Data.Query (Query (Query))
 import qualified Hix.Managed.Data.QueryDep
-import Hix.Managed.Data.StageContext (StageContext (StageContext), query)
+import Hix.Managed.Data.StageContext (StageContext (StageContext, query))
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
 import Hix.Managed.Diff (reifyVersionChanges)
 import Hix.Managed.Flow (Flow, evalStageState, runStage_, stageError)
