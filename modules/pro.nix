@@ -87,7 +87,7 @@
 
   };
 
-  ghci.ghcOptions = ["-Werror"] ++ lib.optional (util.minGhcDev "9.8") "-Wno-show-error-context";
+  ghci.ghcOptions = ["-Werror"] ++ lib.optional (util.minGhcDev "9.8") "-fno-show-error-context";
 
   hackage.setChangelogVersion = true;
 

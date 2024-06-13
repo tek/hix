@@ -17,7 +17,7 @@
     check 'result/bin/root' 'string' 'Running the main package produced the wrong output'
 
     target='fourmolu 0.14.0.0
-using ghc-lib-parser 9.6.4.20240109'
+using ghc-lib-parser 9.6.5.20240423'
     check 'nix develop -c fourmolu --version' $target 'Fourmolu version output wrong'
   '';
 }

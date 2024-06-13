@@ -232,7 +232,7 @@ library
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
-    , aeson >=2.0 && <2.2
+    , aeson >=2.0 && <2.3
     , base ==4.*
     , bytestring
     , cabal-install
@@ -392,7 +392,7 @@ test-suite hix-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
-    , aeson >=2.0 && <2.2
+    , aeson >=2.0 && <2.3
     , base ==4.*
     , exon >=1.4 && <1.7
     , extra ==1.7.*
