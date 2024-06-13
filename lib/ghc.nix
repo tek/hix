@@ -17,7 +17,7 @@
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     isWanted = p: !(p ? pname && lib.elem p.pname unwanted);
     targetDeps = builtins.filter isWanted (lib.concatMap bInputs (map (p: ghc.${p}) targets));
-  in lib.optionals env.localDeps targetDeps ++ extraHs env ghc ++ [ghc.cabal-install];
+  in lib.optionals env.localDeps targetDeps ++ extraHs env ghc;
 
   solverGhc = env: let
     overrides =
