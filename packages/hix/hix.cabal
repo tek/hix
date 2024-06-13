@@ -334,6 +334,7 @@ test-suite hix-test
       Hix.Test.Managed.BuildOutputTest
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
+      Hix.Test.Managed.BumpNativeTest
       Hix.Test.Managed.DiffTest
       Hix.Test.Managed.LowerAuto.MutationOptimizeTest
       Hix.Test.Managed.LowerAuto.MutationStabilizeTest

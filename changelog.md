@@ -1,6 +1,8 @@
 # Unreleased
 
 * Add a reusable workflow for managed bounds updates.
+* Parse Nix json output messages to diagnose problems; add overrides for installed packages that fail with a bounds
+  error printed by Cabal.
 
 # 0.7.0: Hix Unbound: Majors Apart
 
