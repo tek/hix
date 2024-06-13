@@ -40,7 +40,7 @@ newtype BuildTimeout =
 data EnvBuilder =
   EnvBuilder {
     cabal :: CabalHandlers,
-    buildWithState :: Versions -> [PackageId] -> M (Overrides, BuildResult)
+    buildWithState :: Bool -> Versions -> [PackageId] -> M (BuildResult, (Overrides, Set PackageId))
   }
 
 data Builder =
@@ -61,16 +61,19 @@ data BuildHandlers =
     latestVersion :: PackageName -> M (Maybe Version)
   }
 
-testBuilder :: (Versions -> [PackageId] -> M (Overrides, BuildResult)) -> (Builder -> M a) -> M a
+testBuilder ::
+  (Bool -> Versions -> [PackageId] -> M (BuildResult, (Overrides, Set PackageId))) ->
+  (Builder -> M a) ->
+  M a
 testBuilder buildWithState use =
   use Builder {withEnvBuilder = \ cabal _ _ useE -> useE EnvBuilder {cabal, buildWithState}}
 
 versionsBuilder :: HackageHandlers -> (Versions -> M BuildResult) -> (Builder -> M a) -> M a
 versionsBuilder hackage build =
-  testBuilder \ versions overrideVersions -> do
+  testBuilder \ _ versions overrideVersions -> do
     overrides <- packageOverrides hackage overrideVersions
     status <- build versions
-    pure (overrides, status)
+    pure (status, (overrides, mempty))
 
 handlersNull :: BuildHandlers
 handlersNull =
@@ -78,7 +81,7 @@ handlersNull =
     stateFile = StateFileHandlers.handlersNull,
     report = Report.handlersNull,
     cabal = \ _ _ -> pure Solve.handlersNull,
-    withBuilder = testBuilder \ _ _ -> pure (mempty, BuildFailure UnknownFailure),
+    withBuilder = testBuilder \ _ _ _ -> pure (BuildFailure UnknownFailure, mempty),
     versions = \ _ -> pure [],
     latestVersion = \ _ -> pure Nothing
   }

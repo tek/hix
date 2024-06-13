@@ -1,12 +1,13 @@
 module Hix.Managed.Data.StageState where
 
+import Hix.Data.PackageId (PackageId)
+import Hix.Managed.Build.NixOutput (PackageDerivation)
 import Hix.Managed.Data.Initial (Initial (Initial))
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))
 import Hix.Managed.Data.Mutation (DepMutation)
 import Hix.Managed.Data.MutationState (MutationState)
-import Hix.Data.PackageId (PackageId)
 
 data BuildStatus =
   Success
@@ -22,9 +23,9 @@ justSuccess a = \case
 data BuildFailure =
   UnknownFailure
   |
-  PackageFailure PackageId
+  PackageFailure (NonEmpty PackageDerivation)
   |
-  TimeoutFailure (Maybe PackageId)
+  TimeoutFailure [PackageId]
   deriving stock (Eq, Show, Generic)
 
 data BuildResult =
@@ -70,6 +71,7 @@ data StageState a s =
     success :: Map MutableDep BuildSuccess,
     failed :: [DepMutation a],
     state :: MutationState,
+    revisions :: Set PackageId,
     iterations :: Natural,
     ext :: s
   }
@@ -77,4 +79,4 @@ data StageState a s =
 
 initStageState :: Initial MutationState -> s -> StageState a s
 initStageState (Initial state) ext =
-  StageState {success = [], failed = [], iterations = 0, ..}
+  StageState {success = [], failed = [], revisions = [], iterations = 0, ..}

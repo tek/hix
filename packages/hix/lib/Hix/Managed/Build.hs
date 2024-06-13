@@ -2,6 +2,7 @@ module Hix.Managed.Build where
 
 import Control.Monad (foldM)
 import qualified Data.Map.Strict as Map
+import qualified Data.Text as Text
 import Distribution.Pretty (Pretty)
 import Exon (exon)
 import Text.PrettyPrint (vcat)
@@ -12,10 +13,11 @@ import Hix.Data.EnvName (EnvName (EnvName))
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
 import qualified Hix.Data.PackageId
-import Hix.Data.PackageId (PackageId (PackageId))
+import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Version, Versions)
 import Hix.Data.VersionBounds (VersionBounds)
 import qualified Hix.Log as Log
+import Hix.Managed.Build.NixOutput (PackageDerivation (..))
 import Hix.Managed.Build.Solve (solveMutation)
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Config (isNonReinstallableDep, isReinstallableId)
@@ -64,19 +66,22 @@ logBuildInputs env description overrides = do
 
 logBuildResult :: Text -> BuildResult -> M ()
 logBuildResult description result =
-  Log.info [exon|Build with ##{description} #{describeResult result}#{describePackage result}|]
+  Log.info [exon|Build with ##{description} #{describeResult result}#{describePackages result}|]
   where
     describeResult = \case
       BuildSuccess -> "succeeded"
       BuildFailure (TimeoutFailure _) -> "timed out"
       BuildFailure _ -> "failed"
 
-    describePackage = \case
-      BuildFailure (TimeoutFailure (Just p)) -> packageFragment p
-      BuildFailure (PackageFailure p) -> packageFragment p
+    describePackages = \case
+      BuildFailure (TimeoutFailure pkgs) | not (null pkgs) -> packageFragment pkgs
+      BuildFailure (PackageFailure pkgs) -> packageFragment ((.package) <$> toList pkgs)
       _ -> ""
 
-    packageFragment PackageId {name} = [exon| in #{color colors.blue (showP name)}|]
+    packageFragment pkgs =
+      [exon| in #{names}|]
+      where
+        names = Text.intercalate ", " (color colors.blue . showP . (.name) <$> pkgs)
 
 updateMutationState ::
   (Version -> VersionBounds -> VersionBounds) ->
@@ -97,14 +102,15 @@ buildVersions ::
   EnvBuilder ->
   EnvContext ->
   Text ->
+  Bool ->
   Versions ->
   [PackageId] ->
-  M (Overrides, BuildStatus)
-buildVersions builder context description versions overrideVersions = do
+  M (Overrides, Set PackageId, BuildStatus)
+buildVersions builder context description allowRevisions versions overrideVersions = do
   logBuildInputs context.env description reinstallable
-  (overrides, result) <- builder.buildWithState versions reinstallable
+  (result, (overrides, revisions)) <- builder.buildWithState allowRevisions versions reinstallable
   logBuildResult description result
-  pure (overrides, buildStatus result)
+  pure (overrides, revisions, buildStatus result)
   where
     reinstallable = filter isReinstallableId overrideVersions
 
@@ -112,25 +118,30 @@ buildConstraints ::
   EnvBuilder ->
   EnvContext ->
   Text ->
+  Bool ->
+  Set PackageId ->
   SolverState ->
-  M (Maybe (Versions, Overrides, BuildStatus))
-buildConstraints builder context description state =
-  solveMutation builder.cabal context.deps state >>= traverse \ changes -> do
-    (overrides, status) <- buildVersions builder context description changes.versions changes.overrides
-    pure (changes.versions, overrides, status)
+  M (Maybe (Versions, Overrides, Set PackageId, BuildStatus))
+buildConstraints builder context description allowRevisions prevRevisions state =
+  solveMutation builder.cabal context.deps prevRevisions state >>= traverse \ changes -> do
+    (overrides, revisions, status) <-
+      buildVersions builder context description allowRevisions changes.versions changes.overrides
+    pure (changes.versions, overrides, prevRevisions <> revisions, status)
 
 buildMutation ::
   EnvBuilder ->
   EnvContext ->
   MutationState ->
+  Set PackageId ->
   BuildMutation ->
-  M (Maybe MutationState)
-buildMutation builder context state BuildMutation {description, solverState, updateBound} =
-  result <$> buildConstraints builder context description solverState
+  M (Maybe (MutationState, Set PackageId))
+buildMutation builder context state prevRevisions BuildMutation {description, solverState, updateBound} =
+  result <$> buildConstraints builder context description True prevRevisions solverState
   where
     result = \case
-      Just (versions, overrides, status) ->
-        justSuccess (updateMutationState updateBound versions overrides state) status
+      Just (versions, overrides, revisions, status) -> do
+        new <- justSuccess (updateMutationState updateBound versions overrides state) status
+        pure (new, revisions)
       Nothing -> Nothing
 
 logMutationResult ::
@@ -138,9 +149,9 @@ logMutationResult ::
   MutationResult s ->
   M ()
 logMutationResult package = \case
-  MutationSuccess candidate True _ _ ->
+  MutationSuccess {candidate, changed = True} ->
     Log.verbose [exon|Build succeeded for #{showP candidate}|]
-  MutationSuccess _ False _ _ ->
+  MutationSuccess {changed = False} ->
     Log.verbose [exon|Build is up to date for '##{package}'|]
   MutationKeep ->
     Log.verbose [exon|No better version found for '##{package}'|]
@@ -164,7 +175,7 @@ validateMutation envBuilder context handlers stageState mutation = do
       = pure MutationKeep
       | otherwise
       = handlers.process stageState.ext mutation build
-    build = buildMutation envBuilder context stageState.state
+    build = buildMutation envBuilder context stageState.state stageState.revisions
 
 convergeMutations ::
   Pretty a =>

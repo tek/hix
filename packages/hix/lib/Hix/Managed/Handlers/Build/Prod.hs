@@ -1,8 +1,12 @@
 module Hix.Managed.Handlers.Build.Prod where
 
 import Control.Monad.Catch (catch)
+import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ask, asks)
+import Control.Monad.Trans.State.Strict (StateT (runStateT), gets, modify')
 import qualified Data.ByteString.Char8 as ByteString
+import Data.List.Extra (firstJust)
+import qualified Data.Set as Set
 import Exon (exon)
 import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
@@ -26,24 +30,27 @@ import System.Process.Typed (
   )
 import System.Timeout (timeout)
 
+import Hix.Class.Map (nInsert, nMember)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Error (Error (Fatal))
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M (M))
 import Hix.Data.Overrides (Overrides)
+import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
 import Hix.Error (pathText)
 import Hix.Hackage (latestVersionHackage, versionsHackage)
 import qualified Hix.Log as Log
-import Hix.Managed.Build.NixOutput (OutputResult (OutputResult), outputParse, runOutputState)
+import Hix.Managed.Build.NixOutput (OutputResult (OutputResult), PackageDerivation (..), outputParse, runOutputState)
+import Hix.Managed.Build.NixOutput.Analysis (analyzeLog)
 import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.EnvConfig (EnvConfig)
 import qualified Hix.Managed.Data.EnvContext
-import Hix.Managed.Data.EnvContext (EnvContext (EnvContext))
+import Hix.Managed.Data.EnvContext (EnvContext)
 import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Initial (Initial)
@@ -60,10 +67,11 @@ import qualified Hix.Managed.Handlers.Hackage.Prod as HackageHandlers
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import qualified Hix.Managed.Handlers.StateFile.Prod as StateFileHandlers
-import Hix.Managed.Overrides (packageOverrides)
+import Hix.Managed.Overrides (packageOverride, packageOverrides)
 import Hix.Managed.Path (rootOrCwd)
 import Hix.Managed.StateFile (writeBuildStateFor, writeInitialEnvState)
 import Hix.Monad (runMUsing, throwM, tryIOM, withTempDir)
+import Hix.Pretty (showP)
 
 data BuilderResources =
   BuilderResources {
@@ -174,9 +182,9 @@ runProc buildConf pipeHandler conf =
   where
     interact prc =
       limit do
-        err <- traverse pipeHandler (getStderr prc)
+        output <- traverse pipeHandler (getStderr prc)
         res <- waitExitCode prc
-        pure (err, res)
+        pure (output, res)
 
     limit | Just t <- buildConf.timeout
           , t > 0
@@ -209,7 +217,7 @@ buildTarget buildConf root env target = do
   runProc buildConf (runOutput appRes) conf >>= \case
     Just (output, code) ->
       outputResult output code
-    Nothing -> pure (BuildFailure (TimeoutFailure Nothing))
+    Nothing -> pure (BuildFailure (TimeoutFailure []))
   where
     runOutput appRes handle =
       runMUsing appRes (runOutputState (outputLines outputParse handle))
@@ -222,16 +230,50 @@ buildTarget buildConf root env target = do
       | otherwise
       = OutputParse
 
+buildAdaptive ::
+  EnvBuilderResources ->
+  Bool ->
+  LocalPackage ->
+  StateT (Overrides, Set PackageId) M BuildResult
+buildAdaptive EnvBuilderResources {global, context} allowRevisions target = do
+  build
+  where
+    build = do
+      overrides <- gets fst
+      result <- lift do
+        writeBuildStateFor "current build" global.stateFileHandlers global.root context overrides
+        buildTarget global.buildConfig global.root context.env target
+      checkResult overrides result
+
+    checkResult overrides result
+      | allowRevisions
+      , BuildFailure (PackageFailure pkgs) <- result
+      , Just package <- firstJust logFailure (toList pkgs)
+      , not (nMember package.name overrides)
+      = retry package
+      | otherwise
+      = pure result
+
+    logFailure PackageDerivation {package, log} =
+      package <$ analyzeLog log
+
+    retry broken = do
+      lift $ Log.verbose [exon|Installed package failed with bounds error, retrying with override: #{showP broken}|]
+      (package, newOverride) <- lift $ packageOverride global.hackage broken
+      modify' \ (overrides, revisions) -> (nInsert package newOverride overrides, Set.insert broken revisions)
+      build
+
 buildWithState ::
   EnvBuilderResources ->
+  Bool ->
   Versions ->
   [PackageId] ->
-  M (Overrides, BuildResult)
-buildWithState EnvBuilderResources {global, context = context@EnvContext {env, targets}} _ overrideVersions = do
-  overrides <- packageOverrides global.hackage overrideVersions
-  writeBuildStateFor "current build" global.stateFileHandlers global.root context overrides
-  result <- firstMTargets BuildSuccess buildUnsuccessful (buildTarget global.buildConfig global.root env) targets
-  pure (overrides, result)
+  M (BuildResult, (Overrides, Set PackageId))
+buildWithState builder allowRevisions _ overrideVersions = do
+  overrides <- packageOverrides builder.global.hackage overrideVersions
+  let build = buildAdaptive builder allowRevisions
+      s0 = (overrides, Set.empty)
+  runStateT (firstMTargets BuildSuccess buildUnsuccessful build builder.context.targets) s0
 
 -- | This used to have the purpose of reading an updated GHC package db using the current managed state, but this has
 -- become obsolete.

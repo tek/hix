@@ -14,7 +14,7 @@ data PackageId =
     name :: PackageName,
     version :: Version
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Show, Ord, Generic)
 
 renderPackage :: PackageId -> Text
 renderPackage PackageId {..} =

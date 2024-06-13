@@ -1,5 +1,6 @@
 module Hix.Managed.Build.Solve where
 
+import Data.List (partition)
 import qualified Data.Set as Set
 import Distribution.PackageDescription (customFieldsPD)
 import Distribution.Pretty (pretty)
@@ -22,7 +23,7 @@ import Hix.Managed.Data.EnvContext (EnvDeps)
 import Hix.Managed.Data.Mutable (depName)
 import qualified Hix.Managed.Handlers.Cabal
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
-import Hix.Pretty (showPL, prettyL)
+import Hix.Pretty (prettyL, showPL)
 
 logNonReinstallable :: NonEmpty PackageId -> M ()
 logNonReinstallable ids =
@@ -49,24 +50,31 @@ processSolverPlan ::
   Bool ->
   CabalHandlers ->
   EnvDeps ->
+  Set PackageId ->
   SolverPlan ->
   M SolverChanges
-processSolverPlan forceRevisions cabal deps SolverPlan {..} = do
-  Log.debugP (hang "New project deps from solver:" 2 (pretty projectDeps) $$ "Revisions:" <+> prettyL revisions)
+processSolverPlan forceRevisions cabal deps prevRevisions SolverPlan {..} = do
+  Log.debugP $
+    hang "New project deps from solver:" 2 (pretty projectDeps) $$
+    "Forced revisions:" <+> prettyL forcedRevisions $$
+    "Reused revisions:" <+> prettyL reusedRevisions
   traverse_ logNonReinstallable nonReinstallable
   pure SolverChanges {versions, overrides, projectDeps}
   where
     projectDeps = nRestrictKeys mutablePIds versions
     versions = packageIdVersions (overrides ++ installed)
-    overrides = filter notLocal (changes ++ revisions)
-    (installed, revisions) = partitionEithers (checkRevision forceRevisions cabal <$> matching)
+    overrides = filter notLocal (changes ++ forcedRevisions ++ reusedRevisions)
+    (reusedRevisions, installed) = partition (flip Set.member prevRevisions) noForcedRevisions
+    (noForcedRevisions, forcedRevisions) = partitionEithers (checkRevision forceRevisions cabal <$> matching)
     notLocal PackageId {name} = not (isLocalPackage deps.local name)
     mutablePIds = Set.fromList (depName <$> Set.toList deps.mutable)
 
+-- TODO probably best to store the revisions in the SolverState
 solveMutation ::
   CabalHandlers ->
   EnvDeps ->
+  Set PackageId ->
   SolverState ->
   M (Maybe SolverChanges)
-solveMutation cabal deps state =
-  traverse (processSolverPlan state.flags.forceRevisions cabal deps) =<< cabal.solveForVersion state
+solveMutation cabal deps prevRevisions state =
+  traverse (processSolverPlan state.flags.forceRevisions cabal deps prevRevisions) =<< cabal.solveForVersion state

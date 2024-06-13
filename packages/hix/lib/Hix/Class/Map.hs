@@ -713,3 +713,11 @@ nWithoutKeys ::
   map
 nWithoutKeys keys =
   nVia (`Map.withoutKeys` keys)
+
+nMember ::
+  NMap map k v sort =>
+  k ->
+  map ->
+  Bool
+nMember k =
+  Map.member k . nGet

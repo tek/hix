@@ -29,6 +29,7 @@
       };
     };
 
+    # TODO remove
     internal.hixCli.dev = true;
 
   });

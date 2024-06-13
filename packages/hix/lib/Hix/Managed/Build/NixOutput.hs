@@ -5,9 +5,10 @@ import Control.Monad.Trans.State.Strict (StateT (runStateT), modify', state)
 import qualified Data.Aeson as Aeson
 import Data.Aeson (FromJSON, Value (String), withObject, (.:), (.:?))
 import qualified Data.ByteString.Char8 as ByteString
-import Data.List.Extra (firstJust)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
+import qualified Data.Sequence as Seq
+import Data.Sequence ((|>))
 import Distribution.Compat.CharParsing (
   CharParsing (char, notChar, string),
   Parsing (notFollowedBy, try),
@@ -23,18 +24,20 @@ import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId (..))
 import qualified Hix.Log as Log
-import Hix.Maybe (justIf)
 import Hix.Pretty (showP)
 
-newtype Derivation =
-  Derivation { path :: Text }
+data Derivation =
+  Derivation {
+    path :: Text,
+    log :: (Seq Text, Seq Text)
+  }
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord)
 
 data PackageDerivation =
   PackageDerivation {
     package :: PackageId,
-    success :: Bool
+    success :: Bool,
+    log :: [Text]
   }
   deriving stock (Eq, Show, Generic)
 
@@ -58,15 +61,13 @@ data OutputState =
 
 data OutputResult =
   OutputResult {
-    failedPackage :: Maybe PackageId
+    failedPackages :: Maybe (NonEmpty PackageDerivation)
   }
   deriving stock (Eq, Show, Generic)
 
 outputResult :: OutputState -> OutputResult
 outputResult OutputState {finished} =
-  OutputResult {failedPackage = firstJust failedPackage finished}
-  where
-    failedPackage PackageDerivation {package, success} = justIf (not success) package
+  OutputResult {failedPackages = nonEmpty (filter (not . (.success)) finished)}
 
 runOutputState ::
   Monad m =>
@@ -132,11 +133,18 @@ instance Parsec StorePathName where
     string ".drv"
     pure (StorePathName (pid0 <> pid))
 
+addLogMessage :: Text -> Derivation -> Derivation
+addLogMessage message Derivation {log = (current, prev), ..} =
+  Derivation {log = updated, ..}
+  where
+    updated | Seq.length current > 100 = (pure message, current)
+            | otherwise = (current |> message, prev)
+
 finish :: Bool -> Derivation -> Either String PackageDerivation
-finish success Derivation {path} = do
+finish success Derivation {path, log = (current, prev)} = do
   StorePathName name <- eitherParsec (toString path)
   package <- PackageId.fromCabal <$> eitherParsec name
-  pure PackageDerivation {package, success}
+  pure PackageDerivation {package, success, log = toList (prev <> current)}
 
 tryFinish ::
   Maybe BuildsState ->
@@ -184,8 +192,8 @@ processResult aid rtype fields s
   , aid == buildsId
   = updateBuilds fields s
   | rtype == 101
-  , Left _ : _ <- fields
-  = s
+  , Left message : _ <- fields
+  = s {running = Map.adjust (addLogMessage message) aid s.running}
   | otherwise
   = s
 
@@ -194,12 +202,14 @@ processMessage ::
   NixAction ->
   StateT OutputState M ()
 processMessage _ = \case
-  NixResult {aid, rtype, fields} -> modify' (processResult aid rtype fields)
+  NixResult {aid, rtype, fields} -> do
+    -- lift (Log.debug (decodeUtf8 payload))
+    modify' (processResult aid rtype fields)
   NixStartBuilds i -> modify' \ s -> s {builds = Just BuildsState {id = i, done = 0, failed = 0, unassigned = []}}
   NixStart i path -> do
-    lift $ Log.debug [exon|Started build of #{path}|]
+    lift $ Log.debug [exon|Started build of #{path} (#{show i})|]
     modify' \ OutputState {running, ..} ->
-      OutputState {running = Map.insert i (Derivation path) running, ..}
+      OutputState {running = Map.insert i (Derivation path mempty) running, ..}
   NixStop i -> do
     result <- state \ OutputState {running, ..} -> do
       let (result, package, newBuilds) = tryFinish builds (running !? i)

@@ -11,6 +11,8 @@ import Hix.Managed.Data.Mutable (MutableVersions)
 import Hix.Managed.Data.StageState (BuildStatus (Failure))
 import Hix.Managed.Handlers.Build (EnvBuilder)
 
+-- | Passes 'False' to 'buildConstraints' to disable revisions, since this function is used to check whether the current
+-- configuration builds successful, and revisions modify the set of overrides on failure.
 buildVersions ::
   EnvBuilder ->
   EnvContext ->
@@ -18,8 +20,8 @@ buildVersions ::
   MutableVersions ->
   M BuildStatus
 buildVersions builder context description versions =
-  buildConstraints builder context description solver <&> \case
-    Just (_, _, status) -> status
+  buildConstraints builder context description False [] solver <&> \case
+    Just (_, _, _, status) -> status
     Nothing -> Failure
   where
     solver = solverState context.solverBounds context.deps (fromVersions exactVersion versions) def
