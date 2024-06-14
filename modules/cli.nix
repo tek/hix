@@ -68,7 +68,7 @@ in {
 
     ghc = {
       name = "hix";
-      compiler = "ghc94";
+      compiler = "ghc98";
       overrides = mkForce config.internal.hixCli.overrides;
       nixpkgs = config.inputs.nixpkgs;
       nixpkgsOptions = {};
