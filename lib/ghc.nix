@@ -16,7 +16,7 @@
     unwanted = if noLocalsInDeps then config.internal.packageNames else targets;
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     isWanted = p: !(p ? pname && lib.elem p.pname unwanted);
-    targetDeps = builtins.filter isWanted (lib.concatMap bInputs (map (p: ghc.${p}) targets));
+    targetDeps = lib.filter isWanted (lib.filter (a: a != null) (lib.concatMap bInputs (map (p: ghc.${p}) targets)));
   in lib.optionals env.localDeps targetDeps ++ extraHs env ghc;
 
   solverGhc = env: let
