@@ -133,12 +133,15 @@ in {
 
       lowPrio = {
 
-        legacyPackages = util.output.scopedEnvOutputs config.ghcVersions // util.output.envsApi config.envs // {
-          inherit config;
-          inherit (config.envs.dev.ghc) pkgs ghc;
-          ghc0 = config.envs.dev.ghc.vanillaGhc;
-          show-config = show-config.shell;
-        };
+        legacyPackages =
+          util.output.scopedEnvOutputs (["dev"] ++ config.ghcVersions) //
+          util.output.envsApi config.envs //
+          {
+            inherit config;
+            inherit (config.envs.dev.ghc) pkgs ghc;
+            ghc0 = config.envs.dev.ghc.vanillaGhc;
+            show-config = show-config.shell;
+          };
 
         apps = config.hackage.output.apps //
         basicApps //
