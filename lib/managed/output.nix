@@ -16,7 +16,7 @@
   wantChecks = config.managed.enable && config.managed.check;
 
   prefixedEnvDerivations = env:
-  lib.mapAttrs' (n: d: { name = "${env}-${n}"; value = d; }) config.envs.${env}.derivations;
+  lib.mapAttrs' (n: d: { name = "${env}-${n}"; value = d; }) (util.env.derivations "checks" env);
 
   checks =
     lib.optionalAttrs wantChecks

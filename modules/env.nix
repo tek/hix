@@ -153,12 +153,6 @@ let
     };
   };
 
-  ghc = config.ghc.ghc;
-
-  extraPackages = genAttrs global.output.extraPackages (n: ghc.${n});
-
-  localPackages = genAttrs (util.env.targets config) (n: ghc.${n} // { inherit ghc; });
-
   ghcidMod = if util.minGhc "9.4" config then config.ghc.pkgs.haskell.lib.dontCheck else id;
 
 in {
@@ -378,14 +372,6 @@ in {
       default = false;
     };
 
-    derivations = mkOption {
-      description = ''
-      The derivations for the local Cabal packages using this env's GHC, as well as the
-      [](#opt-general-output.extraPackages).
-      '';
-      type = lazyAttrsOf package;
-    };
-
     localPackage = mkOption {
       description = ''
         A function that takes override combinators and a derivation and returns a modified version of that derivation.
@@ -596,8 +582,6 @@ in {
 
       gen-overrides = mkDefault true;
     };
-
-    derivations = mkDefault (localPackages // extraPackages);
 
     hostPorts = util.mapListCatAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
 

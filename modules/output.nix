@@ -7,8 +7,6 @@ let
 
   showConfig = import ../lib/show-config.nix { inherit config lib util; };
 
-  libOutput = import ../lib/output.nix { inherit config lib util; };
-
   genOverrides = import ../lib/gen-overrides.nix { inherit config lib util; };
 
   showOverrides = import ../lib/show-overrides.nix { inherit config lib util; };
@@ -130,12 +128,12 @@ in {
       };
 
       basicEnvApps = optionalAttrs config.output.envApps {
-        env = util.mapListCatAttrs libOutput.envApps (lib.attrValues util.visibleAppEnvs);
+        env = util.mapListCatAttrs util.output.envApps (lib.attrValues util.visibleAppEnvs);
       };
 
       lowPrio = {
 
-        legacyPackages = libOutput.scopedEnvOutputs config.ghcVersions // libOutput.envsApi config.envs // {
+        legacyPackages = util.output.scopedEnvOutputs config.ghcVersions // util.output.envsApi config.envs // {
           inherit config;
           inherit (config.envs.dev.ghc) pkgs ghc;
           ghc0 = config.envs.dev.ghc.vanillaGhc;
@@ -145,8 +143,8 @@ in {
         apps = config.hackage.output.apps //
         basicApps //
         util.managed.output.apps //
-        libOutput.mainAppimageApp //
-        optionalAttrs config.output.commandApps { cmd = libOutput.commandApps config.commands; } //
+        util.output.mainAppimageApp //
+        optionalAttrs config.output.commandApps { cmd = util.output.commandApps config.commands; } //
         basicEnvApps //
         util.managed.output.gen
         ;
@@ -154,11 +152,11 @@ in {
       };
 
       highPrio = {
-        packages = libOutput.devOutputs // libOutput.prefixedInEnvs config.ghcVersions;
+        packages = util.output.devPackages // util.output.prefixedInEnvs "packages" config.ghcVersions;
 
         checks =
-          config.envs.dev.derivations //
-          optionalAttrs config.compat.enable (libOutput.prefixedInEnvs config.compat.versions) //
+          util.output.envOutputs "checks" "dev" //
+          optionalAttrs config.compat.enable (util.output.prefixedInEnvs "compat" config.compat.versions) //
           util.managed.output.checks
           ;
 
@@ -174,7 +172,7 @@ in {
         apps = let
           exposedCommands = lib.filterAttrs (_: c: c.expose) config.commands;
         in
-          libOutput.commandApps exposedCommands //
+          util.output.commandApps exposedCommands //
           {
             gen-cabal = app "${config.hpack.script}";
             gen-cabal-quiet = app "${config.hpack.scriptQuiet}";

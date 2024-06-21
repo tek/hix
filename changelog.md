@@ -3,6 +3,9 @@
 * Add a reusable workflow for managed bounds updates.
 * Parse Nix json output messages to diagnose problems; add overrides for installed packages that fail with a bounds
   error printed by Cabal.
+* Replace `envs.<env>.derivations` by per-output-category flags in `packages.<package>.expose` to control which packages
+  are included in outputs.
+  Added `dev` to the scoped envs to allow access to excluded derivations.
 
 # 0.7.0: Hix Unbound: Majors Apart
 

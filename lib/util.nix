@@ -221,6 +221,8 @@ let
 
     env = import ./env.nix { inherit util; };
 
+    output = import ./output.nix { inherit util; };
+
     hpack = import ./hpack/default.nix { inherit util; };
   };
 

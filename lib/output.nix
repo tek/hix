@@ -1,6 +1,6 @@
-{ lib, config, util, ... }:
+{util}:
 let
-  inherit (util) app;
+  inherit (util) app lib config;
 
   envCommand = import ./command.nix { inherit config util; };
 
@@ -68,21 +68,32 @@ let
     ghc = env.ghc;
   in withStatic ghc.ghc.${name} // { cross = cross ghc name; musl = nativeMusl ghc name; };
 
-  envOutputs = v: let
-    env = config.envs.${v};
-  in lib.mapAttrs (n: d: (withCross env n)) env.derivations;
+  envOutputs = purpose: envName: let
+    env = config.envs.${envName};
+    extra = n: d:
+    if lib.elem purpose ["checks" "compat"]
+    then d
+    else withCross env n;
+  in lib.mapAttrs extra (util.env.derivations purpose envName);
 
-  fullEnvOutputs = v: let
-    env = config.envs.${v};
-  in envOutputs v // util.attrsetMain (main: {
-    static = staticDrv env.derivations.${main};
-  }) // envExes env;
+  fullEnvOutputs = purpose: envName: let
+    env = config.envs.${envName};
+    drvs = util.env.derivations purpose envName;
+  in
+  envOutputs purpose envName //
+  util.attrsetMain (main: { static = staticDrv drvs.${main}; }) //
+  envExes env
+  ;
 
-  prefixedInEnv = v: lib.mapAttrs' (n: d: { name = "${v}-${n}"; value = d; }) (envOutputs v);
+  prefixed = purpose: envName:
+  lib.mapAttrs' (n: d: { name = "${envName}-${n}"; value = d; }) (envOutputs purpose envName);
 
-  prefixedInEnvs = envs: util.mapListCatAttrs prefixedInEnv envs;
+  prefixedInEnvs = purpose: envs: util.mapListCatAttrs (prefixed purpose) envs;
 
-  devOutputs = let
+  scopedEnvOutputs = envs: lib.genAttrs envs (envOutputs "scoped");
+
+  # TODO the main package/exe should probably also respect the targets and expose settings
+  devPackages = let
     env = config.envs.dev;
     ghc = env.ghc.ghc;
     minGhc = config.envs.min.ghc.ghc;
@@ -92,7 +103,7 @@ let
       min = minGhc.${name};
       profiled = profiledGhc.${name};
     };
-    local = lib.mapAttrs extra config.envs.dev.derivations;
+    local = lib.mapAttrs extra (util.env.derivations "packages" "dev");
   in local // util.attrsetMain (main: {
     default = local.${main};
     min = local.${main}.min;
@@ -100,10 +111,8 @@ let
     static = staticDrv local.${main};
   });
 
-  scopedEnvOutputs = envs: lib.genAttrs envs envOutputs;
-
   envsApi = envs: {
-    env = lib.mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; ghc0 = e.ghc.vanillaGhc; } // fullEnvOutputs n) envs;
+    env = lib.mapAttrs (n: e: { inherit (e.ghc) pkgs ghc; ghc0 = e.ghc.vanillaGhc; } // fullEnvOutputs "scoped" n) envs;
   };
 
   appimage = env: name: util.script "hix-appimage-${name}" ''
@@ -162,9 +171,10 @@ let
 
 in {
   inherit
-  prefixedInEnvs
+  envOutputs
   scopedEnvOutputs
-  devOutputs
+  prefixedInEnvs
+  devPackages
   envsApi
   app
   appimageApp

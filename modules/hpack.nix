@@ -2,7 +2,7 @@
 let
   inherit (lib) types mkOption;
 
-  libOutput = import ../lib/output.nix { inherit config lib util; };
+  libOutput = util.output;
 
   maybeDefaultApp = name: a:
   if name == config.defaultApp
@@ -73,7 +73,8 @@ in {
     hpack = {
 
       apps = lib.mkDefault (
-        util.catAttrs (lib.mapAttrsToList (packageApps config.envs.dev.derivations) config.hpack.internal.packages)
+        let drvs = util.env.derivations "apps" "dev";
+        in util.catAttrs (lib.mapAttrsToList (packageApps drvs) config.hpack.internal.packages)
       );
 
       script = util.hpack.gen { verbose = true; };

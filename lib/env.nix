@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config;
+  inherit (util) config lib;
 
   targets = env: if env.packages == null then config.internal.packageNames else env.packages;
 
@@ -29,6 +29,15 @@
   fi
   '';
 
+  exposed = purpose: env: let
+    allow = name: config.packages.${name}.expose.${purpose};
+  in lib.filter allow (targets env);
+
+  derivations = purpose: envName: let
+    env = config.envs.${envName};
+    ghc = env.ghc.ghc;
+  in lib.genAttrs (exposed purpose env ++ config.output.extraPackages) (n: ghc.${n} // { inherit ghc; });
+
 in {
-  inherit targets waitScript;
+  inherit targets waitScript derivations;
 }

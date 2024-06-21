@@ -359,6 +359,49 @@ in {
 
     };
 
+    expose = {
+
+      packages = mkOption {
+        description = "Whether to expose this package in [](#opt-output-outputs.packages).";
+        type = bool;
+        default = true;
+      };
+
+      apps = mkOption {
+        description = "Whether to expose this package in [](#opt-output-outputs.apps) if it has executables.";
+        type = bool;
+        default = true;
+      };
+
+      checks = mkOption {
+        description = "Whether to expose this package in [](#opt-output-outputs.checks).";
+        type = bool;
+        default = true;
+      };
+
+      compat = mkOption {
+        description = ''
+        Whether to expose this package in [](#opt-output-outputs.checks) for GHC version
+        [compat checks](#opt-general-compat).
+        '';
+        type = bool;
+        default = true;
+      };
+
+      scoped = mkOption {
+        description = ''
+        Whether to expose this package in [](#opt-output-outputs.legacyPackages) in env-keyed subsets like
+        `ghc98.<pkgname>`.
+        These are not evaluated by `nix flake check` and only buildable when referring to the whole path, like
+        `nix build .#ghc98.<pkgname>`, so they can include packages you don't want evaluated or built frequently
+        (because they pull in expensive dependencies etc).
+        '';
+        type = bool;
+        default = true;
+      };
+
+    };
+
   };
 
   config = {
