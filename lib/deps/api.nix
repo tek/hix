@@ -16,8 +16,11 @@ let
   transformers = {
     transformDrv = transform_ "transform-drv";
     jailbreak = transform_ "jailbreak" modifiers.jailbreak;
+    # TODO why does this use `flip`? The functions appear to take the flag arg first
     configure = flag: transform_ "configure" (flip hl.appendConfigureFlag flag);
     configures = flags: transform_ "configures" (flip hl.appendConfigureFlags flags);
+    enable = flag: transform_ "enable" (flip hl.enableCabalFlag flag);
+    disable = flag: transform_ "disable" (flip hl.disableCabalFlag flag);
     override = conf: transform_ "override" (flip hl.overrideCabal conf);
     overrideAttrs = f: transform_ "overrideAttrs" (drv: drv.overrideAttrs f);
     buildInputs = inputs: transform_ "buildInputs" (drv: drv.overrideAttrs (old: { buildInputs = old.buildInputs ++ inputs; }));

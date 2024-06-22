@@ -592,8 +592,10 @@ in {
   - `fast` – Disable profiling and Haddock
   - `noprofiling` – Disable profiling libraries for the package
   - `profiling` – Enable executable profiling for the package
-  - `configure` – Add a Cabal configure flag
-  - `configures` – Add multiple Cabal configure flags (in a list)
+  - `configure` – Add a Cabal configure CLI option
+  - `configures` – Add multiple Cabal configure CLI options (in a list)
+  - `enable` – Enable a Cabal flag (`-f<flag>`)
+  - `disable` – Disable a Cabal flag (`-f-<flag>`)
   - `override` – Call `overrideCabal` on the derivation, allowing arbitrary Cabal manipulation
   - `overrideAttrs` – Call `overrideAttrs` on the derivation
   - `buildInputs` – Add Nix build inputs

@@ -6,6 +6,7 @@
 * Replace `envs.<env>.derivations` by per-output-category flags in `packages.<package>.expose` to control which packages
   are included in outputs.
   Added `dev` to the scoped envs to allow access to excluded derivations.
+* Add override combinators for toggling Cabal flags.
 
 # 0.7.0: Hix Unbound: Majors Apart
 
