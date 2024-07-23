@@ -1,5 +1,7 @@
 {config, pkgs, util, prose}: let
 
+  inherit (util) outputs internal;
+
   global = config;
   lib = pkgs.lib;
 
@@ -71,12 +73,12 @@
     (options.importMod "systems" { inherit config lib; })
     (options.importMod "system" { inherit config lib; })
     (options.importMod "input" { inherit config lib; })
-    (options.importMod "basic" { inherit config lib util; })
+    (options.importMod "basic" { inherit config lib util internal; })
     (options.importMod "envs" { inherit config lib util; })
     (options.importMod "services" { inherit config lib util; })
     (options.importMod "commands" { inherit config lib util; })
     (options.importMod "overrides" { inherit config lib util; })
-    (options.importMod "output" { inherit config lib util; })
+    (options.importMod "output" { inherit config lib util; inherit (util) outputs; })
   ];
   generalExclude = [
     { type = "sub"; path = ["envs"]; }

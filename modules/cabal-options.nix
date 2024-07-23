@@ -13,6 +13,7 @@ let
         description = "The package containing the alternative Prelude.";
         type = util.types.cabalDep;
         example = literalExpression ''"relude"'';
+        default = "base";
       };
 
       module = mkOption {
@@ -164,7 +165,7 @@ in {
 
     prelude = mkOption {
       description = "Configure an alternative Prelude package.";
-      type = nullOr (submodule preludeModule);
+      type = submodule preludeModule;
       default = {};
     };
 

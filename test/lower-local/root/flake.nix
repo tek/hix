@@ -40,7 +40,6 @@
     };
 
     envs.lower-local1.localPackage = api: api.minimal;
-    envs.lower-local1.hide = false;
     envs.lower-local2.localPackage = api: api.minimal;
   });
 }

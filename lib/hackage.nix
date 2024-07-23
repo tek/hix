@@ -1,8 +1,8 @@
-{ lib, config, util, ... }:
+{util}:
 with builtins;
-with lib;
+with util.lib;
 let
-  inherit (util) app;
+  inherit (util) app build config;
 
   pkgs = config.internal.pkgs;
 
@@ -129,15 +129,15 @@ let
 
   command = doc: tarball: publish: target:
   let
-    pkg = config.output.final.packages.${target};
+    pkg = build.packages.dev.${target};
   in
     cfg.uploadCommand { inherit publish doc; path = tarball pkg; };
 
   sourceCommand =
-    command false (pkg: "${pkg.release.sdist}/${pkg.pname}-${pkg.version}.tar.gz");
+    command false (pkg: "${pkg.release.sdist}/${pkg.package.pname}-${pkg.package.version}.tar.gz");
 
   docCommand =
-  command true (pkg: "${pkg.release.haddock}/${pkg.pname}-${pkg.version}-docs.tar.gz");
+    command true (pkg: "${pkg.release.haddock}/${pkg.package.pname}-${pkg.package.version}-docs.tar.gz");
 
   sourceCommands = publish:
   map (sourceCommand publish) allTargets;

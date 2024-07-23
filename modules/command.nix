@@ -1,49 +1,30 @@
 {global, util, ...}:
-{name, config, lib, ...}:
-with lib;
-let
+{name, config, lib, ...}: let
 
-  envCommand = import ../lib/command.nix { config = global; inherit util; };
-
-  cli = global.internal.hixCli.exe;
-
-  json = util.json.ghciFile;
-
-  ghciOpts = let
-    opt = switch: o: optionalString (config.ghci.${o} != null) " ${switch} ${config.ghci.${o}}";
-  in "${opt "-r" "runner"}${opt "-p" "package"}${opt "-m" "module"}${opt "-c" "component"}";
-
-  ghciCommand = ''
-  ghci_cmd=$(${cli} ghci-cmd --config ${json} ${ghciOpts} ''${env_args[@]} "''$@")
-  eval $ghci_cmd
-  '';
-
-  ghcidCommand = ''
-  ghcid_cmd=$(${cli} ghcid-cmd --config ${json} ${ghciOpts} ''${env_args[@]} "''$@")
-  eval $ghcid_cmd
-  '';
+  inherit (lib) types;
 
 in {
-  options = with types; {
 
-    name = mkOption {
+  options = {
+
+    name = lib.mkOption {
       description = "Name";
-      type = str;
+      type = types.str;
       default = name;
     };
 
-    env = mkOption {
+    env = lib.mkOption {
       description = "The default env for the command.";
       type = util.types.env;
       default = "dev";
     };
 
-    command = mkOption {
+    command = lib.mkOption {
       description = "The script executed by this command.";
-      type = str;
+      type = types.str;
     };
 
-    component = mkOption {
+    component = lib.mkOption {
       description = ''
       Whether this command should determine the env based on a target component specified by command line arguments.
 
@@ -53,60 +34,54 @@ in {
       command.
       :::
       '';
-      type = bool;
+      type = types.bool;
       default = false;
     };
 
-    expose = mkOption {
+    expose = lib.mkOption {
       description = "Whether this command should be a top-level flake app.";
-      type = bool;
+      type = types.bool;
       default = false;
-    };
-
-    path = mkOption {
-      description = "The final executable.";
-      type = path;
-      readOnly = true;
     };
 
     ghci = {
-      enable = mkOption {
+      enable = lib.mkOption {
         description = ''
         Create a command that runs GHCi (like the built-in command) with some static options.
         For example, you can specify a [runner](#opt-ghci-ghci.run), and the app will be equivalent to running
         `nix run .#ghci -r <runner>`.
         '';
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
-      ghcid = mkOption {
+      ghcid = lib.mkOption {
         description = "Whether to run this command with GHCid instead of plain GHCi.";
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
-      runner = mkOption {
+      runner = lib.mkOption {
         description = "The name of a runner in [](#opt-ghci-ghci.run) and [](#opt-ghci-ghci.run).";
-        type = nullOr str;
+        type = types.nullOr types.str;
         default = null;
       };
 
-      package = mkOption {
+      package = lib.mkOption {
         description = "The name of the package passed to the GHCi runner with `-p`.";
-        type = nullOr str;
+        type = types.nullOr types.str;
         default = null;
       };
 
-      module = mkOption {
+      module = lib.mkOption {
         description = "The name of the module passed to the GHCi runner with `-m`.";
-        type = nullOr str;
+        type = types.nullOr types.str;
         default = null;
       };
 
-      component = mkOption {
+      component = lib.mkOption {
         description = "The name of the component passed to the GHCi runner with `-c`.";
-        type = nullOr str;
+        type = types.nullOr types.str;
         default = null;
       };
 
@@ -116,9 +91,9 @@ in {
 
   config = {
 
-    path = (envCommand { command = config; env = global.envs.${config.env}; }).path;
-
-    command = mkIf config.ghci.enable (if config.ghci.ghcid then ghcidCommand else ghciCommand);
+    command =
+      lib.mkIf config.ghci.enable
+      (util.command.ghciCommand.extend (_: super: { config = super.config // config.ghci; })).script;
 
   };
 }

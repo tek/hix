@@ -8,9 +8,8 @@ in {
     git add .
     git commit -m "init" --quiet
 
-    check 'nix eval .#checkNames' \
-      '[ "latest-main-local1" "latest-other-local2" "latest-other-local3" "local1" "local2" "local3" ]' \
-      'checks are wrong'
+    check 'nix eval .#checks.x86_64-linux --apply builtins.attrNames' \
+      '[ "dev-local1" "dev-local2" "dev-local3" "latest-main-local1" "latest-other-local2" "latest-other-local3" ]'
 
     nix run .#bump -- ${args} --output=commit-msg > commit-msg-out || fail 'bump commit-msg failed'
     check_diff '${./state.nix}' 'ops/managed.nix' 'ops/managed.nix is wrong after batch run (state.nix)'

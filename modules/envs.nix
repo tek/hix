@@ -15,6 +15,18 @@ let
     # TODO this didn't use mkForce before, should that mean that all dep overrides are active in this env?
     internal.overridesInherited = mkForce (util.overridesGlobal [compiler]);
     ifd = mkIf (!config.compat.ifd) false;
+
+    expose = let
+      isCompat = config.compat.enable && lib.elem compiler config.compat.versions;
+    in {
+      packages = mkDefault true;
+      apps = mkDefault true;
+      checks = mkDefault isCompat;
+      scoped = mkDefault true;
+      shell = mkDefault true;
+      envKeyed = mkDefault false;
+    };
+
   };
 
   ghcVersionEnvs = genAttrs config.ghcVersions ghcVersionEnv;
@@ -57,23 +69,37 @@ in {
         };
         internal.overridesInherited = (util.overridesGlobal ["dev"]);
         hls.enable = true;
+        expose = {
+          packages = mkDefault true;
+          apps = mkDefault true;
+          checks = mkDefault true;
+          scoped = mkDefault true;
+          shell = mkDefault true;
+          envKeyed = mkDefault false;
+        };
       };
 
       min = {
+        packages = mkDefault config.envs.dev.packages;
         internal.overridesInherited =
           util.concatOverrides [(util.overridesGlobalMin ["dev"]) config.envs.dev.internal.overridesEnv];
         localPackage = api: api.minimal;
+        expose = {
+          envKeyed = mkDefault true;
+        };
       };
 
       profiled = {
+        packages = mkDefault config.envs.dev.packages;
         profiling = true;
+        expose = {
+          envKeyed = mkDefault true;
+        };
       };
 
       hls = {
         hls.enable = true;
         hls.package = mkDefault config.envs.hls.ghc.ghc.haskell-language-server;
-        hide = true;
-        hideApps = true;
         ghc.overrides = config.envs.hls.overrides;
         # TODO this didn't use mkForce before, should that mean that all dep overrides are active in this env?
         # ghc.overrides has an explicit redirect here, and the default for that option uses mkDefault, so that should
@@ -81,6 +107,7 @@ in {
         # overridesInherited.
         internal.overridesInherited = mkForce [];
         localDeps = false;
+        packages = [];
       };
 
     };

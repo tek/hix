@@ -42,6 +42,7 @@ jobs:
       with:
         name: ${{ inputs.cachix }}
         signingKey: ${{ secrets.cachix_key }}
+    - run: rm -rf /opt/hostedtoolcache
     - id: bounds
       name: Check and update bounds
       run: nix run .#${{ inputs.command }} -- --output=ga-pr --build-timeout=${{ inputs.timeout }} ${{ inputs.options }}

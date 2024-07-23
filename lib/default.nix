@@ -10,9 +10,12 @@ let
   utilWithConfig = config:
   import ../lib/util.nix { inherit config lib; };
 
-  utilModule = extra: {config, ...}: {
+  utilModule = extra: {config, ...}: let
+    util = utilWithConfig config // extra;
+  in {
     _module.args = {
-      util = utilWithConfig config // extra;
+      inherit util;
+      inherit (util) internal build outputs;
     };
   };
 
@@ -51,11 +54,14 @@ let
 
   unlinesConcatMap = f: xs: concatStringsSep "\n" (concatMap f xs);
 
-  catAttrs =
-  foldl lib.mergeAttrs {};
+  # catSets :: [Attrs a] -> Attrs a
+  catSets = lib.mergeAttrsList;
 
   mapListCatAttrs = f: xs:
-  catAttrs (map f xs);
+  catSets (map f xs);
+
+  catValues = a:
+  catSets (lib.attrValues a);
 
   foldMapAttrs = f: set:
   lib.foldlAttrs (z: name: attr: z // f name attr) {} set;
@@ -65,11 +71,22 @@ let
   then updateManyAttrsByPath [{ inherit path; update = f; }] attrs
   else attrs;
 
+  mapKeys = f: lib.mapAttrs' (k: v: lib.nameValuePair (f k v) v);
+
   mapValues = f: lib.mapAttrs (_: f);
 
-  mergeAttr = a: b:
+  mergeAttr = name: a: b:
   if isDerivation a
-  then throw "'mergeAuto' can not be used with sets containing competing derivations! Derivation name: ${a.pname}"
+  then
+  if isDerivation b
+  then throw ''
+  'mergeAuto' can not be used with sets containing competing derivations!
+    Key: ${name}
+    Derivation names: ${a.pname} / ${b.pname}
+  ''
+  else b // a
+  else if isDerivation b
+  then a // b
   else if isAttrs a
   then mergeAttrset a b
   else if isList a
@@ -80,7 +97,7 @@ let
   let
     f = name:
     if hasAttr name l && hasAttr name r
-    then mergeAttr l.${name} r.${name}
+    then mergeAttr name l.${name} r.${name}
     else l.${name} or r.${name};
   in genAttrs (concatMap attrNames [l r]) f;
 
@@ -96,6 +113,7 @@ let
   mergeAll' = z: items:
   foldl mergeAuto z items;
 
+  # Later items have precedence
   mergeAll = items:
   if length items == 0
   then throw "Internal error: passed empty list to 'mergeAll'."
@@ -105,6 +123,25 @@ let
   if length items == 0
   then {}
   else mergeAll' (head items) (tail items);
+
+  mergeValues = a:
+  mergeAllAttrs (lib.attrValues a);
+
+  # Attrs (Maybe a) -> Attrs a
+  catMaybes = lib.filterAttrs (_: a: a != null);
+
+  # (a -> Maybe b) -> Attrs a -> Attrs b
+  mapMaybe = f: a: catMaybes (lib.mapAttrs f a);
+
+  maybe = alt: f: a: if a == null then alt else f a;
+
+  apMaybe = lib.mapNullable;
+
+  filterNulls = filterAttrs (_: a: a != null);
+
+  restrictKeys = allow: lib.filterAttrs (k: _: lib.elem k allow);
+
+  removeKeys = lib.flip builtins.removeAttrs;
 
   toTitle = s:
   if stringLength s == 0
@@ -141,13 +178,16 @@ let
 
   app = program: { type = "app"; program = "${program}"; };
 
+  removeApp = a: removeAttrs a ["app" "type"];
+
+  console = import ./console.nix { inherit lib; };
+
   loadConsole = let
-    console = import ./console.nix { inherit lib; };
     inherit (console) colors color bold chevrons chevronY chevronM chevronsH;
     colorFun = name: ''
     ${name}()
     {
-      echo -e "${color colors.${name} "\${1}"}"
+      echo -e "${color colors.${name} "\${*}"}"
     }
     '';
   in ''
@@ -166,7 +206,7 @@ let
   ${unlines (map colorFun (attrNames colors))}
   bold()
   {
-      echo -e "${bold "$1"}"
+      echo -e "${bold "$*"}"
   }
   chevronsH='${chevronsH}'
   chevrons='${chevrons}'
@@ -206,10 +246,12 @@ in {
   unlines
   unlinesMap
   unlinesConcatMap
-  catAttrs
+  catSets
   mapListCatAttrs
+  catValues
   foldMapAttrs
   over
+  mapKeys
   mapValues
   mergeAttr
   mergeAttrset
@@ -217,6 +259,14 @@ in {
   mergeAll'
   mergeAll
   mergeAllAttrs
+  mergeValues
+  catMaybes
+  mapMaybe
+  maybe
+  apMaybe
+  filterNulls
+  restrictKeys
+  removeKeys
   toTitle
   versionAtLeast
   minGhc
@@ -226,6 +276,8 @@ in {
   overridesVia
   cabalDepPackage
   app
+  removeApp
+  console
   loadConsole
   ;
 

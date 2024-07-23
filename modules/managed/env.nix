@@ -45,7 +45,6 @@ in {
 
     verbatim = default "verbatim" {
       managed = mkDefault true;
-      hide = mkDefault true;
     };
 
     solverOverrides = default "solverOverrides" [];

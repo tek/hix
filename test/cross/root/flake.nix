@@ -18,7 +18,10 @@
         source-dirs = "app";
       };
     };
-    envs.cross.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
+    envs.cross = {
+      expose = true;
+      ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
+    };
     overrides = { hsLib, self, ... }: {
       static-override = hsLib.justStaticExecutables self.root;
     };

@@ -8,6 +8,7 @@ let
 
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
   cabalComponentModule = import ./cabal-component.nix { inherit global util; };
+  exposeModule = import ./expose.nix { inherit util; type = "package"; };
 
   anyEnabled = set: any (a: a.enable) (attrValues set);
 
@@ -311,11 +312,6 @@ in {
       default = {};
     };
 
-    internal.componentsSet = mkOption {
-      description = "Internal option";
-      type = attrsOf unspecified;
-    };
-
     subpath = mkOption {
       description = "The computed relative path of the package root directory.";
       type = str;
@@ -359,47 +355,15 @@ in {
 
     };
 
-    expose = {
-
-      packages = mkOption {
-        description = "Whether to expose this package in [](#opt-output-outputs.packages).";
-        type = bool;
-        default = true;
-      };
-
-      apps = mkOption {
-        description = "Whether to expose this package in [](#opt-output-outputs.apps) if it has executables.";
-        type = bool;
-        default = true;
-      };
-
-      checks = mkOption {
-        description = "Whether to expose this package in [](#opt-output-outputs.checks).";
-        type = bool;
-        default = true;
-      };
-
-      compat = mkOption {
-        description = ''
-        Whether to expose this package in [](#opt-output-outputs.checks) for GHC version
-        [compat checks](#opt-general-compat).
-        '';
-        type = bool;
-        default = true;
-      };
-
-      scoped = mkOption {
-        description = ''
-        Whether to expose this package in [](#opt-output-outputs.legacyPackages) in env-keyed subsets like
-        `ghc98.<pkgname>`.
-        These are not evaluated by `nix flake check` and only buildable when referring to the whole path, like
-        `nix build .#ghc98.<pkgname>`, so they can include packages you don't want evaluated or built frequently
-        (because they pull in expensive dependencies etc).
-        '';
-        type = bool;
-        default = true;
-      };
-
+    expose = mkOption {
+      description = ''
+      The parts of this package that should be accessible as flake outputs, like being able to run
+      `nix build .#<env>.<package>`.
+      If the value is boolean, all parts are affected.
+      If it is a set, submodule options configure the individual parts.
+      '';
+      type = types.either types.bool (types.submodule exposeModule);
+      default = true;
     };
 
   };
@@ -413,19 +377,6 @@ in {
     hackageRootLink = mkDefault "${config.hackageLink}/docs/${replaceStrings ["."] ["-"] config.rootModule}.html";
 
     description = mkDefault "See ${config.hackageRootLink}";
-
-    # TODO This adds multi-component sets unconditionally, suggesting that downstream check the enable flag, but checks
-    # it itself for the single components...that doesn't seem right.
-    internal.componentsSet =
-      optionalAttrs config.library.enable { library = config.library; } //
-      config.libraries //
-      optionalAttrs config.executable.enable { ${config.executable.name} = config.executable; } //
-      config.executables //
-      optionalAttrs config.test.enable { ${config.test.name} = config.test; } //
-      config.tests //
-      optionalAttrs config.benchmark.enable { ${config.benchmark.name} = config.benchmark; } //
-      config.benchmarks
-      ;
 
     subpath = util.packageSubpath global.base config.src;
 

@@ -1,5 +1,5 @@
 {util}: let
-  inherit (util) config lib;
+  inherit (util) config lib internal;
 
   optionalField = name: conf: lib.optionalAttrs (lib.hasAttr name conf) { ${name} = conf.${name}; };
 
@@ -16,7 +16,7 @@
         "hiding (${mod})"
       ];
     };
-  in [preludePackage] ++ lib.optional (base != null) base;
+  in [preludePackage] ++ lib.optional (base != null && preludePackage.name != "base") base;
 
   mkPathsBlocker = name:
   { when = { condition = false; generated-other-modules = "Paths_${lib.replaceStrings ["-"] ["_"] name}"; }; };
@@ -111,7 +111,7 @@
 
   componentFull = pkg: name: conf: let
     isLib = conf.internal.sort == "library";
-    mainLib = isLib && name == "library";
+    mainLib = isLib && conf.internal.single;
     extra =
       if isLib
       then extraLibrary mainLib
@@ -122,7 +122,7 @@
   lib.optionalAttrs conf.enable (wrap isLib mainLib conf comp);
 
   packageComponents = pkg:
-  util.mergeAllAttrs (lib.mapAttrsToList (componentFull pkg) pkg.internal.componentsSet);
+  util.mergeAllAttrs (lib.mapAttrsToList (componentFull pkg) (internal.packages.normalized pkg));
 
   packageMeta = conf: let
     cabal = conf.cabal-config;

@@ -12,7 +12,7 @@
   # If it is `false`, exclude dependencies if they are env target packages, but not if they are non-target local
   # packages (i.e. targets of a different env).
   packageDb = noLocalsInDeps: env: ghc: let
-    targets = util.env.targets env;
+    targets = util.internal.env.targets env;
     unwanted = if noLocalsInDeps then config.internal.packageNames else targets;
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     isWanted = p: !(p ? pname && lib.elem p.pname unwanted);

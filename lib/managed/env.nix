@@ -7,7 +7,7 @@
   envFor = packages: special: {
     inherit packages;
     managed = lib.mkDefault true;
-    hide = lib.mkDefault true;
+    expose = lib.mkDefault true;
   } // special.envs.verbatim // {
     ghc = { compiler = envDefault special.compiler; } // special.envs.verbatim.ghc or {};
     internal = { overridesSolver = envDefault special.envs.solverOverrides; } // special.envs.verbatim.internal or {};

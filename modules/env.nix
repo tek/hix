@@ -2,6 +2,7 @@
 {name, config, lib, ...}:
 with lib;
 let
+  inherit (util) internal;
 
   envConfig = config;
 
@@ -12,6 +13,10 @@ let
   ghcModule = import ./ghc.nix { inherit global util; };
 
   vmLib = import ../lib/vm.nix { inherit (global) pkgs; inherit util; };
+
+  exposeModule = import ./expose.nix { inherit util; type = "env"; default = false; };
+
+  envExposeModule = import ./env-expose.nix { inherit util; };
 
   mkBuildInputs = def:
     if isFunction def
@@ -81,7 +86,7 @@ let
       ${messages}
       ${config.setup-pre}
       ${optionalString config.vm.enable config.vm.setup}
-      ${optionalString (config.vm.enable && config.wait > 0) (util.env.waitScript config)}
+      ${optionalString (config.vm.enable && config.wait > 0) (internal.env.waitScript config)}
       ${config.setup}
     fi
   '';
@@ -190,11 +195,21 @@ in {
 
       Setting this has a variety of effects:
       - These packages will be exposed as outputs for this env
-      - The GHC package db will not contain them, so they won't be built when entering a shell or starting `.#ghci` for
-        this env
+      - The GHC package db will not contain the excluded packages, so they won't be built when entering a shell or
+        starting `.#ghci` for this env
       - Managed dependencies envs use this to produce separate sets of bounds
       '';
       type = nullOr (listOf util.types.localPackage);
+      default = null;
+    };
+
+    main = mkOption {
+      description = ''
+      The name of the main package of this env, defaulting to [](#opt-general-main) if that is in [](#opt-env-packages)
+      or one of those packages determined by the same method as described
+      [for the global equivalent](#opt-general-main).
+      '';
+      type = types.nullOr types.str;
       default = null;
     };
 
@@ -360,15 +375,14 @@ in {
       };
     };
 
-    hide = mkOption {
-      description = "Skip this env for `devShells`.";
-      type = bool;
-      default = false;
-    };
-
-    hideApps = mkOption {
-      description = "Skip this env for `apps.env`.";
-      type = bool;
+    expose = mkOption {
+      description = ''
+      The parts of this environment that should be accessible as flake outputs, like being able to run
+      `nix build .#<env>.<package>`.
+      If the value is boolean, all parts are affected.
+      If it is a set, submodule options configure the individual parts.
+      '';
+      type = types.either types.bool (types.submoduleWith { modules = [exposeModule envExposeModule]; });
       default = false;
     };
 

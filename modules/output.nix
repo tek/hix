@@ -1,4 +1,4 @@
-{ lib, config, util, ... }:
+{ lib, config, util, outputs, ... }:
 let
   inherit (lib) optionalAttrs mkOption;
   inherit (util) app;
@@ -44,31 +44,10 @@ in {
 
       final = mkOption {
         description = ''
-        The final flake outputs computed by Hix, defaulting to the set in `outputs`.
+        The final flake outputs computed by Hix, defaulting to the set in [outputs](#opt-general-outputs.packages).
         May be overriden for unusual customizations.
         '';
-        type = unspecified;
-      };
-
-      commandApps = mkOption {
-        description = ''
-        Whether to expose all commands in the attrset `apps.cmd.*`.
-
-        This means that you can run `nix run .#cmd.do-stuff` to access the command defined as `commands.do-stuff`, but
-        it does not strictly conform to the convention for `apps`, potentially breaking other tooling.
-        '';
-        type = bool;
-        default = true;
-      };
-
-      envApps = mkOption {
-        description = ''
-        Whether to expose all commands in the attrset `apps.env.<env>.*`.
-
-        Like [](#opt-general-output.commandApps), but commands are executed in the selected environment.
-        '';
-        type = bool;
-        default = true;
+        type = raw;
       };
 
     };
@@ -114,73 +93,71 @@ in {
 
       prefix = config.buildOutputsPrefix;
 
-      basicApps = {
-        hpack = app "${config.hpack.script}";
-        hpack-quiet = app "${config.hpack.scriptQuiet}";
-        tags = app tags.app;
-        show-config = show-config.app;
-        cli = app "${config.internal.hixCli.package}/bin/hix";
-        gen-overrides = app "${genOverrides.script}";
-        gen = app "${genAll false}";
-        gen-quiet = app "${genAll true}";
-        show-overrides = app "${showOverrides}";
-        dep-versions = app "${depVersions "dev"}";
+      basicApps = util.mapValues app {
+        gen-cabal = config.hpack.script;
+        gen-cabal-quiet = config.hpack.scriptQuiet;
+        tags = tags.app;
+        show-config = show-config.appScript;
+        cli = "${config.internal.hixCli.package}/bin/hix";
+        gen-overrides = genOverrides.script;
+        gen = genAll false;
+        gen-quiet = genAll true;
+        show-overrides = showOverrides;
+        dep-versions = depVersions "dev";
       };
 
-      basicEnvApps = optionalAttrs config.output.envApps {
-        env = util.mapListCatAttrs util.output.envApps (lib.attrValues util.visibleAppEnvs);
+      basicEnvApps = {
+        env = util.mergeAll [
+          outputs.commands.appsFull
+          outputs.packages.apps
+        ];
       };
 
       lowPrio = {
 
         legacyPackages =
-          util.output.scopedEnvOutputs (["dev"] ++ config.ghcVersions) //
-          util.output.envsApi config.envs //
-          {
-            inherit config;
-            inherit (config.envs.dev.ghc) pkgs ghc;
-            ghc0 = config.envs.dev.ghc.vanillaGhc;
-            show-config = show-config.shell;
-          };
+          util.mergeAll [
+            {
+              inherit config;
+              inherit (config.envs.dev.ghc) pkgs ghc;
+              ghc0 = config.envs.dev.ghc.vanillaGhc;
+              show-config = show-config.shell;
+            }
+            outputs.envs.legacyPackages
+            outputs.packages.legacyPackages
+          ];
 
-        apps = config.hackage.output.apps //
-        basicApps //
-        util.managed.output.apps //
-        util.output.mainAppimageApp //
-        optionalAttrs config.output.commandApps { cmd = util.output.commandApps config.commands; } //
-        basicEnvApps //
-        util.managed.output.gen
-        ;
+        apps = util.mergeAllAttrs [
+          outputs.hpack.legacyApps
+          config.hackage.output.apps
+          basicApps
+          outputs.managed.apps
+          util.managed.output.apps
+          basicEnvApps
+          util.managed.output.gen
+          outputs.packages.apps
+          outputs.envs.apps
+        ];
 
       };
 
       highPrio = {
-        packages = util.output.devPackages // util.output.prefixedInEnvs "packages" config.ghcVersions;
+        packages = outputs.packages.packages;
 
-        checks =
-          util.output.envOutputs "checks" "dev" //
-          optionalAttrs config.compat.enable (util.output.prefixedInEnvs "compat" config.compat.versions) //
-          util.managed.output.checks
-          ;
+        checks = outputs.packages.checks;
 
         legacyPackages = {
           overrides = config.exportedOverrides;
           ${prefix}.env = util.managed.output.envGhcs;
         };
 
-        devShells = let
-          envShells = lib.mapAttrs (_: e: e.shell) (lib.filterAttrs (_: util.envSystemAllowed) util.visibleEnvs);
-        in envShells // { default = envShells.dev; };
+        devShells = outputs.envs.shells // { default = outputs.envs.shells.dev; };
 
-        apps = let
-          exposedCommands = lib.filterAttrs (_: c: c.expose) config.commands;
-        in
-          util.output.commandApps exposedCommands //
-          {
-            gen-cabal = app "${config.hpack.script}";
-            gen-cabal-quiet = app "${config.hpack.scriptQuiet}";
-          } //
-          config.hpack.apps;
+        apps =
+          util.mergeAll [
+            outputs.commands.apps
+            (util.removeApp outputs.packages.apps.dev)
+          ];
       };
 
       withPrio = name: let

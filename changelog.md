@@ -5,8 +5,12 @@
   error printed by Cabal.
 * Replace `envs.<env>.derivations` by per-output-category flags in `packages.<package>.expose` to control which packages
   are included in outputs.
-  Added `dev` to the scoped envs to allow access to excluded derivations.
+* Added `envs.<env>.expose` analogous to package exposition config.
+* Added `dev` to the scoped envs to allow access to excluded derivations.
 * Add override combinators for toggling Cabal flags.
+* Remove packages with env name prefix (`ghc96-hix`) in favor of scoped derivations in `legacyPackages` (`ghc96.hix`).
+* Expose intermediate and final build outputs as nested sets of environments and packages via module arguments `build`
+  and `outputs`.
 
 # 0.7.0: Hix Unbound: Majors Apart
 

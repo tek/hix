@@ -1,8 +1,9 @@
-{ lib, hsLib, ... }: drv:
-with lib;
+{util}: drv:
 let
 
-  forHackage = d: hsLib.overrideCabal d (old: {
+  inherit (util) lib;
+
+  forHackage = d: util.hsLib.overrideCabal d (old: {
     doHaddock = true;
     haddockFlags = old.haddockFlags or [] ++ ["--for-hackage"];
   });
@@ -23,5 +24,4 @@ let
     '';
   };
 
-in
-  overrideDerivation (forHackage drv) addRelease
+in lib.overrideDerivation (forHackage drv) addRelease

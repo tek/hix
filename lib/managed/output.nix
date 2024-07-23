@@ -13,16 +13,6 @@
 
   appsForEnvs = envs: appsWith ({cmd, env, sub}: util.app (cmd [envs.${env}]));
 
-  wantChecks = config.managed.enable && config.managed.check;
-
-  prefixedEnvDerivations = env:
-  lib.mapAttrs' (n: d: { name = "${env}-${n}"; value = d; }) (util.env.derivations "checks" env);
-
-  checks =
-    lib.optionalAttrs wantChecks
-    (util.mapListCatAttrs prefixedEnvDerivations (lib.attrNames util.managed.env.envs))
-    ;
-
   managedCmdMulti = envSort: cmd: sets: let
     envName = name: "${envSort}-${name}";
     envs = map (name: envName name) sets;
@@ -88,5 +78,5 @@
   envGhcs = lib.mapAttrs (_: env: { ghc-local = util.managed.managedEnvGhc env; }) util.managed.env.envs;
 
 in {
-  inherit appsForEnvs checks apps gen envGhcs;
+  inherit appsForEnvs apps gen envGhcs;
 }

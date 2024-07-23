@@ -4,15 +4,25 @@ let
 
   preamble = ''
   hix_src_dir=$PWD
-  tmpdir=/tmp/hix-test-temp
+  tmp_dir=$(mktemp -d --tmpdir hix-test.XXXXXXXX)
   if [[ -z ''${hix_test_keep-} ]]
   then
-    trap "rm -rf $tmpdir" EXIT
+    trap "rm -rf $tmp_dir" EXIT
   fi
+
   ${util.loadConsole}
+
   flake_update()
   {
     nix flake update --quiet --quiet
+  }
+
+  if_ci()
+  {
+    if [[ -n ''${CI-} ]]
+    then
+      eval $@
+    fi
   }
   '';
 
@@ -47,14 +57,32 @@ let
     fi
   }
 
+  check_note()
+  {
+    check_eq "$(eval $1)" $2 "Output mismatch for\n    $(bold $(blue $1))\n    Note: $3\n    $(red Output diff)"
+  }
+
   check()
   {
-    check_eq "$(eval $1)" $2 $3
+    local msg
+    if (( $# < 3 ))
+    then
+      msg="Output mismatch for $(bold $(blue $1))"
+    else
+      msg="$3"
+    fi
+    check_eq "$(eval $1)" $2 $msg
   }
 
   check_match()
   {
-    check_re "$(eval $1)" $2 $3
+    if (( $# < 3 ))
+    then
+      msg="No match for $(bold $(green $2))\n    $(red in output of) $(bold $(blue $1))"
+    else
+      msg="$3"
+    fi
+    check_re "$(eval $1)" $2 $msg
   }
 
   check_err()
@@ -78,13 +106,42 @@ let
     fi
   }
 
+  nonempty()
+  {
+    setopt local_options err_return
+    local file=$1
+    [[ -f $file ]]
+    local size=$(stat -c %s $file)
+    (( $size > 0 ))
+  }
+
+  show_output()
+  {
+    local fd=$1 name=$2
+    if nonempty $fd
+    then
+      message "$(blue $name):"
+      echo ""
+      echo -e "$(cat $fd)"
+      echo ""
+    else
+      message "$(blue $name) empty"
+    fi
+  }
+
   check_exit()
   {
-    setopt local_options no_err_return no_unset
-    out=$(eval $1 2>&1)
-    if [[ $? != 0 ]]
+    setopt local_options no_unset
+    local output_base=$(mktemp -d "$output_dir/check.XXX")
+    local stdout="$output_base/stdout" stderr="$output_base/stderr"
+    setopt local_options no_err_return
+    eval $1 1>$stdout 2>$stderr
+    local code=$?
+    if [[ $code != 0 ]]
     then
-      fail "$2: $out"
+      error_message "$1 terminated with code $(yellow $code)$(red .)"
+      show_output $stdout stdout
+      show_output $stderr stderr
       return 1
     fi
   }
@@ -113,9 +170,10 @@ let
     local current="$1"
     local test="''${tests[$current]}"
     local test_src="$hix_src_dir/test/$current"
-    local test_base="$tmpdir/$current"
-    local testdir="$test_base/work"
+    local test_base="$tmp_dir/$current"
+    local work_dir="$test_base/work"
     local hix_dir="$test_base/hix"
+    local output_dir="$test_base/output"
     local test_config="$test_src/test-config.nix"
 
     if [[ -z $test ]]
@@ -125,12 +183,13 @@ let
     fi
 
     mkdir -p $test_base
+    mkdir -p $output_dir
 
     local sub() {
       if (( $# > 0 ))
       then
         sed -i "s#HIX#$hix_dir#" "$@"
-        sed -i "s#BASE#$testdir#" "$@"
+        sed -i "s#BASE#$work_dir#" "$@"
       fi
     }
 
@@ -144,8 +203,8 @@ let
       sub $test_config_target
     fi
 
-    cp -r "$test_src" "$testdir"
-    cd "$testdir"
+    cp -r "$test_src" "$work_dir"
+    cd "$work_dir"
 
     sub $(print **/flake.nix(N))
 
@@ -155,8 +214,8 @@ let
   '';
 
   main = ''
-  rm -rf $tmpdir
-  mkdir -p $tmpdir
+  rm -rf $tmp_dir
+  mkdir -p $tmp_dir
 
   local failure=0
   local failed=()

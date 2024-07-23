@@ -37,7 +37,7 @@ with lib;
       The special keys `local` and `localMin` contain the local packages and their minimal build variants, respectively.
       Local packages are only propagated when [](#opt-general-depsFull) is used.
       '';
-      type = lazyAttrsOf (util.types.cabalOverridesVia (util.withMainOr "dependency" id));
+      type = lazyAttrsOf (util.types.cabalOverridesVia (util.withMainNameOr "dependency" id));
       default = {};
     };
 

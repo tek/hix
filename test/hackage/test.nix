@@ -119,7 +119,7 @@ let
   synthetic = ''
     cd ./nix-hpack
     flake_update
-    nix run .#hpack-quiet
+    nix run .#gen-cabal-quiet
     git init --quiet
     git add .
     git commit -m "init" --quiet

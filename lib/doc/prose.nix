@@ -1038,11 +1038,13 @@ in {
   nix build .#parser.cross.musl64
   ```
 
-  In addition, the package may also be linked statically:
+  In addition, the package may also be linked statically against its Haskell dependencies:
 
   ```
   nix build .#parser.cross.musl64.static
   ```
+
+  Note that this does not result in a static binary – it will still be linked dynamically against libc.
 
   For more elaborate cross-compilation setups, each GHC can be configured to use a [cross pkgs set](#opt-ghc-crossPkgs):
 
@@ -1052,11 +1054,20 @@ in {
   }
   ```
 
-  For `musl`, there even is a native package set in nixpkgs that is supported by Hix:
+  For `musl`, there are two native package sets in nixpkgs that are supported by Hix:
 
   ```
   nix build .#parser.musl
-  nix build .#parser.musl.static
+  ```
+
+  This will result in a binary that's similar to `.#parser.cross.musl64.static`.
+
+  For a fully static build, you can use the `static` attribute:
+
+  ```
+  $ nix build .#parser.static
+  $ file result/bin/parser
+  result/bin/parser: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, stripped
   ```
 
   ### AppImage bundles {#appimage}

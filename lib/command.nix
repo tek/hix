@@ -1,8 +1,7 @@
-{config, util}:
-{command, env}:
+{util}:
 let
 
-  cli = config.internal.hixCli.exe;
+  inherit (util) lib;
 
   splitArgs = ''
   declare -a env_args=() cmd_args=()
@@ -21,29 +20,58 @@ let
   done
   '';
 
-  exe = util.scriptErr "command-${command.name}" command.command;
+  cli = util.config.internal.hixCli.exe;
 
-  json = util.json.envFile env;
+  ghciJson = util.json.ghciFile;
 
-  script =
-    if command.component
-    then ''
-    ${splitArgs}
-    env_runner=$(${cli} env --config ${json} "''${env_args[@]}")
-    env_args="''${env_args[*]}" $env_runner "${exe} "''${cmd_args[@]}""
-    ''
-    else ''
-    ${env.code}
-    ${exe} "$@"
+  ghciCommand = lib.makeExtensible (self: {
+
+    config = {};
+
+    cliCmd = if self.config.ghcid or false then "ghcid-cmd" else "ghci-cmd";
+
+    options = let
+      opt = switch: o: lib.optionalString (self.config.${o} != null) " ${switch} ${self.config.${o}}";
+    in "${opt "-r" "runner"}${opt "-p" "package"}${opt "-m" "module"}${opt "-c" "component"}";
+
+    script = ''
+    ghci_cmd=$(${cli} ${self.cliCmd} --config ${ghciJson} ${self.options} ''${env_args[@]} "''$@")
+    eval $ghci_cmd
     '';
 
+  });
+
+  inEnv = {command, env}:
+  lib.makeExtensible (self: {
+
+    exe = util.scriptErr "command-${command.name}" command.command;
+
+    inherit cli;
+
+    json = util.json.envFile env;
+
+    script =
+      if command.component
+      then ''
+      ${splitArgs}
+      env_runner=$(${self.cli} env --config ${self.json} "''${env_args[@]}")
+      env_args="''${env_args[*]}" $env_runner "${self.exe} "''${cmd_args[@]}""
+      ''
+      else ''
+      ${env.code}
+      ${self.exe} "$@"
+      '';
+
+    path = util.script "hix-command-${env.name}-${command.name}" ''
+    set -u
+    ${self.script}
+    '';
+
+  });
+
 in {
-
-  inherit script;
-
-  path = util.script "hix-command-${command.name}" ''
-  set -u
-  ${script}
-  '';
-
+  inherit
+  ghciCommand
+  inEnv
+  ;
 }

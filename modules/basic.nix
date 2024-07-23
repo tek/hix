@@ -1,4 +1,4 @@
-{ config, lib, util, ... }:
+{ config, lib, util, internal, ... }:
 with lib;
 with types;
 let
@@ -18,26 +18,13 @@ let
       then p
       else next (dirOf p);
   in
-   if length paths == 0
-   then throw ''
+  if length paths == 0
+  then throw ''
    Could not determine project root dir.
    Either specify `base = ./.;` or add entries to `packages`.
    See https://tryp.io/hix/index.html#packages for more.
-   ''
-   else next pkg;
-
-   autoMain = let
-     ps = attrValues config.packages;
-
-    inDeps = target: thing: any (dep: util.cabalDepPackage dep == target) thing.dependencies;
-
-    hasDepOn = dep: pkg:
-    pkg.name != dep &&
-    any (inDeps dep) (attrValues pkg.internal.componentsSet);
-
-     isNoDep = pkg: ! (any (hasDepOn pkg.name) ps);
-
-    in findFirst isNoDep null (attrValues config.packages);
+  ''
+  else next pkg;
 
 in {
   options = {
@@ -308,8 +295,10 @@ in {
         packages.my-project = { src = ./.; };
       }
       ''
-      else if autoMain != null
-      then autoMain.name
+      else let
+        autoMain = internal.packages.selectMain (lib.attrNames config.packages);
+      in if autoMain != null
+      then autoMain
       else throw ''
       Could not determine the main package.
       This should only happen if all packages depend on each other cyclically.

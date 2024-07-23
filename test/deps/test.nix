@@ -4,7 +4,7 @@
     cd ./root
     flake_update
 
-    check_match 'nix run .#show-overrides -- dev' 'Hackage: 1.0.0' 'show-overrides does not contain "Hackage: 1.0.0"'
+    check_match 'nix run .#show-overrides -- dev' 'Hackage: 1.0.0'
 
     version=$(nix eval .#stm-chans-version.${pkgs.system})
     if [[ $version != '"2.0.0"' ]]
@@ -20,6 +20,13 @@
       fail "Running the main package produced the wrong output:\n$output"
     fi
 
-    nix run .#hls 2>/dev/null
+    cabal_update()
+    {
+      nix run .#gen-cabal-quiet
+      nix develop -c cabal update
+    }
+
+    if_ci cabal_update
+    check_exit 'nix run .#hls'
   '';
 }

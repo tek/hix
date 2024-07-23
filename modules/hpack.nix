@@ -2,29 +2,6 @@
 let
   inherit (lib) types mkOption;
 
-  libOutput = util.output;
-
-  maybeDefaultApp = name: a:
-  if name == config.defaultApp
-  then { default = a; }
-  else {};
-
-  # TODO this is too out of place here
-  appWithAppimage = pkg: name:
-  util.app "${pkg}/bin/${name}" // libOutput.appimageApp "dev" name;
-
-  appField = pkg: name: exe:
-  let a = appWithAppimage pkg name;
-  in { ${name} = a; } // maybeDefaultApp name a;
-
-  packageApps = outputs: pname: conf: let
-    main = libOutput.pkgMainExe config.packages.${pname};
-    pkg = outputs.${pname};
-  in
-  lib.optionalAttrs (main != null) { ${pname} = appWithAppimage pkg main.name; } //
-  util.catAttrs (lib.mapAttrsToList (appField pkg) (conf.executables or {}))
-  ;
-
 in {
   options = {
 
@@ -37,19 +14,12 @@ in {
 
     hpack = {
 
-      apps = mkOption {
-        type = types.lazyAttrsOf util.types.flakeApp;
-        default = {};
-      };
-
       script = mkOption {
         type = types.path;
         description = ''
-          The script that generates a Cabal file in each of the directories configured in `packages` by
+          The script that generates a Cabal file in each of the directories configured in [](#opt-general-packages) by
           executing `hpack`.
-          It is intended to be run manually in the package directory using `nix run .#hpack`.
-          If `hpack.packages` is defined, it is used to synthesize a `package.yaml`.
-          Otherwise, the file needs to be present in the source directory.
+          It is intended to be run manually in the package directory using `nix run .#gen-cabal`.
         '';
       };
 
@@ -71,11 +41,6 @@ in {
     defaultApp = lib.mkDefault config.main;
 
     hpack = {
-
-      apps = lib.mkDefault (
-        let drvs = util.env.derivations "apps" "dev";
-        in util.catAttrs (lib.mapAttrsToList (packageApps drvs) config.hpack.internal.packages)
-      );
 
       script = util.hpack.gen { verbose = true; };
 

@@ -6,6 +6,8 @@ on:
   pull_request:
 jobs:
   tests:
+    env:
+      CI: 1
     runs-on: ubuntu-latest
     permissions:
       contents: read

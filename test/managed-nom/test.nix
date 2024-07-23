@@ -5,9 +5,9 @@ in {
     mk_pkg()
     {
       local i=$1 name=$2 code=$3
-      local target="$testdir/root/''${name}''${i}"
+      local target="$work_dir/root/''${name}''${i}"
       mkdir -p "$target/lib"
-      cp $testdir/multi-fail/multi-fail.cabal "$target/multi-fail''${i}.cabal"
+      cp $work_dir/multi-fail/multi-fail.cabal "$target/multi-fail''${i}.cabal"
       print "module MultiFail where
     $code
     " > "$target/lib/MultiFail.hs"

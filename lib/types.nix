@@ -79,11 +79,24 @@ let
     merge = mergeOneOption;
   };
 
+  explainAppRecErr = def: let
+    a = def.value or {};
+    reason =
+      if !(a ? type)
+      then "Does not have the attribute 'type'"
+      else if !(a ? program)
+      then "Does not have the attribute 'program'"
+      else if !(isString a.type)
+      then "Attribute 'type' is not a string"
+      else "Unknown reason"
+      ;
+  in "${options.showDefs [def]}\n  :: ${reason}";
+
   appRecErr = loc: allInvalid:
     throw (
       "A definition for option `${showOption loc}' is not a valid flake app tree." +
       " It must have the attributes 'type' and 'program', both of which must be strings, or neither of them." +
-      " Definition values:${options.showDefs allInvalid}"
+      " Definition values:${lib.concatMapStrings explainAppRecErr allInvalid}"
     );
 
   attrsOfFlakeAppRec = lazyAttrsOf flakeAppRec;
@@ -96,19 +109,23 @@ let
 
     merge = loc: defs: let
 
-      maybeApps = lib.filter (a: a.value ? program || a.value ? type) defs;
+      isRoot = loc == ["outputs" "apps"];
+      maybeApps =
+        if isRoot
+        then []
+        else lib.filter (a: a.value ? program || a.value ? type) defs;
       validatedApps = lib.partition (a: checkFlakeApp a.value) maybeApps;
       apps =
         if validatedApps.wrong != []
         then appRecErr loc validatedApps.wrong
         else map (a: a // { value = { inherit (a.value) type program; }; }) validatedApps.right;
-      nested = map (a: a // { value = removeAttrs a.value ["type" "program"]; }) defs;
+      nested =
+        if isRoot
+        then defs
+        else map (a: a // { value = removeAttrs a.value ["type" "program"]; }) defs;
       merged = attrsOfFlakeAppRec.merge loc nested;
       # TODO improve this
-      dummyUnlessRoot =
-        if loc == ["outputs" "apps"]
-        then {}
-        else util.dummyApp loc (attrNames merged);
+      dummyUnlessRoot = optionalAttrs (!isRoot) (util.dummyApp loc (attrNames merged));
       app = if apps == [] then dummyUnlessRoot else mergeEqualOption loc apps;
 
     in merged // app;

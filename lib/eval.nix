@@ -19,7 +19,7 @@ let
   # TODO maybe this could include gen-overrides so the default systems may depend on it
   onlySystemsConfig = m:
   if lib.isFunction m
-  then a@{util, ...}: onlySystemsConfig (m a)
+  then a@{util, build, outputs, ...}: onlySystemsConfig (m a)
   else
   lib.optionalAttrs (m ? systems) { inherit (m) systems; } //
   lib.optionalAttrs (m ? config && m.config ? systems) { config = { inherit (m.config) systems; }; }

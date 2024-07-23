@@ -1,5 +1,5 @@
 {util}: let
-  inherit (util) config lib;
+  inherit (util) config lib internal;
 
   current = let
     file = "${config.base}/${config.managed.file}";
@@ -28,7 +28,7 @@
 
   envConfig = env: {
     ghc = managedEnvGhc env;
-    targets = util.env.targets env;
+    targets = internal.env.targets env;
   };
 
   cliConfig = {

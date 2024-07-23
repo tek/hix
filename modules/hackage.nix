@@ -1,9 +1,9 @@
-{ lib, config, util, ... }:
+{ util, ... }:
 with builtins;
-with lib;
+with util.lib;
 let
 
-  logic = import ../lib/hackage.nix { inherit lib config util; };
+  logic = import ../lib/hackage.nix { inherit util; };
 
   isNix = file: match ".*\.nix" file != null;
 

@@ -4,6 +4,8 @@ let
   # TODO use ghc-pkg to query versions so core library versions are accessible
   # even better: use CLI
 
+  inherit (util) internal;
+
   inherit (util.console) s indent;
   inherit (s) colors;
 
@@ -28,7 +30,7 @@ let
 
   packageDeps = name: conf: let
     head = colors.blue name;
-  in ["" head] ++ indent (util.concatMapAttrsToList componentDeps conf.internal.componentsSet);
+  in ["" head] ++ indent (util.concatMapAttrsToList componentDeps (internal.packages.normalized conf));
 
   packagesDeps =
     pkgs.writeText "dep-versions" (util.unlines (util.concatMapAttrsToList packageDeps config.packages));

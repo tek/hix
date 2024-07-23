@@ -1,5 +1,5 @@
 {inputs}:
-{config, lib, util, ...}: let
+{config, lib, util, build, ...}: let
 
   release = import ./lib/release.nix { inherit config util; };
 
@@ -140,7 +140,7 @@ in {
       test-managed = util.app tests.sets.test-managed;
       test = util.app tests.sets.test;
 
-      cli = util.app "${config.outputs.packages.hix}/bin/hix";
+      cli = util.app "${build.packages.min.hix.package}/bin/hix";
 
       new-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
@@ -157,7 +157,8 @@ in {
       bootstrap-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-bootstrap-nocache" ''
         $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
-        '' ''
+        ''
+        ''
         ${util.nixC} run .#gen-cabal-quiet
         '';
       in util.app prog;
@@ -172,11 +173,6 @@ in {
 
     };
 
-  };
-
-  output = {
-    commandApps = false;
-    envApps = false;
   };
 
 }

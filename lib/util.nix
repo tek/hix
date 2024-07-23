@@ -25,12 +25,14 @@ let
 
   projectHasPackages = !(basic.empty config.packages);
 
-  withMainOr = fallback: f:
+  withMainNameOr = alt: f:
   if projectHasPackages
   then f config.main
-  else fallback;
+  else alt;
 
-  attrsetMain = withMainOr {};
+  withMainOr = alt: f: withMainNameOr alt (pkgName: f config.packages.${pkgName});
+
+  attrsetMainName = withMainNameOr {};
 
   jsonFile = name: value: config.pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
 
@@ -45,10 +47,10 @@ let
       sourceDirs = c.source-dirs;
     };
 
-    packageConf = p: {
-      inherit (p) name;
-      src = p.subpath;
-      components = mapAttrs (_: componentConf) p.internal.componentsSet;
+    packageConf = pkg: {
+      inherit (pkg) name;
+      src = pkg.subpath;
+      components = mapAttrs (_: componentConf) (util.internal.packages.normalized pkg);
     };
 
     packages = mapAttrs (_: packageConf) config.packages;
@@ -146,7 +148,7 @@ let
   '';
 
   bootstrapWithDynamicCli = name: pre: post: script name ''
-  exe="${config.outputs.packages.hix}/bin/hix"
+  exe="${util.build.packages.min.hix.package}/bin/hix"
   ${pre}
   if ! ${pkgs.git}/bin/git status &>/dev/null
   then
@@ -189,8 +191,9 @@ let
     overridesGlobal
     overridesGlobalMin
     projectHasPackages
+    withMainNameOr
     withMainOr
-    attrsetMain
+    attrsetMainName
     jsonFile
     json
     visibleEnvs
@@ -219,11 +222,17 @@ let
 
     managed = import ./managed/default.nix { inherit util; };
 
-    env = import ./env.nix { inherit util; };
+    package = import ./package.nix { inherit util; };
 
-    output = import ./output.nix { inherit util; };
+    command = import ./command.nix { inherit util; };
 
     hpack = import ./hpack/default.nix { inherit util; };
+
+    internal = import ./internal/default.nix { inherit util; };
+
+    build = import ./build/default.nix { inherit util; };
+
+    outputs = import ./outputs/default.nix { inherit util; };
   };
 
 in util
