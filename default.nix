@@ -19,6 +19,9 @@ let
     pro = projectModules:
     self.flakeWith { extraModules = [(import ./modules/pro.nix)]; projectModules = toList projectModules; };
 
+    _hix_test = projectModules:
+    self.flakeWith { extraModules = [(import ./modules/hix-test.nix)]; projectModules = toList projectModules; };
+
     spec = import ./lib/deps/spec.nix { inherit (self) lib; };
   });
 

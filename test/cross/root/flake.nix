@@ -4,7 +4,7 @@
   inputs.hix.url = "path:HIX";
 
   outputs = {hix, ...}:
-  hix.lib.flake ({config, ...}: {
+  hix.lib._hix_test ({config, ...}: {
     packages.root = {
       src = ./.;
       library.enable = true;

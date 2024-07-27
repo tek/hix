@@ -3,7 +3,7 @@
 
   inputs.hix.url = "path:HIX";
 
-  outputs = { hix, ... }: hix.lib.flake ({config, ...}: {
+  outputs = { hix, ... }: hix.lib._hix_test ({config, ...}: {
     packages = {
       core = {
         src = ./core;

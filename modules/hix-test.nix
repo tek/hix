@@ -1,0 +1,3 @@
+{
+  internal.removeFlakeLockFromCabalDrvSrc = true;
+}

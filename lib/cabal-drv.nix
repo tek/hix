@@ -6,7 +6,14 @@ let
   hpackFile = conf:
   toFile "package.yaml" (toJSON (removeAttrs conf ["passthru"]));
 
-  srcWithCabal = pkgs: conf: name: src: let
+  withoutLock = name: srcPath: builtins.path {
+    path = srcPath;
+    filter = path: type: type != "regular" || baseNameOf path != "flake.lock";
+    name = "${name}-cabal-drv-src";
+  };
+
+  srcWithCabal = pkgs: conf: name: srcPath: let
+    src = if config.internal.removeFlakeLockFromCabalDrvSrc then withoutLock name srcPath else srcPath;
     cabal = "${name}.cabal";
   in pkgs.runCommand "${name}-cabal-drv" {} ''
   cp -r ${src} $out

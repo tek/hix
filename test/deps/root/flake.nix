@@ -5,7 +5,7 @@
   inputs.dep1.url = "path:BASE/dep1";
   inputs.dep2.url = "path:BASE/dep2";
 
-  outputs = { hix, dep1, dep2, ... }: hix.lib.flake ({ config, lib, ... }: {
+  outputs = { hix, dep1, dep2, ... }: hix.lib._hix_test ({ config, lib, ... }: {
     main = "root";
     packages = {
       root = {

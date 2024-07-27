@@ -4,7 +4,7 @@
   inputs.hix.url = "path:HIX";
   inputs.dep.url = "path:BASE/dep";
 
-  outputs = { hix, dep, ... }: hix.lib.flake ({config, lib, ...}: {
+  outputs = { hix, dep, ... }: hix.lib._hix_test ({config, lib, ...}: {
     systems = ["x86_64-linux" "aarch64-darwin"];
     depsFull = [dep];
     packages.root = {

@@ -14,7 +14,7 @@
       outputs.apps = f { inherit app; inherit (util) lib; };
     };
 
-  in hix.lib.flake [
+  in hix.lib._hix_test [
     (mod ({lib, app}: {
       a = lib.mkDefault (app "a" 1);
       b = {

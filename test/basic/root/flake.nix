@@ -4,7 +4,7 @@
   inputs.hix.url = "path:HIX";
 
   outputs = { hix, ... }:
-  hix.lib.flake {
+  hix.lib._hix_test {
     packages.root = {
       src = builtins.path { path = ./.; filter = (_: _: true); };
       cabal.dependencies = ["aeson"];

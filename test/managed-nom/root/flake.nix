@@ -3,7 +3,7 @@
 
   inputs.hix.url = "path:HIX";
 
-  outputs = {self, hix, ...}: hix.lib.flake ({config, lib, ...}: {
+  outputs = {self, hix, ...}: hix.lib._hix_test ({config, lib, ...}: {
     managed = {
       enable = true;
       latest.compiler = "ghc94";

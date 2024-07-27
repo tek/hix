@@ -283,6 +283,12 @@ in {
         default = "github:tek/hix?ref=${config.internal.hixVersion}";
       };
 
+      removeFlakeLockFromCabalDrvSrc = mkOption {
+        description = "If set, flake.lock will be filtered out of the source path for synthetic Cabal derivations.";
+        type = types.bool;
+        default = false;
+      };
+
     };
   };
 

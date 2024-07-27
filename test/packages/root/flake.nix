@@ -4,7 +4,7 @@
   inputs.hix.url = "path:HIX";
 
   outputs = { hix, ... }:
-  hix.lib.flake ({config, lib, ...}: let
+  hix.lib._hix_test ({config, lib, ...}: let
     global = config;
   in {
     main = "root";
