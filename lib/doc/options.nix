@@ -22,6 +22,8 @@ let
 
   excludedByAny = loc: any (excluded loc);
 
+  excludeGlobal = any (seg: seg == "_module");
+
   # TODO declarations appears to be always empty, so no links are generated
   optionsDoc = exclude: options: pkgs.nixosOptionsDoc {
     inherit options;
@@ -29,7 +31,7 @@ let
     allowDocBook = false;
     documentType = "none";
     transformOptions = opt: opt // { declarations = map (removePrefix "${toString ../..}/") opt.declarations; } // {
-      visible = opt.visible && !(excludedByAny opt.loc exclude);
+      visible = opt.visible && !(excludeGlobal opt.loc) && !(excludedByAny opt.loc exclude);
     };
   };
 
