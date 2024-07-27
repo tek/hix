@@ -17,6 +17,7 @@ let
     ./hackage.nix
     ./cli.nix
     ./managed.nix
+    ./ui.nix
     inputsConfig
   ];
 

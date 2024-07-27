@@ -69,6 +69,8 @@
 
   mod-managed = options.moduleWithout [] "managed" { inherit config lib util; };
 
+  mod-ui = options.module "ui" { inherit config lib util; inherit (util) outputs; };
+
   generalModules = [
     (options.importMod "systems" { inherit config lib; })
     (options.importMod "system" { inherit config lib; })
@@ -113,6 +115,8 @@
         (opt "package" "Package" mod-package)
         (opt "general" "General" mod-general)
         (text prose.ifd)
+        (text prose.ui)
+        (opt "ui" "UI" mod-ui)
       ];
     }
     {

@@ -23,6 +23,7 @@ jobs:
       with:
         name: tek
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+    - run: rm -rf /opt/hostedtoolcache
     - run: git config --global user.name hix
     - run: git config --global user.email hix@tryp.io
     - run: nix run .#test-basic-2

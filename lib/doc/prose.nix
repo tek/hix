@@ -431,6 +431,12 @@ in {
   exposed.
   '';
 
+  ui = ''
+  ## User Interface {#ui}
+
+  Options for UI behavior:
+  '';
+
   environments = ''
   ## Environments {#envs}
 
