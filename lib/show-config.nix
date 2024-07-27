@@ -7,8 +7,7 @@ with lib;
 let
 
   inherit (config.internal) pkgs;
-  console = import ./console.nix { inherit lib; };
-  inherit (console) color indent;
+  inherit (util.console) color indent;
 
   mods = util.evaledModules;
 

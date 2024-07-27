@@ -23,32 +23,39 @@
 
   colorsBgBright = colorsBased 100;
 
-  color = n: t: "\\e[" + toString n + "m" + t + "\\e[0m";
+  startSgr = n: "\\e[" + toString n + "m";
 
-  bold = color "1";
+  sgr = n: t: startSgr n + t + "\\e[0m";
 
-  faint = color "2";
+  bold = sgr "1";
 
-  underline = color "4";
+  faint = sgr "2";
 
-  colorExt = n: color "38;5;${toString n}";
+  underline = sgr "4";
 
-  colorExtBg = n: color "48;5;${toString n}";
+  colorExt = n: sgr "38;5;${toString n}";
+
+  colorExtBg = n: sgr "48;5;${toString n}";
 
 in {
-  inherit indentLine color colors colorsBg colorsBright colorsBgBright bold faint underline colorExt colorExtBg;
+  inherit indentLine sgr colors colorsBg colorsBright colorsBgBright bold faint underline colorExt colorExtBg;
+
+  color = sgr;
 
   indent = map indentLine;
 
-  s.colors = builtins.mapAttrs (_: color) colors;
-  s.colorsBg = builtins.mapAttrs (_: color) colorsBg;
+  s.colors = builtins.mapAttrs (_: sgr) colors;
+  s.colorsBg = builtins.mapAttrs (_: sgr) colorsBg;
 
-  rgb = r: g: b: color "38;2;${r};${g};${b}";
-  rgbBg = r: g: b: color "48;2;${r};${g};${b}";
+  start.colors = builtins.mapAttrs (_: startSgr) colors;
+  start.colorsBg = builtins.mapAttrs (_: startSgr) colorsBg;
 
-  chevrons = bold (color colors.magenta ">>>");
+  rgb = r: g: b: sgr "38;2;${r};${g};${b}";
+  rgbBg = r: g: b: sgr "48;2;${r};${g};${b}";
+
+  chevrons = bold (sgr colors.magenta ">>>");
   chevronsH = bold (colorExt 55 ">>=");
 
-  chevronY = bold (color colors.yellow ">");
-  chevronM = bold (color colors.magenta ">");
+  chevronY = bold (sgr colors.yellow ">");
+  chevronM = bold (sgr colors.magenta ">");
 }

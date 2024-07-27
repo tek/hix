@@ -4,8 +4,7 @@ let
   # TODO use ghc-pkg to query versions so core library versions are accessible
   # even better: use CLI
 
-  console = import ./console.nix { inherit lib; };
-  inherit (console) s indent;
+  inherit (util.console) s indent;
   inherit (s) colors;
 
   pkgs = config.pkgs;
