@@ -91,7 +91,7 @@ let
 
   ghci_match()
   {
-    check_match "nix run $1 <<< ':quit'" $2 $3
+    check_match "nix run $1 <<< ':quit' 2>&1" $2 $3
   }
   '';
 

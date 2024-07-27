@@ -137,7 +137,7 @@ let
   ${pre}
   if ! git status &>/dev/null
   then
-    ${pkgs.git}/bin/git init
+    ${pkgs.git}/bin/git init -q
   fi
   ${pkgs.git}/bin/git add .
   ${nixC} flake update --quiet --quiet
@@ -150,7 +150,7 @@ let
   ${pre}
   if ! ${pkgs.git}/bin/git status &>/dev/null
   then
-    ${pkgs.git}/bin/git init
+    ${pkgs.git}/bin/git init -q
   fi
   ${pkgs.git}/bin/git add .
   ${nixC} flake update --quiet --quiet

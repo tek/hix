@@ -41,6 +41,7 @@ let
 in {
   test = builtins.toFile "overrides-test" ''
     cd ./dep
+    flake_update
     nix run .#gen-overrides
     cd ../root
     flake_update
@@ -60,7 +61,7 @@ in {
     check 'nix eval .#legacyPackages.${pkgs.system}.ghc.aeson.version' '"2.1.2.1"' 'aeson version wrong after gen-overrides'
 
     nix build .#root1
-    nix flake check
+    nix --quiet --quiet flake check
 
     sed -i 's/2\.1/5.8/' flake.nix
     error_target="Please run 'nix run .#gen-overrides' again."

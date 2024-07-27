@@ -14,5 +14,6 @@ in {
     ${direnv} allow .
     cd . &>/dev/null
     check_match 'which ghc' 'bin/ghc' 'GHC not present in direnv'
+    cd .. &>/dev/null
   '';
 }

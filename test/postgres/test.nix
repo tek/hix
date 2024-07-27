@@ -3,7 +3,7 @@
   test = builtins.toFile "postgres-test" ''
     cd ./root
     flake_update
-    output=$(nix run .#cmd.db-test | tail -n5)
+    output=$(nix run .#cmd.db-test 2>/dev/null | tail -n5)
 
     target=' ?column? 
     ----------
