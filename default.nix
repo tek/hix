@@ -8,7 +8,7 @@ let
     hixModules = import ./modules/all-modules.nix { inherit inputs; };
 
     flakeWith = {projectModules ? [], extraModules ? []}:
-    import ./lib/build.nix {
+    import ./lib/eval.nix {
       inherit (inputs.nixpkgs) lib;
       inherit (self) hixModules;
       inherit projectModules extraModules;
