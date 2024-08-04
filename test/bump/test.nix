@@ -4,6 +4,9 @@ in {
   git = true;
 
   source = ''
+  file_exact ${./workflow.yaml} .github/workflows/bump.yaml
+  step_run managed.gen.ga.bump
+
   output_exact '[ "dev-local1" "dev-local2" "dev-local3" "latest-main-local1" "latest-other-local2" "latest-other-local3" ]'
   step_output_names checks.x86_64-linux
 

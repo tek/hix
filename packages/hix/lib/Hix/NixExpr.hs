@@ -5,7 +5,7 @@ import qualified Data.Text as Text
 import Exon (exon)
 
 import Hix.Class.EncodeNix (EncodeNix (encodeNix))
-import Hix.Data.NixExpr (Expr (..), ExprAttr (ExprAttr, ExprAttrNil))
+import Hix.Data.NixExpr (Expr (..), ExprAttr (ExprAttr, ExprAttrNil), ExprKey (..))
 
 indent ::
   Functor t =>
@@ -24,7 +24,7 @@ withSemicolon = \case
 renderAttrs :: Int -> [ExprAttr] -> [Text]
 renderAttrs ind attrs =
   attrs >>= \case
-    ExprAttr k v ->
+    ExprAttr (ExprKey k) v ->
       case renderExpr ind v of
         e :| [] -> [[exon|#{k} = #{e};|]]
         h :| (h1 : t) -> [exon|#{k} = #{h}|] : toList (withSemicolon (h1 :| t))
@@ -48,7 +48,7 @@ renderRootExpr =
   Text.unlines . toList . renderExpr 0
 
 checkEmpty ::
-  Text ->
+  ExprKey ->
   Expr ->
   ExprAttr
 checkEmpty key = \case
@@ -61,7 +61,7 @@ checkEmpty key = \case
 
 singleOpt ::
   EncodeNix a =>
-  Text ->
+  ExprKey ->
   (e -> Maybe a) ->
   e ->
   ExprAttr
@@ -70,7 +70,7 @@ singleOpt key get entity =
 
 single ::
   EncodeNix a =>
-  Text ->
+  ExprKey ->
   (e -> a) ->
   e ->
   ExprAttr
@@ -79,7 +79,7 @@ single key get =
 
 multiOpt ::
   EncodeNix a =>
-  Text ->
+  ExprKey ->
   (e -> Maybe [a]) ->
   e ->
   ExprAttr
@@ -88,7 +88,7 @@ multiOpt key get entity =
 
 multi ::
   EncodeNix a =>
-  Text ->
+  ExprKey ->
   (e -> [a]) ->
   e ->
   ExprAttr
@@ -98,7 +98,7 @@ multi key get =
 multiOrSingle ::
   ∀ a e .
   EncodeNix a =>
-  Text ->
+  ExprKey ->
   (e -> [a]) ->
   e ->
   ExprAttr
@@ -119,7 +119,7 @@ notNil = \case
   ExprAttrNil -> False
   _ -> True
 
-nonEmptyAttrs :: Text -> [ExprAttr] -> ExprAttr
+nonEmptyAttrs :: ExprKey -> [ExprAttr] -> ExprAttr
 nonEmptyAttrs key =
   filter notNil >>> \case
     [] -> ExprAttrNil

@@ -11,10 +11,11 @@ import Hix.Managed.Data.Bump (Bump (Bump))
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
-import Hix.Managed.Handlers.Build (BuildHandlers (latestVersion), handlersNull)
+import qualified Hix.Managed.Handlers.AvailableVersions as AvailableVersions
+import Hix.Managed.Handlers.Build (BuildHandlers (..), handlersNull)
 import Hix.Managed.QueryDep (simpleQueryDep)
 import Hix.Monad (M, clientError)
-import Hix.Test.Utils (UnitTest, runMTest)
+import Hix.Test.Utils (UnitTest, runMTest')
 
 deps :: [(MutableDep, VersionBounds)]
 deps =
@@ -62,7 +63,9 @@ latestVersion =
 
 handlersTest :: BuildHandlers
 handlersTest =
-  handlersNull {latestVersion}
+  handlersNull {
+    versions = AvailableVersions.handlersActionOne latestVersion
+  }
 
 target :: [DepMutation Bump]
 target =
@@ -99,7 +102,7 @@ target =
 test_candidatesBump :: UnitTest
 test_candidatesBump = do
   mutations <- evalEither =<< liftIO do
-    runMTest False do
+    runMTest' def do
       catMaybes <$> traverse (candidatesBump handlersTest) query
   sortOn (.package) target === sortOn (.package) (toList mutations)
   where

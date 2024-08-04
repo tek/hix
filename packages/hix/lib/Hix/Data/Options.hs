@@ -1,22 +1,27 @@
 module Hix.Data.Options where
 
 import Path (Abs, Dir, File, Path, SomeBase)
+import Text.Show (show)
 
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions)
+import Hix.Data.Json (JsonConfig)
 import Hix.Data.NewProjectConfig (NewProjectConfig)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Managed.Cabal.Data.Config (CabalConfig)
-import Hix.Managed.Data.BuildConfig (BuildConfig)
+import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
+import Hix.Managed.Cabal.Data.HackageRepo (HackageName)
+import Hix.Managed.Data.BuildConfig (BuildConfig, SpecialBuildHandlers)
+import Hix.Managed.Data.MaintConfig (MaintConfig)
+import Hix.Managed.Data.MaintContext (MaintContext)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import Hix.Managed.Data.Query (RawQuery)
+import Hix.Managed.Data.RevisionConfig (RevisionConfig)
+import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers)
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
-import Hix.Managed.Handlers.Build (SpecialBuildHandlers)
-import Hix.Optparse (JsonConfig)
 
 data PreprocOptions =
   PreprocOptions {
@@ -120,23 +125,38 @@ data EnvRunnerCommandOptions =
   }
   deriving stock (Show, Generic)
 
+data CabalOptions =
+  CabalOptions {
+    hackage :: [(HackageName, ContextHackageRepo -> ContextHackageRepo)]
+  }
+
+instance Show CabalOptions where
+  show CabalOptions {} = "CabalOptions"
+
+instance Default CabalOptions where
+  def = CabalOptions {hackage = []}
+
 data ProjectOptions =
   ProjectOptions {
     build :: BuildConfig,
+    cabal :: CabalOptions,
     envs :: [EnvName],
     query :: RawQuery,
     readUpperBounds :: Bool,
-    mergeBounds :: Bool
+    mergeBounds :: Bool,
+    localDeps :: Bool
   }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Show, Generic)
 
 instance Default ProjectOptions where
   def = ProjectOptions {
     build = def,
+    cabal = def,
     envs = [],
     query = [],
     readUpperBounds = False,
-    mergeBounds = False
+    mergeBounds = False,
+    localDeps = False
   }
 
 projectOptions :: [EnvName] -> ProjectOptions
@@ -144,10 +164,9 @@ projectOptions envs = def {envs}
 
 data ManagedOptions =
   ManagedOptions {
-    context :: Either ProjectContextProto JsonConfig,
+    context :: Either ProjectContextProto (Maybe JsonConfig),
     project :: ProjectOptions,
     stateFile :: StateFileConfig,
-    cabal :: CabalConfig,
     handlers :: Maybe SpecialBuildHandlers
   }
   deriving stock (Show, Generic)
@@ -168,13 +187,36 @@ data LowerOptions =
   deriving stock (Show)
 
 data LowerCommand =
-  LowerInitCmd LowerOptions
+  LowerInit LowerOptions
   |
-  LowerOptimizeCmd LowerOptions
+  LowerOptimize LowerOptions
   |
-  LowerStabilizeCmd LowerOptions
+  LowerStabilize LowerOptions
   |
-  LowerAutoCmd LowerOptions
+  LowerAuto LowerOptions
+  deriving stock (Show)
+
+data ReleaseMaintOptions =
+  ReleaseMaintOptions {
+    context :: Either MaintContext (Maybe JsonConfig),
+    managed :: ManagedOptions,
+    handlers :: Maybe SpecialMaintHandlers,
+    config :: MaintConfig
+  }
+  deriving stock (Show)
+
+data RevisionOptions =
+  RevisionOptions {
+    context :: Either MaintContext (Maybe JsonConfig),
+    config :: RevisionConfig,
+    cabal :: CabalOptions
+  }
+  deriving stock (Show)
+
+data HackageCommand =
+  ReleaseMaint ReleaseMaintOptions
+  |
+  Revision RevisionOptions
   deriving stock (Show)
 
 data Command =
@@ -186,13 +228,15 @@ data Command =
   |
   GhciCmd GhciOptions
   |
-  NewCmd NewOptions
+  New NewOptions
   |
-  BootstrapCmd BootstrapOptions
+  Bootstrap BootstrapOptions
   |
-  BumpCmd BumpOptions
+  Bump BumpOptions
   |
-  LowerCmd LowerCommand
+  Lower LowerCommand
+  |
+  Hackage HackageCommand
   deriving stock (Show)
 
 data Options =

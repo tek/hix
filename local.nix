@@ -11,9 +11,18 @@
     };
   };
 
+  hackageServer = config.pkgs.fetchFromGitea {
+    domain = "git.tryp.io";
+    owner = "tek";
+    repo = "hackage-server";
+    sha256 = "sha256-bm9jpskrYM4QKbP5tjdBy3BemSZnMH/Tx2yUuvuhr8c=";
+    rev = "678022773f7cd7db9264d8f9bf275e0ead9ea28a";
+  };
+
 in {
   compiler = "ghc98";
   ghcVersions = ["ghc96" "ghc98" "ghc910"];
+  main = "hix";
 
   hackage = {
     versionFile = "ops/version.nix";
@@ -38,80 +47,164 @@ in {
       module = "IncipitBase";
     };
     paths = false;
+
+    license = "BSD-2-Clause-Patent";
+    license-file = "LICENSE";
+    author = "Torsten Schmits";
+
+    meta = {
+      maintainer = "hackage@tryp.io";
+      category = "Build";
+      git = "https://git.tryp.io/tek/hix";
+      homepage = "https://git.tryp.io/tek/hix";
+      bug-reports = "https://github.com/tek/hix/issues";
+      synopsis = "Haskell/Nix development build tools";
+    };
   };
 
   packages.hix = {
     src = ./packages/hix;
 
-    cabal = {
+    buildInputs = p: [p.git];
 
-      license = "BSD-2-Clause-Patent";
-      license-file = "LICENSE";
-      author = "Torsten Schmits";
-
-      meta = {
-        maintainer = "hackage@tryp.io";
-        category = "Build";
-        git = "https://git.tryp.io/tek/hix";
-        homepage = "https://git.tryp.io/tek/hix";
-        bug-reports = "https://github.com/tek/hix/issues";
-        synopsis = "Haskell/Nix development build tools";
-      };
-
+    library = {
+      enable = true;
+      dependencies = [
+        "Cabal"
+        "aeson >= 2.0 && < 2.3"
+        "bytestring"
+        "cabal-install"
+        "cabal-install-solver"
+        "casing ^>= 0.1.4"
+        "containers"
+        "exceptions ^>= 0.10"
+        "exon >= 1.4 && < 1.8"
+        "extra ^>= 1.7"
+        "filepattern ^>= 0.1"
+        "generic-lens ^>= 2.2"
+        "generics-sop ^>= 0.5"
+        "http-client ^>= 0.7"
+        "http-client-tls ^>= 0.3"
+        "http-types ^>= 0.12"
+        "generic-lens ^>= 2.2"
+        "generics-sop ^>= 0.5"
+        "lens >= 5.1 && < 5.4"
+        "lens-regex-pcre ^>= 1.1"
+        "network"
+        "network-uri"
+        "optparse-applicative >= 0.17 && <0.19"
+        "path ^>= 0.9"
+        "path-io >= 1.7 && < 1.9"
+        "pretty"
+        "random ^>= 1.2"
+        "these ^>=1.2"
+        "time"
+        "transformers"
+        "typed-process ^>= 0.2"
+        "unix"
+      ];
     };
-
-    library.enable = true;
-    library.dependencies = [
-      "Cabal"
-      "cabal-install"
-      "cabal-install-solver"
-      "aeson >= 2.0 && < 2.3"
-      "bytestring"
-      "casing ^>= 0.1.4"
-      "containers"
-      "exceptions ^>= 0.10"
-      "exon >= 1.4 && < 1.8"
-      "extra ^>= 1.7"
-      "filepattern ^>= 0.1"
-      "http-client ^>= 0.7"
-      "http-client-tls ^>= 0.3"
-      "http-types ^>= 0.12"
-      "generic-lens ^>= 2.2"
-      "generics-sop ^>= 0.5"
-      "lens >= 5.1 && < 5.4"
-      "lens-regex-pcre ^>= 1.1"
-      "optparse-applicative >= 0.17 && <0.19"
-      "path ^>= 0.9"
-      "path-io >= 1.7 && < 1.9"
-      "pretty"
-      "random ^>= 1.2"
-      "these ^>=1.2"
-      "time"
-      "typed-process ^>= 0.2"
-      "transformers"
-      "unix"
-    ];
 
     executable.enable = true;
 
-    test.enable = true;
-    test.dependencies = [
-      "aeson >= 2.0 && < 2.3"
-      "Cabal"
-      "exon >= 1.4 && < 1.8"
-      "extra ^>= 1.7"
-      "hedgehog >= 1.1 && < 1.5"
-      "path ^>= 0.9"
-      "path-io >= 1.7 && < 1.9"
-      "tasty ^>= 1.4"
-      "tasty-hedgehog >= 1.3 && < 1.5"
-      "these ^>=1.2"
-      "transformers"
-    ];
+    test = {
+      enable = true;
+      dependencies = [
+        "Cabal"
+        "aeson >= 2.0 && < 2.3"
+        "exon >= 1.4 && < 1.8"
+        "extra ^>= 1.7"
+        "hedgehog >= 1.1 && < 1.5"
+        "lens >= 5.1 && < 5.3"
+        "path ^>= 0.9"
+        "path-io >= 1.7 && < 1.9"
+        "pretty"
+        "tasty ^>= 1.4"
+        "tasty-hedgehog >= 1.3 && < 1.5"
+        "these ^>=1.2"
+        "time"
+        "transformers"
+      ];
+    };
 
   };
 
-  envs.dev = cabalInstallFix;
+  packages.integration = {
+    src = ./packages/integration;
+
+    library = {
+      enable = true;
+      dependencies = [
+        "async"
+        "exon >= 1.4 && < 1.7"
+        "exceptions"
+        "hackage-server"
+        "network-uri"
+        "optparse-applicative >= 0.17 && <0.19"
+        "path ^>= 0.9"
+        "path-io >= 1.7 && < 1.9"
+        config.packages.hix.dep.exact
+      ];
+    };
+
+    test = {
+      enable = true;
+      dependencies = [
+        "aeson >= 2.0 && < 2.3"
+        "Cabal"
+        "exon >= 1.4 && < 1.7"
+        "hedgehog >= 1.1 && < 1.5"
+        "lens >= 5.1 && < 5.3"
+        "path ^>= 0.9"
+        "path-io >= 1.7 && < 1.9"
+        "tasty ^>= 1.4"
+        "tasty-hedgehog >= 1.3 && < 1.5"
+        "time"
+        config.packages.hix.dep.exact
+      ];
+      env = "integration";
+    };
+
+    executable.enable = true;
+
+    expose = false;
+
+  };
+
+  envs.integration = {
+    expose = false;
+    packages = ["hix" "integration"];
+    env = {
+      hackage_data_dir = "${hackageServer}/datafiles";
+      hix_dir = "${inputs.self}";
+    };
+
+    overrides = api@{hackage, fast, source, force, self, minimal, overrideAttrs, ...}:
+    cabalInstallFix.overrides api // {
+      hix = minimal;
+      integration = fast (overrideAttrs (old: {
+        hackage_data_dir = "${hackageServer}/datafiles";
+      }));
+      hackage-security = self.hackage-security_0_6_2_6;
+      hackage-server = force (source.root hackageServer);
+      tar = hackage "0.6.3.0" "02nq0l9bsnkk5w8lbp493anc01fyf45l7zbcahhzji02agjwxkqm";
+    };
+
+  };
+
+  commands.integration-hackage = {
+    env = "integration";
+    command = ''
+    ${build.packages.integration.integration.package}/bin/integration hackage $@
+    '';
+    expose = true;
+  };
+
+  commands.hls.env = lib.mkForce "integration";
+
+  envs.dev = cabalInstallFix // {
+    packages = ["hix"];
+  };
   envs.ghc98 = cabalInstallFix;
   envs.ghc910.overrides = {hackage, jailbreak, notest, ...}: {
     exon = hackage "1.7.1.0" "16vf84nnpivxw4a46g7jsy2hg4lpla7grkv3gp8nd69zlv43777l";
@@ -134,6 +227,8 @@ in {
 
     apps = let
 
+      # The test runner does not copy `./test` to the temporary directory.
+      # When the flake is evaluated in a test, this import would cause an exception without a guard.
       tests =
         if builtins.pathExists ./test
         then import ./test/default.nix { inherit util; inherit (inputs) self; }

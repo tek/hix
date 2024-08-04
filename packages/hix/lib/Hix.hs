@@ -3,50 +3,20 @@ module Hix where
 import System.Exit (exitFailure)
 
 import Hix.Bootstrap (bootstrapProject)
-import qualified Hix.Console as Console
-import Hix.Console (errorMessage)
 import qualified Hix.Data.GlobalOptions
-import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions))
+import Hix.Data.LogLevel (LogLevel)
 import qualified Hix.Data.Options as Options
-import Hix.Data.Options (
-  Command (..),
-  LowerCommand (LowerAutoCmd, LowerInitCmd, LowerOptimizeCmd, LowerStabilizeCmd),
-  Options (Options),
-  )
+import Hix.Data.Options (Command (..), HackageCommand (..), LowerCommand (..), Options (Options))
 import Hix.Env (printEnvRunner)
-import Hix.Error (
-  Error (..),
-  printBootstrapError,
-  printEnvError,
-  printError,
-  printFatalError,
-  printGhciError,
-  printNewError,
-  printPreprocError,
-  )
+import Hix.Error (Error, printError)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
 import Hix.Managed.Bump.App (bumpCli)
 import Hix.Managed.Lower.App (lowerAutoCli, lowerInitCli, lowerOptimizeCli, lowerStabilizeCli)
+import Hix.Managed.ReleaseMaintenance (releaseMaintenanceCli, revisionCli)
 import Hix.Monad (M, runMWith)
 import Hix.New (newProject)
 import Hix.Options (parseCli)
 import Hix.Preproc (preprocess)
-
-handleError ::
-  MonadIO m =>
-  GlobalOptions ->
-  Error ->
-  m ()
-handleError GlobalOptions {verbose} = \case
-  PreprocError err -> printPreprocError err
-  EnvError err -> printEnvError err
-  GhciError err -> printGhciError err
-  NewError err -> printNewError err
-  BootstrapError err -> printBootstrapError err
-  NoMatch msg | verbose -> printPreprocError msg
-  NoMatch _ -> unit
-  Fatal err -> printFatalError err
-  Client err -> Console.err (errorMessage err)
 
 runCommand :: Command -> M ()
 runCommand = \case
@@ -54,21 +24,24 @@ runCommand = \case
   EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts
   GhciCmd opts -> printGhciCmdline opts
-  NewCmd opts -> newProject opts.config
-  BootstrapCmd opts -> bootstrapProject opts.config
-  BumpCmd opts -> bumpCli opts
-  LowerCmd sub -> case sub of
-    LowerInitCmd opts -> lowerInitCli opts
-    LowerOptimizeCmd opts -> lowerOptimizeCli opts
-    LowerStabilizeCmd opts -> lowerStabilizeCli opts
-    LowerAutoCmd opts -> lowerAutoCli opts
+  New opts -> newProject opts.config
+  Bootstrap opts -> bootstrapProject opts.config
+  Bump opts -> bumpCli opts
+  Lower sub -> case sub of
+    LowerInit opts -> lowerInitCli opts
+    LowerOptimize opts -> lowerOptimizeCli opts
+    LowerStabilize opts -> lowerStabilizeCli opts
+    LowerAuto opts -> lowerAutoCli opts
+  Hackage sub -> case sub of
+    ReleaseMaint opts -> releaseMaintenanceCli opts
+    Revision opts -> revisionCli opts
 
-failure :: Bool -> Error -> IO ()
-failure verbose err = do
-  printError verbose err
+failure :: LogLevel -> Error -> IO ()
+failure logLevel err = do
+  printError logLevel err
   exitFailure
 
 main :: IO ()
 main = do
   Options global cmd <- parseCli
-  leftA (failure global.verbose) =<< runMWith global (runCommand cmd)
+  leftA (failure global.logLevel) =<< runMWith global (runCommand cmd)

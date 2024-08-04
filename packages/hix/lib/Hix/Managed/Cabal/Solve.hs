@@ -19,7 +19,7 @@ import Distribution.Solver.Types.Settings (AllowBootLibInstalls (AllowBootLibIns
 import Distribution.Verbosity (Verbosity)
 import Exon (exon)
 
-import Hix.Data.Error (Error (Fatal))
+import Hix.Data.Error (ErrorMessage (Fatal))
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Changes (SolverPlan, solverPlan)
 import qualified Hix.Managed.Cabal.Data.Config

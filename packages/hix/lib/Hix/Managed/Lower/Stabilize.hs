@@ -2,7 +2,7 @@ module Hix.Managed.Lower.Stabilize where
 
 import Exon (exon)
 
-import Hix.Class.Map (nToMaybe, (!!))
+import Hix.Class.Map ((!!))
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
@@ -17,7 +17,7 @@ import qualified Hix.Managed.Data.Constraints
 import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints))
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.Initial (Initial (Initial))
-import Hix.Managed.Data.Mutable (MutableDep, MutableVersions, depName)
+import Hix.Managed.Data.Mutable (MutableDep, depName)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId)
 import qualified Hix.Managed.Data.MutationState
@@ -44,21 +44,10 @@ import Hix.Managed.Process (processProject)
 import Hix.Managed.Report (describeIterations)
 import Hix.Managed.StageResult (stageResult)
 
--- TODO When some initial versions are missing, e.g. because the user added deps and the project broke at the same time,
--- it is up to luck that the solver chooses working versions.
--- Unlikely that there's a useful heuristic though.
-initialVersions ::
-  MutableVersions ->
-  [PackageId]
-initialVersions state =
-  nToMaybe state \ name -> fmap (initVersion name)
-  where
-    initVersion name version = PackageId {name = depName name, ..}
-
 buildLowerInit :: Flow BuildStatus
 buildLowerInit = do
-  execStatelessStage "stabilize-initial" \ StageContext {env, initial, builder} ->
-    buildVersions builder env "initial lower bounds" initial <&> \case
+  execStatelessStage "stabilize-initial" \ StageContext {env, initialVersions, builder} ->
+    buildVersions builder env "initial lower bounds" initialVersions <&> \case
       Success -> StageNoAction (Just "Env builds successfully with the initial bounds.")
       Failure -> StageFailure (FailedPrecondition msg)
   where
@@ -99,11 +88,11 @@ lowerStabilize ::
 lowerStabilize handlers conf context =
   stageResult success failure <$> processQuery candidates mutationHandlers conf context ext
   where
-    candidates query = candidatesStabilize handlers.versions query (join (context.initial !! query.package))
+    candidates query = candidatesStabilize handlers.versions query (join (context.initialVersions !! query.package))
 
     mutationHandlers = Mutation.handlersLower conf lowerStabilizeMode lowerStabilizeUpdate
 
-    ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper context.initial) def
+    ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper context.initialVersions) def
 
 stabilizeStage ::
   BuildHandlers ->

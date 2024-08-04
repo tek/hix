@@ -13,5 +13,7 @@
 
     file_exact ${./state-optimize.nix} 'ops/managed.nix'
     step_run lower.optimize.main $args
+
+    step_build lower-main.root
   '';
 }

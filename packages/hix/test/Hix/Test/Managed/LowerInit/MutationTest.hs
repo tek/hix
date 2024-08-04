@@ -2,14 +2,11 @@ module Hix.Test.Managed.LowerInit.MutationTest where
 
 import qualified Data.Text as Text
 import Exon (exon)
-import Hedgehog ((===))
 
 import Hix.Class.Map ((!!))
-import Hix.Data.Error (Error (Fatal))
-import Hix.Data.Options (ProjectOptions (envs, readUpperBounds))
-import qualified Hix.Data.Overrides
-import Hix.Data.Overrides (Override (Override))
-import Hix.Data.Version (SourceHash (SourceHash), Versions)
+import Hix.Data.Error (ErrorMessage (Fatal))
+import Hix.Data.Options (ProjectOptions (..))
+import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Changes (SolverPlan (SolverPlan))
 import qualified Hix.Managed.Cabal.Data.Packages
@@ -17,7 +14,7 @@ import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Cabal.Mock.SourcePackage (allDep, allDeps)
 import Hix.Managed.Data.Constraints (EnvConstraints)
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
@@ -26,11 +23,11 @@ import Hix.Managed.Lower.Init (lowerInitMain)
 import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
-import Hix.Test.Hedgehog (eqLines, listEqZip)
+import Hix.Test.Hedgehog (eqLines, listEqTail, listEqZip)
 import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, nosortOptions, testParams)
 import Hix.Test.Utils (UnitTest)
 
-packages :: Packages ManagedPackageProto
+packages :: Packages ManagedPackage
 packages =
   managedPackages [
     (("local1", "1.0"), [
@@ -44,13 +41,17 @@ packages =
     (("local4", "1.0"), ["direct4"]),
     (("local5", "1.0"), ["direct5"]),
     (("local6", "1.0"), ["direct3"]),
-    (("local7", "1.0"), ["local6 <2", "direct2"]),
+    (("local7", "1.0"), ["local6 <0.9", "direct2"]),
     (("local8", "1.0"), ["direct1", "direct6"])
   ]
 
 available :: SourcePackages
 available =
   [
+    ("local6", [
+      ([0, 8], ["direct3 >=1.0.1 && <1.5"]),
+      ([0, 9], ["direct3 >=1.0.1 && <1.5"])
+    ]),
     ("direct1", [
       ([1, 0, 3], ["transitive1 >=1"]),
       ([1, 0, 4], ["transitive1 >=1"]),
@@ -93,7 +94,8 @@ state =
   ProjectStateProto {
     bounds = [
       ("local1", [
-        ("direct2", [[4, 0], [4, 4]]),
+        ("direct2", ">=4.0"),
+
         ("direct3", [[1, 0, 1], [1, 5]])
       ]),
       ("local5", [("direct5", [[1, 5], [1, 6]])])
@@ -110,8 +112,8 @@ state =
       ])
     ],
     overrides = [
-      ("latest", [("direct2", Override {version = [5, 0], hash = SourceHash "direct2-5.0"})]),
-      ("lower-main", [("direct3", Override {version = [1, 0, 1], hash = SourceHash "direct3-1.0.1"})])
+      ("latest", [("direct2", "direct2-5.0")]),
+      ("lower-main", [("direct3", "direct3-1.0.1")])
     ],
     initial = [("lower-main", [("direct3", [1, 0, 1])])],
     resolving = False
@@ -139,6 +141,19 @@ build = \case
   [
     ("direct2", [5, 0]),
     ("direct3", [1, 4]),
+    ("local6", [0, 9]),
+    ("transitive3", [1, 0, 1])
+    ] -> pure Success
+  [
+    ("direct2", [5, 0]),
+    ("direct3", [1, 4]),
+    ("local6", [0, 8]),
+    ("transitive3", [1, 0, 1])
+    ] -> pure Success
+  [
+    ("direct2", [5, 0]),
+    ("direct3", [1, 4]),
+    ("local6", [1, 0]),
     ("transitive3", [1, 0, 1])
     ] -> pure Success
   [
@@ -190,7 +205,11 @@ cabalTarget =
     ([
       "direct2 ==5.0",
       "local6"
-    ], plan ["direct2-5.0", "direct3-1.4", "local6-1.0", "transitive3-1.0.1"])
+    ], plan ["direct2-5.0", "direct3-1.4", "local6-0.9", "transitive3-1.0.1"]),
+    ([
+      "direct2 <=5.0",
+      "local6 ==0.8"
+    ], plan ["direct2-5.0", "direct3-1.4", "local6-0.8", "transitive3-1.0.1"])
   ]
   where
     item1 (v1 :: Natural) (nt :: Natural) =
@@ -241,10 +260,23 @@ stateFileTarget =
         upper = null;
       };
     };
-    local2 = {};
+    local2 = {
+      local1 = {
+        lower = null;
+        upper = null;
+      };
+      local3 = {
+        lower = null;
+        upper = null;
+      };
+    };
     local3 = {
       direct1 = {
         lower = "1.0.5";
+        upper = null;
+      };
+      local1 = {
+        lower = null;
         upper = null;
       };
     };
@@ -271,6 +303,10 @@ stateFileTarget =
         lower = "5.0";
         upper = null;
       };
+      local6 = {
+        lower = "0.8";
+        upper = "0.9";
+      };
     };
     local8 = {
       direct1 = {
@@ -292,6 +328,7 @@ stateFileTarget =
     };
     lower-special = {
       direct2 = "5.0";
+      local6 = "0.8";
     };
     lower-unused = {
       direct1 = "1.0.1";
@@ -307,6 +344,7 @@ stateFileTarget =
     };
     lower-special = {
       direct2 = "5.0";
+      local6 = "0.8";
     };
     lower-unused = {};
   };
@@ -356,6 +394,10 @@ stateFileTarget =
         version = "1.4";
         hash = "direct3-1.4";
       };
+      local6 = {
+        version = "0.8";
+        hash = "local6-0.8";
+      };
       transitive3 = {
         version = "1.0.1";
         hash = "transitive3-1.0.1";
@@ -381,6 +423,7 @@ logTarget =
 [35m[1m>>>[0m Found initial lower bounds for all deps after 1 iteration.
 [35m[1m>>>[0m Added new versions:
     📦 [34mdirect2[0m   5.0   ↕ [no bounds] -> >=[32m5.0[0m
+    📦 [34mlocal6[0m    0.8   ↕ <0.9 -> [[32m0.8[0m, 0.9]
 |]
 
 -- | Goals for these deps:
@@ -420,7 +463,7 @@ test_lowerInitMutation = do
   Result {..} <- lowerTest params (lowerInitMain def)
   listEqZip cabalTarget cabalLog
   eqLines stateFileTarget (renderRootExpr stateFile)
-  logTarget === drop 24 (reverse log)
+  listEqTail logTarget (reverse log)
   where
     params =
       (testParams False packages) {
@@ -433,6 +476,10 @@ test_lowerInitMutation = do
         log = True,
         ghcPackages,
         state,
-        projectOptions = nosortOptions {envs = ["lower-main", "lower-special"], readUpperBounds = True},
+        projectOptions = nosortOptions {
+          envs = ["lower-main", "lower-special"],
+          readUpperBounds = True,
+          localDeps = True
+        },
         build
       }

@@ -15,12 +15,12 @@ import Hix.Managed.Data.EnvContext (EnvDeps (EnvDeps))
 import Hix.Managed.Data.Mutable (unsafeMutableDep)
 import Hix.Pretty (prettyL, showP, showPL)
 import Hix.Test.Managed.UnsafeIsString ()
-import Hix.Test.Utils (UnitTest, runMTest)
+import Hix.Test.Utils (UnitTest, logConfigDebug, runMTest')
 
 test_solve :: UnitTest
 test_solve =
   evalEither =<< liftIO do
-    runMTest True do
+    runMTest' logConfigDebug do
       res <- SolveResources.acquire mempty def (GhcDbSystem Nothing)
       mb_sip <- solveWithCabal' res state
       sorted <- sortDeps res id (nKeys constraints)
@@ -40,7 +40,7 @@ test_solve =
         putStrLn "Sorted:"
         putStrLn (showPL sorted)
   where
-    state = solverState [] (EnvDeps (Set.fromList (unsafeMutableDep <$> nKeys constraints)) mempty) constraints def
+    state = solverState [] (EnvDeps (Set.fromList (unsafeMutableDep <$> nKeys constraints))) constraints def
     constraints =
       [
         ("ansi-terminal", mempty),

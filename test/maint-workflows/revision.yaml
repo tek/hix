@@ -1,0 +1,26 @@
+name: Publish revision for updated bounds
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ['release/**']
+
+jobs:
+  revision:
+    name: Publish revision
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@main
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: cachix/cachix-action@v15
+      with:
+        name: tek
+    - id: revision
+      name: Publish revision
+      run: |
+        nix run .#revision -- --ci \
+          --hackage="hackage.haskell.org:password:${{ secrets.hackage_password }}" \
+          --branch "${{ github.base_ref }}"

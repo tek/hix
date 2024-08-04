@@ -13,9 +13,12 @@ log level msg = do
   env <- M ask
   env.logger level msg
 
-verbose :: Text -> M ()
-verbose msg =
-  log LogVerbose (withChevrons 4 msg)
+trace :: Text -> M ()
+trace msg =
+  log LogTrace [exon|[#{color 3 "trace"}] #{msg}|]
+
+traceP :: Doc -> M ()
+traceP = trace . show
 
 debug :: Text -> M ()
 debug msg =
@@ -24,9 +27,16 @@ debug msg =
 debugP :: Doc -> M ()
 debugP = debug . show
 
+verbose :: Text -> M ()
+verbose msg =
+  log LogVerbose (withChevrons 4 msg)
+
 info :: Text -> M ()
 info msg =
   log LogInfo (withChevrons 5 msg)
+
+infoP :: Doc -> M ()
+infoP = info . show
 
 infoPlain :: Text -> M ()
 infoPlain msg =
@@ -48,10 +58,12 @@ logWith :: (LogLevel -> Text -> IO ()) -> LogLevel -> Text -> M ()
 logWith handler level msg = do
   env <- M ask
   let
-    minVerbose = env.verbose || env.debug
-    minInfo = minVerbose || not env.quiet
+    minDebug = env.logLevel >= LogDebug
+    minVerbose = env.logLevel >= LogVerbose
+    minInfo = env.logLevel >= LogInfo
   case level of
-    LogDebug | env.debug -> accept
+    LogTrace | env.logLevel >= LogTrace -> accept
+    LogDebug | minDebug -> accept
     LogVerbose | minVerbose -> accept
     LogInfo | minInfo -> accept
     LogWarn | minInfo -> accept

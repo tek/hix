@@ -3,15 +3,13 @@ module Hix.Test.Managed.LowerAuto.MutationStabilizeTest where
 import Exon (exon)
 
 import Hix.Class.Map (nGen, (!!))
-import Hix.Data.Error (Error (Fatal))
-import qualified Hix.Data.Overrides
-import Hix.Data.Overrides (Override (Override))
-import Hix.Data.Version (SourceHash (SourceHash), Versions)
+import Hix.Data.Error (ErrorMessage (Fatal))
+import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Data.LowerConfig (LowerConfig (stabilize))
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
@@ -24,7 +22,7 @@ import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
 import Hix.Test.Utils (UnitTest)
 
-packages :: Packages ManagedPackageProto
+packages :: Packages ManagedPackage
 packages =
   managedPackages [
     (("local1", "1.0"), [
@@ -95,7 +93,7 @@ state =
     override (num :: Natural) =
       (
         fromString [exon|direct#{show num}|],
-        Override {version = [1, 0], hash = SourceHash [exon|direct#{show num}-1.0|]}
+        fromString [exon|direct#{show num}-1.0|]
       )
 
 build :: Versions -> M BuildStatus

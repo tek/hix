@@ -8,7 +8,7 @@ import Generics.SOP (All2, K (K), SListI2, hcmap, hcollapse)
 import Text.PrettyPrint (Doc)
 
 import Hix.Class.SOP (Field (Field), FieldK (FieldK), ToFields (toFields))
-import Hix.Data.NixExpr (Expr (..), ExprAttr (ExprAttr), ViaPretty (ViaPretty), exprBool, exprShow)
+import Hix.Data.NixExpr (Expr (..), ExprAttr (ExprAttr), ExprKey (..), ViaPretty (ViaPretty), exprBool, exprShow)
 
 type EncodeField :: FieldK -> Constraint
 class EncodeField field where
@@ -19,7 +19,7 @@ instance (
     EncodeNix a
   ) => EncodeField ('FieldK name a) where
     encodeField (Field a) =
-      ExprAttr (toText (symbolVal (Proxy @name))) (encodeNix a)
+      ExprAttr (ExprKey (toText (symbolVal (Proxy @name)))) (encodeNix a)
 
 class EncodeProd a where
   encodeProd :: a -> Expr
@@ -36,10 +36,10 @@ instance (
       toFields
 
 class EncodeNixKey a where
-  encodeNixKey :: a -> Text
+  encodeNixKey :: a -> ExprKey
 
 instance EncodeNixKey Text where
-  encodeNixKey = id
+  encodeNixKey = ExprKey
 
 class EncodeNix a where
   encodeNix :: a -> Expr

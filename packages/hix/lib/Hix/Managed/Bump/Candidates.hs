@@ -10,6 +10,7 @@ import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (DepMutation (DepMutation))
 import qualified Hix.Managed.Data.QueryDep
 import Hix.Managed.Data.QueryDep (QueryDep (QueryDep))
+import Hix.Managed.Handlers.AvailableVersions (AvailableVersionsHandlers (..))
 import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (BuildHandlers)
 import Hix.Version (nextMajor)
@@ -37,7 +38,7 @@ candidatesBump ::
   QueryDep ->
   M (Maybe (DepMutation Bump))
 candidatesBump handlers QueryDep {package, current} = do
-  fmap mutation <$> handlers.latestVersion (depName package)
+  fmap mutation <$> handlers.versions.latest (depName package)
   where
     mutation version =
       DepMutation {

@@ -182,5 +182,4 @@ mutations results = do
   sequence_ (intersperse blankLine (envResult <$> toList results.envs))
 
 handlersProd :: ReportHandlers
-handlersProd =
-  ReportHandlers {mutations}
+handlersProd = ReportHandlers {mutations}

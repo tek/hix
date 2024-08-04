@@ -30,10 +30,11 @@ mutationState EnvState {versions, overrides} =
 stageContext :: EnvRequest -> EnvState -> StageContext
 stageContext EnvRequest {context = env, builder} envState =
   StageContext {
-    query = Query (queryDep builder.cabal state bounds <$> env.query),
-    initial = reifyVersionChanges envState.initial,
+    query = Query (queryDep builder.cabal state initialBounds <$> env.query),
+    initialVersions = reifyVersionChanges envState.initial,
+    initialBounds,
     ..
   }
   where
-    bounds = reifyBoundsChanges envState.bounds
+    initialBounds = reifyBoundsChanges envState.bounds
     state = mutationState envState

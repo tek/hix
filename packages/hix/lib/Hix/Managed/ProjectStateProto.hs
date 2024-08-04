@@ -4,21 +4,18 @@ import Data.Map.Merge.Strict (mapMissing, traverseMaybeMissing, traverseMissing,
 import Exon (exon)
 
 import Hix.Class.Map (NMap, nBy, nElems, nFromKeys, nMap, nMergeA, nTransform)
-import Hix.Data.Bounds (Bounds)
+import Hix.Data.Bounds (Bounds, Ranges)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
-import qualified Hix.Data.Options
-import Hix.Data.Options (ProjectOptions)
+import Hix.Data.Options (ProjectOptions (..))
 import Hix.Data.PackageName (LocalPackage, PackageName)
-import Hix.Data.Version (Version, VersionRange, Versions)
-import Hix.Data.VersionBounds (anyBounds, withUpper)
+import Hix.Data.Version (Version, Versions)
+import Hix.Data.VersionBounds (amendUpper, anyBounds)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvDeps (EnvDeps))
 import Hix.Managed.Data.Envs (Envs)
-import qualified Hix.Managed.Data.ManagedPackage
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (ManagedPackage))
-import Hix.Managed.Data.Mutable (MutableBounds, MutableDep, MutableRanges, depName)
+import Hix.Managed.Data.Mutable (MutableDep, depName)
 import Hix.Managed.Data.Packages (Deps, Packages)
 import qualified Hix.Managed.Data.ProjectState
 import Hix.Managed.Data.ProjectState (ProjectState (ProjectState))
@@ -35,10 +32,6 @@ invalidDep ::
 invalidDep package dep _ =
   Nothing <$ Log.warn [exon|Discarding bound for invalid dep '##{dep}' of package '##{package}'|]
 
-packageDepsForMerge :: MutableRanges -> Deps (MutableDep, VersionRange)
-packageDepsForMerge =
-  nTransform \ name range -> (depName name, (name, range))
-
 envDepsForMerge :: Envs EnvDeps -> Envs (Deps MutableDep)
 envDepsForMerge =
   nMap \ EnvDeps {mutable} -> nBy mutable depName
@@ -49,35 +42,33 @@ toMutable ::
   map
 toMutable = nTransform \ _ -> id
 
-validateBounds ::
-  Bool ->
-  LocalPackage ->
-  ManagedPackage ->
-  Bounds ->
-  M MutableBounds
-validateBounds readUpper package ManagedPackage {mutable} bounds =
-  toMutable <$> nMergeA stateMissing depMissing convertBound deps bounds
-  where
-    deps = packageDepsForMerge mutable
-
-    stateMissing = mapMissing \ _ (name, range) -> (name, handleUpper range anyBounds)
-
-    depMissing = traverseMaybeMissing (invalidDep package)
-
-    convertBound = zipWithMatched \ _ (name, range) bound -> (name, handleUpper range bound)
-
-    handleUpper range | readUpper, Just u <- upperVersion range = withUpper u
-                      | otherwise = id
-
 invalidBoundsPackage :: LocalPackage -> a -> M (Maybe b)
 invalidBoundsPackage package _ =
   Nothing <$ Log.warn [exon|Discarding bounds for unknown local package '##{package}'|]
 
+validateBounds ::
+  Bool ->
+  LocalPackage ->
+  Ranges ->
+  Bounds ->
+  M Bounds
+validateBounds readUpper package ranges stateBounds =
+  nMergeA stateMissing depMissing convertBound ranges stateBounds
+  where
+    stateMissing = mapMissing \ _ range -> handleUpper range anyBounds
+
+    depMissing = traverseMaybeMissing (invalidDep package)
+
+    convertBound = zipWithMatched (const handleUpper)
+
+    handleUpper range | readUpper, Just u <- upperVersion range = amendUpper u
+                      | otherwise = id
+
 validateProjectBounds ::
   Bool ->
-  Packages ManagedPackage ->
+  Packages Ranges ->
   Packages Bounds ->
-  M (Packages MutableBounds)
+  M (Packages Bounds)
 validateProjectBounds readUpper =
   nMergeA boundsMissing (traverseMaybeMissing invalidBoundsPackage) (zipWithAMatched (validateBounds readUpper))
   where
@@ -128,12 +119,12 @@ validateProjectVersions desc =
 
 validateProjectState ::
   ProjectOptions ->
-  Packages ManagedPackage ->
+  Packages Ranges ->
   Envs EnvDeps ->
   ProjectStateProto ->
   M ProjectState
-validateProjectState opts packages envDeps proto = do
-  bounds <- validateProjectBounds opts.readUpperBounds packages proto.bounds
+validateProjectState opts ranges envDeps proto = do
+  bounds <- validateProjectBounds opts.readUpperBounds ranges proto.bounds
   versions <- validateProjectVersions "bound versions" depSets proto.versions
   initial <- validateProjectVersions "initial versions" depSets proto.initial
   pure ProjectState {overrides = proto.overrides, resolving = False, ..}

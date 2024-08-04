@@ -1,20 +1,24 @@
 module Hix.Managed.ProjectContextProto where
 
+import qualified Data.Set as Set
 import Exon (exon)
 
-import Hix.Class.Map (nBy, nKeys, nKeysSet, nMap, nTo, (!!), (!?))
+import Hix.Class.Map (nConcat, nGen, nKeys, nKeysSet, nMap, nOver, (!?))
+import Hix.Data.Dep (Dep (..))
 import Hix.Data.EnvName (EnvName)
+import Hix.Data.Error (ErrorMessage (Client))
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (ProjectOptions)
+import Hix.Data.PackageName (PackageName)
+import Hix.Managed.Cabal.Config (cabalConfig)
+import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext, EnvDeps)
 import Hix.Managed.Data.Envs (Envs)
-import qualified Hix.Managed.Data.ManagedPackage
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (ManagedPackage))
-import Hix.Managed.Data.Mutable (MutableDep, depName)
-import Hix.Managed.Data.Packages (Deps, Packages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (..))
+import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext (ProjectContext))
 import qualified Hix.Managed.Data.ProjectContextProto
@@ -22,23 +26,20 @@ import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import Hix.Managed.Data.ProjectState (ProjectState)
 import Hix.Managed.Data.Query (RawQuery (RawQuery))
 import Hix.Managed.EnvContext (envContexts)
-import qualified Hix.Managed.ManagedPackageProto as ManagedPackageProto
 import qualified Hix.Managed.ProjectStateProto as ProjectStateProto
-import Hix.Monad (clientError, noteClient)
+import Hix.Monad (fromEither, noteClient)
 
 validateQuery ::
-  Packages ManagedPackage ->
+  Set PackageName ->
   RawQuery ->
-  M (Maybe (NonEmpty MutableDep))
-validateQuery packages (RawQuery deps) =
-  nonEmpty <$> traverse check deps
+  Either ErrorMessage (Maybe (NonEmpty PackageName))
+validateQuery projectDeps (RawQuery query) =
+  maybeToLeft (nonEmpty query) (err <$> find invalid query)
   where
-    check dep | Just m <- mutables !! dep = pure m
-              | otherwise = clientError [exon|'##{dep}' is not a dependency of any package.|]
+    err :: PackageName -> ErrorMessage
+    err dep = Client [exon|'##{dep}' is not a dependency of any package.|]
 
-    mutables :: Deps MutableDep
-    mutables = nBy mutablesSet depName
-    mutablesSet = mconcat (nTo packages \ _ ManagedPackage {mutable} -> nKeysSet mutable)
+    invalid dep = not (Set.member dep projectDeps)
 
 noEnvs :: Text
 noEnvs =
@@ -65,25 +66,34 @@ projectContext ::
   ProjectState ->
   Packages ManagedPackage ->
   NonEmpty (Either EnvName EnvContext) ->
+  CabalConfig ->
   ProjectContext
-projectContext build state packages envs =
-  ProjectContext {
-    build,
-    state,
-    packages,
-    envs
-  }
+projectContext build state packages envs cabal =
+  ProjectContext {..}
 
 validate ::
   ProjectOptions ->
   ProjectContextProto ->
   M ProjectContext
 validate opts proto = do
-  query <- validateQuery packages opts.query
-  contexts <- envContexts opts packages proto.envs query
-  let envDeps = nMap (either id (.deps)) contexts
-  state <- ProjectStateProto.validateProjectState opts packages envDeps proto.state
+  query <- fromEither (validateQuery projectDeps opts.query)
+  let contexts = envContexts opts proto.packages proto.envs query
+      envDeps = nMap (either id (.deps)) contexts
+  state <- ProjectStateProto.validateProjectState opts ranges envDeps proto.state
   envTargets <- selectEnvs contexts opts.envs
-  pure (projectContext opts.build state packages envTargets)
+  cabal <- cabalConfig proto.hackage opts.cabal
+  pure ProjectContext {
+    build = opts.build,
+    state,
+    packages = proto.packages,
+    envs = envTargets,
+    cabal
+  }
   where
-    packages = ManagedPackageProto.validate proto.packages
+    projectDeps = nConcat ranges (const nKeysSet)
+
+    ranges =
+      nOver proto.packages \ ManagedPackage {deps} ->
+        nGen deps \ Dep {package = depPackage, ..} ->
+          (depPackage, version)
+

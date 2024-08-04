@@ -7,7 +7,7 @@ import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Data.Constraints (EnvConstraints)
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
@@ -17,7 +17,7 @@ import Hix.Test.Hedgehog (listEqZip)
 import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
 import Hix.Test.Utils (UnitTest)
 
-packages :: Packages ManagedPackageProto
+packages :: Packages ManagedPackage
 packages =
   managedPackages [(("local1", "1.0"), ["dep1", "dep2", "dep3"])]
 

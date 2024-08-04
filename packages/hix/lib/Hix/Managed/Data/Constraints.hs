@@ -55,6 +55,7 @@ instance Pretty MutationConstraints where
       pref v = "~" <+> pretty v
       spec v = "+" <+> pretty v
 
+-- TODO maybe try creating something lawful, or at least intuitive?
 instance Semigroup MutationConstraints where
   l <> r =
     MutationConstraints {

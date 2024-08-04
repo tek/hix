@@ -42,5 +42,4 @@ tests =
   ]
 
 main :: IO ()
-main =
-  defaultMain tests
+main = defaultMain tests

@@ -1,25 +1,24 @@
 module Hix.Trace where
 
-import Distribution.Pretty (Pretty)
 import GHC.Stack (callStack)
 import System.IO.Unsafe (unsafePerformIO)
 
-import Hix.Pretty (showP)
+import Hix.Pretty (HPretty, showHP)
 
 trp ::
   ∀ b a .
-  Pretty b =>
+  HPretty b =>
   HasCallStack =>
   b ->
   a ->
   a
 trp b a =
-  unsafePerformIO (a <$ debugPrint (srcLoc callStack) (showP b))
+  unsafePerformIO (a <$ debugPrint (srcLoc callStack) (showHP b))
 
 trpi ::
-  Pretty a =>
+  HPretty a =>
   HasCallStack =>
   a ->
   a
 trpi a =
-  unsafePerformIO (a <$ debugPrint (srcLoc callStack) (showP a))
+  unsafePerformIO (a <$ debugPrint (srcLoc callStack) (showHP a))

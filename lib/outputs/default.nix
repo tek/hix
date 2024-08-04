@@ -6,4 +6,5 @@
   internals = import ./internals.nix { inherit util; };
   managed = import ./managed.nix { inherit util; };
   packages = import ./packages.nix { inherit util; };
+  cli-context = import ./cli-context.nix { inherit util; };
 }

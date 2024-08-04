@@ -1,5 +1,5 @@
 {util}: let
-  inherit (util) config lib;
+  inherit (util) config lib outputs;
 
   cli = config.internal.hixCli.exe;
 
@@ -17,27 +17,30 @@
 
   mergeBounds = lib.optionalString conf.mergeBounds "--merge-bounds";
 
-  # TODO change this to use only one script that loops over all the options
-  # TODO also generalize
-  withCheckFor = flag: name: main:
-    if lib.attrByPath flag false conf
+  sharedOptions = [
+    "--file ${file}"
+  ];
+
+  withCheckFor = main: flag:
+    if lib.attrByPath flag false config
     then main
     else util.zscriptErrBin "managed-disabled" ''
     ${util.loadConsole}
-    die "Set $(blue 'managed.${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
+    die "Set $(blue '${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
     '';
 
-  mainScript = cmd: envs: let
+  cliJson = util.jsonFile "managed-config" outputs.cli-context.managed;
+
+  managedScript = cmd: envs: let
     general = [
-      "--config ${util.managed.state.cliJson}"
-      "--file ${file}"
+      "--config ${cliJson}"
       readUpperBounds
       mergeBounds
     ];
 
     envsArgs = map (env: "--env ${env}") envs;
 
-    args = util.unwords (general ++ envsArgs);
+    args = util.unwords (sharedOptions ++ general ++ envsArgs);
 
     desc = if lib.length envs == 1 then lib.head envs else "${cmd}-multi";
   in
@@ -58,12 +61,25 @@
   ''}
   '';
 
-  checkedScript = flags: cmd: envs:
-  lib.foldl (z: flag: lib.foldl (z': env: withCheckFor flag env z') z envs) (mainScript cmd envs) flags;
+  maintScript = util.zscriptBin "managed-maint" ''
+  ${cli} ${verbose} ${debug} ${quiet} hackage maint ${util.unwords sharedOptions} $@
+  '';
 
-  bump = checkedScript [["enable"]] "bump";
-  lower = sub: checkedScript [["lower" "enable"] ["enable"]] "lower ${sub}";
+  revisionScript = util.zscriptBin "managed-revision" ''
+  ${cli} ${verbose} ${debug} ${quiet} hackage revision $@
+  '';
+
+  checkedScript = flags: script:
+  lib.foldl withCheckFor script flags;
+
+  checkedMainScript = flags: cmd: envs:
+  checkedScript flags (managedScript cmd envs);
+
+  bump = checkedMainScript [["managed" "enable"]] "bump";
+  lower = sub: checkedMainScript [["managed" "lower" "enable"] ["managed" "enable"]] "lower ${sub}";
+  maint = checkedScript [["ui" "experimental" "managed-maint"] ["managed" "enable"]] maintScript;
+  revision = checkedScript [["ui" "experimental" "managed-maint"] ["managed" "enable"]] revisionScript;
 
 in {
-  inherit bump lower;
+  inherit bump lower maint revision;
 }

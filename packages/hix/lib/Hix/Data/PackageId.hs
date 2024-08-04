@@ -8,6 +8,7 @@ import Exon (exon)
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName (..))
 import Hix.Pretty (prettyText, showP)
+import Distribution.Parsec ( Parsec(..) )
 
 data PackageId =
   PackageId {
@@ -30,3 +31,6 @@ toCabal PackageId {..} =
 fromCabal :: PackageIdentifier -> PackageId
 fromCabal (PackageIdentifier (PackageName.fromCabal -> name) version) =
   PackageId {..}
+
+instance Parsec PackageId where
+  parsec = fromCabal <$> parsec

@@ -1,27 +1,51 @@
 module Hix.Managed.ManagedPackage where
 
-import Hix.Class.Map (nFlatten, nKeys, nMap, nRestrictKeys, nWithoutKeys)
-import Hix.Data.PackageName (LocalPackage)
+import Control.Lens (each, (%~))
+import Distribution.Version (VersionRange, removeLowerBound)
+
+import Hix.Class.Map (nFlatten, nGenWith, nKeys, nMap, nOver)
+import Hix.Data.Bounds (Ranges)
+import Hix.Data.Dep (Dep (..))
+import Hix.Data.PackageName (LocalPackage, PackageName)
 import qualified Hix.Managed.Data.ManagedPackage
 import Hix.Managed.Data.ManagedPackage (ManagedPackage)
-import Hix.Managed.Data.Mutable (LocalRanges, MutableRanges)
+import qualified Hix.Managed.Data.Mutable as Mutable
+import Hix.Managed.Data.Mutable (MutableRanges)
 import Hix.Managed.Data.Packages (Packages)
-import Hix.Managed.Data.Targets (Targets, sortTargets, targetsSet)
+import Hix.Managed.Data.Targets (Targets, sortTargets)
 
-forTargets :: Packages ManagedPackage -> [LocalPackage] -> (Targets, LocalRanges, MutableRanges)
+forTargets ::
+  Packages ManagedPackage ->
+  [LocalPackage] ->
+  (Targets, MutableRanges)
 forTargets packages targetNames =
-  (targets, local, mutable)
+  (targets, nFlatten id targetRanges)
   where
-    mutable = nFlatten id (nMap (.mutable) targetPackages :: Packages MutableRanges)
+    targetRanges :: Packages MutableRanges
+    targetRanges = Mutable.forTargets targets allRanges
 
-    -- Remove the targets from the local deps
-    local = nWithoutKeys tset (nFlatten id (nMap (.local) targetPackages :: Packages LocalRanges))
+    targets = sortTargets onlyDepNames targetNames
 
-    targetPackages = nRestrictKeys tset packages
+    onlyDepNames :: Packages [PackageName]
+    onlyDepNames = nMap nKeys allRanges
 
-    tset = targetsSet targets
+    allRanges :: Packages Ranges
+    allRanges =
+      nOver onlyDeps $ nGenWith \ Dep {package, version} -> (package, version)
 
-    targets = sortTargets (nMap nKeys allLocal) targetNames
+    onlyDeps :: Packages [Dep]
+    onlyDeps = nMap (.deps) packages
 
-    allLocal :: Packages LocalRanges
-    allLocal = nMap (.local) packages
+updateRanges ::
+  (PackageName -> VersionRange -> VersionRange) ->
+  ManagedPackage ->
+  ManagedPackage
+updateRanges f =
+  #deps . each %~ \ Dep {version = original, ..} ->
+    Dep {version = f package original, ..}
+
+overRanges :: (VersionRange -> VersionRange) -> ManagedPackage -> ManagedPackage
+overRanges f = #deps . each . #version %~ f
+
+removeLowerBounds :: ManagedPackage -> ManagedPackage
+removeLowerBounds = overRanges removeLowerBound

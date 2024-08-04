@@ -25,15 +25,15 @@ import Hix.Cabal (buildInfoForFile)
 import Hix.Component (targetComponentOrError)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec))
-import Hix.Data.Monad (M, liftE)
+import Hix.Data.Json (JsonConfig)
+import Hix.Data.Monad (LogLevel (LogVerbose), M, liftE)
 import Hix.Data.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
-import Hix.Error (Error (..), sourceError)
+import Hix.Error (Error (..), ErrorMessage (Client), sourceError)
 import Hix.Json (jsonConfigE)
 import Hix.Monad (tryIOM)
-import Hix.Optparse (JsonConfig)
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
 
@@ -64,7 +64,7 @@ newtype DummyExportName =
 
 noMatch :: Text -> Path b File -> ExceptT Error IO a
 noMatch reason source =
-  throwE (NoMatch (sourceError reason source))
+  throwE (Error {message = Client (sourceError reason source), context = [], level = Just LogVerbose})
 
 takeLine :: ByteString -> Maybe (ByteString, ByteString)
 takeLine bs =
@@ -461,7 +461,7 @@ fromConfig ::
   Either PreprocConfig JsonConfig ->
   M CabalConfig
 fromConfig cliRoot source pconf = do
-  conf <- jsonConfigE PreprocError pconf
+  conf <- jsonConfigE pconf
   target <- targetComponentOrError cliRoot Nothing conf.packages (TargetForFile source)
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,

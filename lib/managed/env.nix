@@ -7,6 +7,7 @@
   envFor = packages: special: {
     inherit packages;
     managed = lib.mkDefault true;
+    # TODO use fine-grained variant
     expose = lib.mkDefault true;
   } // special.envs.verbatim // {
     ghc = { compiler = envDefault special.compiler; } // special.envs.verbatim.ghc or {};

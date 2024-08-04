@@ -18,22 +18,28 @@ import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (BuildMutation (BuildMutation), MutationResult (MutationSuccess))
 import qualified Hix.Managed.Data.MutationState
 import Hix.Managed.Data.MutationState (MutationState (MutationState))
+import qualified Hix.Managed.Handlers.AvailableVersions as AvailableVersions
+import Hix.Managed.Handlers.AvailableVersions (AvailableVersionsHandlers (..))
 import Hix.Managed.Handlers.Mutation.Lower (processMutationLower)
 import Hix.Managed.Lower.Candidates (candidatesOptimize)
 import Hix.Managed.Lower.Data.LowerMode (lowerOptimizeMode)
 import Hix.Managed.Lower.Optimize (lowerOptimizeUpdate)
 import Hix.Managed.QueryDep (simpleQueryDep)
 import Hix.Monad (M, clientError)
-import Hix.Test.Utils (UnitTest, runMTest)
+import Hix.Test.Utils (UnitTest, runMTest')
 
-availableVersions :: PackageName -> M [Version]
-availableVersions = \case
+fetchVersions :: PackageName -> M [Version]
+fetchVersions = \case
   "dep" -> pure versions
   _ -> clientError "No such package"
   where
     versions = s1 ++ s2
     s1 = [[1, m, n] | m <- [7 .. 9], n <- [1 .. 3]]
     s2 = [[2, m, n] | m <- [0 .. 4], n <- [1 .. 3]]
+
+availableVersions :: AvailableVersionsHandlers
+availableVersions =
+  AvailableVersions.handlersActionAll fetchVersions
 
 targets :: [Version]
 targets =
@@ -69,7 +75,7 @@ test_candidatesOptimize :: UnitTest
 test_candidatesOptimize = do
   buildRef <- liftIO (newIORef [])
   let
-  result <- liftIO $ runMTest False do
+  result <- liftIO $ runMTest' def do
     majors <- candidatesOptimize availableVersions mempty dep
     for majors \ mut ->
       processMutationLower def lowerOptimizeMode lowerOptimizeUpdate initialState mut (build buildRef)

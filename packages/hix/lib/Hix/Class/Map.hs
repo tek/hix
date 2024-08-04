@@ -29,6 +29,8 @@ class (Ord k, Coercible map (Map k v)) => NMap map k v sort | map -> k v sort wh
   nGet :: map -> Map k v
   nGet = coerce
 
+instance Ord k => NMap (Map k v) k v LookupMaybe where
+
 lookupError ::
   ∀ k v .
   Show k =>
@@ -196,6 +198,28 @@ nMapWithKey1 ::
 nMapWithKey1 f =
   nMapWithKey \ k -> nMapWithKey (f k)
 
+nOver ::
+  NMap map1 k v1 sort1 =>
+  NMap map2 k v2 sort2 =>
+  map1 ->
+  (v1 -> v2) ->
+  map2
+nOver =
+  flip nMap
+
+nViaList ::
+  NMap map1 k1 v1 sort1 =>
+  NMap map2 k2 v2 sort2 =>
+  ([(k1, v1)] -> [(k2, v2)]) ->
+  map1 ->
+  map2
+nViaList f =
+  coerce .
+  Map.fromList .
+  f .
+  Map.toList .
+  nGet
+
 nTransform ::
   NMap map1 k1 v1 sort1 =>
   NMap map2 k2 v2 sort2 =>
@@ -203,11 +227,7 @@ nTransform ::
   map1 ->
   map2
 nTransform f =
-  coerce .
-  Map.fromList .
-  fmap (uncurry f) .
-  Map.toList .
-  nGet
+  nViaList (fmap (uncurry f))
 
 nTransformMaybe ::
   NMap map1 k1 v1 sort1 =>
@@ -216,11 +236,16 @@ nTransformMaybe ::
   map1 ->
   map2
 nTransformMaybe f =
-  coerce .
-  Map.fromList .
-  mapMaybe (uncurry f) .
-  Map.toList .
-  nGet
+  nViaList (mapMaybe (uncurry f))
+
+nTransformMulti ::
+  NMap map1 k1 v1 sort1 =>
+  NMap map2 k2 v2 sort2 =>
+  (k1 -> v1 -> [(k2, v2)]) ->
+  map1 ->
+  map2
+nTransformMulti f =
+  nViaList (>>= (uncurry f))
 
 nMapMaybe ::
   NMap map1 k v1 sort1 =>
@@ -508,6 +533,46 @@ nZip ::
   map3
 nZip f = nZipWithKey (const f)
 
+nPartitionWithKey ::
+  ∀ map1 map2 map3 k1 k2 k3 v1 v2 v3 s1 s2 s3 .
+  NMap map1 k1 v1 s1 =>
+  NMap map2 k2 v2 s2 =>
+  NMap map3 k3 v3 s3 =>
+  (k1 -> v1 -> Either (k2, v2) (k3, v3)) ->
+  map1 ->
+  (map2, map3)
+nPartitionWithKey f =
+  coerce .
+  Map.foldl' step (Map.empty, Map.empty) .
+  Map.mapWithKey f .
+  nGet
+  where
+    step (l, r) = \case
+      Left (k, v2) -> (Map.insert k v2 l, r)
+      Right (k, v3) -> (l, Map.insert k v3 r)
+
+nPartitionByKey ::
+  ∀ map1 map2 map3 k1 k2 k3 v s1 s2 s3 .
+  NMap map1 k1 v s1 =>
+  NMap map2 k2 v s2 =>
+  NMap map3 k3 v s3 =>
+  (k1 -> Either k2 k3) ->
+  map1 ->
+  (map2, map3)
+nPartitionByKey f =
+  nPartitionWithKey \ k1 v -> bimap (,v) (,v) (f k1)
+
+nPartition ::
+  ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
+  NMap map1 k v1 s1 =>
+  NMap map2 k v2 s2 =>
+  NMap map3 k v3 s3 =>
+  (v1 -> Either v2 v3) ->
+  map1 ->
+  (map2, map3)
+nPartition f =
+  nPartitionWithKey \ k v1 -> bimap (k,) (k,) (f v1)
+
 nFromList ::
   NMap map k v sort =>
   [(k, v)] ->
@@ -654,6 +719,15 @@ nFor ::
   m map
 nFor values f =
   nFromList <$> for values \ v -> (,v) <$> f v
+
+nForAssoc ::
+  Applicative m =>
+  NMap map k v sort =>
+  [a] ->
+  (a -> m (k, v)) ->
+  m map
+nForAssoc seed f =
+  nFromList <$> traverse f seed
 
 nElems ::
   ∀ map k v s .

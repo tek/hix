@@ -51,10 +51,11 @@ listEqZip ::
   [a] ->
   TestT m ()
 listEqZip target actual =
-  for_ (zip [0 :: Natural ..] (zipWithLongest (,) target actual)) \case
-    (i, (Just t, Just l)) -> (i, t) === (i, l)
-    _ | [] <- actual -> fail "Result list is empty."
-    _ -> target === actual
+  withFrozenCallStack do
+    for_ (zip [0 :: Natural ..] (zipWithLongest (,) target actual)) \case
+      (i, (Just t, Just l)) -> (i, t) === (i, l)
+      _ | [] <- actual -> fail "Result list is empty."
+      _ -> target === actual
 
 listEqTail ::
   ∀ m a .
@@ -66,4 +67,5 @@ listEqTail ::
   [a] ->
   TestT m ()
 listEqTail target actual =
-  target === takeEnd (length target) actual
+  withFrozenCallStack do
+    target === takeEnd (length target) actual

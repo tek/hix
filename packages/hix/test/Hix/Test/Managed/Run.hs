@@ -1,11 +1,14 @@
 module Hix.Test.Managed.Run where
 
 import Data.IORef (readIORef)
+import qualified Data.Text.IO as Text
 import Hedgehog (TestT, evalEither, evalMaybe)
+import Path (Abs, Dir, File, Path, Rel, parent, toFilePath, (</>))
+import Path.IO (createDirIfMissing)
 
 import Hix.Class.Map (nFromList, nKeys)
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.Monad (M)
+import Hix.Data.Monad (LogLevel (..), M)
 import Hix.Data.NixExpr (Expr)
 import qualified Hix.Data.Options as ProjectOptions
 import Hix.Data.Options (ProjectOptions)
@@ -19,7 +22,7 @@ import Hix.Managed.Data.BuildConfig (BuildConfig (toposortMutations))
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import qualified Hix.Managed.Data.ProjectContextProto as ProjectContextProto
@@ -30,17 +33,18 @@ import Hix.Managed.Data.StageState (BuildStatus (Failure), resultFromStatus)
 import qualified Hix.Managed.Handlers.Build as BuildHandlers
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
+import Hix.Managed.Handlers.Project (ProjectHandlers (..))
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
-import Hix.Managed.ProjectContext (withProjectContext)
-import Hix.Test.Utils (runMLogTest, runMTest)
+import Hix.Managed.ProjectContext (processProjectResult, withProjectContext)
+import Hix.Test.Utils (LogConfig (..), runMLogTest, runMTest')
 
 data TestParams =
   TestParams {
     envs :: [(EnvName, [LocalPackage])],
     cabalLog :: Bool,
     log :: Bool,
-    debug :: Bool,
-    packages :: Packages ManagedPackageProto,
+    logConfig :: LogConfig,
+    packages :: Packages ManagedPackage,
     ghcPackages :: GhcPackages,
     state :: ProjectStateProto,
     projectOptions :: ProjectOptions,
@@ -52,14 +56,14 @@ nosortOptions = def {ProjectOptions.build = def {toposortMutations = False}}
 
 testParams ::
   Bool ->
-  Packages ManagedPackageProto ->
+  Packages ManagedPackage ->
   TestParams
 testParams debug packages =
   TestParams {
     envs = [],
     cabalLog = False,
     log = False,
-    debug,
+    logConfig = def {logLevel = if debug then LogDebug else LogError, onlyRef = not debug},
     packages,
     ghcPackages = GhcPackages {installed = [], available = []},
     state = def,
@@ -84,7 +88,7 @@ testProjectContext defaultEnvName params =
     ProjectContextProto.packages = params.packages,
     state = params.state,
     envs = nFromList (second mkEnv <$> maybe defaultEnv toList (nonEmpty params.envs)),
-    buildOutputsPrefix = Nothing
+    hackage = []
   }
   where
     mkEnv targets = EnvConfig {targets, ghc = GhcDbSynthetic params.ghcPackages}
@@ -107,16 +111,15 @@ managedTest' defaultEnvName params main =
     let
       handlers =
         if params.log
-        then handlers1 {report = ReportHandlers.handlersProd}
+        then handlers1 {project = handlers1.project {report = ReportHandlers.handlersProd}}
         else handlers1
-    (log, e_result) <- liftIO (runner (main handlers params.projectOptions context))
-    result <- evalEither e_result
+    (log, result) <- traverse evalEither =<< liftIO (runner (main handlers params.projectOptions context))
     stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
     cabalLog <- fold <$> for cabalRef \ ref -> reverse <$> liftIO (readIORef ref)
     pure Result {..}
   where
-    runner | params.log = runMLogTest params.debug (not params.debug)
-           | otherwise = fmap ([],) . runMTest params.debug
+    runner | params.log = runMLogTest params.logConfig
+           | otherwise = fmap ([],) . runMTest' params.logConfig
 
     context = testProjectContext defaultEnvName params
 
@@ -128,7 +131,7 @@ managedTest ::
 managedTest defaultEnvName params main =
   withFrozenCallStack do
     managedTest' defaultEnvName params \ handlers options context ->
-      withProjectContext handlers options context (main handlers)
+      processProjectResult =<< withProjectContext handlers.project options context (main handlers)
 
 lowerTest ::
   TestParams ->
@@ -145,3 +148,10 @@ bumpTest ::
 bumpTest params main =
   withFrozenCallStack do
     managedTest "latest" params main
+
+addFile :: Path Abs Dir -> Path Rel File -> Text -> M ()
+addFile root path content = do
+  createDirIfMissing True (parent file)
+  liftIO (Text.writeFile (toFilePath file) content)
+  where
+    file = root </> path

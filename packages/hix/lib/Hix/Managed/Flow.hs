@@ -20,7 +20,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
 import Exon (exon)
 
-import Hix.Data.Error (Error (Fatal))
+import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Monad (M)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Data.EnvContext

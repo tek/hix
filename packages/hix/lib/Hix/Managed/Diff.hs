@@ -3,7 +3,7 @@ module Hix.Managed.Diff where
 import Hix.Class.Map (NMap, nAmend, nMap)
 import Hix.Data.Version (Version)
 import qualified Hix.Data.VersionBounds
-import Hix.Data.VersionBounds (anyBounds, VersionBounds)
+import Hix.Data.VersionBounds (VersionBounds, anyBounds, updateWithCorrection)
 import Hix.Managed.Data.Diff (BoundsChange, BoundsDiffDetail (..), Change (..), Diff (..), VersionChange)
 import Hix.Managed.Data.Mutable (MutableBounds, MutableDep, MutableDeps, MutableVersions)
 import Hix.These (maybeThese)
@@ -97,7 +97,7 @@ boundsDiffDetail original new =
   where
     diffL = versionDiff original.lower combined.lower
     diffU = versionDiff original.upper combined.upper
-    combined = new <> original
+    combined = updateWithCorrection new original
 
 boundsChange :: VersionBounds -> VersionBounds -> BoundsChange
 boundsChange = diff boundsDiffDetail
@@ -113,7 +113,7 @@ updateBoundsChange new d =
   diffMaybe boundsDiffDetail original (Just combined)
   where
     (original, combined) = case changeOriginal d of
-      Just o -> (Just o, new <> o)
+      Just o -> (Just o, updateWithCorrection new o)
       Nothing -> (Nothing, new)
 
 updateVersionChanges ::

@@ -79,6 +79,9 @@ withChevrons :: Int -> Text -> Text
 withChevrons col msg =
   [exon|#{sgis [show (30 + col), "1"] ">>>"} #{msg}|]
 
+withErrorChevrons :: Text -> Text
+withErrorChevrons = withChevrons 1
+
 errorMessage :: Text -> Text
 errorMessage msg =
-  withChevrons 1 [exon|Error: #{msg}|]
+  withErrorChevrons [exon|Error: #{msg}|]

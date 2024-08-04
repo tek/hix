@@ -13,7 +13,7 @@ import Hix.Pretty (prettyText)
 newtype PackageName =
   PackageName Text
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, ToJSON, ToJSONKey, EncodeNixKey)
+  deriving newtype (IsString, ToString, Ord, FromJSON, FromJSONKey, ToJSON, ToJSONKey, EncodeNixKey)
 
 instance Pretty PackageName where
   pretty (PackageName n) = prettyText n
@@ -31,15 +31,15 @@ depPackageName =
   fromCabal . depPkgName
 
 newtype LocalPackage =
-  LocalPackage PackageName
+  LocalPackage { name :: PackageName }
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON, FromJSONKey, Pretty, EncodeNixKey)
+  deriving newtype (IsString, ToString, Ord, FromJSON, FromJSONKey, ToJSON, ToJSONKey, Pretty, EncodeNixKey)
 
 localPackageName :: LocalPackage -> PackageName
 localPackageName = coerce
 
-localPackageNames :: [LocalPackage] -> [PackageName]
-localPackageNames = coerce
+localPackageNames :: Functor f => f LocalPackage -> f PackageName
+localPackageNames = fmap coerce
 
 sameLocalPackage :: LocalPackage -> PackageName -> Bool
 sameLocalPackage (LocalPackage lp) p = lp == p

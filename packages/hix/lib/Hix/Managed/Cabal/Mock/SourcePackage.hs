@@ -1,6 +1,5 @@
 module Hix.Managed.Cabal.Mock.SourcePackage where
 
-import qualified Data.Map.Strict as Map
 import Distribution.Client.Types (PackageLocation (LocalTarballPackage), SourcePackageDb (..), UnresolvedSourcePackage)
 import Distribution.PackageDescription (
   BuildInfo (targetBuildDepends),
@@ -19,7 +18,7 @@ import Distribution.Types.GenericPackageDescription (GenericPackageDescription (
 import Distribution.Types.Library (libVisibility)
 import Exon (exon)
 
-import Hix.Class.Map (nGet, nKeys, nMap, nTo1, nTransform, (!!))
+import Hix.Class.Map (nElems, nKeys, nMap, nTo1, nTransform, (!!))
 import qualified Hix.Data.Dep as Dep
 import Hix.Data.Dep (Dep)
 import Hix.Data.Monad (M)
@@ -100,13 +99,13 @@ managedSourcePackageVersions =
 
 managedSourcePackage :: ManagedPackage -> UnresolvedSourcePackage
 managedSourcePackage package =
-  mockSourcePackage (localPackageName package.package) package.version pid
+  mockSourcePackage (localPackageName package.name) package.version pid
   where
-    pid = SourcePackageId {deps = ManagedPackage.deps package, description = Nothing}
+    pid = SourcePackageId {deps = package.deps, description = Nothing}
 
 managedPackageIndex :: Packages ManagedPackage -> PackageIndex UnresolvedSourcePackage
 managedPackageIndex packages =
-  PackageIndex.fromList (managedSourcePackage <$> Map.elems (nGet packages))
+  PackageIndex.fromList (managedSourcePackage <$> nElems packages)
 
 dbWithManaged :: Packages ManagedPackage -> SourcePackageDb -> SourcePackageDb
 dbWithManaged packages SourcePackageDb {packageIndex, packagePreferences} =

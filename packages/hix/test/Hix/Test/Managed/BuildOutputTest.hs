@@ -5,21 +5,21 @@ import Exon (exon)
 import Hedgehog ((===))
 import Test.Tasty (TestTree, testGroup)
 
-import Hix.Managed.BuildOutput (buildOutputFromLists)
+import Hix.Managed.BuildOutput (buildOutput)
 import qualified Hix.Managed.Data.BuildOutput
-import Hix.Managed.Data.BuildOutput (BuildOutput, ModifiedId (ModifiedId))
+import Hix.Managed.Data.BuildOutput (BuildOutput, DepChanges (..), ModifiedId (ModifiedId))
 import Hix.Test.Utils (UnitTest, unitTest)
 
 output :: BuildOutput
 output =
-  buildOutputFromLists [
-    ModifiedId {package = "direct1", version = [1, 0, 1], range = Just ">=1.1 && >0.8"},
-    ModifiedId {package = "direct2", version = [1, 0, 1], range = Nothing}
-  ] [
-    "direct3", "direct4"
-  ] [
-    "direct5", "direct6"
-  ]
+  buildOutput DepChanges {
+    modified = [
+      ModifiedId {package = "direct1", version = [1, 0, 1], range = Just ">=1.1 && >0.8"},
+      ModifiedId {package = "direct2", version = [1, 0, 1], range = Nothing}
+    ],
+    unmodified = ["direct3", "direct4"],
+    failed = ["direct5", "direct6"]
+  }
 
 target :: ByteString
 target =

@@ -1,8 +1,9 @@
 module Hix.Data.Json where
 
-import Data.Aeson (FromJSON (parseJSON), Key, Object, (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, Value, (.:?))
 import Data.Aeson.Types (Parser)
 import Distribution.Parsec (Parsec, eitherParsec)
+import qualified Text.Show as Show
 
 aesonParsec ::
   Parsec a =>
@@ -32,6 +33,24 @@ foldMissing ::
 foldMissing o k =
   fold <$> o .:? k
 
+useMissing ::
+  FromJSON a =>
+  a ->
+  Object ->
+  Key ->
+  Parser a
+useMissing a o k =
+  fromMaybe a <$> o .:? k
+
+defMissing ::
+  Default a =>
+  FromJSON a =>
+  Object ->
+  Key ->
+  Parser a
+defMissing =
+  useMissing def
+
 newtype JsonEither a b =
   JsonEither (Either a b)
   deriving stock (Eq, Show)
@@ -42,3 +61,10 @@ jsonEither = coerce
 instance (FromJSON a, FromJSON b) => FromJSON (JsonEither a b) where
   parseJSON v =
     JsonEither <$> ((Right <$> parseJSON v) <|> (Left <$> parseJSON v))
+
+newtype JsonConfig =
+  JsonConfig { unJsonConfig :: IO (Either String Value) }
+  deriving stock (Generic)
+
+instance Show JsonConfig where
+  show (JsonConfig _) = "JsonConfig"

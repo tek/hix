@@ -56,12 +56,14 @@ solverPlan plan =
 data SolverChanges =
   SolverChanges {
     versions :: Versions,
-    overrides :: [PackageId],
-    projectDeps :: Versions
+    overrides :: [PackageId]
+    --   ,
+    -- projectDeps :: Versions
   }
   deriving stock (Eq, Show, Generic)
 
 instance Pretty SolverChanges where
   pretty SolverChanges {..} =
-    hang "overrides:" 2 (prettyL overrides) $+$
-    hang "projectDeps:" 2 (pretty projectDeps)
+    hang "overrides:" 2 (prettyL overrides)
+    -- $+$
+    -- hang "projectDeps:" 2 (pretty projectDeps)

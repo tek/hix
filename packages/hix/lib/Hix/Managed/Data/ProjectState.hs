@@ -4,14 +4,15 @@ import Distribution.Pretty (Pretty (pretty))
 import Text.PrettyPrint (hang, ($+$))
 
 import Hix.Class.EncodeNix (EncodeNix)
+import Hix.Data.Bounds (Bounds)
 import Hix.Data.Overrides (Overrides)
 import Hix.Managed.Data.Envs (Envs)
-import Hix.Managed.Data.Mutable (MutableBounds, MutableVersions)
+import Hix.Managed.Data.Mutable (MutableVersions)
 import Hix.Managed.Data.Packages (Packages)
 
 data ProjectState =
   ProjectState {
-    bounds :: Packages MutableBounds,
+    bounds :: Packages Bounds,
     versions :: Envs MutableVersions,
     initial :: Envs MutableVersions,
     overrides :: Envs Overrides,

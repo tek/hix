@@ -1,5 +1,6 @@
 {global, util, ...}:
 {name, config, lib, ...}:
+# TODO remove
 with lib;
 let
   inherit (util) internal;
@@ -629,15 +630,7 @@ in {
 
       };
 
-      internal = let
-
-        managedOverrides = api: let
-          os = util.managed.state.current.overrides.${config.name} or {};
-          managedOverride = _: {version, hash}:
-          api.jailbreak (api.notest (api.nodoc (api.hackage version hash)));
-        in mapAttrs managedOverride os;
-
-      in {
+      internal = {
 
         overridesLocal = import ../lib/deps/local.nix {
           inherit util;
@@ -647,7 +640,11 @@ in {
 
         overridesEnvUnmanaged = lib.toList config.overrides;
 
-        overridesEnv = util.concatOverrides (optional config.managed managedOverrides ++ [config.overrides]);
+        overridesEnv = util.concatOverrides (
+          optional config.managed (internal.env.managedOverrides config.name)
+          ++
+          [config.overrides]
+        );
 
         overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
 
