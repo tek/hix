@@ -1431,6 +1431,107 @@ in {
     };
   };
   ```
+
+  ## Release maintenance
+
+  ::: {.note}
+  This feature is highly experimental and needs to be unlocked in the config:
+  ```nix
+  {
+    ui.experimental.managed-maint = true;
+  }
+  ```
+  :::
+
+  Upper bounds updates executed on the main branch only affect future releases.
+  Especially for people registered as package maintainers for Stackage, this does not solve the recurring chore of
+  building previous releases with new bounds and creating Hackage revisions for them.
+
+  Hix provides additional tools to automate this procedure:
+
+  ```
+  nix run .#maint -- [args]
+  ```
+
+  This app will run `.#bump` on special branches based on each package's latest tag, and upload Hackage revisions when
+  bounds change.
+  For better observability, this process can be split in two and supports Github Actions and PRs – you can run the
+  following commands to generate workflows:
+
+  ```
+  step_run managed.gen.ga.maint
+  step_run managed.gen.ga.revision
+  ```
+
+  The first workflow will run `.#maint` without publishing a revision, and create pull requests against release
+  branches.
+  Once one of these PRs has been merged, the second workflow will be triggered to publish the revision.
+
+  Release branches use the naming schema `release/<package>/<version>` and will be created per-package, choosing base
+  tags that are named either `<package>-<version>` or `<version>`.
+
+  ### Hackage credentials
+
+  Revision uploads naturally require authentication, so you need to specify your hackage password somehow.
+  The simplest way is to use [](#opt-hackage-hackage.repos.password), but it can also be passed on the command line:
+
+  ```
+  nix run .#revision -- --branch 'release/api/0.5' --hackage="hackage.haskell.org:password:$hackage_password"
+  ```
+
+  The app will upload to all Hackage repos for which [](#opt-hackage-hackage.repos.publish) is `true`, so you'll need to
+  provide credentials for each of them.
+
+  The user name can be specified in the same manner.
+
+  Consider this more elaborate example:
+
+  ```nix
+  {
+    hackage.repos = {
+
+      # Default for `publish` is `true` for central Hackage
+      "hackage.haskell.org" = {
+        user = "deepspace-mining-corp";
+        password = {
+          type = "exec";
+          value = "/path/to/password/script";
+        };
+      };
+
+      prod = {
+        location = "https://hackage.deepspace-mining.com:8080";
+        publish = true;
+        user = "ci";
+        password = {
+          type = "env-var";
+          value = "hackage_password_prod";
+        };
+      };
+
+      staging = {
+        location = "http://hackage.staging:80";
+        publish = true;
+      };
+
+    };
+  }
+  ```
+
+  With this config, the app will execute the configured script to obtain the password for central Hackage, and fetch
+  that for `prod` from the given environment variable.
+  For `staging`, the credentials must be specified as CLI args:
+
+  ```
+  nix run .#revision -- --branch 'release/api/0.5' \
+    --hackage="staging:user:ci-staging" \
+    --hackage="staging:password:''${{ secrets.hackage_password }}"
+  ```
+
+  This example assumes a Github Actions environment and resembles the method used by the generated workflow described in
+  the previous section.
+
+  When this command line is executed, the app will publish revisions to all three configured Hackage repos.
   '';
 
   misc = ''

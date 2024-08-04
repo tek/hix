@@ -75,7 +75,7 @@ lowerInit handlers conf buildConf context = do
     ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper keep) def
 
     keep | conf.reset = mempty
-         | otherwise = context.initial
+         | otherwise = context.initialVersions
 
 lowerInitStage ::
   BuildHandlers ->

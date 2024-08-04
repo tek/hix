@@ -32,7 +32,7 @@ import Options.Applicative (
   switch,
   value,
   )
-import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir)
+import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir, relfile)
 import Path.IO (getCurrentDir)
 import Prelude hiding (Mod, mod)
 
@@ -42,12 +42,15 @@ import Hix.Data.ComponentConfig (ComponentName (ComponentName), ModuleName, Sour
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir (ChangeDir), RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions (..))
+import Hix.Data.Json (JsonConfig)
+import Hix.Data.LogLevel (LogLevel (..))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
 import qualified Hix.Data.Options
 import Hix.Data.Options (
   BootstrapOptions (..),
   BumpOptions (..),
+  CabalOptions (..),
   Command (..),
   ComponentCoords (ComponentCoords),
   ComponentSpec (..),
@@ -57,6 +60,7 @@ import Hix.Data.Options (
   ExtraGhcidOptions,
   GhciOptions (..),
   GhcidOptions (..),
+  HackageCommand (..),
   LowerCommand (..),
   LowerOptions (LowerOptions),
   ManagedOptions (ManagedOptions),
@@ -65,33 +69,33 @@ import Hix.Data.Options (
   PackageSpec (..),
   PreprocOptions (PreprocOptions),
   ProjectOptions (ProjectOptions),
+  ReleaseMaintOptions (..),
   TargetSpec (..),
-  TestOptions (..),
+  TestOptions (..), RevisionOptions (..),
   )
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
 import Hix.Data.PackageName (PackageName (PackageName))
-import qualified Hix.Managed.Cabal.Data.Config
-import Hix.Managed.Cabal.Data.Config (CabalConfig (CabalConfig))
 import qualified Hix.Managed.Data.BuildConfig
-import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig))
+import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig), BuildTimeout (..))
+import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.Query (RawQuery (RawQuery))
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
-import Hix.Managed.Handlers.Build (BuildTimeout (BuildTimeout))
 import Hix.Optparse (
-  JsonConfig,
   absDirOption,
   absFileOption,
   absFileOrCwdOption,
   buildHandlersOption,
-  indexStateOption,
+  hackageRepoFieldOption,
   jsonOption,
+  maintHandlersOption,
   outputFormatOption,
   outputTargetOption,
   relFileOption,
   someFileOption,
   )
+import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 
 fileParser ::
   ReadM a ->
@@ -114,8 +118,7 @@ rootParser :: Parser (Maybe (Path Abs Dir))
 rootParser =
   optional (option absDirOption (long "root" <> help "The root directory of the project"))
 
-jsonConfigParser ::
-  Parser JsonConfig
+jsonConfigParser :: Parser JsonConfig
 jsonConfigParser =
   option jsonOption (long "config" <> help "The Hix-generated config, file or text")
 
@@ -261,18 +264,19 @@ bootstrapParser = do
 
 stateFileConfigParser :: Parser StateFileConfig
 stateFileConfigParser = do
-  file <- option relFileOption (long "file" <> short 'f' <> help "The relative path to the managed deps file")
-  -- TODO this isn't nice. maybe there should be two options, since the user might want to build bumps without modifying
-  -- the state.
-  projectRoot <- optional (option absDirOption (long "root" <> help "The root directory of the project"))
+  -- TODO this needs to be moved to ProjectContextProto
+  file <- option relFileOption (long "file" <> short 'f' <> help fileHelp <> value [relfile|ops/managed.nix|])
   pure StateFileConfig {..}
-
-cabalConfigParser :: Parser CabalConfig
-cabalConfigParser = do
-  indexState <- optional (option indexStateOption (long "index-state" <> help indexStateHelp))
-  pure CabalConfig {..}
   where
-    indexStateHelp = "The index state for Hackage, Unix stamp or date string"
+    fileHelp = "The relative path to the managed deps file"
+
+cabalOptionsParser :: Parser CabalOptions
+cabalOptionsParser = do
+  hackage <- many (option hackageRepoFieldOption (long "hackage" <> help hackageHelp))
+  pure CabalOptions {..}
+  where
+    hackageHelp = [exon|Override Hackage server options, formatted #{fmt}|]
+    fmt = "'<name>:<key>:<value>'"
 
 buildConfigParser :: Parser BuildConfig
 buildConfigParser = do
@@ -296,19 +300,20 @@ buildConfigParser = do
 projectOptionsParser :: Parser ProjectOptions
 projectOptionsParser = do
   build <- buildConfigParser
+  cabal <- cabalOptionsParser
   query <- RawQuery <$> many (strArgument (help "Positional arguments select individual deps for processing"))
-  envs <- some (strOption (long "env" <> short 'e' <> help "Environments whose packages should be updated"))
+  envs <- many (strOption (long "env" <> short 'e' <> help "Environments whose packages should be updated"))
   readUpperBounds <- switch (long "read-upper-bounds" <> help "Use the upper bounds from the flake for the first run")
   mergeBounds <- switch (long "merge-bounds" <> help "Always add the flake bounds to the managed bounds")
+  localDeps <- switch (long "local-deps" <> help "Manage bounds of local deps belonging to separate sets")
   pure ProjectOptions {..}
 
 managedOptionsParser :: Parser ManagedOptions
 managedOptionsParser = do
-  context <- Right <$> jsonConfigParser
+  context <- Right <$> optional jsonConfigParser
   project <- projectOptionsParser
   stateFile <- stateFileConfigParser
   handlers <- optional (option buildHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
-  cabal <- cabalConfigParser
   pure ManagedOptions {..}
 
 bumpParser :: Parser BumpOptions
@@ -326,25 +331,63 @@ lowerParser = do
 
 lowerCommands :: Mod CommandFields LowerCommand
 lowerCommands =
-  command "init" (LowerInitCmd <$> info lowerParser (progDesc "Initialize the lower bounds"))
+  command "init" (LowerInit <$> info lowerParser (progDesc "Initialize the lower bounds"))
   <>
-  command "optimize" (LowerOptimizeCmd <$> info lowerParser (progDesc "Optimize the lower bounds"))
+  command "optimize" (LowerOptimize <$> info lowerParser (progDesc "Optimize the lower bounds"))
   <>
-  command "stabilize" (LowerStabilizeCmd <$> info lowerParser (progDesc "Stabilize the lower bounds"))
+  command "stabilize" (LowerStabilize <$> info lowerParser (progDesc "Stabilize the lower bounds"))
   <>
-  command "auto" (LowerAutoCmd <$> info lowerParser (progDesc "Process the lower bounds"))
+  command "auto" (LowerAuto <$> info lowerParser (progDesc "Process the lower bounds"))
 
 lowerCommand :: Parser LowerCommand
 lowerCommand =
-  hsubparser lowerCommands <|> (LowerAutoCmd <$> lowerParser)
+  hsubparser lowerCommands <|> (LowerAuto <$> lowerParser)
 
-managedCommitMsgParser :: Parser (Path Abs File)
-managedCommitMsgParser =
-  option absFileOption (long "file" <> help "The JSON file written by a managed deps app")
+maintConfigParser :: Parser MaintConfig
+maintConfigParser = do
+  targets <- nonEmpty <$> many (strOption (long "package" <> help "Packages that should be processed"))
+  noFailures <- switch (long "no-failures" <> help "Only commit or publish a package if no dependency update fails")
+  commit <- switch (long "commit" <> help "Commit dependency updates")
+  push <- switch (long "push" <> help "Commit and push dependency updates")
+  revision <- switch (long "revision" <> help "Publish a revision to Hackage")
+  ci <- switch (long "ci" <> help "Perform tasks necessary in Github Actions: Fetch tags, set up git identity")
+  pr <- switch (long "pr" <> help "Don't publish revisions, and create branches with timestamps for PRs")
+  pure MaintConfig {commit = commit || push || pr, push = push || pr, ..}
 
-managedGithubPrParser :: Parser (Path Abs File)
-managedGithubPrParser =
-  option absFileOption (long "file" <> help "The JSON file written by a managed deps app")
+-- TODO Since this includes ManagedOptions, some options may be ineffective or counterproductive.
+-- Needs to be adapted.
+maintParser :: Parser ReleaseMaintOptions
+maintParser = do
+  context <- Right <$> optional jsonConfigParser
+  managed <- managedOptionsParser
+  handlers <- optional (option maintHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  config <- maintConfigParser
+  pure ReleaseMaintOptions {..}
+
+revisionConfigParser :: Parser RevisionConfig
+revisionConfigParser = do
+  packages <- fmap Left <$> many (strOption (long "package" <> help "Packages that should be processed"))
+  branches <- fmap Right <$> many (strOption (long "branch" <> help "Release branches that should be processed"))
+  ci <- switch (long "ci" <> help "Perform tasks necessary in Github Actions: Fetch tags, set up git identity")
+  pure RevisionConfig {targets = nonEmpty (packages ++ branches), ..}
+
+revisionParser :: Parser RevisionOptions
+revisionParser = do
+  context <- Right <$> optional jsonConfigParser
+  config <- revisionConfigParser
+  cabal <- cabalOptionsParser
+  pure RevisionOptions {..}
+
+hackageCommands :: Mod CommandFields HackageCommand
+hackageCommands =
+  command "maint" (ReleaseMaint <$> info maintParser (progDesc maintDesc))
+  <>
+  command "revision" (Revision <$> info revisionParser (progDesc "Publish revisions of previous releases"))
+  where
+    maintDesc = "Maintain dependency bounds of previous releases"
+
+hackageCommand :: Parser HackageCommand
+hackageCommand = hsubparser hackageCommands
 
 commands ::
   Path Abs Dir ->
@@ -358,15 +401,24 @@ commands cwd =
   <>
   command "ghcid-cmd" (GhcidCmd <$> info (ghcidParser cwd) (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
   <>
-  command "new" (NewCmd <$> info newParser (progDesc "Create a new Hix project in the current directory"))
+  command "new" (New <$> info newParser (progDesc "Create a new Hix project in the current directory"))
   <>
-  command "bootstrap" (BootstrapCmd <$> info bootstrapParser (progDesc bootstrapDesc))
+  command "bootstrap" (Bootstrap <$> info bootstrapParser (progDesc bootstrapDesc))
   <>
-  command "bump" (BumpCmd <$> info bumpParser (progDesc "Bump the deps of a package"))
+  command "bump" (Bump <$> info bumpParser (progDesc "Bump the deps of a package"))
   <>
-  command "lower" (LowerCmd <$> info lowerCommand (progDesc "Modify the lower bounds of a package"))
+  command "lower" (Lower <$> info lowerCommand (progDesc "Modify the lower bounds of a package"))
+  <>
+  command "hackage" (Hackage <$> info hackageCommand (progDesc "Hackage related commands"))
   where
     bootstrapDesc = "Bootstrap an existing Cabal project in the current directory"
+
+cliLogLevel :: Bool -> Bool -> Bool -> LogLevel
+cliLogLevel verbose debug quiet
+  | debug = LogDebug
+  | verbose = LogVerbose
+  | quiet = LogError
+  | otherwise = LogInfo
 
 globalParser ::
   Path Abs Dir ->
@@ -375,10 +427,12 @@ globalParser realCwd = do
   verbose <- switch (long "verbose" <> short 'v' <> help "Verbose output")
   debug <- switch (long "debug" <> help "Debug output")
   quiet <- switch (long "quiet" <> help "Suppress info output")
+  cabalVerbose <- switch (long "cabal-verbose" <> help "Verbose output from Cabal")
   cwd <- option absDirOption (long "cwd" <> help "Force a different working directory" <> value realCwd)
+  rootOverride <- rootParser
   output <- option outputFormatOption (long "output" <> help formatHelp <> value OutputNone <> metavar "format")
   target <- option outputTargetOption (long "target" <> help targetHelp <> value OutputDefault <> metavar "target")
-  pure GlobalOptions {..}
+  pure GlobalOptions {root = fromMaybe cwd rootOverride, logLevel = cliLogLevel verbose debug quiet, ..}
   where
     formatHelp = "Result output format, if commands support it"
     targetHelp = "Force output to a file or stdout"

@@ -4,9 +4,11 @@ module Hix.Monad (
   M,
 ) where
 
+import Control.Lens ((%~))
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (runExceptT, throwE, ExceptT (ExceptT))
-import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask, asks)
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)
+import qualified Control.Monad.Trans.Reader as Reader
+import Control.Monad.Trans.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.Trans.State.Strict (StateT, get, put, runStateT)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Text as Text
@@ -19,16 +21,43 @@ import System.IO (hClose)
 import System.IO.Error (tryIOError)
 
 import qualified Hix.Console as Console
-import Hix.Data.Error (Error (BootstrapError, Client, EnvError, GhciError, NewError))
+import Hix.Data.AppContext (AppContext (..))
+import Hix.Data.Error (Error (..), ErrorContext (..), ErrorMessage (..))
 import qualified Hix.Data.GlobalOptions as GlobalOptions
 import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions), defaultGlobalOptions)
-import Hix.Data.Monad (AppResources (..), LogLevel, M (M), liftE)
-import Hix.Error (Error (Fatal), tryIO, tryIOWith)
+import Hix.Data.LogLevel (LogLevel (LogInfo))
+import Hix.Data.Monad (AppResources (..), LogLevel (LogDebug), M (M), appRes, liftE)
+import qualified Hix.Error as Error
+import Hix.Error (tryIOWith)
 import qualified Hix.Log as Log
 import Hix.Log (logWith)
+import Hix.Maybe (fromMaybeA)
+import Data.Char (toUpper)
 
-throwM :: Error -> M a
-throwM = liftE . throwE
+errorContext :: M ErrorContext
+errorContext = ErrorContext <$> appRes.context
+
+errorLevel ::
+  LogLevel ->
+  M a ->
+  M a
+errorLevel new (M ma) = do
+  res <- ask
+  M (lift (Error.errorLevel new (runReaderT ma res)))
+
+throwMError :: Error -> M a
+throwMError = liftE . throwE
+
+throwM :: ErrorMessage -> M a
+throwM message = do
+  context <- errorContext
+  throwMError Error {level = Nothing, ..}
+
+fromEitherError :: Either Error a -> M a
+fromEitherError = leftA throwMError
+
+fromEither :: Either ErrorMessage a -> M a
+fromEither = leftA throwM
 
 clientError :: Text -> M a
 clientError msg = throwM (Client msg)
@@ -36,33 +65,14 @@ clientError msg = throwM (Client msg)
 fatalError :: Text -> M a
 fatalError msg = throwM (Fatal msg)
 
-note :: Error -> Maybe a -> M a
-note err =
-  maybe (throwM err) pure
-
-noteEnv :: Text -> Maybe a -> M a
-noteEnv err =
-  note (EnvError err)
-
-noteGhci :: Text -> Maybe a -> M a
-noteGhci err =
-  note (GhciError err)
-
-noteNew :: Text -> Maybe a -> M a
-noteNew err =
-  note (NewError err)
-
-noteBootstrap :: Text -> Maybe a -> M a
-noteBootstrap err =
-  note (BootstrapError err)
+note :: ErrorMessage -> Maybe a -> M a
+note err = fromMaybeA (throwM err)
 
 noteClient :: Text -> Maybe a -> M a
-noteClient err =
-  note (Client err)
+noteClient = note . Client
 
 noteFatal :: Text -> Maybe a -> M a
-noteFatal err =
-  note (Fatal err)
+noteFatal = note . Fatal
 
 eitherClient :: Either Text a -> M a
 eitherClient = leftA clientError
@@ -80,9 +90,25 @@ eitherFatalShow msg =
   where
     mkMsg err = [exon|#{msg}: #{show err}|]
 
+noteEnv :: Text -> Maybe a -> M a
+noteEnv = noteFatal
+
+noteGhci :: Text -> Maybe a -> M a
+noteGhci = noteFatal
+
+noteNew :: Text -> Maybe a -> M a
+noteNew = noteFatal
+
+noteBootstrap :: Text -> Maybe a -> M a
+noteBootstrap = noteFatal
+
+shouldLog :: LogLevel -> M Bool
+shouldLog level =
+  appRes.logLevel <&> \ logLevel -> level >= logLevel
+
 whenDebug :: M () -> M ()
 whenDebug m =
-  whenM (M (asks (.debug))) do
+  whenM (shouldLog LogDebug) do
     m
 
 logIORef :: IORef [Text] -> LogLevel -> Text -> IO ()
@@ -103,7 +129,7 @@ runMUsing res (M ma) =
 runMLoggerWith :: (LogLevel -> Text -> IO ()) -> GlobalOptions -> M a -> IO (Either Error a)
 runMLoggerWith logger GlobalOptions {..} ma =
   withSystemTempDir "hix-cli" \ tmp ->
-    runMUsing AppResources {logger = logWith logger, ..} ma
+    runMUsing AppResources {logger = logWith logger, context = [], ..} ma
 
 runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
 runMLogWith opts ma =
@@ -120,7 +146,7 @@ runM = runMWith . defaultGlobalOptions
 
 runMDebug :: Path Abs Dir -> M a -> IO (Either Error a)
 runMDebug cwd =
-  runMWith (defaultGlobalOptions cwd) {GlobalOptions.verbose = True, GlobalOptions.debug = True}
+  runMWith (defaultGlobalOptions cwd) {GlobalOptions.logLevel = LogDebug}
 
 tryIOMWithM :: (Text -> M a) -> IO a -> M a
 tryIOMWithM handleError ma =
@@ -128,10 +154,12 @@ tryIOMWithM handleError ma =
     Right a -> pure a
     Left err -> handleError (show err)
 
-tryIOMWith :: (Text -> Error) -> IO a -> M a
-tryIOMWith mkErr ma = M (lift (tryIOWith mkErr ma))
+tryIOMWith :: (Text -> ErrorMessage) -> IO a -> M a
+tryIOMWith consMessage ma = do
+  context <- errorContext
+  M (lift (tryIOWith (\ msg -> Error {context, level = Nothing, message = consMessage msg}) ma))
 
-tryIOMAs :: Error -> IO a -> M a
+tryIOMAs :: ErrorMessage -> IO a -> M a
 tryIOMAs err ma = do
   liftIO (tryIOError ma) >>= \case
     Right a -> pure a
@@ -141,7 +169,7 @@ tryIOMAs err ma = do
       throwM err
 
 tryIOM :: IO a -> M a
-tryIOM ma = M (lift (tryIO ma))
+tryIOM = tryIOMWith Fatal
 
 catchIOM :: IO a -> (Text -> M a) -> M a
 catchIOM ma handle =
@@ -149,18 +177,25 @@ catchIOM ma handle =
     Right a -> pure a
     Left err -> handle (show err)
 
+withProjectRoot :: Path Abs Dir -> M a -> M a
+withProjectRoot root = local \ res -> res {root}
+
 withTempDir :: String -> (Path Abs Dir -> M a) -> M a
 withTempDir name use = do
-  AppResources {tmp} <- M ask
+  AppResources {tmp} <- ask
   Path.withTempDir tmp name use
 
 withTempFile :: String -> Maybe [Text] -> (Path Abs File -> M a) -> M a
 withTempFile name content use = do
-  AppResources {tmp} <- M ask
+  AppResources {tmp} <- ask
   Path.withTempFile tmp name \ file handle -> do
     for_ content \ lns -> liftIO (Text.hPutStr handle (Text.unlines lns))
     liftIO (hClose handle)
     use file
+
+withTempRoot :: String -> (Path Abs Dir -> M a) -> M a
+withTempRoot name use =
+  withTempDir name \ root -> withProjectRoot root (use root)
 
 stateM ::
   Monad m =>
@@ -185,5 +220,42 @@ mapAccumM f s as =
 
 withLower :: (∀ b . (M a -> IO b) -> IO b) -> M a
 withLower f = do
-  res <- M ask
-  liftE (ExceptT (f \ (M ma) -> runExceptT (runReaderT ma res)))
+  res <- ask
+  liftE (ExceptT (f (runMUsing res)))
+
+withLowerTry' :: ((∀ b . M b -> IO (Either Error b)) -> IO a) -> M a
+withLowerTry' f = do
+  res <- ask
+  tryIOM (f (runMUsing res))
+
+withLowerTry :: (∀ b . (M a -> IO b) -> IO b) -> M a
+withLowerTry f = do
+  res <- ask
+  fromEitherError =<< tryIOM (f (runMUsing res))
+
+globalOptions :: M GlobalOptions
+globalOptions =
+  M $ asks \ AppResources {..} -> GlobalOptions {..}
+
+local :: (AppResources -> AppResources) -> M a -> M a
+local f (M ma) =
+  M (Reader.local f ma)
+
+ask :: M AppResources
+ask = M Reader.ask
+
+appContextAt :: LogLevel -> Text -> M a -> M a
+appContextAt level description =
+  local (#context %~ (AppContext {description, level} :))
+
+appContext :: Text -> M a -> M a
+appContext = appContextAt LogInfo
+
+appContextDebug :: Text -> M a -> M a
+appContextDebug desc ma = do
+  Log.debug logMsg
+  appContextAt LogDebug desc ma
+  where
+    logMsg = case Text.uncons desc of
+      Just (h, t) -> Text.cons (toUpper h) t
+      Nothing -> desc

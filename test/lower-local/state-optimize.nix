@@ -37,7 +37,7 @@
     latest-local1 = {};
     latest-local2 = {};
     lower-local1 = {
-      containers = "0.7";
+      containers = "0.8";
     };
     lower-local2 = {
       semigroups = "0.20";

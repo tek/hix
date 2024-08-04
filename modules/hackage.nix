@@ -183,6 +183,13 @@ in {
       default = true;
     };
 
+    # TODO
+    hermetic = lib.mkOption {
+      description = "Whether to ignore the Cabal config in `$HOME`.";
+      type = types.bool;
+      default = false;
+    };
+
     hooks = {
 
       postUploadAll = lib.mkOption {

@@ -2,36 +2,31 @@ module Hix.Managed.Handlers.Build.Test where
 
 import Data.IORef (IORef)
 import Data.Map.Strict ((!?))
-import Exon (exon)
 
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr)
 import qualified Hix.Data.PackageId
+import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (PackageName)
-import Hix.Data.Version (Version, Versions)
+import Hix.Data.Version (Versions)
 import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages)
-import Hix.Managed.Cabal.Mock.SourcePackage (queryVersions, queryVersionsLatest, sourcePackageVersions)
-import Hix.Managed.Data.BuildConfig (BuildConfig)
+import Hix.Managed.Data.BuildConfig (BuildConfig, SpecialBuildHandlers (..))
 import Hix.Managed.Data.EnvConfig (EnvConfig)
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Mutation (FailedMutation)
 import Hix.Managed.Data.StageState (BuildResult)
-import Hix.Managed.Data.StateFileConfig (StateFileConfig)
-import Hix.Managed.Handlers.Build (
-  BuildHandlers (..),
-  BuildOutputsPrefix,
-  SpecialBuildHandlers (TestBumpHandlers),
-  versionsBuilder,
-  )
+import qualified Hix.Managed.Handlers.AvailableVersions as AvailableVersions
+import qualified Hix.Managed.Handlers.AvailableVersions.Test as AvailableVersions
+import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
 import Hix.Managed.Handlers.Build.Prod (handlersProd)
 import qualified Hix.Managed.Handlers.Cabal.Prod as CabalHandlers
-import Hix.Managed.Handlers.Cabal.Prod (testPackagesBump)
-import qualified Hix.Managed.Handlers.Hackage as HackageHandlers
+import Hix.Managed.Handlers.Cabal.Prod (testPackagesBump, testPackagesMaint)
+import Hix.Managed.Handlers.Project (ProjectHandlers (..))
 import qualified Hix.Managed.Handlers.Report.Test as ReportHandlers
+import qualified Hix.Managed.Handlers.SourceHash as SourceHashHandlers
 import qualified Hix.Managed.Handlers.StateFile.Test as StateFile
-import Hix.Monad (clientError)
 
 handlersUnitTest ::
   MonadIO m =>
@@ -44,52 +39,49 @@ handlersUnitTest ghcPackages builder = do
   let
     handlers =
       BuildHandlers {
-        stateFile,
-        report,
+        project = ProjectHandlers {
+          stateFile,
+          report
+        },
         cabal,
-        withBuilder = versionsBuilder HackageHandlers.handlersNull builder,
-        versions = queryVersions versions,
-        latestVersion = queryVersionsLatest versions
+        withBuilder = versionsBuilder SourceHashHandlers.handlersNull builder,
+        versions = AvailableVersions.handlersTest ghcPackages.available
       }
   pure (handlers, stateFileRef, mutationsRef)
   where
     cabal = CabalHandlers.handlersProd def False
-    versions = sourcePackageVersions ghcPackages.available
 
-latestVersionNixTestBump :: PackageName -> M (Maybe Version)
-latestVersionNixTestBump name =
-  maybe invalid found (testPackagesBump !? name)
-  where
-    invalid = clientError [exon|Invalid package for latestVersion: ##{name}|]
-    found = pure . Just . (.version)
-
-handlersBumpTest ::
-  MonadIO m =>
-  StateFileConfig ->
+handlersTest ::
+  Map PackageName PackageId ->
+  ProjectHandlers ->
   Envs EnvConfig ->
-  Maybe BuildOutputsPrefix ->
   BuildConfig ->
   CabalConfig ->
-  Bool ->
-  m BuildHandlers
-handlersBumpTest stateFileConf envsConf buildOutputsPrefix buildConf cabalConf oldest = do
-  handlers <- handlersProd stateFileConf envsConf buildOutputsPrefix buildConf cabalConf oldest
+  M BuildHandlers
+handlersTest packages project envsConf buildConf cabalConf = do
+  handlers <- handlersProd project envsConf buildConf cabalConf
   pure handlers {
-    cabal = CabalHandlers.handlersTest cabalConf oldest,
-    latestVersion = latestVersionNixTestBump
+    cabal = CabalHandlers.handlersTest cabalConf False,
+    versions = AvailableVersions.handlersActionOne \ name -> pure ((.version) <$> packages !? name)
   }
 
-chooseHandlers ::
-  MonadIO m =>
-  StateFileConfig ->
+handlersBumpTest ::
+  ProjectHandlers ->
   Envs EnvConfig ->
-  Maybe BuildOutputsPrefix ->
   BuildConfig ->
   CabalConfig ->
+  M BuildHandlers
+handlersBumpTest =
+  handlersTest testPackagesBump
+
+chooseHandlers ::
   Maybe SpecialBuildHandlers ->
-  m BuildHandlers
-chooseHandlers stateFileConf envsConf buildOutputsPrefix buildConf cabalConf = \case
-  Just TestBumpHandlers -> handlersBumpTest stateFileConf envsConf buildOutputsPrefix buildConf cabalConf oldest
-  Nothing -> handlersProd stateFileConf envsConf buildOutputsPrefix buildConf cabalConf oldest
-  where
-    oldest = False
+  ProjectHandlers ->
+  Envs EnvConfig ->
+  BuildConfig ->
+  CabalConfig ->
+  M BuildHandlers
+chooseHandlers = \case
+  Just BuildHandlersTestBump -> handlersBumpTest
+  Just BuildHandlersTestMaint -> handlersTest testPackagesMaint
+  Nothing -> handlersProd

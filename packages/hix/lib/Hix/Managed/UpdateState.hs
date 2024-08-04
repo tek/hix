@@ -1,17 +1,20 @@
 module Hix.Managed.UpdateState where
 
-import Hix.Class.Map (nAdjust, nAmend, nInsert)
+import Hix.Class.Map (nAdjust, nAmend, nInsert, nMapKeys)
 import Hix.Data.Overrides (Overrides)
+import Hix.Managed.Data.Diff (BoundsChange)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext)
 import qualified Hix.Managed.Data.EnvState
 import Hix.Managed.Data.EnvState (EnvState (EnvState))
-import Hix.Managed.Data.Mutable (mutUpdateTargets)
+import Hix.Managed.Data.Mutable (depName)
 import qualified Hix.Managed.Data.MutationState
 import Hix.Managed.Data.MutationState (MutationState)
+import Hix.Managed.Data.Packages (Deps)
 import qualified Hix.Managed.Data.ProjectState
 import Hix.Managed.Data.ProjectState (ProjectState (ProjectState))
 import Hix.Managed.Diff (applyBoundsChange, applyVersionChange, updateBoundsChanges, updateVersionChanges)
+import Hix.Managed.Targets (overTargets)
 
 -- | Insert the transformed 'EnvState', which contains only the bounds for the current target set and the overrides
 -- for the current env.
@@ -34,7 +37,9 @@ projectStateWithEnv ::
   ProjectState
 projectStateWithEnv context new old =
   ProjectState {
-    bounds = mutUpdateTargets context.targets applyBoundsChange new.bounds old.bounds,
+    -- TODO clean up
+    -- bounds = mutUpdateTargets context.targets applyBoundsChange new.bounds old.bounds,
+    bounds = overTargets context.targets (nAmend applyBoundsChange (nMapKeys depName new.bounds :: Deps BoundsChange)) old.bounds,
     versions = nAdjust context.env old.versions (nAmend applyVersionChange new.versions),
     overrides = nInsert context.env new.overrides old.overrides,
     initial = nAdjust context.env old.initial (nAmend applyVersionChange new.initial),

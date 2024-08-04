@@ -165,7 +165,7 @@ tryFinish builds = \case
 
 reportFinished :: Either Derivation PackageDerivation -> StateT OutputState M ()
 reportFinished result =
-  lift $ Log.debug [exon|Nix build of #{desc} #{status}|]
+  lift $ Log.trace [exon|Nix build of #{desc} #{status}|]
   where
     (desc, status) = case result of
       Right PackageDerivation {package, success} -> (showP package, if success then "succeeded" else "failed")
@@ -202,20 +202,25 @@ processMessage ::
   NixAction ->
   StateT OutputState M ()
 processMessage _ = \case
-  NixResult {aid, rtype, fields} -> do
-    -- lift (Log.debug (decodeUtf8 payload))
+  NixResult {aid, rtype, fields} ->
     modify' (processResult aid rtype fields)
-  NixStartBuilds i -> modify' \ s -> s {builds = Just BuildsState {id = i, done = 0, failed = 0, unassigned = []}}
+
+  NixStartBuilds i ->
+    modify' \ s -> s {builds = Just BuildsState {id = i, done = 0, failed = 0, unassigned = []}}
+
   NixStart i path -> do
-    lift $ Log.debug [exon|Started build of #{path} (#{show i})|]
+    lift $ Log.trace [exon|Started build of #{path} (#{show i})|]
     modify' \ OutputState {running, ..} ->
       OutputState {running = Map.insert i (Derivation path mempty) running, ..}
+
   NixStop i -> do
     result <- state \ OutputState {running, ..} -> do
       let (result, package, newBuilds) = tryFinish builds (running !? i)
       (result, OutputState {running = Map.delete i running, finished = finished ++ package, builds = newBuilds, ..})
     traverse_ reportFinished result
+
   NixStartOther _ -> unit
+
   NixMessage -> unit
 
 outputParse :: ByteString -> StateT OutputState M ()

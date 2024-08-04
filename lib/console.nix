@@ -85,9 +85,6 @@ in {
   s.colors = withAliases sgr;
   s.colorsBg = mapAttrs (_: sgr) colorsBg;
 
-  start.colors = builtins.mapAttrs (_: startSgr) colors;
-  start.colorsBg = builtins.mapAttrs (_: startSgr) colorsBg;
-
   rgb = r: g: b: sgr "38;2;${r};${g};${b}";
   rgbBg = r: g: b: sgr "48;2;${r};${g};${b}";
 

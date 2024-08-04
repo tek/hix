@@ -2,18 +2,22 @@
 
 module Hix.Managed.Cabal.Resources where
 
-import Control.Monad.Trans.Reader (asks)
 import Distribution.Client.IndexUtils (getInstalledPackages, getSourcePackages)
 import qualified Distribution.Client.NixStyleOptions
 import Distribution.Client.Setup (configCompilerAux', withRepoContext)
 import Distribution.Simple (pattern GlobalPackageDB, compilerInfo)
 import Distribution.Solver.Types.PkgConfigDb (readPkgConfigDb)
-import Distribution.Verbosity (lessVerbose, silent, verbose)
+import Distribution.Verbosity (Verbosity, lessVerbose, silent, verbose)
 
 import qualified Hix.Data.Monad
-import Hix.Data.Monad (M (M))
+import Hix.Data.Monad (M, appRes)
 import qualified Hix.Log as Log
-import Hix.Managed.Cabal.Data.Config (CabalConfig, GhcDb (GhcDbSynthetic, GhcDbSystem), SolveConfig (..))
+import Hix.Managed.Cabal.Data.Config (
+  CabalConfig (..),
+  GhcDb (GhcDbSynthetic, GhcDbSystem),
+  SolveConfig (..),
+  allHackages,
+  )
 import qualified Hix.Managed.Cabal.Data.SolveResources
 import Hix.Managed.Cabal.Data.SolveResources (SolveResources (SolveResources))
 import qualified Hix.Managed.Cabal.Init
@@ -76,8 +80,14 @@ resources packages conf = do
       ..
     }
 
--- TODO The Packages ManagedPackage are added in 'resources' as well as in 'mockSolveResources', which is probably ok since they
--- now come from @processProject@ and not from the tests, I think. still would be better to unify those
+cabalVerbosity :: M Verbosity
+cabalVerbosity =
+  appRes.cabalVerbose <&> \case
+    True -> verbose
+    False -> lessVerbose silent
+
+-- TODO The Packages ManagedPackage are added in 'resources' as well as in 'mockSolveResources', which is probably ok
+-- since they now come from @processProject@ and not from the tests, I think. still would be better to unify those
 --
 -- just add the managed packages to the result.
 acquire ::
@@ -87,9 +97,7 @@ acquire ::
   M SolveResources
 acquire packages cabal = \case
   GhcDbSystem ghc -> do
-    verbosity <- M (asks (.debug)) <&> \case
-      True -> verbose
-      False -> lessVerbose silent
-    resources packages def {verbosity, ghc, cabal}
+    verbosity <- cabalVerbosity
+    resources packages SolveConfig {hackageRepos = allHackages cabal, verbosity, ghc, allowBoot = False, cabal}
   GhcDbSynthetic db ->
     pure (mockSolveResources packages db)

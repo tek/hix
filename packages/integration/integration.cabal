@@ -1,0 +1,208 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.36.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           integration
+version:        0.8.0
+synopsis:       Haskell/Nix development build tools
+description:    See https://hackage.haskell.org/package/integration/docs/Integration.html
+category:       Build
+homepage:       https://git.tryp.io/tek/hix
+bug-reports:    https://github.com/tek/hix/issues
+author:         Torsten Schmits
+maintainer:     hackage@tryp.io
+copyright:      2025 Torsten Schmits
+license:        BSD-2-Clause-Patent
+license-file:   LICENSE
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://git.tryp.io/tek/hix
+
+library
+  exposed-modules:
+      Hix.Integration
+      Hix.Integration.Data.Options
+      Hix.Integration.Hackage
+      Hix.Integration.Options
+  hs-source-dirs:
+      lib
+  default-extensions:
+      StrictData
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BlockArguments
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DuplicateRecordFields
+      FunctionalDependencies
+      GADTs
+      LambdaCase
+      LiberalTypeSynonyms
+      MonadComprehensions
+      MultiWayIf
+      OverloadedLabels
+      OverloadedLists
+      OverloadedStrings
+      PackageImports
+      PartialTypeSignatures
+      PatternSynonyms
+      QuantifiedConstraints
+      QuasiQuotes
+      RecordWildCards
+      RecursiveDo
+      RoleAnnotations
+      TemplateHaskell
+      TypeFamilies
+      TypeFamilyDependencies
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+      OverloadedRecordDot
+      NoFieldSelectors
+  ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
+  build-depends:
+      async
+    , base ==4.*
+    , exceptions
+    , exon >=1.4 && <1.7
+    , hackage-server
+    , hix ==0.8.0
+    , incipit-base >=0.5 && <0.7
+    , network-uri
+    , optparse-applicative >=0.17 && <0.19
+    , path ==0.9.*
+    , path-io >=1.7 && <1.9
+  mixins:
+      base hiding (Prelude)
+    , incipit-base (IncipitBase as Prelude)
+    , incipit-base hiding (IncipitBase)
+  default-language: GHC2021
+
+executable integration
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  default-extensions:
+      StrictData
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BlockArguments
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DuplicateRecordFields
+      FunctionalDependencies
+      GADTs
+      LambdaCase
+      LiberalTypeSynonyms
+      MonadComprehensions
+      MultiWayIf
+      OverloadedLabels
+      OverloadedLists
+      OverloadedStrings
+      PackageImports
+      PartialTypeSignatures
+      PatternSynonyms
+      QuantifiedConstraints
+      QuasiQuotes
+      RecordWildCards
+      RecursiveDo
+      RoleAnnotations
+      TemplateHaskell
+      TypeFamilies
+      TypeFamilyDependencies
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+      OverloadedRecordDot
+      NoFieldSelectors
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
+  build-depends:
+      base ==4.*
+    , incipit-base >=0.5 && <0.7
+    , integration
+  mixins:
+      base hiding (Prelude)
+    , incipit-base (IncipitBase as Prelude)
+    , incipit-base hiding (IncipitBase)
+  default-language: GHC2021
+
+test-suite integration-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Hix.Integration.HackageTest
+      Hix.Integration.ReleaseMaintenanceTest
+      Hix.Integration.RevisionTest
+      Hix.Integration.Utils
+  hs-source-dirs:
+      test
+  default-extensions:
+      StrictData
+      AllowAmbiguousTypes
+      ApplicativeDo
+      BlockArguments
+      DataKinds
+      DefaultSignatures
+      DeriveAnyClass
+      DerivingStrategies
+      DerivingVia
+      DisambiguateRecordFields
+      DuplicateRecordFields
+      FunctionalDependencies
+      GADTs
+      LambdaCase
+      LiberalTypeSynonyms
+      MonadComprehensions
+      MultiWayIf
+      OverloadedLabels
+      OverloadedLists
+      OverloadedStrings
+      PackageImports
+      PartialTypeSignatures
+      PatternSynonyms
+      QuantifiedConstraints
+      QuasiQuotes
+      RecordWildCards
+      RecursiveDo
+      RoleAnnotations
+      TemplateHaskell
+      TypeFamilies
+      TypeFamilyDependencies
+      UndecidableInstances
+      UnicodeSyntax
+      ViewPatterns
+      OverloadedRecordDot
+      NoFieldSelectors
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
+  build-depends:
+      Cabal
+    , aeson >=2.0 && <2.3
+    , base ==4.*
+    , exon >=1.4 && <1.7
+    , hedgehog >=1.1 && <1.5
+    , hix ==0.8.0
+    , incipit-base >=0.5 && <0.7
+    , integration
+    , lens >=5.1 && <5.3
+    , path ==0.9.*
+    , path-io >=1.7 && <1.9
+    , tasty ==1.4.*
+    , tasty-hedgehog >=1.3 && <1.5
+    , time
+  mixins:
+      base hiding (Prelude)
+    , incipit-base (IncipitBase as Prelude)
+    , incipit-base hiding (IncipitBase)
+  default-language: GHC2021

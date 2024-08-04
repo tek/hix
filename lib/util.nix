@@ -274,6 +274,8 @@ let
     unlessDev
     scriptErr
     script
+    scriptBin
+    scriptErrBin
     zscriptPure
     zscriptErr
     zscript

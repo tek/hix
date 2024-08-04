@@ -26,6 +26,7 @@ let
       "ghci"
       "hackage"
       "hackage-legacy"
+      "hackage-local"
       "lazy"
       "local-prelude"
       "multi-exe"
@@ -65,6 +66,8 @@ let
       "lower"
       "lower-local"
       "lower-stabilize"
+      "maint"
+      "maint-workflows"
       "managed-nom"
     ];
 

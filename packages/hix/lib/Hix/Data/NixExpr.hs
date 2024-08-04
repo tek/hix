@@ -1,8 +1,13 @@
 module Hix.Data.NixExpr where
 
+newtype ExprKey =
+  ExprKey Text
+  deriving stock (Eq, Show)
+  deriving newtype (IsString, Ord, Semigroup, Monoid)
+
 data ExprAttr =
   ExprAttr {
-    name :: Text,
+    name :: ExprKey,
     value :: Expr
   }
   |

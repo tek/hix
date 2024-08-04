@@ -1,6 +1,17 @@
 module Hix.Managed.Data.BuildConfig where
 
-import Hix.Managed.Handlers.Build (BuildTimeout)
+import Data.Aeson (FromJSON)
+
+newtype BuildTimeout =
+  BuildTimeout Int
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (Num, Real, Enum, Integral, Ord, FromJSON)
+
+data SpecialBuildHandlers =
+  BuildHandlersTestBump
+  |
+  BuildHandlersTestMaint
+  deriving stock (Eq, Show)
 
 data BuildConfig =
   BuildConfig {

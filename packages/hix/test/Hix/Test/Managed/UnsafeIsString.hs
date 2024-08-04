@@ -10,8 +10,7 @@ import Hix.CabalParsec (unsafeParsec)
 import qualified Hix.Data.Dep
 import qualified Hix.Data.Dep as Dep
 import Hix.Data.Dep (Dep (Dep))
-import qualified Hix.Data.Overrides
-import Hix.Data.Overrides (Override (Override))
+import Hix.Data.Overrides (Override, override)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
 import Hix.Data.PackageName (PackageName)
@@ -63,7 +62,7 @@ instance IsString Dep where
 
 instance IsString Override where
   fromString s =
-    Override {hash = SourceHash (showP package), version = package.version}
+    override package.version (SourceHash (showP package))
     where
       package = fromString @PackageId s
 

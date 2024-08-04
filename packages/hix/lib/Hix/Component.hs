@@ -16,12 +16,11 @@ import Hix.Data.ComponentConfig (
   Target (Target),
   TargetOrDefault (DefaultTarget, ExplicitTarget, NoDefaultTarget),
   )
-import Hix.Data.Error (Error (EnvError))
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (ComponentCoords, ComponentSpec (ComponentSpec), PackageSpec (PackageSpec), TargetSpec (..))
 import Hix.Data.PackageName (PackageName (PackageName))
 import Hix.Error (pathText)
-import Hix.Monad (M, noteEnv, throwM)
+import Hix.Monad (M, clientError, noteEnv)
 import Hix.Path (rootDir)
 
 data ResolvedPackage =
@@ -126,7 +125,7 @@ targetInPackage (ResolvedPackage _ package) (Just comp) = do
   where
     match cand = matchComponent cand comp
 targetInPackage (ResolvedPackage True package) Nothing =
-  either (throwM . EnvError) pure (ExplicitTarget <$> defaultComponent package)
+  either clientError pure (ExplicitTarget <$> defaultComponent package)
 targetInPackage (ResolvedPackage False package) Nothing = do
   either (pure . NoDefaultTarget) pure (DefaultTarget <$> defaultComponent package)
 targetInPackage (NoPackage err) _ = pure (NoDefaultTarget err)
@@ -194,4 +193,4 @@ targetComponentOrError cliRoot mainPkg config spec =
   targetComponent cliRoot mainPkg config spec >>= \case
     ExplicitTarget t -> pure t
     DefaultTarget t -> pure t
-    NoDefaultTarget err -> throwM (EnvError err)
+    NoDefaultTarget err -> clientError err

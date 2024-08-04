@@ -13,7 +13,6 @@ import GHC.Records (HasField (getField))
 
 import Hix.Class.Map (nGenWith)
 import Hix.Data.Bounds (Ranges)
-import Hix.Data.PackageName (LocalPackage (LocalPackage))
 import Hix.Managed.Constraints (explicitBounds, noBounds)
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import qualified Hix.Managed.Data.EnvContext
@@ -56,11 +55,6 @@ instance HasField "constraints" SolverState EnvConstraints where
 instance HasField "flags" SolverState SolverFlags where
   getField (UnsafeSolverState _ p) = p
 
--- TODO What's the point of this now that there's no @local@ flag in the constraints anymore?
-localDepConstraints :: Set LocalPackage -> EnvConstraints
-localDepConstraints =
-  nGenWith \ (LocalPackage package) -> (package, noBounds)
-
 mutableDepConstraints :: Set MutableDep -> EnvConstraints
 mutableDepConstraints =
   nGenWith \ package -> (depName package, noBounds)
@@ -77,7 +71,6 @@ solverState user deps modeConstraints flags =
     constraints =
       modeConstraints <>
       explicitBounds user <>
-      localDepConstraints deps.local <>
       mutableDepConstraints deps.mutable
 
 updateSolverState :: (EnvConstraints -> EnvConstraints) -> SolverState -> SolverState

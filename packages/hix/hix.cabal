@@ -31,9 +31,11 @@ library
       Hix.Class.EncodeNix
       Hix.Class.Map
       Hix.Class.SOP
+      Hix.Color
       Hix.Compat
       Hix.Component
       Hix.Console
+      Hix.Data.AppContext
       Hix.Data.BootstrapProjectConfig
       Hix.Data.Bounds
       Hix.Data.ComponentConfig
@@ -44,6 +46,8 @@ library
       Hix.Data.GhciTest
       Hix.Data.GlobalOptions
       Hix.Data.Json
+      Hix.Data.LogLevel
+      Hix.Data.MDep
       Hix.Data.Monad
       Hix.Data.NewProjectConfig
       Hix.Data.NixExpr
@@ -61,8 +65,12 @@ library
       Hix.Error
       Hix.Ghci
       Hix.Hackage
+      Hix.Hackage.Hash
+      Hix.Hackage.Versions
+      Hix.Http
       Hix.Json
       Hix.Log
+      Hix.Managed.App
       Hix.Managed.Build
       Hix.Managed.Build.Mutation
       Hix.Managed.Build.NixOutput
@@ -77,24 +85,34 @@ library
       Hix.Managed.Bump.Optimize
       Hix.Managed.Cabal.Changes
       Hix.Managed.Cabal.Config
+      Hix.Managed.Cabal.ContextHackageRepo
       Hix.Managed.Cabal.Data.Config
+      Hix.Managed.Cabal.Data.ContextHackageRepo
+      Hix.Managed.Cabal.Data.HackageLocation
+      Hix.Managed.Cabal.Data.HackageRepo
       Hix.Managed.Cabal.Data.Packages
+      Hix.Managed.Cabal.Data.Revision
       Hix.Managed.Cabal.Data.SolveResources
       Hix.Managed.Cabal.Data.SolverState
       Hix.Managed.Cabal.Data.SolveTarget
       Hix.Managed.Cabal.Data.SourcePackage
+      Hix.Managed.Cabal.HackageLocation
+      Hix.Managed.Cabal.HackageRepo
       Hix.Managed.Cabal.Init
       Hix.Managed.Cabal.Installed
       Hix.Managed.Cabal.Mock
       Hix.Managed.Cabal.Mock.InstalledPackage
       Hix.Managed.Cabal.Mock.SourcePackage
+      Hix.Managed.Cabal.PackageDescription
       Hix.Managed.Cabal.Print
       Hix.Managed.Cabal.Repo
       Hix.Managed.Cabal.Resources
+      Hix.Managed.Cabal.Sdist
       Hix.Managed.Cabal.Solve
       Hix.Managed.Cabal.Sort
       Hix.Managed.Cabal.Source
       Hix.Managed.Cabal.Targets
+      Hix.Managed.Cabal.Upload
       Hix.Managed.Constraints
       Hix.Managed.Data.BuildConfig
       Hix.Managed.Data.BuildOutput
@@ -111,8 +129,9 @@ library
       Hix.Managed.Data.Initial
       Hix.Managed.Data.Lower
       Hix.Managed.Data.LowerConfig
+      Hix.Managed.Data.MaintConfig
+      Hix.Managed.Data.MaintContext
       Hix.Managed.Data.ManagedPackage
-      Hix.Managed.Data.ManagedPackageProto
       Hix.Managed.Data.Mutable
       Hix.Managed.Data.MutableId
       Hix.Managed.Data.Mutation
@@ -127,6 +146,8 @@ library
       Hix.Managed.Data.ProjectStateProto
       Hix.Managed.Data.Query
       Hix.Managed.Data.QueryDep
+      Hix.Managed.Data.RevisionConfig
+      Hix.Managed.Data.SpecialMaintHandlers
       Hix.Managed.Data.StageContext
       Hix.Managed.Data.StageResult
       Hix.Managed.Data.StageState
@@ -136,20 +157,35 @@ library
       Hix.Managed.EnvContext
       Hix.Managed.EnvRequest
       Hix.Managed.EnvResult
+      Hix.Managed.Flake
       Hix.Managed.Flow
+      Hix.Managed.Git
+      Hix.Managed.Handlers.AvailableVersions
+      Hix.Managed.Handlers.AvailableVersions.Prod
+      Hix.Managed.Handlers.AvailableVersions.Test
       Hix.Managed.Handlers.Build
       Hix.Managed.Handlers.Build.Prod
       Hix.Managed.Handlers.Build.Test
       Hix.Managed.Handlers.Cabal
       Hix.Managed.Handlers.Cabal.Prod
-      Hix.Managed.Handlers.Hackage
-      Hix.Managed.Handlers.Hackage.Prod
+      Hix.Managed.Handlers.Context
+      Hix.Managed.Handlers.HackageClient
+      Hix.Managed.Handlers.HackageClient.Prod
+      Hix.Managed.Handlers.Maint
+      Hix.Managed.Handlers.Maint.Prod
+      Hix.Managed.Handlers.Maint.Test
       Hix.Managed.Handlers.Mutation
       Hix.Managed.Handlers.Mutation.Bump
       Hix.Managed.Handlers.Mutation.Lower
+      Hix.Managed.Handlers.Project
+      Hix.Managed.Handlers.Project.Prod
       Hix.Managed.Handlers.Report
       Hix.Managed.Handlers.Report.Prod
       Hix.Managed.Handlers.Report.Test
+      Hix.Managed.Handlers.Revision
+      Hix.Managed.Handlers.Revision.Prod
+      Hix.Managed.Handlers.SourceHash
+      Hix.Managed.Handlers.SourceHash.Prod
       Hix.Managed.Handlers.StateFile
       Hix.Managed.Handlers.StateFile.Prod
       Hix.Managed.Handlers.StateFile.Test
@@ -160,24 +196,36 @@ library
       Hix.Managed.Lower.Init
       Hix.Managed.Lower.Optimize
       Hix.Managed.Lower.Stabilize
+      Hix.Managed.Maint.Data.MaintEnv
+      Hix.Managed.Maint.Data.MaintPlan
+      Hix.Managed.Maint.Data.MaintPrep
+      Hix.Managed.Maint.Data.MaintResult
+      Hix.Managed.Maint.Data.MaintTarget
+      Hix.Managed.Maint.Git
+      Hix.Managed.Maint.MaintPlan
+      Hix.Managed.Maint.MaintResult
+      Hix.Managed.Maint.Package
+      Hix.Managed.Maint.Prep
+      Hix.Managed.Maint.RevisionPlan
       Hix.Managed.ManagedPackage
-      Hix.Managed.ManagedPackageProto
       Hix.Managed.Overrides
-      Hix.Managed.Path
       Hix.Managed.Process
       Hix.Managed.ProjectContext
       Hix.Managed.ProjectContextProto
       Hix.Managed.ProjectResult
       Hix.Managed.ProjectStateProto
       Hix.Managed.QueryDep
+      Hix.Managed.ReleaseMaintenance
       Hix.Managed.Report
       Hix.Managed.StageContext
       Hix.Managed.StageResult
       Hix.Managed.StageState
       Hix.Managed.StateFile
+      Hix.Managed.Targets
       Hix.Managed.UpdateState
       Hix.Maybe
       Hix.Monad
+      Hix.Network
       Hix.New
       Hix.NixExpr
       Hix.Options
@@ -253,6 +301,8 @@ library
     , incipit-base >=0.5 && <0.7
     , lens >=5.1 && <5.4
     , lens-regex-pcre ==1.1.*
+    , network
+    , network-uri
     , optparse-applicative >=0.17 && <0.19
     , path ==0.9.*
     , path-io >=1.7 && <1.9
@@ -336,6 +386,7 @@ test-suite hix-test
       Hix.Test.Managed.Bump.MutationTest
       Hix.Test.Managed.BumpNativeTest
       Hix.Test.Managed.DiffTest
+      Hix.Test.Managed.HackageTest
       Hix.Test.Managed.LowerAuto.MutationOptimizeTest
       Hix.Test.Managed.LowerAuto.MutationStabilizeTest
       Hix.Test.Managed.LowerInit.MutationTest
@@ -344,9 +395,14 @@ test-suite hix-test
       Hix.Test.Managed.LowerOptimize.MutationTest
       Hix.Test.Managed.LowerOptimize.OrderTest
       Hix.Test.Managed.LowerStabilize.MutationTest
+      Hix.Test.Managed.Maint.Handlers
       Hix.Test.Managed.ProjectContextProtoTest
+      Hix.Test.Managed.ReleaseMaintenance.Case
+      Hix.Test.Managed.ReleaseMaintenance.Gen
+      Hix.Test.Managed.ReleaseMaintenanceTest
       Hix.Test.Managed.Run
       Hix.Test.Managed.SolveTest
+      Hix.Test.Managed.TagTest
       Hix.Test.Managed.UnsafeIsString
       Hix.Test.ManagedTest
       Hix.Test.NewTest
@@ -402,11 +458,14 @@ test-suite hix-test
     , hedgehog >=1.1 && <1.5
     , hix
     , incipit-base >=0.5 && <0.7
+    , lens >=5.1 && <5.3
     , path ==0.9.*
     , path-io >=1.7 && <1.9
+    , pretty
     , tasty ==1.4.*
     , tasty-hedgehog >=1.3 && <1.5
     , these ==1.2.*
+    , time
     , transformers
   mixins:
       base hiding (Prelude)

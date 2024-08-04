@@ -4,7 +4,7 @@ import Control.Monad.Trans.Reader (ask)
 import qualified Data.Text.IO as Text
 import Exon (exon)
 import Hedgehog (evalEither)
-import Path (Abs, Dir, File, Path, Rel, parent, reldir, relfile, toFilePath, (</>))
+import Path (Abs, Dir, Path, parent, reldir, relfile, toFilePath, (</>))
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import qualified Hix.Data.Monad
@@ -15,22 +15,25 @@ import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
-import qualified Hix.Managed.Data.ProjectContext
 import qualified Hix.Managed.Data.ProjectContextProto
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (ProjectContextProto))
 import qualified Hix.Managed.Data.ProjectResult
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
+import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
+import qualified Hix.Managed.Handlers.Project.Prod as Project
 import Hix.Managed.ProjectContext (updateProject)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
+import Hix.Monad (withProjectRoot)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Utils (UnitTest, runMTest)
+import Hix.Test.Managed.Run (addFile)
+import Hix.Test.Utils (UnitTest, logConfigDebug, runMTest')
 
-packages :: Packages ManagedPackageProto
+packages :: Packages ManagedPackage
 packages =
   managedPackages [
     (("root", "1.0"), ["tasty <1.5", "criterion <1.7"])
@@ -69,13 +72,8 @@ string :: String
 string = "hello"
 |]
 
-addFile :: Path Abs Dir -> Path Rel File -> Text -> M ()
-addFile root path content = do
-  createDirIfMissing True (parent file)
-  liftIO (Text.writeFile (toFilePath file) content)
-  where
-    file = root </> path
-
+-- | This accesses cwd because it needs to access the hix repo.
+-- Won't work when run outside of the repo.
 setupProject :: M (Path Abs Dir)
 setupProject = do
   AppResources {tmp} <- M ask
@@ -97,39 +95,40 @@ targetStateFile =
 bumpNativeTest :: M Text
 bumpNativeTest = do
   root <- setupProject
-  let
-    stateFileConf = StateFileConfig {
-      file = [relfile|ops/managed.nix|],
-      projectRoot = Just root
-    }
-    envsConfig = [("latest", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
-    buildConfig = def
-  handlers <- Build.handlersProd stateFileConf envsConfig Nothing buildConfig def False
-  let
-    opts = (projectOptions ["latest"]) {query = ["tasty"]}
-
-    proto0 =
-      ProjectContextProto {
-        packages,
-        state = ProjectStateProto [] [] mempty mempty False,
-        envs = envsConfig,
-        buildOutputsPrefix = Nothing
+  withProjectRoot root do
+    let
+      stateFileConf = StateFileConfig {
+        file = [relfile|ops/managed.nix|]
       }
+      envsConfig = [("latest", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
+      buildConfig = def
+    handlersProject <- Project.handlersProd stateFileConf
+    handlers <- Build.handlersProd handlersProject envsConfig buildConfig def
+    let
+      opts = (projectOptions ["latest"]) {query = ["tasty"]}
 
-    stateFile = root </> [relfile|ops/managed.nix|]
+      proto0 =
+        ProjectContextProto {
+          packages,
+          state = ProjectStateProto [] [] mempty mempty False,
+          envs = envsConfig,
+          hackage = []
+        }
 
-    run context process = do
-      result <- process handlers context
-      updateProject handlers context.build result
-      stateFileContent <- liftIO (Text.readFile (toFilePath stateFile))
-      pure (result.state, stateFileContent)
+      stateFile = root </> [relfile|ops/managed.nix|]
 
-  context0 <- ProjectContextProto.validate opts proto0
-  (_, stateFileContent) <- run context0 bumpOptimizeMain
-  pure stateFileContent
+      run context process = do
+        result <- process handlers context
+        updateProject handlers.project False result
+        stateFileContent <- liftIO (Text.readFile (toFilePath stateFile))
+        pure (result.state, stateFileContent)
+
+    context0 <- ProjectContextProto.validate opts proto0
+    (_, stateFileContent) <- run context0 bumpOptimizeMain
+    pure stateFileContent
 
 test_bumpNative :: UnitTest
 test_bumpNative = do
   stateFileContent <- evalEither =<< liftIO do
-    runMTest True bumpNativeTest
+    runMTest' logConfigDebug bumpNativeTest
   eqLines targetStateFile stateFileContent

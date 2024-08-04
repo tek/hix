@@ -10,15 +10,19 @@ import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep (Dep), mkDep)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Version (range0)
-import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem), GhcPath (GhcPath))
+import Hix.Managed.Cabal.Data.Config (CabalConfig (..), GhcDb (GhcDbSystem), GhcPath (GhcPath))
+import qualified Hix.Managed.Cabal.Data.ContextHackageRepo as ContextHackageRepo
+import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo, contextHackageRepo)
+import qualified Hix.Managed.Cabal.Data.HackageLocation as HackageLocation
+import qualified Hix.Managed.Cabal.Data.HackageRepo as HackageRepo
+import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo)
+import Hix.Managed.Cabal.HackageRepo (hackageRepo)
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext (EnvContext), EnvDeps (EnvDeps))
 import qualified Hix.Managed.Data.ManagedPackage
 import Hix.Managed.Data.ManagedPackage (ManagedPackage (ManagedPackage))
-import qualified Hix.Managed.Data.ManagedPackageProto
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto (ManagedPackageProto))
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext (ProjectContext))
@@ -31,7 +35,7 @@ import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto)
 import Hix.Managed.Data.Targets (unsafeTargets)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Test.Hedgehog (assertRight)
-import Hix.Test.Utils (UnitTest, runMTest)
+import Hix.Test.Utils (UnitTest, runMTest')
 
 json :: ByteString
 json =
@@ -106,13 +110,19 @@ json =
         "targets": ["local3", "local4"],
         "ghc": "/ghc"
       }
+    },
+    "hackage": {
+      "local": {
+        "name": "local",
+        "publish": false
+      }
     }
   }|]
 
-packages :: Packages ManagedPackageProto
+packages :: Packages ManagedPackage
 packages =
   [
-    ("local1", ManagedPackageProto {
+    ("local1", ManagedPackage {
       name = "local1",
       version = "1.2.1",
       deps = [
@@ -126,22 +136,22 @@ packages =
         mkDep "direct5" (intersectVersionRanges (orLaterVersion [5, 0]) (earlierVersion [5, 1]))
       ]
     }),
-    ("local2", ManagedPackageProto {
+    ("local2", ManagedPackage {
       name = "local2",
       version = "1.1.1",
       deps = ["local1"]
     }),
-    ("local3", ManagedPackageProto {
+    ("local3", ManagedPackage {
       name = "local3",
       version = "1.1.1",
       deps = []
     }),
-    ("local4", ManagedPackageProto {
+    ("local4", ManagedPackage {
       name = "local4",
       version = "1.1.1",
       deps = ["local2", "direct1", "direct2"]
     }),
-    ("local5", ManagedPackageProto {
+    ("local5", ManagedPackage {
       name = "local5",
       version = "1.1.1",
       deps = ["local4", "local3"]
@@ -151,6 +161,14 @@ packages =
 ghc :: GhcDb
 ghc =
   GhcDbSystem (Just (GhcPath [absdir|/ghc|]))
+
+targetContextRepo :: ContextHackageRepo
+targetContextRepo =
+  (contextHackageRepo "local") {ContextHackageRepo.publish = Just False}
+
+targetRepo :: HackageRepo
+targetRepo =
+  (hackageRepo "local" HackageLocation.central) {HackageRepo.secure = Nothing}
 
 targetProto :: ProjectContextProto
 targetProto =
@@ -167,7 +185,7 @@ targetProto =
       ("lower-main", EnvConfig {targets = ["local1", "local2"], ghc}),
       ("lower-special", EnvConfig {targets = ["local3", "local4"], ghc})
     ],
-    buildOutputsPrefix = Nothing
+    hackage = [("local", targetContextRepo)]
   }
 
 targetEnvs :: NonEmpty (Either EnvName EnvContext)
@@ -177,7 +195,7 @@ targetEnvs =
       env = "lower-main",
       ghc,
       targets = unsafeTargets ["local1", "local2"],
-      deps = EnvDeps {mutable = ["direct1", "direct2", "direct3", "direct4", "direct5"], local = []},
+      deps = EnvDeps {mutable = ["direct1", "direct2", "direct3", "direct4", "direct5"]},
       query = ["direct1", "direct2", "direct3", "direct4", "direct5"],
       solverBounds = mempty
     },
@@ -185,8 +203,8 @@ targetEnvs =
       env = "lower-special",
       ghc,
       targets = unsafeTargets ["local3", "local4"],
-      deps = EnvDeps {mutable = ["direct1", "direct2"], local = ["local2"]},
-      query = ["direct1", "direct2"],
+      deps = EnvDeps {mutable = ["direct1", "direct2", "local2"]},
+      query = ["direct1", "direct2", "local2"],
       solverBounds = mempty
     }
   ]
@@ -197,40 +215,35 @@ targetProject =
     build = def,
     packages = [
       ("local1", ManagedPackage {
-        package = "local1",
+        name = "local1",
         version = [1, 2, 1],
-        local = [],
-        mutable = [
-          ("direct1", "^>=2.0"),
-          ("direct2", "<1.5"),
-          ("direct3", ">=0"),
-          ("direct4", "==13.23"),
-          ("direct5", ">=5.0 && <5.1")
+        deps = [
+          "direct1 ^>=2.0",
+          "direct2 <1.5",
+          "direct3 >=0",
+          "direct4 ==13.23",
+          "direct5 >=5.0 && <5.1"
         ]
       }),
       ("local2", ManagedPackage {
-        package = "local2",
+        name = "local2",
         version = [1, 1, 1],
-        local = [("local1", ">=0")],
-        mutable = []
+        deps = ["local1 >=0"]
       }),
       ("local3", ManagedPackage {
-        package = "local3",
+        name = "local3",
         version = [1, 1, 1],
-        local = [],
-        mutable = []
+        deps = []
       }),
       ("local4", ManagedPackage {
-        package = "local4",
+        name = "local4",
         version = [1, 1, 1],
-        local = [("local2", ">=0")],
-        mutable = [("direct1", ">=0"), ("direct2", ">=0")]
+        deps = ["local2 >=0", "direct1 >=0", "direct2 >=0"]
       }),
       ("local5", ManagedPackage {
-        package = "local5",
+        name = "local5",
         version = [1, 1, 1],
-        local = [("local3", ">=0"), ("local4", ">=0")],
-        mutable = []
+        deps = ["local4 >=0", "local3 >=0"]
       })
     ],
     state = ProjectState {
@@ -242,10 +255,10 @@ targetProject =
           ("direct4", ">=0"),
           ("direct5", ">=0")
         ]),
-        ("local2", []),
+        ("local2", [("local1", ">=0")]),
         ("local3", []),
-        ("local4", [("direct1", ">=0"), ("direct2", ">=0")]),
-        ("local5", [])
+        ("local4", [("direct1", ">=0"), ("direct2", ">=0"), ("local2", ">=0")]),
+        ("local5", [("local3", ">=0"), ("local4", ">=0")])
       ],
       versions = [
         ("lower-main", [
@@ -257,7 +270,8 @@ targetProject =
         ]),
         ("lower-special", [
           ("direct1", Nothing),
-          ("direct2", Nothing)
+          ("direct2", Nothing),
+          ("local2", Nothing)
         ])
       ],
       overrides = [],
@@ -271,17 +285,19 @@ targetProject =
         ]),
         ("lower-special", [
           ("direct1", Nothing),
-          ("direct2", Nothing)
+          ("direct2", Nothing),
+          ("local2", Nothing)
         ])
       ],
       resolving = False
     },
-    envs = targetEnvs
+    envs = targetEnvs,
+    cabal = CabalConfig {hackageMain = Nothing, hackageExtra = [targetRepo]}
   }
 
 test_parseProjectContextProto :: UnitTest
 test_parseProjectContextProto = do
   assertRight targetProto (eitherDecodeStrict' json)
   project <- evalEither =<< liftIO do
-    runMTest False (ProjectContextProto.validate def targetProto)
+    runMTest' def (ProjectContextProto.validate def targetProto)
   targetProject === project

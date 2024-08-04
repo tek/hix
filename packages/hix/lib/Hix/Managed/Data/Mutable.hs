@@ -4,6 +4,7 @@ module Hix.Managed.Data.Mutable (
   unsafeMutableDep,
   depName,
   isMutableDep,
+  validate,
   MutableVersions,
   MutableBounds,
   MutableRanges,
@@ -21,9 +22,11 @@ module Hix.Managed.Data.Mutable (
   addBuildVersions,
   mutFromSet,
   mutRelaxVersions,
+  mutNonTargets,
+  forTargets,
 ) where
 
-import Data.Aeson (ToJSON, ToJSONKey)
+import Data.Aeson (FromJSON, FromJSONKey, ToJSON, ToJSONKey)
 import qualified Data.Set as Set
 import Distribution.Pretty (Pretty (pretty))
 import Exon (ToSegment (toSegment))
@@ -38,6 +41,7 @@ import Hix.Class.Map (
   nFromKeys,
   nMap,
   nMapKeys,
+  nPartitionByKey,
   nPretty,
   nPrettyWith,
   nRestrictKeys,
@@ -50,12 +54,15 @@ import Hix.Data.PackageName (LocalPackage (LocalPackage), PackageName)
 import Hix.Data.Version (Version, VersionRange, Versions)
 import Hix.Data.VersionBounds (VersionBounds)
 import Hix.Managed.Data.Packages (Deps, Packages)
-import Hix.Managed.Data.Targets (Targets, overTargets)
+import Hix.Managed.Data.Targets (Targets)
+import qualified Hix.Managed.Targets as Targets
+import Hix.Managed.Targets (overTargets, onlyTargets)
+import Hix.Maybe (justIf)
 
 newtype MutableDep =
   UnsafeMutableDep PackageName
   deriving stock (Eq, Show)
-  deriving newtype (Ord, ToJSON, ToJSONKey, Pretty, EncodeNixKey)
+  deriving newtype (Ord, ToJSON, ToJSONKey, Pretty, EncodeNixKey, FromJSON, FromJSONKey)
 
 pattern MutableDep :: PackageName -> MutableDep
 pattern MutableDep name <- UnsafeMutableDep name
@@ -70,6 +77,10 @@ depName (UnsafeMutableDep name) = name
 
 isMutableDep :: Set MutableDep -> PackageName -> Bool
 isMutableDep mut p = Set.member (UnsafeMutableDep p) mut
+
+validate :: Set MutableDep -> PackageName -> Maybe MutableDep
+validate pool candidate =
+  justIf (isMutableDep pool candidate) (UnsafeMutableDep candidate)
 
 instance IsString a => ToSegment MutableDep a where
   toSegment (UnsafeMutableDep name) = toSegment name
@@ -107,16 +118,6 @@ instance NMap MutableBounds MutableDep VersionBounds LookupMaybe where
 instance Pretty MutableBounds where
   pretty = nPretty
 
-newtype LocalBounds =
-  LocalBounds (Map LocalPackage VersionBounds)
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (Semigroup, Monoid, IsList, EncodeNix)
-
-instance NMap LocalBounds LocalPackage VersionBounds LookupMaybe where
-
-instance Pretty LocalBounds where
-  pretty = nPretty
-
 newtype MutableRanges =
   MutableRanges (Map MutableDep VersionRange)
   deriving stock (Eq, Show, Generic)
@@ -144,7 +145,7 @@ mutLookup ::
   map ->
   l
 mutLookup k m =
-  m !! (UnsafeMutableDep k)
+  m !! UnsafeMutableDep k
 
 mutRestrictKeys ::
   NMap map MutableDep v sort =>
@@ -249,3 +250,26 @@ mutFromSet ::
   map
 mutFromSet =
   nFromKeys
+
+-- TODO remove
+mutNonTargets ::
+  Targets ->
+  LocalRanges ->
+  (MutableRanges, LocalRanges)
+mutNonTargets targets =
+  nPartitionByKey \case
+    package | Targets.member package targets -> Right package
+    LocalPackage package -> Left (UnsafeMutableDep package)
+
+forTargets ::
+  NMap map1 PackageName a sort1 =>
+  NMap map2 MutableDep a sort2 =>
+  Targets ->
+  Packages map1 ->
+  Packages map2
+forTargets targets =
+  onlyTargets targets . nMap transformOne
+  where
+    transformOne =
+      nTransformMaybe \ package a ->
+        justIf (not (Targets.member (LocalPackage package) targets)) (UnsafeMutableDep package, a)

@@ -3,27 +3,13 @@ module Hix.Managed.BuildOutput.GithubActionsPr where
 import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import Exon (exon)
-import Path (parseAbsFile)
-import System.Environment (getEnv)
 import System.Posix (epochTime)
 
-import Hix.Data.Error (Error (Client, Fatal))
 import Hix.Data.Monad (M)
-import Hix.Data.OutputTarget (OutputTarget)
 import Hix.Managed.BuildOutput.CommitMsg (commit)
-import Hix.Managed.Data.BuildOutput (BuildOutput)
-import Hix.Monad (note, throwM, tryIOMAs)
+import Hix.Managed.Data.BuildOutput (DepChanges)
 import qualified Hix.OutputWriter
-import Hix.OutputWriter (OutputWriter, fileWriter, outputWriterM)
-
-envVarWriter :: M OutputWriter
-envVarWriter = do
-  var <- tryIOMAs envVarError (getEnv "GITHUB_OUTPUT")
-  outFile <- note envVarError (parseAbsFile var)
-  pure (fileWriter writeError outFile)
-  where
-    envVarError = Client "The variable $GITHUB_OUTPUT does not contain a file path"
-    writeError err = throwM (Fatal [exon|Couldn't write to $GITHUB_OUTPUT: #{err.msg}|])
+import Hix.OutputWriter (OutputWriter)
 
 formatOutput :: Text -> [Text] -> [Text]
 formatOutput key = \case
@@ -50,9 +36,8 @@ modifiedOutputs date msg body =
     ("delete-branch", ["true"])
   ]
 
-githubActionsPr :: BuildOutput -> OutputTarget -> M ()
-githubActionsPr output target =
-  for_ (commit output) \ (msg, body) -> do
+githubActionsPr :: DepChanges -> M (Maybe (Map Text [Text]))
+githubActionsPr changes =
+  for (commit changes) \ (msg, body) -> do
     date <- liftIO epochTime
-    writer <- outputWriterM envVarWriter target
-    writeOutputs writer (modifiedOutputs (show date) msg body)
+    pure (modifiedOutputs (show date) msg body)

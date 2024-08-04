@@ -1,32 +1,16 @@
 module Hix.Hackage where
 
-import Control.Monad.Extra (fromMaybeM)
-import Data.Aeson (FromJSON (parseJSON), eitherDecodeStrict', withObject, (.:))
-import Data.IORef (IORef, modifyIORef', readIORef)
-import qualified Data.Map.Strict as Map
-import Data.Map.Strict ((!?))
-import qualified Data.Text as Text
-import Distribution.Parsec (eitherParsec)
-import Hix.Data.Version (Version)
-import Exon (exon)
-import Network.HTTP.Client (Manager, Request (..), Response (..), defaultRequest, httpLbs)
-import Network.HTTP.Types (
-  Status (statusCode, statusMessage),
-  hAccept,
-  statusIsClientError,
-  statusIsServerError,
-  statusIsSuccessful,
-  )
-import System.Exit (ExitCode (ExitFailure, ExitSuccess))
-import System.Process.Typed (proc, readProcess)
+import qualified Data.Aeson as Aeson
+import Data.Aeson (FromJSON (parseJSON), ToJSON, withObject, (.:))
 
-import Hix.Data.Error (Error (Fatal))
-import Hix.Data.PackageId (PackageId, renderPackage)
-import Hix.Data.PackageName (PackageName)
-import Hix.Data.Version (SourceHash (SourceHash))
-import qualified Hix.Log as Log
-import Hix.Monad (M, throwM, tryIOM)
-import Hix.Pretty (showP)
+import Hix.Data.Monad (M)
+import Hix.Managed.Handlers.HackageClient (
+  HackageClient (..),
+  HackageError (..),
+  HackageRequest (..),
+  HackageResponse (HackageResponseJson),
+  )
+import Hix.Monad (fatalError)
 
 data HackageVersions =
   HackageVersions {
@@ -37,84 +21,105 @@ data HackageVersions =
 instance FromJSON HackageVersions where
   parseJSON = withObject "HackageVersions" \ o -> HackageVersions <$> o .: "normal-version"
 
-parseVersion :: String -> Either (String, String) Version
-parseVersion s = first (s,) (eitherParsec s)
+hackageRequest ::
+  ∀ a b .
+  (a -> Either Text b) ->
+  HackageClient ->
+  HackageRequest a ->
+  M (Either HackageError b)
+hackageRequest process HackageClient {request = run} request = do
+  response <- run request
+  pure (first HackageParseError . process =<< response)
 
-parseResult :: LByteString -> M (Either Text [Version])
-parseResult body =
-  case eitherDecodeStrict' (toStrict body) of
-    Left err ->
-      noVersion [exon|Hackage response parse error: #{toText err}|]
-    Right (HackageVersions []) ->
-      noVersion "No versions on Hackage"
-    Right (HackageVersions versions) ->
-      case traverse parseVersion versions of
-        Left (v, err) -> noVersion (toText [exon|Version '#{v}' has invalid format (#{err})|])
-        Right vs -> pure (Right vs)
-  where
-    noVersion = pure . Left
+hackageGet ::
+  ∀ a b .
+  (a -> Either Text b) ->
+  HackageClient ->
+  Text ->
+  HackageResponse a ->
+  M (Either HackageError b)
+hackageGet process client path accept =
+  hackageRequest process client HackageRequest {
+    method = "GET",
+    path,
+    body = Nothing,
+    query = Nothing,
+    accept
+  }
 
-versionsHackage :: Manager -> PackageName -> M [Version]
-versionsHackage manager pkg = do
-  res <- liftIO (httpLbs request manager)
-  let
-    body = responseBody res
+hackagePostJson ::
+  ∀ a b body .
+  FromJSON a =>
+  Typeable a =>
+  ToJSON body =>
+  (a -> Either Text b) ->
+  HackageClient ->
+  Text ->
+  body ->
+  M (Either HackageError b)
+hackagePostJson process client path body =
+  hackageRequest process client HackageRequest {
+    method = "POST",
+    path,
+    body = Just (Right (Aeson.encode body)),
+    query = Nothing,
+    accept = HackageResponseJson
+  }
 
-    status = responseStatus res
+hackagePostQuery ::
+  ∀ a b .
+  (a -> Either Text b) ->
+  HackageClient ->
+  Text ->
+  NonEmpty (Text, Text) ->
+  HackageResponse a ->
+  M (Either HackageError b)
+hackagePostQuery process client path query accept =
+  hackageRequest process client HackageRequest {
+    method = "POST",
+    path,
+    body = Nothing,
+    query = Just (bimap encodeUtf8 encodeUtf8 <$> query),
+    accept
+  }
 
-    errorStatus category = noVersion [exon|#{category} (#{decodeUtf8 (statusMessage status)})|]
+hackagePostForm ::
+  ∀ a b .
+  (a -> Either Text b) ->
+  HackageClient ->
+  Text ->
+  NonEmpty (Text, Text) ->
+  HackageResponse a ->
+  M (Either HackageError b)
+hackagePostForm process client path fields accept =
+  hackageRequest process client HackageRequest {
+    method = "POST",
+    path,
+    body = Just (Left fields),
+    query = Nothing,
+    accept
+  }
 
-  if
-    | statusIsSuccessful status -> leftA noVersion =<< parseResult body
-    | statusCode status == 404 -> noVersion "PackageId does not exist"
-    | statusIsClientError status -> errorStatus "Client error"
-    | statusIsServerError status -> errorStatus "Server error"
-    | otherwise -> errorStatus "Weird error"
+hackagePut ::
+  ∀ a b .
+  FromJSON a =>
+  Typeable a =>
+  (a -> Either Text b) ->
+  HackageClient ->
+  Text ->
+  M (Either HackageError b)
+hackagePut process client path =
+  hackageRequest process client HackageRequest {
+    method = "PUT",
+    path,
+    body = Nothing,
+    query = Nothing,
+    accept = HackageResponseJson
+  }
 
-  where
-    request =
-      defaultRequest {
-        host = "hackage.haskell.org",
-        secure = False,
-        method = "GET",
-        path = [exon|/package/##{pkg}/preferred|],
-        requestHeaders = [(hAccept, "application/json")]
-      }
-
-    noVersion msg =
-      [] <$ Log.error [exon|Hackage request for '##{pkg}' failed: #{msg}|]
-
-latestVersionHackage :: Manager -> PackageName -> M (Maybe Version)
-latestVersionHackage manager pkg =
-  head <$> versionsHackage manager pkg
-
-fetchHashHackage ::
-  PackageId ->
-  M SourceHash
-fetchHashHackage package = do
-  Log.debug [exon|Fetching hash for '##{slug}' from ##{url}|]
-  tryIOM (readProcess conf) >>= \case
-    (ExitFailure _, _, err) ->
-      throwM (Fatal [exon|Prefetching source of '##{slug}' from hackage failed: #{decodeUtf8 err}|])
-    (ExitSuccess, hash, _) ->
-      pure (SourceHash (Text.stripEnd (decodeUtf8 hash)))
-  where
-    conf = proc "nix-prefetch-url" ["--unpack", url]
-    url = [exon|https://hackage.haskell.org/package/#{slug}/#{slug}.tar.gz|]
-    slug = showP package
-
-fetchHashHackageCached ::
-  IORef (Map Text SourceHash) ->
-  PackageId ->
-  M SourceHash
-fetchHashHackageCached cacheRef package =
-  liftIO (readIORef cacheRef) >>= \ cache ->
-    fromMaybeM fetch (pure (cache !? cacheKey))
-  where
-    fetch = do
-      hash <- fetchHashHackage package
-      hash <$ addToCache hash
-
-    addToCache hash = liftIO (modifyIORef' cacheRef (Map.insert cacheKey hash))
-
-    cacheKey = renderPackage package
+fatalHackageRequest :: Either HackageError a -> M a
+fatalHackageRequest =
+  leftA $ fatalError . \case
+    HackageNotFound -> "Not found"
+    HackageFatal msg -> msg
+    HackageParseError msg -> msg

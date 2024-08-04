@@ -6,6 +6,7 @@ import Hix.Test.Managed.BuildOutputTest (test_buildOutput)
 import Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump)
 import Hix.Test.Managed.Bump.MutationTest (test_bumpMutation)
 import Hix.Test.Managed.DiffTest (test_diff)
+import Hix.Test.Managed.HackageTest (test_hackageRepo)
 import Hix.Test.Managed.LowerAuto.MutationOptimizeTest (test_lowerAutoMutationOptimize)
 import Hix.Test.Managed.LowerAuto.MutationStabilizeTest (test_lowerAutoMutationStabilize)
 import Hix.Test.Managed.LowerInit.MutationTest (test_lowerInitMutation)
@@ -15,6 +16,8 @@ import Hix.Test.Managed.LowerOptimize.MutationTest (test_lowerOptimizeMutation)
 import Hix.Test.Managed.LowerOptimize.OrderTest (test_mutationOrder)
 import Hix.Test.Managed.LowerStabilize.MutationTest (test_lowerStabilizeMutation)
 import Hix.Test.Managed.ProjectContextProtoTest (test_parseProjectContextProto)
+import Hix.Test.Managed.ReleaseMaintenanceTest (test_maint)
+import Hix.Test.Managed.TagTest (test_tag)
 import Hix.Test.Utils (unitTest)
 
 test_managed :: TestTree
@@ -35,5 +38,8 @@ test_managed =
       ],
       unitTest "parse ProjectContext" test_parseProjectContextProto,
       test_buildOutput,
-      test_diff
+      test_diff,
+      test_maint,
+      test_tag,
+      unitTest "parse HackageRepo" test_hackageRepo
     ]

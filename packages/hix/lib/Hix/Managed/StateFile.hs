@@ -6,7 +6,7 @@ import Path (Abs, Dir, Path)
 
 import Hix.Class.EncodeNix (encodeNix)
 import Hix.Data.Monad (M)
-import Hix.Data.NixExpr (Expr (..), ExprAttr (..))
+import Hix.Data.NixExpr (Expr (..), ExprAttr (..), ExprKey (..))
 import Hix.Data.Overrides (Overrides)
 import qualified Hix.Log as Log
 import Hix.Managed.Data.EnvContext (EnvContext)
@@ -38,7 +38,7 @@ writeStateFile ::
   ProjectState ->
   M ()
 writeStateFile purpose handlers tmpRoot state = do
-  Log.debug [exon|writing managed state file for #{purpose}: #{renderRootExpr expr}|]
+  Log.trace [exon|writing managed state file for #{purpose}: #{renderRootExpr expr}|]
   handlers.writeFile tmpRoot expr
   where
     expr = encodeNix state

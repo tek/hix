@@ -2,15 +2,16 @@ module Hix.Data.GlobalOptions where
 
 import Path (Abs, Dir, Path)
 
+import Hix.Data.LogLevel (LogLevel (LogInfo))
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
 
 data GlobalOptions =
   GlobalOptions {
-    verbose :: Bool,
-    debug :: Bool,
-    quiet :: Bool,
+    logLevel :: LogLevel,
+    cabalVerbose :: Bool,
     cwd :: Path Abs Dir,
+    root :: Path Abs Dir,
     output :: OutputFormat,
     target :: OutputTarget
   }
@@ -19,10 +20,10 @@ data GlobalOptions =
 defaultGlobalOptions :: Path Abs Dir -> GlobalOptions
 defaultGlobalOptions cwd =
   GlobalOptions {
-    verbose = False,
-    debug = False,
-    quiet = False,
+    logLevel = LogInfo,
+    cabalVerbose = False,
     cwd,
+    root = cwd,
     output = OutputNone,
     target = OutputDefault
   }

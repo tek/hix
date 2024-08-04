@@ -99,12 +99,14 @@ nextMajor =
     [s] -> [s, 1]
     s : m : _ -> [s, m + 1]
 
+-- | For simplicity, we define the major before 1.0.0 to be 1.0.
 prevMajor :: Version -> Version
 prevMajor =
   alterVersion \case
     [s] | s > 0 -> [s - 1, 99]
-    s : 0 : _ | s > 0 -> [s - 1, 99]
-    s : m : _ | s > 0, m > 0 -> [s, m - 1]
+    [s, 0] | s > 0 -> [s - 1, 99]
+    s : 0 : _ : _ -> [s, 0]
+    s : m : _ -> [s, m - 1]
     _ -> [0]
 
 currentMajor :: Version -> Version

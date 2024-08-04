@@ -27,6 +27,20 @@ in {
         type = types.attrsOf types.bool;
         default = {};
       };
+
+    };
+
+    ui.experimental = {
+
+      managed-maint = lib.mkOption {
+        description = ''
+        Whether to enable the experimental app `maint`, which attempts to adapt dependency bounds to new versions and
+        publish Hackage revisions on success.
+        '';
+        type = types.bool;
+        default = false;
+      };
+
     };
 
   };

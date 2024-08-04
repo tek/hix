@@ -1,19 +1,21 @@
 module Hix.Managed.Cabal.Data.Config where
 
 import Data.Aeson (FromJSON (parseJSON))
-import Distribution.Client.IndexUtils.Timestamp (Timestamp)
+import qualified Data.List.NonEmpty as NonEmpty
+import Distribution.Pretty (Pretty (pretty))
 import Distribution.Verbosity (Verbosity, verbose)
 import Path (Abs, Dir, Path)
+import qualified Text.PrettyPrint as PrettyPrint
+import Text.PrettyPrint (hang, text, (<+>))
 
+import Hix.Data.Monad (M)
+import Hix.Managed.Cabal.Data.HackageLocation ()
+import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
 import Hix.Managed.Cabal.Data.Packages (GhcPackages)
-
-newtype HackageRepoName =
-  HackageRepoName Text
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord)
-
-instance Default HackageRepoName where
-  def = "hackage.haskell.org"
+import Hix.Managed.Cabal.HackageRepo (centralHackage)
+import Hix.Maybe (fromMaybeA)
+import Hix.Monad (fatalError)
+import Hix.Pretty (fieldOr, fieldWith, prettyMap, prettyV)
 
 newtype GhcPath =
   GhcPath (Path Abs Dir)
@@ -29,23 +31,68 @@ data GhcDb =
 instance FromJSON GhcDb where
   parseJSON = fmap GhcDbSystem . parseJSON
 
-newtype HackageIndexState =
-  HackageIndexState Timestamp
-  deriving stock (Eq, Show, Generic)
+data HackagePurpose =
+  ForVersions
+  |
+  ForSolver
+  |
+  ForPublish
+  deriving stock (Eq, Show)
+
+describePurpose :: IsString a => HackagePurpose -> a
+describePurpose = \case
+  ForVersions -> "fetching versions"
+  ForSolver -> "resolving dependencies"
+  ForPublish -> "publishing packages"
 
 data CabalConfig =
   CabalConfig {
-    indexState :: Maybe HackageIndexState
+    hackageMain :: Maybe HackageRepo,
+    hackageExtra :: [HackageRepo]
   }
   deriving stock (Eq, Show, Generic)
 
+instance Pretty CabalConfig where
+  pretty CabalConfig {..} =
+    prettyMap "cabal" [
+      fieldOr "main" "default" hackageMain,
+      fieldWith "extra" (nonEmpty hackageExtra) prettyV
+    ]
+
 instance Default CabalConfig where
-  def =
-    CabalConfig {indexState = Nothing}
+  def = CabalConfig {hackageMain = Just centralHackage, hackageExtra = []}
+
+-- | This forces at least the default repo to be available.
+-- If this is not desired, the repo should be included with the 'enable' flag unset.
+allHackages :: CabalConfig -> NonEmpty HackageRepo
+allHackages CabalConfig {..} =
+  fromMaybe centralHackage hackageMain :| hackageExtra
+
+hackagesFor :: HackagePurpose -> CabalConfig -> M (NonEmpty HackageRepo)
+hackagesFor purpose config =
+  fromMaybeA noMatches $
+  nonEmpty $
+  NonEmpty.filter match $
+  repos
+  where
+    match repo =
+      repo.enable && case purpose of
+      ForVersions -> True
+      ForSolver -> repo.solver
+      ForPublish -> repo.publish
+
+    noMatches =
+      fatalError $ show $
+      hang (text "None of the configured Hackage repos are allowed for" <+> text desc PrettyPrint.<> text ":") 2 $
+      prettyV repos
+
+    repos = allHackages config
+
+    desc = describePurpose purpose
 
 data SolveConfig =
   SolveConfig {
-    hackageRepoName :: HackageRepoName,
+    hackageRepos :: NonEmpty HackageRepo,
     verbosity :: Verbosity,
     ghc :: Maybe GhcPath,
     allowBoot :: Bool,
@@ -56,7 +103,7 @@ data SolveConfig =
 instance Default SolveConfig where
   def =
     SolveConfig {
-      hackageRepoName = def,
+      hackageRepos = [centralHackage],
       verbosity = verbose,
       ghc = Nothing,
       allowBoot = False,

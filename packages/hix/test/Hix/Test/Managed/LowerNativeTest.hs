@@ -4,7 +4,7 @@ import Control.Monad.Trans.Reader (ask)
 import qualified Data.Text.IO as Text
 import Exon (exon)
 import Hedgehog (evalEither)
-import Path (Abs, Dir, File, Path, Rel, parent, reldir, relfile, toFilePath, (</>))
+import Path (Abs, Dir, Path, parent, reldir, relfile, toFilePath, (</>))
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import qualified Hix.Data.Monad
@@ -14,29 +14,30 @@ import Hix.Error (pathText)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectContext
 import qualified Hix.Managed.Data.ProjectContextProto
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (ProjectContextProto))
 import qualified Hix.Managed.Data.ProjectResult
-import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
+import qualified Hix.Managed.Handlers.Project.Prod as Project
 import Hix.Managed.Lower.Init (lowerInitMain)
 import Hix.Managed.Lower.Optimize (lowerOptimizeMain)
 import Hix.Managed.ProjectContext (updateProject)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Managed.ProjectContextProto (projectContext)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Utils (UnitTest, runMTest)
+import Hix.Test.Managed.Run (addFile)
+import Hix.Test.Utils (UnitTest, logConfigDebug, runMTest')
 
 -- TODO when aeson's lower bound is set to 2.2 here, the build of 2.1.0.0 fails with an infinite recursion in nix when
 -- reaching optimize.
 -- But when it is set to 2.1, the build succeeds during init.
 -- in the former case, there are a few more overrides added from the solver plan.
-packages :: Packages ManagedPackageProto
+packages :: Packages ManagedPackage
 packages =
   managedPackages [
     (("root", "1.0"), ["aeson >=2.2 && <2.3", "extra >=1.6 && <1.8"])
@@ -70,18 +71,12 @@ flake hixRoot =
 libMod :: Text
 libMod =
   [exon|module Root where
+
 import Data.Aeson
 import Data.List.Extra
 string :: String
 string = "hello"
 |]
-
-addFile :: Path Abs Dir -> Path Rel File -> Text -> M ()
-addFile root path content = do
-  createDirIfMissing True (parent file)
-  liftIO (Text.writeFile (toFilePath file) content)
-  where
-    file = root </> path
 
 setupProject :: M (Path Abs Dir)
 setupProject = do
@@ -229,41 +224,41 @@ lowerNativeTest = do
   root <- setupProject
   let
     stateFileConf = StateFileConfig {
-      file = [relfile|ops/managed.nix|],
-      projectRoot = Just root
+      file = [relfile|ops/managed.nix|]
     }
     envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
     buildConfig = def
-  handlers <- Build.handlersProd stateFileConf envsConfig Nothing buildConfig def False
+  handlersProject <- Project.handlersProd stateFileConf
+  handlers <- Build.handlersProd handlersProject envsConfig buildConfig def
   let
     opts = projectOptions ["lower"]
 
     proto0 =
       ProjectContextProto {
         packages,
-        state = ProjectStateProto mempty mempty mempty mempty False,
+        state = def,
         envs = envsConfig,
-        buildOutputsPrefix = Nothing
+        hackage = []
       }
 
     stateFile = root </> [relfile|ops/managed.nix|]
 
     run context process = do
       result <- process handlers context
-      updateProject handlers context.build result
+      updateProject handlersProject True result
       stateFileContent <- liftIO (Text.readFile (toFilePath stateFile))
       pure (result.state, stateFileContent)
 
   context0 <- ProjectContextProto.validate opts proto0
   (state1, stateFileContentInit) <- run context0 (lowerInitMain def)
   -- TODO the packages here aren't updated with the result from the first run
-  let context1 = projectContext buildConfig state1 context0.packages context0.envs
+  let context1 = projectContext buildConfig state1 packages context0.envs def
   (_, stateFileContentOptimize) <- run context1 lowerOptimizeMain
   pure (stateFileContentInit, stateFileContentOptimize)
 
 test_lowerNative :: UnitTest
 test_lowerNative = do
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
-    runMTest True lowerNativeTest
+    runMTest' logConfigDebug lowerNativeTest
   eqLines targetStateFileInit stateFileContentInit
   eqLines targetStateFileOptimize stateFileContentOptimize

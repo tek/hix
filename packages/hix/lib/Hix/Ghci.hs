@@ -36,8 +36,9 @@ import Hix.Data.Options (
   TestOptions (TestOptions),
   )
 import Hix.Data.PackageName (PackageName)
-import Hix.Error (Error (GhciError), note, pathText, tryIO)
+import Hix.Error (Error, ErrorMessage (..), pathText, throwMessage, tryIO)
 import Hix.Json (jsonConfigE)
+import Hix.Maybe (fromMaybeA)
 import Hix.Monad (M, noteGhci)
 import Hix.Path (rootDir)
 
@@ -108,7 +109,7 @@ testRun config = \case
 
 assemble :: GhciOptions -> M GhciTest
 assemble opt = do
-  config <- jsonConfigE GhciError opt.config
+  config <- jsonConfigE opt.config
   root <- rootDir opt.root
   Target {..} <- targetComponentOrError opt.root config.mainPackage config.packages opt.component
   script <- ghciScript config package sourceDir opt
@@ -119,14 +120,15 @@ assemble opt = do
     searchPath = (root </>) <$> searchPath config.packages package component
     }
 
-hixTempDir ::
-  ExceptT Error IO (Path Abs Dir)
+hixTempDir :: ExceptT Error IO (Path Abs Dir)
 hixTempDir = do
   tmp <- tryIO getTempDir
-  user <- note "Couldn't determine user name" . parseRelDir =<< catchE (tryIO getLoginName) (const (pure "user"))
+  user <- parseError . parseRelDir =<< catchE (tryIO getLoginName) (const (pure "user"))
   let hixTmp = tmp </> [reldir|hix|] </> user
   tryIO (createDirIfMissing True hixTmp)
   pure hixTmp
+  where
+    parseError = fromMaybeA (throwMessage (FatalExternal "Couldn't convert user name to path"))
 
 ghciScriptFile ::
   Path Abs Dir ->

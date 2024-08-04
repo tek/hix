@@ -3,14 +3,16 @@ module Hix.Error (
   module Hix.Error,
 ) where
 
-import Control.Monad.Trans.Except (ExceptT, throwE)
+import Control.Monad.Trans.Except (ExceptT, throwE, withExceptT)
 import Exon (exon)
 import Path (Path, toFilePath)
 import System.IO.Error (tryIOError)
 
 import qualified Hix.Console as Console
-import Hix.Console (errorMessage)
-import Hix.Data.Error (Error (..))
+import Hix.Console (errorMessage, withErrorChevrons)
+import Hix.Data.AppContext (AppContext (..))
+import Hix.Data.Error (Error (..), ErrorContext (..), ErrorMessage (..))
+import Hix.Data.LogLevel (LogLevel)
 
 pathText :: Path b t -> Text
 pathText =
@@ -66,9 +68,21 @@ printFatalError ::
 printFatalError =
   prefixedError "Fatal error"
 
+printFatalWhenError ::
+  MonadIO m =>
+  Text ->
+  Text ->
+  m ()
+printFatalWhenError context =
+  prefixedError [exon|Fatal error when #{context}|]
+
 sourceError :: Text -> Path b t -> Text
 sourceError reason source =
   [exon|#{reason} the source file '#{pathText source}'|]
+
+throwMessage :: ErrorMessage -> ExceptT Error IO a
+throwMessage message =
+  throwE Error {message, level = Nothing, context = []}
 
 catchIO ::
   (Text -> ExceptT e IO a) ->
@@ -88,28 +102,41 @@ tryIOWith mkErr ma =
     Right a -> pure a
     Left err -> throwE (mkErr (show err))
 
-tryIO ::
+tryIOContext ::
+  ErrorContext ->
   IO a ->
   ExceptT Error IO a
-tryIO =
-  tryIOWith Fatal
+tryIOContext context =
+  tryIOWith \ message -> Error {message = Fatal message, level = Nothing, ..}
 
-note :: Text -> Maybe a -> ExceptT Error IO a
-note err =
-  maybe (throwE (GhciError err)) pure
+tryIO :: IO a -> ExceptT Error IO a
+tryIO = tryIOContext []
+
+errorLevel ::
+  LogLevel ->
+  ExceptT Error IO a ->
+  ExceptT Error IO a
+errorLevel new =
+  withExceptT \ Error {..} -> Error {level = Just new, ..}
+
+formatError :: ErrorMessage -> Text
+formatError = \case
+  Fatal msg -> [exon|Fatal: #{msg}|]
+  FatalExternal msg -> [exon|Fatal: #{msg}|]
+  Client msg -> msg
 
 printError ::
   MonadIO m =>
-  Bool ->
+  LogLevel ->
   Error ->
   m ()
-printError verbose = \case
-  PreprocError err -> printPreprocError err
-  EnvError err -> printEnvError err
-  GhciError err -> printGhciError err
-  NewError err -> printNewError err
-  BootstrapError err -> printBootstrapError err
-  NoMatch msg | verbose -> printPreprocError msg
-  NoMatch _ -> unit
-  Fatal err -> printFatalError err
-  Client err -> Console.err (errorMessage err)
+printError logLevel Error {..}
+  | Just messageLevel <- level
+  , messageLevel < logLevel
+  = unit
+  | ErrorContext ctxLines <- context
+  = do
+    for_ (reverse ctxLines) \ ctx ->
+      when (ctx.level >= logLevel) do
+        Console.err (withErrorChevrons [exon|While #{ctx.description}|])
+    Console.err (errorMessage (formatError message))

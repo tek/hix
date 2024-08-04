@@ -66,6 +66,14 @@ testPackagesBump =
     PackageId {name = "multi-fail2", version = [0, 1, 0]}
   ]
 
+testPackagesMaint :: Map PackageName PackageId
+testPackagesMaint =
+  Map.fromList $ zipApplyL (.name) [
+    PackageId {name = "base", version = [4, 19, 0, 0]},
+    PackageId {name = "extra", version = [1, 8]},
+    PackageId {name = "semigroups", version = [0, 20]}
+  ]
+
 removeLaterVersions ::
   PackageId ->
   PackageIndex UnresolvedSourcePackage ->
@@ -73,13 +81,13 @@ removeLaterVersions ::
 removeLaterVersions PackageId {..} =
   PackageIndex.deleteDependency (PackageName.toCabal name) (laterVersion version)
 
-testResources :: SolveResources -> SolveResources
-testResources SolveResources {..} =
+testResourcesFor :: Map PackageName PackageId -> SolveResources -> SolveResources
+testResourcesFor packages SolveResources {..} =
   SolveResources {sourcePkgDb = removeLaterTestPackageVersions sourcePkgDb, ..}
   where
     removeLaterTestPackageVersions SourcePackageDb {..} =
       SourcePackageDb {
-        packageIndex = Map.foldr' removeLaterVersions packageIndex testPackagesBump,
+        packageIndex = Map.foldr' removeLaterVersions packageIndex packages,
         ..
       }
 
@@ -90,4 +98,4 @@ handlersTest ::
   GhcDb ->
   M CabalHandlers
 handlersTest =
-  handlersWith testResources
+  handlersWith (testResourcesFor testPackagesBump)

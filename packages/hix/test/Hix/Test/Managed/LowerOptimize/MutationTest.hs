@@ -2,13 +2,13 @@ module Hix.Test.Managed.LowerOptimize.MutationTest where
 
 import Exon (exon)
 
-import Hix.Data.Error (Error (Fatal))
+import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Cabal.Mock.SourcePackage (allDep)
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto, managedPackages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
@@ -18,10 +18,10 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Run (TestParams (..), Result (..), testParams, lowerTest)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
 import Hix.Test.Utils (UnitTest)
 
-packages :: Packages ManagedPackageProto
+packages :: Packages ManagedPackage
 packages =
   managedPackages [(("local1", "1.0"), ["direct1", "direct2"])]
 

@@ -1,0 +1,29 @@
+name: Bump upper bounds
+
+on: workflow_dispatch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-pr:
+    name: Create PR for updated bounds
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - uses: DeterminateSystems/nix-installer-action@main
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - id: bounds
+      name: Update managed bounds
+      run: nix run .#bump -- --output=ga-pr
+
+    - id: pr
+      name: Create pull request
+      if: steps.bounds.outputs.commit-message
+      uses: peter-evans/create-pull-request@v5
+      with: ${{ steps.bounds.outputs }}

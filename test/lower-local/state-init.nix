@@ -6,7 +6,7 @@
         upper = null;
       };
       containers = {
-        lower = "0.7";
+        lower = "0.8";
         upper = null;
       };
     };
@@ -26,7 +26,7 @@
     latest-local2 = {};
     lower-local1 = {
       base = "4.15.1.0";
-      containers = "0.7";
+      containers = "0.8";
     };
     lower-local2 = {
       base = "4.15.1.0";
@@ -37,7 +37,7 @@
     latest-local1 = {};
     latest-local2 = {};
     lower-local1 = {
-      containers = "0.7";
+      containers = "0.8";
     };
     lower-local2 = {
       semigroups = "0.20";
@@ -46,14 +46,14 @@
   overrides = {
     lower-local1 = {
       containers = {
-        version = "0.7";
-        hash = "15i7w8xavx83b0gdiq5a7g3m8k4ghmcy67yhx4b4119x7r4j7w4n";
+        version = "0.8";
+        hash = "06mmyljfj41hg5rzr9d2fb61gd2a11waicpk7dcy3hxrqvfgs8yc";
       };
     };
     lower-local2 = {
       containers = {
-        version = "0.7";
-        hash = "15i7w8xavx83b0gdiq5a7g3m8k4ghmcy67yhx4b4119x7r4j7w4n";
+        version = "0.8";
+        hash = "06mmyljfj41hg5rzr9d2fb61gd2a11waicpk7dcy3hxrqvfgs8yc";
       };
     };
   };

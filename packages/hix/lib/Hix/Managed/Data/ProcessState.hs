@@ -1,21 +1,18 @@
 module Hix.Managed.Data.ProcessState where
 
-import Control.Lens ((%~))
 import Data.Generics.Labels ()
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Version (removeLowerBound)
 import Text.PrettyPrint (hang, ($+$))
 
-import Hix.Class.Map (nAmend, nMap)
+import Hix.Class.Map (nAmend, (!!), nMap)
+import Hix.Data.Bounds (Bounds)
 import Hix.Data.VersionBounds (majorRange)
-import qualified Hix.Managed.Data.ManagedPackage
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (ManagedPackage))
-import Hix.Managed.Data.Mutable (MutableBounds)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (..))
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext)
-import qualified Hix.Managed.Data.ProjectState
-import Hix.Managed.Data.ProjectState (ProjectState)
+import Hix.Managed.Data.ProjectState (ProjectState (..))
+import Hix.Managed.ManagedPackage (updateRanges, removeLowerBounds)
 
 data ProcessState =
   ProcessState {
@@ -26,24 +23,26 @@ data ProcessState =
 
 instance Pretty ProcessState where
   pretty ProcessState {..} =
-    hang "packages:" 2 (pretty packages) $+$ hang "state:" 2 (pretty state)
+    hang "packages:" 2 (pretty packages)
+    $+$
+    hang "state:" 2 (pretty state)
 
--- TODO Check that this is sound.
--- We simply replace the deps in the packages with the updated bounds.
--- These are used only for the installed-package-db, so the solver can propagate bounds from local deps.
--- However, before conversion from ManagedPackageProto, these deps are completely unrelated, and supposed to be used as
--- additional solver bounds.
--- So we have to extract those into a separate bin at that point, and wipe the bounds when constructing ManagedPackage,
--- and then replacing them by the managed bounds if they already exist.
-updateManagedPackages :: Packages MutableBounds -> Packages ManagedPackage -> Packages ManagedPackage
+updateManagedPackages :: Packages Bounds -> Packages ManagedPackage -> Packages ManagedPackage
 updateManagedPackages =
-  nAmend \ bounds ManagedPackage {..} -> ManagedPackage {mutable = nMap majorRange bounds, ..}
+  nAmend \ bounds ->
+    updateRanges \ package original ->
+      maybe original majorRange (bounds !! package)
 
-removeLowerBounds :: ManagedPackage -> ManagedPackage
-removeLowerBounds =
-  #mutable %~ nMap removeLowerBound
-
--- | We remove lower bounds because they are likely to interfere with LowerInit, but upper bounds are useful.
+-- | 1. Remove lower bounds from the package configs, leave the upper bounds.
+--      These are from the flake's unmanaged dependencies, so they should only be used when there is no better
+--      information available, i.e. managed dependencies from prior runs.
+--   2. Replace bounds in the package configs entirely with managed bounds if they exist.
+--      This ensures that Cabal sees managed bounds for local packages instead of stray flake config bounds.
+--
+-- The package configs are used to populate Cabal's source package DB with fallbacks for local packages in case they
+-- don't exist in other DBs.
+--
+-- TODO Review – this may be obsolete.
 initProcessState :: ProjectContext -> ProcessState
 initProcessState context =
   ProcessState {

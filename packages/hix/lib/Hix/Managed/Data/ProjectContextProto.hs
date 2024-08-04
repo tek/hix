@@ -2,19 +2,22 @@ module Hix.Managed.Data.ProjectContextProto where
 
 import Data.Aeson (FromJSON)
 
+import Hix.Class.Map (nGet)
+import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
+import Hix.Managed.Cabal.Data.HackageRepo (HackageName)
 import Hix.Managed.Data.EnvConfig (EnvConfig)
 import Hix.Managed.Data.Envs (Envs)
-import Hix.Managed.Data.ManagedPackageProto (ManagedPackageProto)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto)
-import Hix.Managed.Handlers.Build (BuildOutputsPrefix)
+import Hix.Pretty (HPretty (hpretty), field, prettyMap)
 
 data ProjectContextProto =
   ProjectContextProto {
-    packages :: Packages ManagedPackageProto,
+    packages :: Packages ManagedPackage,
     state :: ProjectStateProto,
     envs :: Envs EnvConfig,
-    buildOutputsPrefix :: Maybe BuildOutputsPrefix
+    hackage :: Map HackageName ContextHackageRepo
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -25,5 +28,14 @@ instance Default ProjectContextProto where
       packages = mempty,
       state = def,
       envs = mempty,
-      buildOutputsPrefix = Nothing
+      hackage = mempty
     }
+
+instance HPretty ProjectContextProto where
+  hpretty ProjectContextProto {..} =
+    prettyMap "project context" [
+      field "packages" packages,
+      field "state" state,
+      field "envs" (nGet envs),
+      field "hackage" hackage
+    ]

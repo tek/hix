@@ -55,6 +55,8 @@ in {
 
   config.internal.hixCli = {
 
+    # TODO This should use a fixed nixpkgs – when users override nixpkgs with a commit that's across some boundary of
+    # breaking boot library changes (like semaphore-compat in 9.10), hix will not be buildable.
     overrides = {hackage, source, minimal, jailbreak, ...}: let
 
       devSrc = source.package ../. "hix";

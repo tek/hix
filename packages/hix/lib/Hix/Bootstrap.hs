@@ -31,7 +31,11 @@ import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import qualified Hix.Data.Monad (AppResources (cwd))
 import Hix.Data.Monad (M (M))
 import qualified Hix.Data.NewProjectConfig
-import Hix.Data.NixExpr (Expr (ExprAttrs, ExprLit, ExprPrefix, ExprString), ExprAttr (ExprAttr, ExprAttrNil))
+import Hix.Data.NixExpr (
+  Expr (ExprAttrs, ExprLit, ExprPrefix, ExprString),
+  ExprAttr (ExprAttr, ExprAttrNil),
+  ExprKey (..),
+  )
 import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
@@ -235,9 +239,9 @@ renderComponent HixComponent {..} =
       | otherwise = ExprString (toText p.prelude.preludePackage)
     key = case special of
       Library -> "library"
-      Executable name -> [exon|executables.#{name}|]
-      Test name -> [exon|tests.#{name}|]
-      Benchmark name -> [exon|benchmarks.#{name}|]
+      Executable name -> [exon|executables.##{name}|]
+      Test name -> [exon|tests.##{name}|]
+      Benchmark name -> [exon|benchmarks.##{name}|]
     enable = case special of
       Library -> [ExprAttr "enable" (ExprLit "true")]
       _ -> []

@@ -17,6 +17,8 @@ let
   finalModules = system: evaled: allModules ++ [(moduleArgs evaled) { inherit system; }];
 
   # TODO maybe this could include gen-overrides so the default systems may depend on it
+  #
+  # TODO we can use `lib.mirrorFunctionArgs` for the wrapper
   onlySystemsConfig = m:
   if lib.isFunction m
   then a@{util, build, outputs, project, ...}: onlySystemsConfig (m a)

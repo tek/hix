@@ -1,3 +1,7 @@
+# Unreleased
+
+* Add an experimental app, `maint`, that uploads Hackage revisions for previous tags when bounds can be bumped.
+
 # 0.8.0
 
 * Add a reusable workflow for managed bounds updates.

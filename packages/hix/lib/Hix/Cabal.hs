@@ -2,7 +2,7 @@
 
 module Hix.Cabal where
 
-import Control.Monad.Trans.Except (ExceptT (ExceptT), throwE)
+import Control.Monad.Trans.Except (ExceptT, throwE)
 import Distribution.PackageDescription (BuildInfo (..), GenericPackageDescription (..))
 import Distribution.Types.Benchmark (benchmarkBuildInfo)
 import Distribution.Types.CondTree (CondTree (..))
@@ -28,11 +28,11 @@ import Path (
   (</>),
   )
 import System.FilePattern.Directory (getDirectoryFiles)
-import System.IO.Error (tryIOError)
 
 import Hix.Compat (readGenericPackageDescription)
-import Hix.Data.Error (Error (..))
-import Hix.Error (pathText, sourceError)
+import Hix.Data.Error (Error (..), ErrorMessage (Client, Fatal))
+import Hix.Data.LogLevel (LogLevel (LogVerbose))
+import Hix.Error (pathText, sourceError, throwMessage, tryIO)
 
 #if MIN_VERSION_Cabal(3,14,0)
 import Distribution.Utils.Path (makeSymbolicPath)
@@ -40,15 +40,15 @@ import Distribution.Utils.Path (makeSymbolicPath)
 
 noMatch :: Text -> Path b File -> ExceptT Error IO a
 noMatch reason source =
-  throwE (NoMatch (sourceError reason source))
+  throwE (Error {message = Client (sourceError reason source), context = [], level = Just LogVerbose})
 
 cabalsInDir ::
   Path Abs Dir ->
   ExceptT Error IO [Path Abs File]
 cabalsInDir dir = do
   matches <- liftIO (getDirectoryFiles (toFilePath dir) ["*.cabal"])
-  let err = PreprocError [exon|Internal error when parsing globbed paths in '#{pathText dir}': #{show matches}|]
-  maybe (throwE err) pure (traverse parse matches)
+  let err = Fatal [exon|Internal error when parsing globbed paths in '#{pathText dir}': #{show matches}|]
+  maybe (throwMessage err) pure (traverse parse matches)
   where
     parse f = do
       rel <- parseRelFile f
@@ -70,13 +70,13 @@ findCabal source =
           sub <- stripProperPrefix (parent cabal) source
           pure (cabal, sub)
         [] -> spin (parent dir)
-        _ -> throwE (PreprocError (sourceError "Multiple cabal files in parent dir of" source))
+        _ -> throwMessage (Client (sourceError "Multiple cabal files in parent dir of" source))
     notFound =
       noMatch "No cabal file found for " source
 
 parseCabal :: Path Abs File -> ExceptT Error IO GenericPackageDescription
 parseCabal path =
-  ExceptT $ fmap (first (PreprocError . show)) $ tryIOError do
+  tryIO do
 #if MIN_VERSION_Cabal(3,14,0)
     readGenericPackageDescription Cabal.verbose Nothing (makeSymbolicPath (toFilePath path))
 #else

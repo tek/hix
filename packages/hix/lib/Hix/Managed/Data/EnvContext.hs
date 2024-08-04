@@ -1,21 +1,15 @@
 module Hix.Managed.Data.EnvContext where
 
-import GHC.Generics (Generically (Generically))
-
 import Hix.Data.Bounds (Ranges)
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.PackageName (LocalPackage)
 import Hix.Managed.Cabal.Data.Config (GhcDb)
 import Hix.Managed.Data.Mutable (MutableDep)
 import Hix.Managed.Data.Targets (Targets)
 
-data EnvDeps =
-  EnvDeps {
-    mutable :: Set MutableDep,
-    local :: Set LocalPackage
-  }
+newtype EnvDeps =
+  EnvDeps { mutable :: Set MutableDep }
   deriving stock (Eq, Show, Generic)
-  deriving (Semigroup, Monoid) via (Generically EnvDeps)
+  deriving newtype (Semigroup, Monoid)
 
 -- | Static data defining a managed bounds job for an environment.
 data EnvContext =

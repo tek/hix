@@ -1,51 +1,44 @@
 module Hix.Managed.ProjectContext where
 
-import Control.Monad.Trans.Reader (ask)
-
 import qualified Hix.Data.Monad
-import Hix.Data.Monad (AppResources (AppResources), M (M))
+import Hix.Data.Monad (AppResources (AppResources), M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (ProjectOptions)
-import Hix.Managed.BuildOutput (buildOutput, outputResult)
+import Hix.Managed.BuildOutput (buildOutput, depChanges, outputResult)
 import qualified Hix.Managed.Data.BuildConfig
-import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import qualified Hix.Managed.Data.ProjectResult
 import Hix.Managed.Data.ProjectResult (ProjectResult)
-import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (BuildHandlers)
+import Hix.Managed.Handlers.Project (ProjectHandlers (..))
 import qualified Hix.Managed.Handlers.Report
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Managed.StateFile (writeProjectState)
+import Hix.Monad (ask)
 
 updateProject ::
-  BuildHandlers ->
-  BuildConfig ->
+  ProjectHandlers ->
+  Bool ->
   ProjectResult ->
   M ()
-updateProject handlers buildConf results = do
-  unless buildConf.validate do
-    writeProjectState handlers.stateFile results.state
-  handlers.report.mutations results
-
-processBuildResults ::
-  BuildHandlers ->
-  BuildConfig ->
-  ProjectResult ->
-  M ()
-processBuildResults handlers buildConf results = do
-  updateProject handlers buildConf results
-  AppResources {output = format, target} <- M ask
-  outputResult (buildOutput results) target format
+updateProject handlers validate result = do
+  unless validate do
+    writeProjectState handlers.stateFile result.state
+  handlers.report.mutations result
 
 withProjectContext ::
-  BuildHandlers ->
+  ProjectHandlers ->
   ProjectOptions ->
   ProjectContextProto ->
   (ProjectContext -> M ProjectResult) ->
-  M ()
+  M ProjectResult
 withProjectContext handlers opts proto use = do
   project <- ProjectContextProto.validate opts proto
   result <- use project
-  processBuildResults handlers opts.build result
+  updateProject handlers opts.build.validate result
+  pure result
+
+processProjectResult :: ProjectResult -> M ()
+processProjectResult result = do
+  AppResources {output = format, target} <- ask
+  outputResult target format (buildOutput (depChanges result))

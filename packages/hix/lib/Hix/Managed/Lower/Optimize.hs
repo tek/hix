@@ -55,7 +55,7 @@ lowerOptimize ::
 lowerOptimize handlers conf context@StageContext {env, state = Initial MutationState {versions}} =
   stageResult success failure <$> processQuery candidates mutationHandlers conf context ext
   where
-    candidates = candidatesOptimize handlers.versions context.initial
+    candidates = candidatesOptimize handlers.versions context.initialVersions
 
     mutationHandlers = Mutation.handlersLower conf lowerOptimizeMode lowerOptimizeUpdate
 

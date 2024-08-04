@@ -2,14 +2,11 @@ module Hix.Managed.Handlers.Build.Prod where
 
 import Control.Monad.Catch (catch)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Reader (ask, asks)
 import Control.Monad.Trans.State.Strict (StateT (runStateT), gets, modify')
 import qualified Data.ByteString.Char8 as ByteString
 import Data.List.Extra (firstJust)
 import qualified Data.Set as Set
 import Exon (exon)
-import Network.HTTP.Client (newManager)
-import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Path (Abs, Dir, Path, toFilePath)
 import Path.IO (copyDirRecur')
 import System.IO (BufferMode (LineBuffering), Handle, hSetBuffering)
@@ -32,20 +29,20 @@ import System.Timeout (timeout)
 
 import Hix.Class.Map (nInsert, nMember)
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.Error (Error (Fatal))
+import Hix.Data.Error (Error, ErrorMessage (Fatal))
 import qualified Hix.Data.Monad
-import Hix.Data.Monad (M (M))
+import Hix.Data.Monad (LogLevel (LogDebug), M, appRes)
 import Hix.Data.Overrides (Overrides)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
 import Hix.Error (pathText)
-import Hix.Hackage (latestVersionHackage, versionsHackage)
+import Hix.Http (httpManager)
 import qualified Hix.Log as Log
 import Hix.Managed.Build.NixOutput (OutputResult (OutputResult), PackageDerivation (..), outputParse, runOutputState)
 import Hix.Managed.Build.NixOutput.Analysis (analyzeLog)
-import Hix.Managed.Cabal.Data.Config (CabalConfig)
+import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForVersions), allHackages)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.EnvConfig (EnvConfig)
@@ -55,30 +52,27 @@ import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Initial (Initial)
 import Hix.Managed.Data.StageState (BuildFailure (..), BuildResult (..), buildUnsuccessful)
-import qualified Hix.Managed.Data.StateFileConfig
-import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 import Hix.Managed.Data.Targets (firstMTargets)
+import qualified Hix.Managed.Handlers.AvailableVersions.Prod as AvailableVersions
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (BuildHandlers (..), BuildOutputsPrefix, Builder (Builder), EnvBuilder (EnvBuilder))
+import Hix.Managed.Handlers.Build (BuildHandlers (..), Builder (Builder), EnvBuilder (EnvBuilder))
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
 import qualified Hix.Managed.Handlers.Cabal.Prod as CabalHandlers
-import Hix.Managed.Handlers.Hackage (HackageHandlers)
-import qualified Hix.Managed.Handlers.Hackage.Prod as HackageHandlers
-import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
+import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
+import Hix.Managed.Handlers.Project (ProjectHandlers (..))
+import Hix.Managed.Handlers.SourceHash (SourceHashHandlers)
+import qualified Hix.Managed.Handlers.SourceHash.Prod as SourceHashHandlers
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
-import qualified Hix.Managed.Handlers.StateFile.Prod as StateFileHandlers
 import Hix.Managed.Overrides (packageOverride, packageOverrides)
-import Hix.Managed.Path (rootOrCwd)
 import Hix.Managed.StateFile (writeBuildStateFor, writeInitialEnvState)
-import Hix.Monad (runMUsing, throwM, tryIOM, withTempDir)
+import Hix.Monad (shouldLog, throwM, withLowerTry', withTempDir)
 import Hix.Pretty (showP)
 
 data BuilderResources =
   BuilderResources {
-    hackage :: HackageHandlers,
+    hackage :: SourceHashHandlers,
     stateFileHandlers :: StateFileHandlers,
     envsConf :: Envs EnvConfig,
-    buildOutputsPrefix :: Maybe BuildOutputsPrefix,
     root :: Path Abs Dir,
     buildConfig :: BuildConfig
   }
@@ -90,11 +84,10 @@ data EnvBuilderResources =
   }
 
 withTempProject ::
-  Maybe (Path Abs Dir) ->
   (Path Abs Dir -> M a) ->
   M a
-withTempProject rootOverride use = do
-  projectRoot <- rootOrCwd rootOverride
+withTempProject use = do
+  projectRoot <- appRes.root
   catch
     do
       withTempDir "managed-build" \ tmpRoot -> do
@@ -174,18 +167,16 @@ nixProc output root cmd installable extra = do
 
 runProc ::
   BuildConfig ->
-  (Handle -> IO a) ->
+  (Handle -> M a) ->
   ProcessConfig () () (Maybe Handle) ->
-  M (Maybe (Maybe a, ExitCode))
+  M (Maybe (Maybe (Either Error a), ExitCode))
 runProc buildConf pipeHandler conf =
-  tryIOM (withProcessTerm conf interact)
+  withLowerTry' \ lower -> withProcessTerm conf \ prc -> do
+    limit do
+      output <- traverse (lower . pipeHandler) (getStderr prc)
+      res <- waitExitCode prc
+      pure (output, res)
   where
-    interact prc =
-      limit do
-        output <- traverse pipeHandler (getStderr prc)
-        res <- waitExitCode prc
-        pure (output, res)
-
     limit | Just t <- buildConf.timeout
           , t > 0
           = timeout (coerce t * 1_000_000)
@@ -211,16 +202,15 @@ buildTarget ::
   LocalPackage ->
   M BuildResult
 buildTarget buildConf root env target = do
-  appRes <- M ask
-  debug <- M (asks (.debug))
-  conf <- nixProc (outputHandler debug) root ["build"] [exon|env.##{env}.##{target}|] []
-  runProc buildConf (runOutput appRes) conf >>= \case
+  debug <- shouldLog LogDebug
+  conf <- nixProc (outputHandler debug) root ["build", "--no-link"] [exon|env.##{env}.##{target}|] []
+  runProc buildConf runOutput conf >>= \case
     Just (output, code) ->
       outputResult output code
     Nothing -> pure (BuildFailure (TimeoutFailure []))
   where
-    runOutput appRes handle =
-      runMUsing appRes (runOutputState (outputLines outputParse handle))
+    runOutput handle =
+      runOutputState (outputLines outputParse handle)
 
     outputHandler debug
       | buildConf.buildOutput || (buildConf.disableNixMonitor && debug)
@@ -259,8 +249,8 @@ buildAdaptive EnvBuilderResources {global, context} allowRevisions target = do
 
     retry broken = do
       lift $ Log.verbose [exon|Installed package failed with bounds error, retrying with override: #{showP broken}|]
-      (package, newOverride) <- lift $ packageOverride global.hackage broken
-      modify' \ (overrides, revisions) -> (nInsert package newOverride overrides, Set.insert broken revisions)
+      newOverride <- lift $ packageOverride global.hackage broken
+      modify' \ (overrides, revisions) -> (nInsert broken.name newOverride overrides, Set.insert broken revisions)
       build
 
 buildWithState ::
@@ -300,37 +290,30 @@ withEnvBuilder global cabal context initialState use = do
     resources = EnvBuilderResources {..}
 
 withBuilder ::
-  HackageHandlers ->
+  SourceHashHandlers ->
   StateFileHandlers ->
-  StateFileConfig ->
   Envs EnvConfig ->
-  Maybe BuildOutputsPrefix ->
   BuildConfig ->
   (Builder -> M a) ->
   M a
-withBuilder hackage stateFileHandlers stateFileConf envsConf buildOutputsPrefix buildConfig use =
-  withTempProject stateFileConf.projectRoot \ root -> do
+withBuilder hackage stateFileHandlers envsConf buildConfig use = do
+  withTempProject \ root -> do
     let resources = BuilderResources {..}
     use Builder {withEnvBuilder = withEnvBuilder resources}
 
 handlersProd ::
-  MonadIO m =>
-  StateFileConfig ->
+  ProjectHandlers ->
   Envs EnvConfig ->
-  Maybe BuildOutputsPrefix ->
   BuildConfig ->
   CabalConfig ->
-  Bool ->
-  m BuildHandlers
-handlersProd stateFileConf envsConf buildOutputsPrefix buildConfig cabalConf oldest = do
-  manager <- liftIO (newManager tlsManagerSettings)
-  hackage <- HackageHandlers.handlersProd
-  let stateFile = StateFileHandlers.handlersProd stateFileConf
+  M BuildHandlers
+handlersProd project envsConf buildConfig cabalConf = do
+  manager <- httpManager
+  hackage <- SourceHashHandlers.handlersProd (allHackages cabalConf)
+  versionsHackages <- HackageClient.handlersProdFor (Just manager) ForVersions cabalConf
   pure BuildHandlers {
-    stateFile,
-    report = ReportHandlers.handlersProd,
-    cabal = CabalHandlers.handlersProd cabalConf oldest,
-    withBuilder = withBuilder hackage stateFile stateFileConf envsConf buildOutputsPrefix buildConfig,
-    versions = versionsHackage manager,
-    latestVersion = latestVersionHackage manager
+    project,
+    cabal = CabalHandlers.handlersProd cabalConf False,
+    withBuilder = withBuilder hackage project.stateFile envsConf buildConfig,
+    versions = AvailableVersions.handlersProd versionsHackages
   }

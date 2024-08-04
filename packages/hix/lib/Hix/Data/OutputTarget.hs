@@ -8,4 +8,6 @@ data OutputTarget =
   OutputStdout
   |
   OutputFile (Path Abs File)
+  |
+  OutputGithub
   deriving stock (Eq, Show, Generic)

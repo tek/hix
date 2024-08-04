@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config internal lib justIf;
+  inherit (util) config internal lib justIf colors;
 
   waitScript = env: let
     waitSeconds = toString env.wait;
@@ -73,6 +73,19 @@
   isTarget = envName: pkgName:
   lib.elem pkgName (withEnv targets envName);
 
+  unknownHackage = package: name: ''
+  The managed dependency override for ${colors.package package} refers to the nonexistent Hackage server config ${colors.option name}.
+  If you recently removed the option definition ${colors.option "hackage.repos.${name}"}, please re-run ${colors.shell_cmd "bump"} and/or ${colors.shell_cmd "lower"}, possibly deleting ${colors.path config.managed.file} beforehand.
+  '';
+
+  managedOverride = api: package: {version, hash, repo ? null}: let
+    hackage = if repo == null then api.hackage else api.hackageConfGen (unknownHackage package) repo;
+  in api.jailbreak (api.notest (api.nodoc (hackage version hash)));
+
+  managedOverrides = envName: api: let
+    os = util.managed.state.current.overrides.${envName} or {};
+  in lib.mapAttrs (managedOverride api) os;
+
 in {
   inherit
   waitScript
@@ -88,5 +101,6 @@ in {
   justExposed
   targets
   isTarget
+  managedOverrides
   ;
 }

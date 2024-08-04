@@ -18,7 +18,7 @@ import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Data.Json (aesonParsec, jsonParsec)
 import Hix.Data.Version (range0)
 import Hix.Pretty (showP)
-import Hix.Version (lowerVersion, upperVersion)
+import Hix.Version (lowerVersion, upperVersion, nextMajor, prevMajor)
 
 data Bound =
   BoundLower
@@ -160,3 +160,17 @@ withUpper upper VersionBounds {lower} =
   where
     clamp old | old > upper = Nothing
               | otherwise = Just old
+
+amendUpper :: Version -> VersionBounds -> VersionBounds
+amendUpper new bounds
+  | Just _ <- bounds.upper
+  = bounds
+  | otherwise
+  = withUpper new bounds
+
+updateWithCorrection :: VersionBounds -> VersionBounds -> VersionBounds
+updateWithCorrection VersionBounds {lower = Just lower, upper = Nothing} VersionBounds {upper = Just upper} =
+  VersionBounds {lower = Just lower, upper = Just if upper > lower then upper else nextMajor lower}
+updateWithCorrection VersionBounds {lower = Nothing, upper = Just upper} VersionBounds {lower = Just lower} =
+  VersionBounds {lower = Just if lower < upper then lower else prevMajor upper, upper = Just upper}
+updateWithCorrection new old = new <> old

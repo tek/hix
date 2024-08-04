@@ -9,9 +9,7 @@ import Text.PrettyPrint (hang, ($$), (<+>))
 
 import Hix.Class.Map (nRestrictKeys)
 import Hix.Data.Monad (M)
-import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
-import Hix.Data.PackageName (isLocalPackage)
 import Hix.Data.Version (packageIdVersions)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Cabal.Changes
@@ -59,14 +57,17 @@ processSolverPlan forceRevisions cabal deps prevRevisions SolverPlan {..} = do
     "Forced revisions:" <+> prettyL forcedRevisions $$
     "Reused revisions:" <+> prettyL reusedRevisions
   traverse_ logNonReinstallable nonReinstallable
-  pure SolverChanges {versions, overrides, projectDeps}
+  pure SolverChanges {versions, overrides}
   where
     projectDeps = nRestrictKeys mutablePIds versions
     versions = packageIdVersions (overrides ++ installed)
     overrides = filter notLocal (changes ++ forcedRevisions ++ reusedRevisions)
     (reusedRevisions, installed) = partition (flip Set.member prevRevisions) noForcedRevisions
     (noForcedRevisions, forcedRevisions) = partitionEithers (checkRevision forceRevisions cabal <$> matching)
-    notLocal PackageId {name} = not (isLocalPackage deps.local name)
+    -- notLocal PackageId {name} = not (isLocalPackage deps.local name)
+    -- TODO I assumed that targets hadn't been part of EnvDeps.local for a long time, so this shouldn't be effective
+    -- anymore, but verify anyway!
+    notLocal PackageId {} = True
     mutablePIds = Set.fromList (depName <$> Set.toList deps.mutable)
 
 -- TODO probably best to store the revisions in the SolverState

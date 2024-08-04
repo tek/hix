@@ -7,9 +7,10 @@ import Distribution.Pretty (Pretty)
 import Exon (exon)
 import Text.PrettyPrint (vcat)
 
+import qualified Hix.Color as Color
 import qualified Hix.Console
 import Hix.Console (color, colors)
-import Hix.Data.EnvName (EnvName (EnvName))
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
 import qualified Hix.Data.PackageId
@@ -61,7 +62,7 @@ logBuildInputs ::
   [PackageId] ->
   M ()
 logBuildInputs env description overrides = do
-  Log.info [exon|Building targets in #{color colors.yellow (coerce env)} with #{description}...|]
+  Log.info [exon|Building targets in #{Color.env env} with #{Color.package description}...|]
   Log.debugP (vcat ["Overrides:", prettyL overrides])
 
 logBuildResult :: Text -> BuildResult -> M ()

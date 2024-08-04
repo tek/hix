@@ -1,26 +1,26 @@
 module Hix.Managed.Overrides where
 
-import qualified Data.Map.Strict as Map
-
+import Hix.Class.Map (nForAssoc)
 import Hix.Data.Monad (M)
-import Hix.Data.Overrides (Override (..), Overrides (Overrides))
+import Hix.Data.Overrides (Override (..), Overrides)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
-import Hix.Data.PackageName (PackageName)
-import qualified Hix.Managed.Handlers.Hackage
-import Hix.Managed.Handlers.Hackage (HackageHandlers)
+import qualified Hix.Managed.Handlers.SourceHash
+import Hix.Managed.Handlers.SourceHash (SourceHashHandlers)
 
 packageOverride ::
-  HackageHandlers ->
+  SourceHashHandlers ->
   PackageId ->
-  M (PackageName, Override)
-packageOverride handlers package@PackageId {name, version} = do
-  hash <- handlers.fetchHash package
-  pure (name, Override {..})
+  M Override
+packageOverride handlers package@PackageId {version} = do
+  (hash, repo) <- handlers.fetchHash package
+  pure Override {..}
 
 packageOverrides ::
-  HackageHandlers ->
+  SourceHashHandlers ->
   [PackageId] ->
   M Overrides
 packageOverrides handlers versions =
-  Overrides . Map.fromList <$> traverse (packageOverride handlers) versions
+  nForAssoc versions \ pid -> do
+    o <- packageOverride handlers pid
+    pure (pid.name, o)

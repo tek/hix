@@ -1,33 +1,34 @@
 module Hix.Managed.Lower.App where
 
-import Hix.Data.Error (Error (Client))
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
-import Hix.Data.Options (LowerOptions (LowerOptions))
-import Hix.Json (jsonConfigE)
+import Hix.Data.Options (LowerOptions)
+import Hix.Managed.App (managedApp)
 import Hix.Managed.Data.LowerConfig (LowerConfig, lowerConfig)
 import Hix.Managed.Data.ProjectContext (ProjectContext)
-import qualified Hix.Managed.Data.ProjectContextProto
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import Hix.Managed.Handlers.Build (BuildHandlers)
-import Hix.Managed.Handlers.Build.Test (chooseHandlers)
+import Hix.Managed.Handlers.Context (ContextKey (ContextManaged), jsonOrQueryProd)
 import Hix.Managed.Lower.Auto (lowerAutoMain)
 import Hix.Managed.Lower.Init (lowerInitMain)
 import Hix.Managed.Lower.Optimize (lowerOptimizeMain)
 import Hix.Managed.Lower.Stabilize (lowerStabilizeMain)
-import Hix.Managed.ProjectContext (withProjectContext)
+import Hix.Managed.ProjectContext (processProjectResult)
+
+lowerApp ::
+  (LowerConfig -> BuildHandlers -> ProjectContext -> M ProjectResult) ->
+  LowerOptions ->
+  M ProjectResult
+lowerApp main opts = do
+  context <- jsonOrQueryProd ContextManaged opts.common.context
+  managedApp opts.common context (main (lowerConfig opts))
 
 lowerCli ::
   (LowerConfig -> BuildHandlers -> ProjectContext -> M ProjectResult) ->
   LowerOptions ->
   M ()
-lowerCli main opts@LowerOptions {common} = do
-  context <- jsonConfigE Client common.context
-  handlers <- chooseHandlers common.stateFile context.envs context.buildOutputsPrefix common.project.build common.cabal
-    common.handlers
-  withProjectContext handlers common.project context (main conf handlers)
-  where
-    conf = lowerConfig opts
+lowerCli main opts =
+  processProjectResult =<< lowerApp main opts
 
 lowerInitCli :: LowerOptions -> M ()
 lowerInitCli = lowerCli lowerInitMain
