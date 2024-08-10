@@ -183,12 +183,15 @@ let
   console = import ./console.nix { inherit lib; };
 
   loadConsole = let
-    inherit (console) colors color bold chevrons chevronY chevronM chevronsH;
+    inherit (console) colors color bold chevrons chevronY chevronM chevronsH startSgr resetSgr;
     colorFun = name: ''
     ${name}()
     {
       echo -e "${color colors.${name} "\${*}"}"
     }
+    '';
+    startColor = name: ''
+    ${name}_start="${startSgr colors.${name}}"
     '';
   in ''
   message()
@@ -199,15 +202,26 @@ let
   {
     echo -n -e "${chevrons} $*"
   }
+  message_hang()
+  {
+    message "  $*"
+  }
+  message_part_hang()
+  {
+    message_part "  $*"
+  }
   error_message()
   {
     echo -e "${chevrons} ${color colors.red "\${*}"}"
   }
   ${unlines (map colorFun (attrNames colors))}
+  ${unlines (map startColor (attrNames colors))}
+  reset_sgr="${resetSgr}"
   bold()
   {
       echo -e "${bold "$*"}"
   }
+  bold_start="${startSgr 1}"
   chevronsH='${chevronsH}'
   chevrons='${chevrons}'
   chevronY='${chevronY}'

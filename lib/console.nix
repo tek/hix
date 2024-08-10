@@ -25,7 +25,9 @@
 
   startSgr = n: "\\e[" + toString n + "m";
 
-  sgr = n: t: startSgr n + t + "\\e[0m";
+  resetSgr = startSgr 0;
+
+  sgr = n: t: startSgr n + t + resetSgr;
 
   bold = sgr "1";
 
@@ -38,7 +40,21 @@
   colorExtBg = n: sgr "48;5;${toString n}";
 
 in {
-  inherit indentLine sgr colors colorsBg colorsBright colorsBgBright bold faint underline colorExt colorExtBg;
+
+  inherit
+  indentLine
+  startSgr
+  resetSgr
+  sgr
+  colors
+  colorsBg
+  colorsBright
+  colorsBgBright
+  bold
+  faint
+  underline
+  colorExt
+  colorExtBg;
 
   color = sgr;
 
@@ -58,4 +74,5 @@ in {
 
   chevronY = bold (sgr colors.yellow ">");
   chevronM = bold (sgr colors.magenta ">");
+
 }
