@@ -2,31 +2,50 @@
 let
   inherit (util) pkgs lib;
 
+  sharedPreamble = ''
+  if_ci()
+  {
+    if [[ -n ''${hix_test_ci-} ]]
+    then
+      eval $@
+    fi
+  }
+
+  ${util.loadConsole}
+  '';
+
   preamble = ''
   hix_src_dir=$PWD
   tmp_dir=$(mktemp -d --tmpdir hix-test.XXXXXXXX)
+  mkdir -p $tmp_dir
+  export HOME=$tmp_dir
+
+  _remove_tmp_dir()
+  {
+    setopt local_options no_err_return
+    if [[ -e $tmp_dir ]]
+    then
+      rm -rf $tmp_dir
+    fi
+  }
+
   if [[ -z ''${hix_test_keep-} ]]
   then
-    trap "rm -rf $tmp_dir" EXIT
+    trap _remove_tmp_dir EXIT
   fi
 
-  ${util.loadConsole}
+  ${sharedPreamble}
 
+  if_ci 'export hix_test_full_output=1'
+  if_ci 'export hix_test_show_stderr_failure=1'
+  '';
+
+  asserts = ''
   flake_update()
   {
     nix flake update --quiet --quiet
   }
 
-  if_ci()
-  {
-    if [[ -n ''${CI-} ]]
-    then
-      eval $@
-    fi
-  }
-  '';
-
-  asserts = ''
   fail()
   {
     error_message $*
@@ -163,6 +182,23 @@ let
   - *
   '';
 
+  sharedVars = ''
+  local work_dir="$test_base/work"
+  local hix_dir="$test_base/hix"
+  local output_dir="$test_base/output"
+  '';
+
+  testWrapper = util.zscriptErr "hix-test-wrapper" ''
+  # Add ${pkgs.ripgrep} to inputs
+  ${sharedPreamble}
+  test_base=$1
+  ${sharedVars}
+  step_number=0
+  ${asserts}
+  source ${./internal/step.zsh}
+  source $2
+  '';
+
   runtest = ''
   runtest()
   {
@@ -171,10 +207,8 @@ let
     local test="''${tests[$current]}"
     local test_src="$hix_src_dir/test/$current"
     local test_base="$tmp_dir/$current"
-    local work_dir="$test_base/work"
-    local hix_dir="$test_base/hix"
-    local output_dir="$test_base/output"
     local test_config="$test_src/test-config.nix"
+    ${sharedVars}
 
     if [[ -z $test ]]
     then
@@ -206,40 +240,41 @@ let
     cp -r "$test_src" "$work_dir"
     cd "$work_dir"
 
+    rm test.nix
     sub $(print **/flake.nix(N))
 
     message "Running test '$current'..."
-    source $test
+    ${testWrapper} $test_base $test
   }
   '';
 
   main = ''
-  rm -rf $tmp_dir
-  mkdir -p $tmp_dir
-
   local failure=0
   local failed=()
   local t
   for t in $=targets
   do
-    runtest $t
-    if [[ $? != 0 ]]
+    if ! runtest $t
     then
       error_message "Test failed: $t"
-      (( failure = failure + 1 ))
+      (( failure ++ ))
       failed+=($t)
     fi
   done
 
-  if [[ $failure == 0 ]]
+  if (( $failure == 0 ))
   then
     message 'All tests succeeded.'
-  else
+  elif (( $failure > 1 ))
+  then
     error_message "$failure tests failed:"
     for t in $failed
     do
       error_message " - $t"
     done
+  fi
+  if (( $failure > 0 ))
+  then
     exit 1
   fi
   '';
@@ -260,5 +295,5 @@ let
   '';
 
 in {
-  inherit preamble asserts runtest main loadTargets;
+  inherit preamble runtest main loadTargets;
 }

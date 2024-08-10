@@ -1,6 +1,6 @@
 {pkgs, ...}:
 {
-  test = builtins.toFile "deps-test" ''
+  source = ''
     cd ./root
     flake_update
 
@@ -22,11 +22,11 @@
 
     cabal_update()
     {
-      nix run .#gen-cabal-quiet
-      nix develop -c cabal update
+      step_run 'gen-cabal-quiet'
+      step_develop 'cabal update'
     }
 
     if_ci cabal_update
-    check_exit 'nix run .#hls'
+    step_run 'hls'
   '';
 }

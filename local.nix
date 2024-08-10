@@ -140,6 +140,8 @@ in {
       test-managed = util.app tests.sets.test-managed;
       test = util.app tests.sets.test;
 
+      test-framework = util.app tests.sets.test-framework;
+
       cli = util.app "${build.packages.min.hix.package}/bin/hix";
 
       new-nocache = let

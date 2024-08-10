@@ -5,7 +5,12 @@ let
 
   tools = import ./tools.nix { inherit util; };
 
-  test = name: (import (./. + "/${name}/test.nix") { inherit config util pkgs; }).test;
+  test = name: let
+    conf = import (./. + "/${name}/test.nix") { inherit config util pkgs; };
+  in
+  if conf ? source
+  then pkgs.writeText "hix-test-${name}" conf.source
+  else conf.test;
 
   tests-basic-1 = {
     app-rec = test "app-rec";
@@ -51,9 +56,12 @@ let
 
   tests = tests-basic-1 // tests-basic-2 // tests-basic-3 // tests-vm // tests-managed;
 
+  tests-framework = {
+    framework-step = test "framework-step";
+  };
+
   setup = pkgs.writeText "hix-tests-setup" ''
   ${tools.preamble}
-  ${tools.asserts}
   ${tools.runtest}
   '';
 
@@ -71,5 +79,7 @@ in {
     test-vm = script "vm" tests-vm;
     test-managed = script "managed" tests-managed;
     test = script "all" tests;
+
+    test-framework = script "framework" tests-framework;
   };
 }

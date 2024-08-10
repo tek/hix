@@ -7,7 +7,7 @@ on:
 jobs:
   tests:
     env:
-      CI: 1
+      hix_test_ci: 1
     runs-on: ubuntu-latest
     permissions:
       contents: read
