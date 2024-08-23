@@ -128,19 +128,21 @@ in {
       docs = docs.html;
     };
 
+    devShells.hix-test = config.pkgs.mkShell {};
+
     apps = let
 
       tests = import ./test/default.nix { inherit util; };
 
     in {
-      test-basic-1 = util.app tests.sets.test-basic-1;
-      test-basic-2 = util.app tests.sets.test-basic-2;
-      test-basic-3 = util.app tests.sets.test-basic-3;
-      test-vm = util.app tests.sets.test-vm;
-      test-managed = util.app tests.sets.test-managed;
-      test = util.app tests.sets.test;
+      test-basic-1 = tests.apps.test-basic-1;
+      test-basic-2 = tests.apps.test-basic-2;
+      test-basic-3 = tests.apps.test-basic-3;
+      test-vm = tests.apps.test-vm;
+      test-managed = tests.apps.test-managed;
+      test = tests.apps.test;
 
-      test-framework = util.app tests.sets.test-framework;
+      test-framework = tests.apps.test-framework;
 
       cli = util.app "${build.packages.min.hix.package}/bin/hix";
 

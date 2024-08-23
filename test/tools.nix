@@ -2,6 +2,8 @@
 let
   inherit (util) pkgs lib;
 
+  testTools = [pkgs.ripgrep pkgs.git];
+
   sharedPreamble = ''
   if_ci()
   {
@@ -12,6 +14,7 @@ let
   }
 
   ${util.loadConsole}
+  export PATH="${lib.makeBinPath testTools}:$PATH"
   '';
 
   preamble = ''
@@ -38,6 +41,8 @@ let
 
   if_ci 'export hix_test_full_output=1'
   if_ci 'export hix_test_show_stderr_failure=1'
+
+  export PATH="$_hix_test_system_bin_nix:$_hix_test_system_bin_systemd:$PATH"
   '';
 
   asserts = ''
@@ -188,8 +193,7 @@ let
   local output_dir="$test_base/output"
   '';
 
-  testWrapper = util.zscriptErr "hix-test-wrapper" ''
-  # Add ${pkgs.ripgrep} to inputs
+  testWrapper = util.zscriptPure "hix-test-wrapper" ''
   ${sharedPreamble}
   test_base=$1
   ${sharedVars}

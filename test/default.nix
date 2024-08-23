@@ -65,13 +65,20 @@ let
   ${tools.runtest}
   '';
 
-  script = name: set: util.zscriptErr "hix-tests-${name}" ''
+  script = name: set: util.zscriptPure "hix-tests-${name}" ''
   source ${setup}
   ${tools.loadTargets set}
   ${tools.main}
   '';
 
-in {
+  testApp = main: let
+    script = ''
+    export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
+    export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
+    nix develop -i -k DBUS_SESSION_BUS_ADDRESS -k _hix_test_system_bin_nix -k _hix_test_system_bin_systemd path:.#hix-test -c ${main} $@
+    '';
+  in util.app (util.zscript "hix-test" script);
+
   sets = {
     test-basic-1 = script "basic-1" tests-basic-1;
     test-basic-2 = script "basic-2" tests-basic-2;
@@ -82,4 +89,9 @@ in {
 
     test-framework = script "framework" tests-framework;
   };
+
+in {
+  inherit sets;
+
+  apps = util.mapValues testApp sets;
 }

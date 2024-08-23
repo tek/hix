@@ -110,6 +110,16 @@ let
   ${text}
   '';
 
+  zwrap = pkgs.writeScript "zsh-pure" ''
+  #!/bin/sh
+  exec ${pkgs.zsh}/bin/zsh -o no_global_rcs -o no_rcs $@
+  '';
+
+  zscriptPure = name: text: pkgs.writeScript name ''
+  #!${zwrap}
+  ${text}
+  '';
+
   zscriptErr = name: text: pkgs.writeScript name ''
   #!${pkgs.zsh}/bin/zsh
   ${text}
@@ -204,6 +214,7 @@ let
     unlessDev
     scriptErr
     script
+    zscriptPure
     zscriptErr
     zscript
     downloadStaticCli
