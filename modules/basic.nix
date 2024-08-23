@@ -67,6 +67,15 @@ in {
       type = str;
     };
 
+    name = mkOption {
+      description = ''
+      The name of the project is used for some temporary directories and defaults to [](#opt-general-main).
+      If no packages are defined, a dummy is used if possible.
+      '';
+      type = types.str;
+      default = "hix-project";
+    };
+
     cabal = mkOption {
       description = ''
       Cabal options that are applied to all packages and components.
@@ -309,6 +318,8 @@ in {
       }
       ''
     );
+
+    name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
     pkgs = mkDefault config.envs.dev.ghc.pkgs;
 

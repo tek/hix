@@ -5,6 +5,8 @@
 
   outputs = { hix, ... }: hix.lib._hix_test ({config, ...}: {
 
+    name = "hix-test-service";
+
     services.test = {
       enable = true;
       ports.test = { guest = 5000; host = 5; };

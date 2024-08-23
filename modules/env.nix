@@ -470,7 +470,7 @@ in {
       dir = mkOption {
         description = "";
         type = str;
-        default = "/tmp/hix-vm/$USER/${config.vm.name}";
+        default = ''/tmp/hix-vm/${global.name}/${config.vm.name}'';
       };
 
       pidfile = mkOption {
