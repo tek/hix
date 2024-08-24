@@ -193,19 +193,31 @@
   updateCliVersion = let
     url = ''https://hackage.haskell.org/package/hix-''${version}/hix-''${version}.tar.gz'';
   in ''
-  response=$({ nix-prefetch-url --unpack ${url} 2>&1 || print 'failed' } | tail -n1)
-  if [[ $response == 'failed' ]]
-  then
-    error_message "Fetching hackage hash for ops/cli-dep.nix failed: $response"
-    false
-  fi
-  cat > ${cliDep} <<EOF
+  (){
+    setopt local_options local_traps
+    local response_out=$(mktemp --tmpdir hix-update-cli-stdout.XXXXXXXX)
+    local error_out=$(mktemp --tmpdir hix-update-cli-stderr.XXXXXXXX)
+    trap "rm -f $response_out $error_out" EXIT
+    setopt local_options no_err_return
+    nix-prefetch-url --unpack ${url} >$response_out 2>$error_out
+    local code=$?
+    setopt local_options err_return
+    if (( $code != 0 ))
+    then
+      error_message "Fetching hackage hash for ops/cli-dep.nix failed:"
+      cat $error_out
+      return 1
+    fi
+    setopt local_options err_return
+    local hash=$(tail -n1 $response_out)
+    cat > ${cliDep} <<EOF
   {
     version = "$version";
-    sha256 = "$response";
+    sha256 = "$hash";
   }
   EOF
-  git add ${cliDep}
+    git add ${cliDep}
+  }
   '';
 
 in { inherit nix all updateCliVersion; }
