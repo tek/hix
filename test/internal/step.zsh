@@ -6,7 +6,7 @@ _step_failed()
 
 _step_output_desc_upper()
 {
-  if [[ $1 == $step_stdout ]]
+  if [[ $1 == $step_stdout ]] || [[ $1 == "${step_stdout}.processed" ]]
   then
     print 'Output'
   else
@@ -76,6 +76,29 @@ _step_show_stderr_after()
   fi
 }
 
+_step_apply_preproc()
+{
+  local desc=$1 cmd=$2 out=$3 out_pp=$4
+  trap "rm -f ${out}.err" EXIT
+  eval "{ $cmd } < $out > $out_pp 2>${out}.err"
+  if (( $? != 0 ))
+  then
+    _step_failed
+    message "$desc preprocessor failed: $(blue $cmd)"
+    cat ${out}.err
+    return 1
+  fi
+}
+
+_step_apply_preprocs()
+{
+  local pp_out=${_step_preproc_out:-cat} pp_err=${_step_preproc_err:-cat}
+  _step_processed_stdout="${step_stdout}.processed"
+  _step_processed_stderr="${step_stderr}.processed"
+  _step_apply_preproc 'Output' $pp_out $step_stdout $_step_processed_stdout &&
+    _step_apply_preproc 'stderr' $pp_err $step_stderr $_step_processed_stderr
+}
+
 _step_check_exit_code()
 {
   local msg="Exit code $(bold $(red step_exit_code))"
@@ -130,7 +153,7 @@ _step_check_exact_out()
 {
   if  [[ -n $_step_exact_out ]]
   then
-    _step_diff_output $step_stdout $_step_exact_out
+    _step_diff_output $_step_processed_stdout $_step_exact_out
   fi
 }
 
@@ -138,7 +161,7 @@ _step_check_exact_err()
 {
   if [[ -n $_step_exact_err ]]
   then
-    _step_check_combined 'error_exact' && _step_diff_output $step_stderr $_step_exact_err
+    _step_check_combined 'error_exact' && _step_diff_output $_step_processed_stderr $_step_exact_err
   fi
 }
 
@@ -181,7 +204,7 @@ _step_check_rg_out()
 {
   if [[ -n $_step_rg_out ]]
   then
-    _step_check_rg $step_stdout $_step_rg_out
+    _step_check_rg $_step_processed_stdout $_step_rg_out
   fi
 }
 
@@ -189,7 +212,7 @@ _step_check_rg_err()
 {
   if [[ -n $_step_rg_err ]]
   then
-    _step_check_combined 'error_rg' && _step_check_rg $step_stderr $_step_rg_err
+    _step_check_combined 'error_rg' && _step_check_rg $_step_processed_stderr $_step_rg_err
   fi
 }
 
@@ -197,7 +220,7 @@ _step_check_regex_out()
 {
   if [[ -n $_step_regex_out ]]
   then
-    _step_check_regex $step_stdout $_step_regex_out
+    _step_check_regex $_step_processed_stdout $_step_regex_out
   fi
 }
 
@@ -205,13 +228,13 @@ _step_check_regex_err()
 {
   if [[ -n $_step_regex_err ]]
   then
-    _step_check_combined 'error_match' && _step_check_regex $step_stderr $_step_regex_err
+    _step_check_combined 'error_match' && _step_check_regex $_step_processed_stderr $_step_regex_err
   fi
 }
 
 step()
 {
-  setopt local_options no_err_return
+  setopt local_options no_err_return local_traps
   local _step_diff result _step_stderr_shown=0
   (( step_number ++ ))
   step_dir="$test_base/step-${step_number}"
@@ -233,7 +256,9 @@ step()
   fi
   step_exit_code=$?
 
-  if _step_check_exit_code &&
+
+  if _step_apply_preprocs &&
+     _step_check_exit_code &&
      _step_check_exact_out &&
      _step_check_exact_err &&
      _step_check_rg_out &&
@@ -248,7 +273,17 @@ step()
 
   _step_show_stderr_after $result
 
-  unset _step_exact_out _step_exact_err _step_rg_out _step_rg_err _step_regex_out _step_regex_err _step_allow_failure
+  unset \
+    _step_exact_out \
+    _step_exact_err \
+    _step_rg_out \
+    _step_rg_err \
+    _step_regex_out \
+    _step_regex_err \
+    _step_preproc_out \
+    _step_preproc_err \
+    _step_allow_failure \
+    _step_combined_output
   return $result
 }
 
@@ -299,6 +334,16 @@ error_match()
   _step_regex_err=$*
 }
 
+preproc_output()
+{
+  _step_preproc_out=$*
+}
+
+preproc_error()
+{
+  _step_preproc_err=$*
+}
+
 allow_failure()
 {
   _step_allow_failure=1
@@ -307,4 +352,9 @@ allow_failure()
 combined_output()
 {
   _step_combined_output=1
+}
+
+sub_store_hash()
+{
+  sed -r 's#/nix/store/[a-z0-9]+#/nix/store/hash#g'
 }

@@ -13,7 +13,7 @@
 
   step_unexpected()
   {
-    error_message "Step $1 unexpectedly"
+    error_message "Step $step_number $1 unexpectedly"
     message "Output:"
     print '
   ---------- 8< ----------
@@ -62,7 +62,7 @@
     diff <(print $1) _step_out
     if (( $? != 0 ))
     then
-      error_message "Step output mismatch"
+      error_message "Step $step_number output mismatch"
       return 1
     fi
   }
@@ -106,7 +106,7 @@
   error_rg -e 'stderr mes+a'
   require_success both_output || return 1
 
-  target1="[1m[35m>>>[0m[0m [31mStep 10 failed:[0m
+  local target1="[1m[35m>>>[0m[0m [31mStep 10 failed:[0m
   [1m[35m>>>[0m[0m   [1m[34mboth_output[0m[0m
   [1m[35m>>>[0m[0m Output doesn't match [34mrg[0m query:
   [1m[35m>>>[0m[0m   [1m[33m-U -e 'stdouts mes+a.*\\\\nstderr.*'[0m
@@ -124,21 +124,20 @@
   output_rg -U -e 'stdout mes+a.*\nstderr.*'
   require_success both_output || return 1
 
-  target2='[1m[35m>>>[0m[0m [31mStep 12 failed:[0m
+  local target2='[1m[35m>>>[0m[0m [31mStep 12 failed:[0m
   [1m[35m>>>[0m[0m   [1m[34mboth_output[0m[0m
   [1m[35m>>>[0m[0m Cannot use [34mcombined_output[0m with [34merror_rg[0m'
   combined_output
   error_rg -e 'x'
   require_output $target2 both_output || return 1
 
-  target3="[1m[35m>>>[0m[0m [31mStep 13 failed:[0m
+  local target3="[1m[35m>>>[0m[0m [31mStep 13 failed:[0m
   [1m[35m>>>[0m[0m   [1m[34mboth_output[0m[0m
   [1m[35m>>>[0m[0m Output doesn't match regex:
   [1m[35m>>>[0m[0m   [1m[33mstdout mes\\\\n[0m
   [1m[35m>>>[0m[0m Output:
 
   stdout message
-  stderr message
 
   [1m[35m>>>[0m[0m rg output:
   rg: the literal \"\\\\n\" is not allowed in a regex
@@ -148,5 +147,24 @@
 
   output_match 'stdout mes\n'
   require_output $target3 both_output || return 1
+
+  preproc_output sub_store_hash
+  output_exact '/nix/store/hash-pkg-1.0'
+  require_success 'print /nix/store/aaa555zzzz999-pkg-1.0' || return 1
+
+  bad_preproc()
+  {
+    print 'preproc error' >& 2
+    return 1
+  }
+
+  local target4='[1m[35m>>>[0m[0m [31mStep 15 failed:[0m
+  [1m[35m>>>[0m[0m   [1m[34mprint hello[0m[0m
+  [1m[35m>>>[0m[0m Output preprocessor failed: [34mbad_preproc[0m
+  preproc error'
+
+  preproc_output bad_preproc
+  require_output $target4 'print hello' || return 1
+  unset bad_preproc
   '';
 }
