@@ -43,6 +43,10 @@ let
   if_ci 'export hix_test_show_stderr_failure=1'
 
   export PATH="$_hix_test_system_bin_nix:$_hix_test_system_bin_systemd:$PATH"
+
+  export GIT_CONFIG_NOSYSTEM=1
+  git config --global user.name hix-test
+  git config --global user.email hix-test@localhost
   '';
 
   asserts = ''
