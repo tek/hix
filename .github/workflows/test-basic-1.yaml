@@ -28,5 +28,6 @@ jobs:
     - run: rm -rf /opt/hostedtoolcache
     - run: git config --global user.name hix
     - run: git config --global user.email hix@tryp.io
+    - run: nix run .#test-framework
     - run: nix run .#test-basic-1
     - run: nix flake check
