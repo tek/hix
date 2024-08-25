@@ -42,7 +42,22 @@ let
   if_ci 'export hix_test_full_output=1'
   if_ci 'export hix_test_show_stderr_failure=1'
 
-  export PATH="$_hix_test_system_bin_nix:$_hix_test_system_bin_systemd:$PATH"
+  _hix_test_bin="$tmp_dir/bin"
+  mkdir -p $_hix_test_bin
+
+  cat > $_hix_test_bin/nix << EOF
+  #!/bin/sh
+  exec $_hix_test_system_bin_nix/nix --quiet --quiet \$*
+  EOF
+
+  cat > $_hix_test_bin/nix-vanilla << EOF
+  #!/bin/sh
+  exec $_hix_test_system_bin_nix/nix \$*
+  EOF
+
+  chmod +x $_hix_test_bin/*
+
+  export PATH="$_hix_test_bin:$_hix_test_system_bin_nix:$_hix_test_system_bin_systemd:$PATH"
 
   export GIT_CONFIG_NOSYSTEM=1
   git config --global user.name hix-test
@@ -52,7 +67,7 @@ let
   asserts = ''
   flake_update()
   {
-    nix flake update --quiet --quiet
+    nix flake update
   }
 
   fail()
