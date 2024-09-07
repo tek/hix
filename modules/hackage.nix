@@ -146,9 +146,19 @@ in {
         }
         ```
       '';
-      default = { publish, doc, path }:
-      "cabal upload ${if publish then "--publish " else ""}${if doc then "--documentation " else ""}${path}";
       type = types.functionTo types.str;
+    };
+
+    cabalArgs = lib.mkOption {
+      description = "Extra global CLI arguments for `cabal`.";
+      type = types.types.str;
+      default = "";
+    };
+
+    cabalUploadArgs = lib.mkOption {
+      description = "Extra CLI arguments for `cabal upload` to use in [](#opt-hackage-hackage.uploadCommand).";
+      type = types.types.str;
+      default = "";
     };
 
     askVersion = lib.mkOption {
@@ -210,9 +220,20 @@ in {
 
   };
 
-  config.hackage.output = {
-    packages = mkDefault logic.packages;
+  config.hackage = {
 
-    apps = mkDefault logic.apps;
+    output = {
+      packages = lib.mkDefault logic.packages;
+
+      apps = lib.mkDefault logic.apps;
+    };
+
+    uploadCommand = lib.mkDefault (
+      { publish, doc, path }:
+      "cabal ${config.hackage.cabalArgs} upload ${config.hackage.cabalUploadArgs} ${if publish then "--publish " else ""}${if doc then "--documentation " else ""}${path}"
+    );
+
   };
+
+
 }
