@@ -71,13 +71,22 @@ let
   ${tools.main}
   '';
 
-  testApp = main: let
-    script = ''
-    export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
-    export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
-    nix develop -i -k DBUS_SESSION_BUS_ADDRESS -k _hix_test_system_bin_nix -k _hix_test_system_bin_systemd path:.#hix-test -c ${main} $@
-    '';
-  in util.app (util.zscript "hix-test" script);
+  testApp = main: util.zapp "hix-test" ''
+  export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
+  export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
+  if [[ -n $hix_test_impure ]]
+  then
+  ${main} $@
+  else
+    nix develop --ignore-environment \
+      -k DBUS_SESSION_BUS_ADDRESS \
+      -k _hix_test_system_bin_nix \
+      -k _hix_test_system_bin_systemd \
+      -k hix_test_show_stderr \
+      -k hix_test_show_stderr_failure \
+      path:.#hix-test -c ${main} $@
+  fi
+  '';
 
   sets = {
     test-basic-1 = script "basic-1" tests-basic-1;
