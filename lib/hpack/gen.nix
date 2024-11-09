@@ -20,12 +20,17 @@ in util.zscript "hpack.zsh" ''
 
   info()
   {
-    ${if verbose then ''echo ">>> $*"'' else ""}
+    ${if verbose then ''echo ">>> $*" >&2'' else ""}
+  }
+
+  error()
+  {
+    echo ">>> $*" >&2
   }
 
   run()
   {
-    ${config.internal.basicGhc.hpack}/bin/hpack --force ${if verbose then "" else "1>/dev/null"}
+    ${config.internal.basicGhc.hpack}/bin/hpack --force ${if verbose then ">&2" else "1>/dev/null"}
   }
 
   regular()
@@ -37,7 +42,7 @@ in util.zscript "hpack.zsh" ''
     then
       run
     else
-      echo "no package.yaml in $dir"
+      error "no package.yaml in $dir"
     fi
     popd
   }
