@@ -24,12 +24,16 @@
 
   # We're not guarding this with a `optionalAttrs` so that we can print an error when the user executes an app.
   # TODO Add an override option that opts into removing these apps from the flake.
-  apps =
-    if config.managed.sets == "all"
+  apps = let
+    sets = config.managed.sets;
+  in
+    if sets == "all"
     then appsForEnvs { latest = "latest"; lower = "lower"; }
-    else if config.managed.sets == "each"
+    else if sets == "each"
     then managedMulti config.internal.packageNames
-    else managedMulti (lib.attrNames config.managed.sets)
+    else if lib.isAttrs sets
+    then managedMulti (lib.attrNames sets)
+    else throw "Unexpected value for 'managed.sets': ${lib.generators.toPretty sets}"
     ;
 
   gaWorkflow = sort: config.pkgs.writeText "${sort}.yaml" ''

@@ -1,8 +1,6 @@
 { pkgs, }:
 with pkgs.lib;
 let
-  util = import ../../lib/default.nix { inherit (pkgs) lib; };
-
   spec = import ./spec.nix { inherit (pkgs) lib; };
 
   # This reverses the list of overrides from different sources, because the rightmost source should have the highest
