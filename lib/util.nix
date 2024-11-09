@@ -130,6 +130,8 @@ let
   ${text}
   '';
 
+  zapp = name: test: util.app (zscript name test);
+
   downloadStaticCli = ''
   tmp=$(mktemp -d)
   quit()
@@ -217,6 +219,7 @@ let
     zscriptPure
     zscriptErr
     zscript
+    zapp
     downloadStaticCli
     nixC
     bootstrapWithStaticCli
