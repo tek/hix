@@ -6,7 +6,7 @@
   {
     if [[ -f _step_out ]]
     then
-      cat _step_out
+      hix_cat _step_out
     fi
     unfunction false_positive false_negative require_success require_failure &>/dev/null
   }
@@ -15,11 +15,11 @@
   {
     error_message "Step $step_number $1 unexpectedly"
     message "Output:"
-    print '
+    hix_print '
   ---------- 8< ----------
     '
-    cat _step_out
-    print '
+    hix_cat _step_out
+    hix_print '
   ---------- 8< ----------
     '
     return 1
@@ -29,7 +29,7 @@
   {
     if (( ''${_test_debug-0} == 1 ))
     then
-      cat _step_out
+      hix_cat _step_out
     fi
     rm -f _step_out
     _test_debug=0
@@ -38,7 +38,7 @@
   require_success()
   {
     trap _after_assert EXIT
-    step $* &>_step_out
+    step $* &> _step_out
     if (( $? != 0 ))
     then
       step_unexpected "failed"
@@ -48,7 +48,7 @@
   require_failure()
   {
     trap _after_assert EXIT
-    step $* &>_step_out
+    step $* &> _step_out
     if (( $? == 0 ))
     then
       step_unexpected "succeeded"
@@ -58,8 +58,8 @@
   require_output()
   {
     trap _after_assert EXIT
-    step $@[2,$] &>_step_out
-    diff <(print $1) _step_out
+    step $@[2,$] &> _step_out
+    _hix_redirect diff <(print $1) _step_out
     if (( $? != 0 ))
     then
       error_message "Step $step_number output mismatch"
@@ -169,7 +169,7 @@
 
   bad_preproc()
   {
-    print 'preproc error' >& 2
+    hix_print 'preproc error'
     return 1
   }
 

@@ -185,6 +185,8 @@ let
 
   console = import ./console.nix { inherit lib; };
 
+  messageStream = ">& $_hix_msg_fd";
+
   loadConsole = let
     inherit (console) colors color bold chevrons chevronY chevronM chevronsH startSgr resetSgr;
     colorFun = name: ''
@@ -196,55 +198,115 @@ let
     startColor = name: ''
     ${name}_start="${startSgr colors.${name}}"
     '';
+
   in ''
-  message()
+  _hix_console_is_zsh()
   {
-    echo -e "${chevrons} $*"
+    [[ -n "''${ZSH_NAME:-}" ]]
   }
-  message_part()
+
+  hix_cat()
   {
-    echo -n -e "${chevrons} $*"
+    cat $* ${messageStream}
   }
-  message_hang()
+
+  _hix_echo()
   {
-    message "  $*"
+    echo "$@" ${message_stream}
   }
-  message_part_hang()
-  {
-    message_part "  $*"
-  }
-  error_message()
-  {
-    echo -e "${chevrons} ${color colors.red "\${*}"}"
-  }
-  ${unlines (map colorFun (attrNames colors))}
-  ${unlines (map startColor (attrNames colors))}
+
+  if _hix_console_is_zsh
+  then
+    hix_print_raw()
+    {
+      $=_hix_printer_raw "$@"
+    }
+    hix_print()
+    {
+      $=_hix_printer "$@"
+    }
+    _hix_redirect()
+    {
+      $=* ${messageStream}
+    }
+  else
+    hix_print_raw()
+    {
+      $_hix_printer_raw "$@"
+    }
+    hix_print()
+    {
+      $_hix_printer "$@"
+    }
+    _hix_redirect()
+    {
+      $* ${messageStream}
+    }
+  fi
+
+  export _hix_printer_raw=''${_hix_printer_raw:-_hix_echo}
+  export _hix_printer=''${_hix_printer:-_hix_echo -e}
+  export _hix_msg_fd=2
+
   reset_sgr="${resetSgr}"
-  bold()
-  {
-      echo -e "${bold "$*"}"
-  }
   bold_start="${startSgr 1}"
   chevronsH='${chevronsH}'
   chevrons='${chevrons}'
   chevronY='${chevronY}'
   chevronM='${chevronM}'
+
+  ${unlines (map colorFun (attrNames colors))}
+  ${unlines (map startColor (attrNames colors))}
+  message()
+  {
+    hix_print "$chevrons $*"
+  }
+
+  message_part()
+  {
+    hix_print -n "$chevrons $*"
+  }
+
+  message_hang()
+  {
+    message "  $*"
+  }
+
+  message_part_hang()
+  {
+    message_part "  $*"
+  }
+
+  error_message()
+  {
+    message "$(color_error $*)"
+  }
+  bold()
+  {
+      echo -e "${bold "$*"}"
+  }
+
   die()
   {
     error_message $*
     exit 1
   }
-  ask() {
-    setopt local_options no_err_exit no_err_return
-    local decision=""
-    message_part "$1 [Yn] "
-    read -k decision
-    if [[ $decision != '\n' ]]
-    then
-      echo ""
-    fi
-    [[ $decision != 'n' ]]
-  }
+
+  if _hix_console_is_zsh
+  then
+    ask()
+    {
+      setopt local_options no_err_exit no_err_return
+      local decision=""
+      message_part "$1 [Yn] "
+      read -k decision
+      if [[ $decision != '\n' ]]
+      then
+        hix_print
+      fi
+      [[ $decision != 'n' ]]
+    }
+  fi
   '';
 
 in {
