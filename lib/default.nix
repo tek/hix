@@ -188,7 +188,9 @@ let
   messageStream = ">& $_hix_msg_fd";
 
   loadConsole = let
-    inherit (console) colors color bold chevrons chevronY chevronM chevronsH startSgr resetSgr;
+
+    inherit (console) colors aliases chevrons chevronY chevronM chevronsH startSgr resetSgr;
+
     colorFun = name: ''
     ${name}()
     {
@@ -198,6 +200,13 @@ let
 
     startColor = name: ''
     ${name}_start="${startSgr colors.${name}}"
+    '';
+
+    colorAliasFun = alias: for: ''
+    color_${alias}()
+    {
+      ${for} "$*"
+    }
     '';
 
   in ''
@@ -258,6 +267,8 @@ let
 
   ${unlines (map colorFun (attrNames colors))}
   ${unlines (map startColor (attrNames colors))}
+  ${unlines (lib.mapAttrsToList colorAliasFun aliases)}
+
   # SGR 28 is "Reveal"
   _hix_color_marker=$(echo -e "${startSgr 28}")
 

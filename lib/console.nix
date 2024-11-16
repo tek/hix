@@ -39,6 +39,18 @@
 
   colorExtBg = n: sgr "48;5;${toString n}";
 
+  # TODO these could be module options!
+  aliases = {
+    path = "blue";
+    shell_cmd = "blue";
+    regex = "yellow";
+    env = "yellow";
+    function = "yellow";
+    command = "blue";
+    variable = "cyan";
+    error = "red";
+  };
+
 in {
 
   inherit
@@ -50,11 +62,13 @@ in {
   colorsBg
   colorsBright
   colorsBgBright
+  aliases
   bold
   faint
   underline
   colorExt
-  colorExtBg;
+  colorExtBg
+  ;
 
   color = sgr;
 
