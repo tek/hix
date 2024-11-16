@@ -2,7 +2,7 @@
 let
   inherit (util) pkgs lib;
 
-  testTools = [pkgs.ripgrep pkgs.git];
+  testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter];
 
   sharedPreamble = ''
   if_ci()
