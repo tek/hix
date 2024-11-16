@@ -185,7 +185,7 @@ let
   dummyAppScript = pre: sub: script "hix-dummy-app" ''
   ${basic.loadConsole}
   message "This app cannot be run, it is a namespace node with contents:"
-  ${basic.unlinesMap (n: ''echo " $(yellow '*') $(blue .#${concatStringsSep "." (pre ++ [n])})"'') sub}
+  ${basic.unlinesMap (n: ''message_hang "$(yellow '*') $(blue .#${concatStringsSep "." (pre ++ [n])})"'') sub}
   '';
 
   dummyApp = pre: sub: basic.app (dummyAppScript pre sub);

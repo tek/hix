@@ -192,9 +192,10 @@ let
     colorFun = name: ''
     ${name}()
     {
-      echo -e "${color colors.${name} "\${*}"}"
+      _hix_nest_sgr "${startSgr colors.${name}}" "$*"
     }
     '';
+
     startColor = name: ''
     ${name}_start="${startSgr colors.${name}}"
     '';
@@ -212,7 +213,7 @@ let
 
   _hix_echo()
   {
-    echo "$@" ${message_stream}
+    echo "$@" ${messageStream}
   }
 
   if _hix_console_is_zsh
@@ -257,14 +258,38 @@ let
 
   ${unlines (map colorFun (attrNames colors))}
   ${unlines (map startColor (attrNames colors))}
+  # SGR 28 is "Reveal"
+  _hix_color_marker=$(echo -e "${startSgr 28}")
+
+  # Place a marker after the colored string, and replace it in substrings by the current SGR code to allow easy nesting
+  # of colors.
+  # The marker stays in to allow multiple levels (for bold + fg + bg), but since it is a no-op SGR itself that's fine.
+  _hix_nest_sgr()
+  {
+    local sgr=$1
+    local string=$2
+    local nest="''${string//''${_hix_color_marker}/$_hix_color_marker$sgr}"
+    echo -e "$sgr$nest${resetSgr}$_hix_color_marker"
+  }
+
+  _hix_sanitize_sgr()
+  {
+    echo "''${*//''${_hix_color_marker}/}"
+  }
+
+  bold()
+  {
+    _hix_nest_sgr "${startSgr 1}" "$*"
+  }
+
   message()
   {
-    hix_print "$chevrons $*"
+    hix_print "$(_hix_sanitize_sgr "$chevrons $*")"
   }
 
   message_part()
   {
-    hix_print -n "$chevrons $*"
+    hix_print -n "$(_hix_sanitize_sgr "$chevrons $*")"
   }
 
   message_hang()
@@ -280,10 +305,6 @@ let
   error_message()
   {
     message "$(color_error $*)"
-  }
-  bold()
-  {
-      echo -e "${bold "$*"}"
   }
 
   die()
@@ -357,6 +378,7 @@ in {
   app
   removeApp
   console
+  messageStream
   loadConsole
   ;
 
