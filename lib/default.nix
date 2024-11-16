@@ -1,6 +1,7 @@
 {lib}:
-with lib;
 let
+
+  inherit (lib) mapAttrs isAttrs isList concatStringsSep attrNames isDerivation length head tail filterAttrs;
 
   flake-utils = import (builtins.fetchTarball {
     url = "https://github.com/numtide/flake-utils/archive/refs/tags/v1.0.0.tar.gz";
@@ -21,7 +22,7 @@ let
 
   packageSubpath = base: pp:
   let
-    new = strings.removePrefix (toString base + "/") (toString pp);
+    new = lib.strings.removePrefix (toString base + "/") (toString pp);
     failed = new == toString pp;
   in
   if builtins.isPath pp || builtins.substring 0 1 (toString pp) == "/"
@@ -32,9 +33,9 @@ let
 
   relativePackages = base: mapAttrs (_: packageSubpath base);
 
-  mergeOverrides = zipAttrsWith (_: concatLists);
+  mergeOverrides = lib.zipAttrsWith (_: lib.concatLists);
 
-  concatOverrides = foldl (a: b: toList a ++ toList b) [];
+  concatOverrides = lib.foldl (a: b: lib.toList a ++ lib.toList b) [];
 
   normalizeOverrides = project: deps: depsFull:
   let
@@ -44,15 +45,15 @@ let
     depsFullOverrides = map (o: o.overrides) depsFull;
   in { all = []; } // mergeOverrides (depsOverrides ++ depsFullOverrides ++ [norm]);
 
-  concatMapAttrsToList = f: a: concatLists (mapAttrsToList f a);
+  concatMapAttrsToList = f: a: lib.concatLists (lib.mapAttrsToList f a);
 
   unwords = concatStringsSep " ";
 
   unlines = concatStringsSep "\n";
 
-  unlinesMap = concatMapStringsSep "\n";
+  unlinesMap = lib.concatMapStringsSep "\n";
 
-  unlinesConcatMap = f: xs: concatStringsSep "\n" (concatMap f xs);
+  unlinesConcatMap = f: xs: concatStringsSep "\n" (lib.concatMap f xs);
 
   # catSets :: [Attrs a] -> Attrs a
   catSets = lib.mergeAttrsList;
@@ -67,8 +68,8 @@ let
   lib.foldlAttrs (z: name: attr: z // f name attr) {} set;
 
   over = path: f: attrs:
-  if hasAttrByPath path attrs
-  then updateManyAttrsByPath [{ inherit path; update = f; }] attrs
+  if lib.hasAttrByPath path attrs
+  then lib.updateManyAttrsByPath [{ inherit path; update = f; }] attrs
   else attrs;
 
   mapKeys = f: lib.mapAttrs' (k: v: lib.nameValuePair (f k v) v);
@@ -96,10 +97,10 @@ let
   mergeAttrset = l: r:
   let
     f = name:
-    if hasAttr name l && hasAttr name r
+    if lib.hasAttr name l && lib.hasAttr name r
     then mergeAttr name l.${name} r.${name}
     else l.${name} or r.${name};
-  in genAttrs (concatMap attrNames [l r]) f;
+  in lib.genAttrs (lib.concatMap attrNames [l r]) f;
 
   mergeAuto = a: b:
   if b == null
@@ -111,7 +112,7 @@ let
   else b;
 
   mergeAll' = z: items:
-  foldl mergeAuto z items;
+  lib.foldl mergeAuto z items;
 
   # Later items have precedence
   mergeAll = items:
@@ -144,12 +145,12 @@ let
   removeKeys = lib.flip builtins.removeAttrs;
 
   toTitle = s:
-  if stringLength s == 0
+  if lib.stringLength s == 0
   then s
-  else toUpper (substring 0 1 s) + substring 1 (-1) s;
+  else lib.toUpper (lib.substring 0 1 s) + lib.substring 1 (-1) s;
 
   minGhc = version: env:
-  versionAtLeast env.ghc.version version;
+  lib.versionAtLeast env.ghc.version version;
 
   empty = v: if isAttrs v then empty (attrNames v) else v == [];
 
@@ -162,7 +163,7 @@ let
   then o
   else if isAttrs o && o ? __source && o ? __functor
   then { __source = [desc] ++ o.__source; inherit (o) __functor; }
-  else if isFunction o
+  else if lib.isFunction o
   then { __source = [desc]; __functor = _: o; }
   else if isList o
   then map (overridesVia desc) o
@@ -282,7 +283,6 @@ in {
   restrictKeys
   removeKeys
   toTitle
-  versionAtLeast
   minGhc
   empty
   evalModules
