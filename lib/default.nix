@@ -3,6 +3,8 @@ let
 
   inherit (lib) mapAttrs isAttrs isList concatStringsSep attrNames isDerivation length head tail filterAttrs;
 
+  internalScope = "__hix-internal__";
+
   flake-utils = import (builtins.fetchTarball {
     url = "https://github.com/numtide/flake-utils/archive/refs/tags/v1.0.0.tar.gz";
     sha256 = "0hynd4rbkbplxzl2a8wb3r8z0h17z2alhhdsam78g3vgzpzg0d43";
@@ -248,6 +250,7 @@ let
 in {
   inherit
   lib
+  internalScope
   utilWithConfig
   utilModule
   flake-utils

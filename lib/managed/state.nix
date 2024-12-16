@@ -35,7 +35,6 @@
     packages = lib.mapAttrs package util.hpack.conf.components;
     state = util.managed.state.current;
     envs = util.mapValues envConfig util.managed.env.envs;
-    inherit (config) buildOutputsPrefix;
   };
 
   cliJson = util.jsonFile "managed-config" cliConfig;

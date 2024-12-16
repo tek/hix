@@ -162,7 +162,8 @@ in {
 
       withPrio = name: let
         low = util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; };
-      in optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
+        full = optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
+      in full // { ${util.internalScope} = removeAttrs full [prefix]; };
 
       asDefault = name: util.mapValues lib.mkDefault (withPrio name);
 
