@@ -80,6 +80,8 @@ let
       -k _hix_test_system_bin_systemd \
       -k hix_test_show_stderr \
       -k hix_test_show_stderr_failure \
+      -k hix_test_full_output \
+      -k hix_test_ci \
       path:.#hix-test -c ${main} $@
   fi
   '';
