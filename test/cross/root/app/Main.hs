@@ -1,6 +1,10 @@
 module Main where
 
-import Root.Lib (string)
+import Data.Text (unpack)
+import Root.Lib (text)
+
+string :: String
+string = unpack text
 
 main :: IO ()
 main =

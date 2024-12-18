@@ -7,6 +7,7 @@
   hix.lib._hix_test ({config, ...}: {
     packages.root = {
       src = ./.;
+      cabal.dependencies = ["text"];
       library.enable = true;
       executable = {
         enable = true;

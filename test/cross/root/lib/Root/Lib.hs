@@ -1,5 +1,6 @@
 module Root.Lib where
 
-string :: String
-string =
-  "string"
+import Data.Text (Text, pack)
+
+text :: Text
+text = pack "string"
