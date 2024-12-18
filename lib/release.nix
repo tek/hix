@@ -110,7 +110,7 @@
     then
       abort 'Docs failed.'
     fi
-    if ! nix --quiet flake show --all-systems >/dev/null
+    if ! nix --quiet --quiet --quiet flake show --all-systems >/dev/null
     then
       abort 'Evaluation of outputs failed.'
     fi

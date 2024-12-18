@@ -86,7 +86,7 @@ let
     if [[ -n $new_version ]]
     then
       ${cfg.versionFileUpdate file}
-      ${if needsGenCabal file then "nix run '.#gen-cabal-quiet'" else ""}
+      ${if needsGenCabal file then "nix --quiet --quiet --quiet run '.#gen-cabal-quiet'" else ""}
       ${if gitAdd && file != null then addFiles file else ""}
       ${if cfg.setChangelogVersion then bumpChangelogs else ""}
     fi
