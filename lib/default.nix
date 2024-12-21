@@ -179,7 +179,7 @@ let
 
   app = program: { type = "app"; program = "${program}"; };
 
-  removeApp = a: removeAttrs a ["app" "type"];
+  removeApp = a: removeAttrs a ["program" "type"];
 
   console = import ./console.nix { inherit lib; };
 
