@@ -1,16 +1,11 @@
-{util, ...}:
+{self, util, ...}:
 let
   inherit (util) config;
   inherit (config) pkgs;
 
-  framework = import ./internal/framework.nix { inherit util; };
+  framework = import ./internal/framework.nix { inherit self util; };
 
-  test = name: let
-    conf = import (./. + "/${name}/test.nix") { inherit config util pkgs; };
-  in
-  if conf ? source
-  then pkgs.writeText "hix-test-${name}" conf.source
-  else conf.test;
+  test = name: import (./. + "/${name}/test.nix") { inherit config util pkgs; };
 
   tests-basic-1 = {
     app-rec = test "app-rec";
@@ -60,45 +55,18 @@ let
     framework-step = test "framework-step";
   };
 
-  script = name: set: util.zscriptPure "hix-tests-${name}" ''
-  ${framework.preamble}
-  ${framework.runtest}
-  ${framework.loadTargets set}
-  ${framework.main}
-  '';
-
-  testApp = main: util.zapp "hix-test" ''
-  export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
-  export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
-  if [[ -n $hix_test_impure ]]
-  then
-  ${main} $@
-  else
-    nix develop --ignore-environment \
-      -k DBUS_SESSION_BUS_ADDRESS \
-      -k _hix_test_system_bin_nix \
-      -k _hix_test_system_bin_systemd \
-      -k hix_test_show_stderr \
-      -k hix_test_show_stderr_failure \
-      -k hix_test_full_output \
-      -k hix_test_ci \
-      path:.#hix-test -c ${main} $@
-  fi
-  '';
-
-  sets = {
-    test-basic-1 = script "basic-1" tests-basic-1;
-    test-basic-2 = script "basic-2" tests-basic-2;
-    test-basic-3 = script "basic-3" tests-basic-3;
-    test-vm = script "vm" tests-vm;
-    test-managed = script "managed" tests-managed;
-    test = script "all" tests;
-
-    test-framework = script "framework" tests-framework;
+  suites = {
+    basic-1 = framework.suite tests-basic-1;
+    basic-2 = framework.suite tests-basic-2;
+    basic-3 = framework.suite tests-basic-3;
+    vm = framework.suite tests-vm;
+    managed = framework.suite tests-managed;
+    all = framework.suite tests // { attr = "test"; };
+    framework = framework.suite tests-framework;
   };
 
 in {
-  inherit sets;
+  inherit suites;
 
-  apps = util.mapValues testApp sets;
+  apps = framework.apps suites;
 }

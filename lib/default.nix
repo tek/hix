@@ -187,7 +187,7 @@ let
 
   messageStream = ">& $_hix_msg_fd";
 
-  loadConsole = let
+  loadConsoleWith = {verbose ? true}: let
 
     inherit (console) colors aliases chevrons chevronY chevronM chevronsH startSgr resetSgr;
 
@@ -257,6 +257,7 @@ let
   export _hix_printer_raw=''${_hix_printer_raw:-_hix_echo}
   export _hix_printer=''${_hix_printer:-_hix_echo -e}
   export _hix_msg_fd=2
+  export _hix_verbose=${if verbose then "1" else "0"}
 
   reset_sgr="${resetSgr}"
   bold_start="${startSgr 1}"
@@ -293,14 +294,43 @@ let
     _hix_nest_sgr "${startSgr 1}" "$*"
   }
 
-  message()
+  _hix_message_fragment()
+  {
+    hix_print -n "$(_hix_sanitize_sgr "$*")"
+  }
+
+  _hix_message()
   {
     hix_print "$(_hix_sanitize_sgr "$chevrons $*")"
   }
 
-  message_part()
+  _hix_message_part()
   {
     hix_print -n "$(_hix_sanitize_sgr "$chevrons $*")"
+  }
+
+  message_fragment()
+  {
+    if (( $_hix_verbose == 1 ))
+    then
+      _hix_message_fragment "$*"
+    fi
+  }
+
+  message()
+  {
+    if (( $_hix_verbose == 1 ))
+    then
+      _hix_message "$*"
+    fi
+  }
+
+  message_part()
+  {
+    if (( $_hix_verbose == 1 ))
+    then
+      _hix_message_part "$*"
+    fi
   }
 
   message_hang()
@@ -316,6 +346,16 @@ let
   error_message()
   {
     message "$(color_error $*)"
+  }
+
+  error_message_hang()
+  {
+    error_message "  $*"
+  }
+
+  error_message_part_hang()
+  {
+    _hix_message_part "  $*"
   }
 
   die()
@@ -340,6 +380,8 @@ let
     }
   fi
   '';
+
+  loadConsole = loadConsoleWith {};
 
 in {
   inherit
@@ -390,6 +432,7 @@ in {
   removeApp
   console
   messageStream
+  loadConsoleWith
   loadConsole
   ;
 

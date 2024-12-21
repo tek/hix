@@ -208,5 +208,33 @@
   require_output $target_step18 bad_code || return 1
 
   unset bad_code
+
+  create_files()
+  {
+    print 'content1' > file1
+    print 'content2' > file2
+  }
+
+  file_exact 'content1' 'file1'
+  file_exact 'content2' 'file2'
+  require_success create_files || return 1
+
+  rm -f file1 file2
+
+  target_step20='[1m[35m>>>[0m[0m [31mStep [36m20[0m[31m failed:[0m
+  [1m[35m>>>[0m[0m   [1m[34mcreate_files[0m[1m[0m
+  [1m[35m>>>[0m[0m Content of [34mfile1[0m does not match expectation:
+
+  1c1
+  < content2
+  ---
+  > content1
+
+  < [32mexpected[0m[28m
+  ---
+  > [31mactual[0m[28m'
+
+  file_exact 'content2' 'file1'
+  require_output $target_step20 create_files || return 1
   '';
 }
