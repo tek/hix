@@ -218,7 +218,7 @@ let
   ${sharedVars}
   step_number=0
   ${asserts}
-  source ${./internal/step.zsh}
+  source ${./step.zsh}
   source $2
   '';
 

@@ -3,7 +3,7 @@ let
   inherit (util) config;
   inherit (config) pkgs;
 
-  tools = import ./tools.nix { inherit util; };
+  framework = import ./internal/framework.nix { inherit util; };
 
   test = name: let
     conf = import (./. + "/${name}/test.nix") { inherit config util pkgs; };
@@ -60,15 +60,11 @@ let
     framework-step = test "framework-step";
   };
 
-  setup = pkgs.writeText "hix-tests-setup" ''
-  ${tools.preamble}
-  ${tools.runtest}
-  '';
-
   script = name: set: util.zscriptPure "hix-tests-${name}" ''
-  source ${setup}
-  ${tools.loadTargets set}
-  ${tools.main}
+  ${framework.preamble}
+  ${framework.runtest}
+  ${framework.loadTargets set}
+  ${framework.main}
   '';
 
   testApp = main: util.zapp "hix-test" ''
