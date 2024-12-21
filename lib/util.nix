@@ -132,6 +132,23 @@ let
 
   zapp = name: test: util.app (zscript name test);
 
+  exportPath = packages: ''
+  export PATH="${lib.makeBinPath packages}:$PATH"
+  '';
+
+  exportPathOptional = packages: lib.optional (!(basic.empty packages)) (exportPath packages);
+
+  setupScript = {
+    path ? [],
+    console ? true,
+    verbose ? true,
+  }:
+  basic.unlines (
+    lib.optional console (basic.loadConsoleWith { inherit verbose; })
+    ++
+    exportPathOptional path
+  );
+
   downloadStaticCli = ''
   tmp=$(mktemp -d)
   quit()
@@ -220,6 +237,9 @@ let
     zscriptErr
     zscript
     zapp
+    exportPath
+    exportPathOptional
+    setupScript
     downloadStaticCli
     nixC
     bootstrapWithStaticCli

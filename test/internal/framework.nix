@@ -1,8 +1,8 @@
-{util}:
+{self, util}:
 let
   inherit (util) pkgs lib;
 
-  testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter];
+  testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter pkgs.gnused];
 
   sharedPreamble = ''
   if_ci()
@@ -13,8 +13,7 @@ let
     fi
   }
 
-  ${util.loadConsole}
-  export PATH="${lib.makeBinPath testTools}:$PATH"
+  ${util.setupScript {path = testTools;}}
   '';
 
   preamble = ''
@@ -47,7 +46,7 @@ let
 
   cat > $_hix_test_bin/nix << EOF
   #!/bin/sh
-  exec $_hix_test_system_bin_nix/nix --quiet --quiet "\$@"
+  exec $_hix_test_system_bin_nix/nix --quiet --quiet --show-trace "\$@"
   EOF
 
   cat > $_hix_test_bin/nix-vanilla << EOF
@@ -215,11 +214,17 @@ let
   testWrapper = util.zscriptPure "hix-test-wrapper" ''
   ${sharedPreamble}
   test_base=$1
+  test_script=$2
   ${sharedVars}
   step_number=0
   ${asserts}
   source ${./step.zsh}
-  source $2
+  _hix_test_scope()
+  {
+    setopt local_options err_return
+    source $test_script
+  }
+  _hix_test_scope
   '';
 
   runtest = ''
@@ -266,7 +271,7 @@ let
     rm test.nix
     sub $(print **/flake.nix(N))
 
-    message "Running test '$current'..."
+    message "Running test $(bold $(magenta $current))"
     ${testWrapper} $test_base $test
   }
   '';
@@ -285,16 +290,25 @@ let
     fi
   done
 
+  list_failures()
+  {
+    for t in $failed
+    do
+      message " $(yellow '*') $(magenta $t)"
+    done
+  }
+
   if (( $failure == 0 ))
   then
     message 'All tests succeeded.'
   elif (( $failure > 1 ))
   then
     error_message "$failure tests failed:"
-    for t in $failed
-    do
-      error_message " - $t"
-    done
+    list_failures
+  elif (( $#targets > 1 ))
+    error_message "One test failed:"
+    list_failures
+  then
   fi
   if (( $failure > 0 ))
   then
@@ -306,7 +320,7 @@ let
 
   testsAssocArray = set: lib.concatStringsSep " " (lib.mapAttrsToList testAssoc set);
 
-  loadTargets = set: ''
+  defineTargets = set: ''
   if (( $# == 0 ))
   then
     targets="${toString (lib.attrNames set)}"
@@ -317,6 +331,56 @@ let
   set -A tests ${testsAssocArray set}
   '';
 
+  # TODO run common steps like flake_update based on flags on the set.
+  casePreamble  = conf: [];
+
+  writeCase = name: conf: let
+    path = util.exportPathOptional (conf.path or []);
+    test = conf.source or "source ${conf.test}";
+  in pkgs.writeText "hix-test-${name}" (util.unlines (path ++ casePreamble conf ++ [test]));
+
+  suite = conf: {
+    script = ''
+    ${preamble}
+    ${runtest}
+    ${defineTargets (lib.mapAttrs writeCase conf)}
+    ${main}
+    '';
+  };
+
+  normalizeSuite = suiteName: conf: {
+    # The flake attribute in `apps`
+    name = conf.attr or "test-${suiteName}";
+    value = {
+      inherit suiteName;
+      main = util.zscriptPure "hix-test-suite-${suiteName}" conf.script;
+    };
+  };
+
+  app = conf:
+    util.zapp "hix-test-app-${conf.suiteName}" ''
+    export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
+    export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
+    if [[ -n $hix_test_impure ]]
+    then
+    exec ${conf.main} $@
+    else
+      exec nix develop \
+        --ignore-environment \
+        -k DBUS_SESSION_BUS_ADDRESS \
+        -k _hix_test_system_bin_nix \
+        -k _hix_test_system_bin_systemd \
+        -k hix_test_show_stderr \
+        -k hix_test_show_stderr_failure \
+        -k hix_test_full_output \
+        -k hix_test_ci \
+        -k hix_test_verbose \
+        path:${self}#hix-test -c ${conf.main} $@
+    fi
+    '';
+
+  apps = suites: util.mapValues app (lib.mapAttrs' normalizeSuite suites);
+
 in {
-  inherit preamble runtest main loadTargets;
+  inherit preamble runtest main defineTargets suite normalizeSuite app apps;
 }

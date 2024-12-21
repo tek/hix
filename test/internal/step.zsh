@@ -1,28 +1,63 @@
+# UI message manipulation
+
+_sub_store_hash()
+{
+  sed -r 's#/nix/store/[a-z0-9]+#/nix/store/hash#g' $*
+}
+
+_sub_store_bin()
+{
+  sed -r 's#/nix/store/[^/ ]+/bin/##g' $*
+}
+
+_step_unclutter_cmd()
+{
+  local general=$(
+    print -- $step_cmd \
+      | _sub_store_bin \
+      | _sub_store_hash
+  )
+  if [[ $step_cmd[1,3] == 'nix' ]]
+  then
+    sed -e 's/ --show-trace -L//' -e 's/ --\s*$//' -e 's/path:\.#/.#/' <<< $general
+  else
+    print $general
+  fi
+}
+
+_step_show_description()
+{
+  if [[ -n ${_step_description:-} ]]
+  then
+    message_hang "$_step_description"
+  fi
+}
+
+# Step failure
+
 _step_failed()
 {
   error_message "Step $(cyan $step_number) failed:"
-  message_hang "$(bold $(color_shell_cmd $step_cmd))"
+  error_message_hang "$(bold $(color_shell_cmd $(_step_unclutter_cmd)))"
+  _step_show_description
 }
+
+# Current stream state
 
 _step_validate_stream()
 {
   if [[ -z $_step_stream || $_step_stream == 'initial' || $_step_stream == 'finished' ]]
   then
     error_message 'Test framework internal error:'
-    message_hang "$(color_variable '$_step_stream') wasn't initialized properly. Value: '$(red "$_step_stream")'"
+    error_message_hang "$(color_variable '$_step_stream') wasn't initialized properly. Value: '$(red "$_step_stream")'"
     return 1
   fi
 }
 
-_step_file_empty()
+_step_finish_stream()
 {
-  local size=$(stat -c %s $1)
-  if [[ $_step_consider_only_control_chars_unexpected_output ]]
-  then
-    (( $size == 0 ))
-  else
-    (( $size < 100000 )) && [[ $(ansifilter $1) =~ '^\s*$' ]]
-  fi
+  _step_stream='finished'
+  return $1
 }
 
 _step_stream_desc_upper()
@@ -35,6 +70,19 @@ _step_stream_desc_upper()
     print 'Output'
   else
     print "Unrecognized stream '$_step_stream'"
+  fi
+}
+
+# Showing output
+
+_step_file_empty()
+{
+  local size=$(stat -c %s $1)
+  if [[ $_step_consider_only_control_chars_unexpected_output ]]
+  then
+    (( $size == 0 ))
+  else
+    (( $size < 100000 )) && [[ $(ansifilter $1) =~ '^\s*$' ]]
   fi
 }
 
@@ -73,6 +121,7 @@ _step_show_stdout()
 _step_show_stderr()
 {
   _step_stream='err'
+  _step_stderr_shown=1
   _step_show_output $step_stderr
   _step_finish_stream 0
 }
@@ -84,6 +133,7 @@ _step_show_stderr_after()
   then
     return
   fi
+  _step_stderr_shown=1
   if [[ -n $hix_test_show_stderr ]] || (
     (( $result == 1 )) &&
     [[ -n $hix_test_show_stderr_failure ]]
@@ -91,13 +141,27 @@ _step_show_stderr_after()
   then
     if _step_file_empty $step_stderr
     then
-      message "stderr is empty."
+      if (( $result == 1 ))
+      then
+        message "stderr is empty."
+      fi
     else
       message "stderr:"
       hix_cat $step_stderr
     fi
   fi
 }
+
+_step_show_verbose()
+{
+  if [[ -n ${hix_test_verbose:-} ]]
+  then
+    message "$(yellow '*') $(cyan $step_number) $(bold $(color_shell_cmd $(_step_unclutter_cmd)))"
+    _step_show_description
+  fi
+}
+
+# Ensuring that streams were validated
 
 _step_start_validation()
 {
@@ -130,6 +194,8 @@ _step_ensure_validated_err()
   _step_ensure_validated 'err' 'stderr'
 }
 
+# Preprocessing output
+
 _step_apply_preproc()
 {
   local desc=$1 cmd=$2 out=$3 out_pp=$4
@@ -152,6 +218,8 @@ _step_apply_preprocs()
   _step_apply_preproc 'Output' $pp_out $step_stdout $_step_processed_stdout &&
     _step_apply_preproc 'stderr' $pp_err $step_stderr $_step_processed_stderr
 }
+
+# Exit code
 
 _step_check_exit_code()
 {
@@ -176,6 +244,8 @@ _step_check_exit_code()
   fi
 }
 
+# Output checks
+
 _step_check_combined()
 {
   if (( ${_step_combined_output-0} == 1 ))
@@ -186,24 +256,34 @@ _step_check_combined()
   fi
 }
 
-_step_diff_output()
+_step_diff()
 {
-  local actual_file=$1 expected=$2
-  diff <(print $expected) $actual_file &> $step_diff
+  local actual_file=$1 expected=$2 headline=$3
+  if [[ -f $expected ]]
+  then
+    diff $expected $actual_file &> $step_diff
+  else
+    diff <(print -- $expected) $actual_file &> $step_diff
+  fi
   if (( $? != 0 ))
   then
     _step_failed
-    _step_validate_stream
-    message "$(_step_stream_desc_upper) mismatch:"
+    message $headline
     hix_print ''
     hix_cat $step_diff
-
     hix_print "
 < $(green 'expected')
 ---
 > $(red 'actual')"
     return 1
   fi
+}
+
+_step_diff_output()
+{
+  local actual_file=$1 expected=$2
+  _step_validate_stream
+  _step_diff $actual_file $expected "$(_step_stream_desc_upper) mismatch:"
 }
 
 _step_check_exact_out()
@@ -227,7 +307,7 @@ _step_check_exact_err()
 _step_check_rg_gen()
 {
   local desc=$1 repr=$2 actual_file=$3 args=($@[4,$])
-  rg $args $actual_file &>$step_match
+  rg $args $actual_file &> $step_match
   if (( $? != 0 ))
   then
     _step_failed
@@ -298,12 +378,6 @@ _step_check_regex_err()
   fi
 }
 
-_step_finish_stream()
-{
-  _step_stream='finished'
-  return $1
-}
-
 _step_check_out()
 {
   _step_stream='out'
@@ -323,6 +397,52 @@ _step_check_err()
   _step_ensure_validated_err
   _step_finish_stream $?
 }
+
+# File checks
+
+_step_bad_file()
+{
+  local file=$1 issue=$2
+  _step_failed
+  message "Expected file $(color_path $file) $issue."
+  return 1
+}
+
+_step_check_file_exact()
+{
+  local file=$1 expected=$2
+  if [[ ! -e $file ]]
+  then
+    _step_bad_file 'was not created'
+  elif [[ -d $file ]]
+  then
+    _step_bad_file 'is a directory'
+  elif [[ ! -r $file ]]
+  then
+    _step_bad_file 'is not readable'
+  else
+    _step_diff $file $expected "Content of $(color_path $file) does not match expectation:"
+  fi
+}
+
+_step_check_files_exact()
+{
+  if (( ${+_step_files_exact} == 1 ))
+  then
+    local f
+    for f in ${(k)_step_files_exact}
+    do
+      _step_check_file_exact $f $_step_files_exact[$f] || return 1
+    done
+  fi
+}
+
+_step_check_files()
+{
+  _step_check_files_exact
+}
+
+# Main
 
 step()
 {
@@ -346,6 +466,7 @@ step()
   touch $step_stdout
   touch $step_stderr
 
+  _step_show_verbose
   if (( ${_step_combined_output-0} == 1 ))
   then
     eval "$step_cmd" &> $step_stdout
@@ -354,11 +475,11 @@ step()
   fi
   local step_exit_code=$?
 
-
   if _step_apply_preprocs &&
      _step_check_exit_code &&
      _step_check_out &&
-     _step_check_err
+     _step_check_err &&
+     _step_check_files
   then
     result=0
   else
@@ -376,30 +497,41 @@ step()
     _step_rg_err \
     _step_regex_err \
     _step_err_processed \
+    _step_require_exit_code \
+    _step_files_exact \
     _step_preproc_out \
     _step_preproc_err \
     _step_allow_failure \
-    _step_require_exit_code \
     _step_combined_output \
     _step_validated_out \
-    _step_validated_err
+    _step_validated_err \
+    _step_description
   return $result
 }
 
+# Nix runners
+
 step_nix()
 {
-  step "nix --show-trace -L $@"
+  step "nix $@"
 }
 
 step_run()
 {
-  step_nix "run .#$1 -- ${@[2,$]}"
+  step_nix "run path:.#$1 -- ${@[2,$]}"
 }
 
 step_develop()
 {
   step_nix "develop -c $@"
 }
+
+step_eval()
+{
+  step_nix "eval path:.#$@"
+}
+
+# Process output matchers
 
 output_exact()
 {
@@ -433,6 +565,24 @@ error_match()
   _step_regex_err=$*
 }
 
+exit_code()
+{
+  _step_require_exit_code=$*
+}
+
+# File matchers
+
+file_exact()
+{
+  if (( ${+_step_files_exact} == 0 ))
+  then
+    typeset -gA _step_files_exact
+  fi
+  _step_files_exact+=([$2]=$1)
+}
+
+# Output preprocessing
+
 preproc_output()
 {
   _step_preproc_out=$*
@@ -443,6 +593,8 @@ preproc_error()
   _step_preproc_err=$*
 }
 
+# Behavior modifiers
+
 allow_failure()
 {
   _step_allow_failure=1
@@ -451,11 +603,6 @@ allow_failure()
 combined_output()
 {
   _step_combined_output=1
-}
-
-sub_store_hash()
-{
-  sed -r 's#/nix/store/[a-z0-9]+#/nix/store/hash#g'
 }
 
 output_ignore()
@@ -468,7 +615,14 @@ error_ignore()
   _step_start_validation 'err'
 }
 
-exit_code()
+describe()
 {
-  _step_require_exit_code=$*
+  _step_description="$*"
+}
+
+# Helpers
+
+sub_store_hash()
+{
+  _sub_store_hash
 }

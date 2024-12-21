@@ -78,7 +78,7 @@
   require_success 'echo "equal: $number"' || return 1
 
   local target_step2="[1m[35m>>>[0m[0m [31mStep [36m2[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m   [1m[34mecho output_exact is reset after a step[0m[1m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mecho output_exact is reset after a step[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Command produced output, but no check was defined.
   [1m[35m>>>[0m[0m Output:
 
@@ -121,7 +121,7 @@
   require_success both_output || return 1
 
   local target_step10="[1m[35m>>>[0m[0m [31mStep [36m10[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m   [1m[34mboth_output[0m[1m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mboth_output[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Output doesn't match [34mrg[0m query:
   [1m[35m>>>[0m[0m   [1m[33m-U -e 'stdouts mes+a.*\\\\nstderr.*'[0m
   [1m[35m>>>[0m[0m Output:
@@ -139,7 +139,7 @@
   require_success both_output || return 1
 
   local target_step12='[1m[35m>>>[0m[0m [31mStep [36m12[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m   [1m[34mboth_output[0m[1m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mboth_output[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Cannot use [33mcombined_output[0m with [33merror_rg[0m'
   combined_output
   output_ignore
@@ -147,7 +147,7 @@
   require_output $target_step12 both_output || return 1
 
   local target_step13="[1m[35m>>>[0m[0m [31mStep [36m13[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m   [1m[34mboth_output[0m[1m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mboth_output[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Output doesn't match regex:
   [1m[35m>>>[0m[0m   [1m[33mstdout mes\\\\n[0m
   [1m[35m>>>[0m[0m Output:
@@ -174,7 +174,7 @@
   }
 
   local target_step15='[1m[35m>>>[0m[0m [31mStep [36m15[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m   [1m[34mprint hello[0m[1m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mprint hello[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Output preprocessor failed: [34mbad_preproc[0m
   preproc error'
 
@@ -191,7 +191,7 @@
   require_success bad_code || return 1
 
   target_step17='[1m[35m>>>[0m[0m [31mStep [36m17[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m   [1m[34mbad_code[0m[1m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mbad_code[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Exit code [1m[31m95[0m[1m[0m, expected [32m15[0m
   [1m[35m>>>[0m[0m Output is empty.
   [1m[35m>>>[0m[0m stderr is empty.'
@@ -200,7 +200,7 @@
   require_output $target_step17 bad_code || return 1
 
   target_step18='[1m[35m>>>[0m[0m [31mStep [36m18[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m   [1m[34mbad_code[0m[1m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mbad_code[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Exit code [1m[31m95[0m[1m[0m
   [1m[35m>>>[0m[0m Output is empty.
   [1m[35m>>>[0m[0m stderr is empty.'
@@ -208,5 +208,33 @@
   require_output $target_step18 bad_code || return 1
 
   unset bad_code
+
+  create_files()
+  {
+    print 'content1' > file1
+    print 'content2' > file2
+  }
+
+  file_exact 'content1' 'file1'
+  file_exact 'content2' 'file2'
+  require_success create_files || return 1
+
+  rm -f file1 file2
+
+  target_step20='[1m[35m>>>[0m[0m [31mStep [36m20[0m[31m failed:[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mcreate_files[0m[31m[1m[0m[31m[0m
+  [1m[35m>>>[0m[0m Content of [34mfile1[0m does not match expectation:
+
+  1c1
+  < content2
+  ---
+  > content1
+
+  < [32mexpected[0m[28m
+  ---
+  > [31mactual[0m[28m'
+
+  file_exact 'content2' 'file1'
+  require_output $target_step20 create_files || return 1
   '';
 }

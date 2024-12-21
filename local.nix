@@ -132,19 +132,17 @@ in {
 
     apps = let
 
-      tests = import ./test/default.nix { inherit util; };
-
-    in {
-      test-basic-1 = tests.apps.test-basic-1;
-      test-basic-2 = tests.apps.test-basic-2;
-      test-basic-3 = tests.apps.test-basic-3;
-      test-vm = tests.apps.test-vm;
-      test-managed = tests.apps.test-managed;
-      test = tests.apps.test;
-
-      test-framework = tests.apps.test-framework;
+      tests =
+        if builtins.pathExists ./test
+        then import ./test/default.nix { inherit util; inherit (inputs) self; }
+        else { apps = {}; };
 
       cli = util.app "${build.packages.min.hix.package}/bin/hix";
+
+    in tests.apps // {
+
+      inherit cli;
+      default = cli;
 
       new-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
