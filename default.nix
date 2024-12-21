@@ -1,26 +1,25 @@
 inputs:
-with builtins;
-with inputs.nixpkgs.lib;
 let
-  api = makeExtensible (self: {
-    lib = import ./lib/default.nix { inherit (inputs.nixpkgs) lib; };
+  inherit (inputs.nixpkgs) lib;
+
+  api = lib.makeExtensible (self: {
+    lib = import ./lib/default.nix { inherit lib; };
 
     hixModules = import ./modules/all-modules.nix { inherit inputs; };
 
     flakeWith = {projectModules ? [], extraModules ? []}:
     import ./lib/eval.nix {
-      inherit (inputs.nixpkgs) lib;
       inherit (self) hixModules;
-      inherit projectModules extraModules;
+      inherit lib projectModules extraModules;
     };
 
-    flake = projectModules: self.flakeWith { projectModules = toList projectModules; };
+    flake = projectModules: self.flakeWith { projectModules = lib.toList projectModules; };
 
     pro = projectModules:
-    self.flakeWith { extraModules = [(import ./modules/pro.nix)]; projectModules = toList projectModules; };
+    self.flakeWith { extraModules = [(import ./modules/pro.nix)]; projectModules = lib.toList projectModules; };
 
     _hix_test = projectModules:
-    self.flakeWith { extraModules = [(import ./modules/hix-test.nix)]; projectModules = toList projectModules; };
+    self.flakeWith { extraModules = [(import ./modules/hix-test.nix)]; projectModules = lib.toList projectModules; };
 
     spec = import ./lib/deps/spec.nix { inherit (self) lib; };
   });
