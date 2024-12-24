@@ -1,10 +1,13 @@
 {util}:
 {ghc}:
+# This is a nixpkgs overlay function, so `final` and `prev` refer to a nixpkgs tree.
+# It's important not to use `util.config.pkgs` instead of `prev` for overrides, since each env-ghc has its own nixpkgs,
+# while the one from `config` points to the default.
 final: prev:
 let
   inherit (util) config lib;
 
-  deps = import ./deps/default.nix { pkgs = prev; };
+  deps = import ./deps/default.nix { inherit config; } { pkgs = prev; };
 
   gen = config.gen-overrides;
 

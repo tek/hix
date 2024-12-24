@@ -11,6 +11,8 @@
 * Remove packages with env name prefix (`ghc96-hix`) in favor of scoped derivations in `legacyPackages` (`ghc96.hix`).
 * Expose intermediate and final build outputs as nested sets of environments and packages via module arguments `build`
   and `outputs`.
+* Add an override combinator for fetching from a different Hackage server.
+* Add an override combinator for specifying the Hackage revision.
 
 # 0.7.0: Hix Unbound: Majors Apart
 

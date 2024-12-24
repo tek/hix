@@ -5,7 +5,7 @@ let
 
   inherit (pkgs) lib;
 
-  pregen = import ./deps/pregen.nix { inherit pkgs; };
+  pregen = import ./deps/pregen.nix { inherit config; } { inherit pkgs; };
 
   drvAttr = pkg: dump: "  ${pkg} = ${toString dump};";
 
