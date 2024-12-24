@@ -564,6 +564,13 @@ in {
 
   - `source.package` is the same as `source.sub`, but it prepends `packages/` to the subdirectory.
 
+  - `hackageAt` is like `hackage`, but takes an additional first argument specifying the address of the server.
+
+  - `hackageConf` is like `hackageAt`, but instead of an address, it takes the name of an item in
+    [](#opt-hackage-hackage.servers).
+    If a server with the key `hix-override` is configured, the combinator `hackage` will automatically use it instead of
+    nixpkgs' built-in logic.
+
   The second class is the transformers, which perform some modification on a derivation.
   They can either be applied to a source combinator or used on their own, in which case they operate on whatever the
   previous definition of the overridden package is (for example, the default package from nixpkgs, or an override from

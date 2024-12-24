@@ -3,7 +3,7 @@ let
   inherit (util) config pkgs lib;
 
   spec = import ./deps/spec.nix { inherit lib; };
-  deps = import ./deps/default.nix { inherit pkgs; };
+  deps = import ./deps/default.nix { inherit config; } { inherit pkgs; };
   inherit (util.console) color bold indent chevrons chevronY chevronM;
   inherit (util.console.colors) blue green;
 
@@ -16,7 +16,7 @@ let
   declsVia = desc: specs: ["" "${chevronM} ${desc}"] ++ indent (lib.concatLists (lib.mapAttrsToList decl specs));
 
   declSet = self: super: specs: let
-    api = import ./deps/api.nix { inherit pkgs self super; };
+    api = import ./deps/api.nix { inherit pkgs config; } { inherit self super; };
     desc =
       if lib.isAttrs specs && specs ? __source
       then renderSource specs.__source

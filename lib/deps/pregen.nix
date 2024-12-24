@@ -1,8 +1,9 @@
+{config ? {}}:
 {pkgs}: let
   inherit (pkgs) lib;
 
   spec = import ./spec.nix { inherit (pkgs) lib; };
-  deps = import ./default.nix { inherit pkgs; };
+  deps = import ./default.nix { inherit config; } { inherit pkgs; };
 
   override = self: super: pkg: specs: let
     data = spec.reifyPregen { inherit pkgs pkg self super; } specs;

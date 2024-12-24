@@ -1,13 +1,17 @@
 {
   pkgs,
+  config ? {},
+}:
+{
   self,
   super,
 }:
 let
-  inherit (pkgs.lib) flip;
+  inherit (pkgs) lib;
+  inherit (lib) flip;
 
   modifiers = import ./modifiers.nix { inherit pkgs; };
-  spec = import ./spec.nix { inherit (pkgs) lib; };
+  spec = import ./spec.nix { inherit lib; };
   c2n = import ./cabal2nix.nix { inherit pkgs; };
 
   inherit (spec) transform transform_ transformDrv drv;
@@ -23,7 +27,9 @@ let
     disable = flag: transform_ "disable" (flip hl.disableCabalFlag flag);
     override = conf: transform_ "override" (flip hl.overrideCabal conf);
     overrideAttrs = f: transform_ "overrideAttrs" (drv: drv.overrideAttrs f);
-    buildInputs = inputs: transform_ "buildInputs" (drv: drv.overrideAttrs (old: { buildInputs = old.buildInputs ++ inputs; }));
+    buildInputs = inputs: transform_ "buildInputs" (drv:
+      drv.overrideAttrs ({buildInputs ? [], ...}: { buildInputs = buildInputs ++ inputs; })
+    );
     minimal = transform_ "minimal" modifiers.minimal;
     profiling = transform_ "profiling" modifiers.profiling;
     noprofiling = transform_ "noprofiling" modifiers.noprofiling;
@@ -41,9 +47,42 @@ let
 
   cabalOverrides = spec.option "cabal2nix-overrides" "Cabal2nix overrides";
 
+  unknownHackage = name: ''
+  An override refers to the nonexistent Hackage server config '${name}'.
+  '';
+
+  hackageLocation = error: name: let
+    server = config.hackage.servers.${name} or null;
+  in
+  if server == null
+  then throw (error name)
+  else server.location;
+
+  hackageNoConfig = name: throw ''
+  Internal error: An override refers to the Hackage server '${name}', but no config was passed to the API.
+  '';
+
+  hackageConfGen = error: server:
+  if lib.attrByPath ["hackage" "servers"] null config == null
+  then hackageNoConfig server
+  else c2n.hackageAt (hackageLocation error server)
+  ;
+
+  hackageConf = hackageConfGen unknownHackage;
+
+  hackage = let
+    conf = lib.attrByPath ["hackage" "servers" "hix-override"] null config;
+  in
+  if conf == null
+  then c2n.hackage
+  else c2n.hackageAt conf.location
+  ;
+
 in transformers // {
-  inherit (c2n) hackage source;
-  inherit self super pkgs reset transform transform_ transformDrv noHpack cabalOverrides drv;
+  inherit (c2n) hackageAt source;
+  inherit self super pkgs;
+  inherit reset transform transform_ transformDrv noHpack cabalOverrides drv;
+  inherit hackageConfGen hackageConf hackage;
   inherit (spec) option;
   hsLib = hl;
   inherit (pkgs) system lib;

@@ -9,8 +9,8 @@ let
 
   util = import ../../lib/default.nix { inherit lib; };
   spec = import ../../lib/deps/spec.nix { inherit lib; };
-  api = import ../../lib/deps/api.nix { inherit pkgs self super; };
-  dep = import ../../lib/deps/default.nix { inherit pkgs; };
+  api = import ../../lib/deps/api.nix { inherit pkgs; } { inherit self super; };
+  dep = import ../../lib/deps/default.nix { } { inherit pkgs; };
 
   v1 = api.hackage "2.1.2.1" "1f1f6h2r60ghz4p1ddi6wnq6z3i07j60sgm77hx2rvmncz4vizp0";
   v2 = api.hackage "2.0.1.0" "0nhzbnygj17m4x39mmf8r13xisc0hnkijnrwyqskf8gk276x9dpz";
