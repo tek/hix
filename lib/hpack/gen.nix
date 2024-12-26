@@ -15,34 +15,25 @@ let
 
 in util.zscript "hpack.zsh" ''
   setopt no_unset
+  ${util.setupScript { inherit verbose; }}
 
   base=''${1-''$PWD}
 
-  info()
-  {
-    ${if verbose then ''echo ">>> $*" >&2'' else ""}
-  }
-
-  error()
-  {
-    echo ">>> $*" >&2
-  }
-
   run()
   {
-    ${config.internal.basicGhc.hpack}/bin/hpack --force ${if verbose then ">&2" else "1>/dev/null"}
+    ${config.internal.basicGhc.hpack}/bin/hpack --canonical --force ${if verbose then ">&2" else "1>/dev/null"}
   }
 
   regular()
   {
     local name=$1 rel=$2 dir="$base/$rel"
     pushd $dir
-    info "$dir"
+    message "$dir"
     if [[ -f package.yaml ]]
     then
       run
     else
-      error "no package.yaml in $dir"
+      error_message "No $(color_path package.yaml) in $(color_path $dir)"
     fi
     popd
   }
@@ -52,19 +43,19 @@ in util.zscript "hpack.zsh" ''
     local name=$1 rel=$2 file=$3
     local dir="$base/$rel"
     pushd $dir
-    info "$dir"
+    message "$dir"
     local remove="$dir/package.yaml"
     cp $file package.yaml
-    error() {
+    fail() {
       cat $file
       rm -f $remove
     }
-    trap error ZERR
+    trap fail ZERR
     trap "rm -f $remove" EXIT
     run
     popd
   }
 
-  info 'Generating Cabal files...'
+  message 'Generating Cabal files...'
   ${concatStringsSep "\n" packageCalls}
 ''
