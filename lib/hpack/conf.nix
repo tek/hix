@@ -33,10 +33,35 @@
     upper = if forced.upper == null then managed.upper or null else forced.upper;
   };
 
+  # Hackage will refuse uploads if base doesn't have an upper bound.
+  # This is particularly problematic for tests.
+  ensureBaseBound = pkg: version: let
+
+    withBound = v: v // { upper = "5"; };
+
+  in
+  if pkg != "base"
+  then version
+  else if version == null
+  then withBound { lower = null; }
+  else if version ? lower && version.lower == null
+  then withBound version
+  else version;
+
   replaceManagedBounds = managedBounds: resolving: dep: let
     norm = util.version.normalize dep;
     pkg = util.version.mainLibName norm.name;
-    managed = util.version.normalizeManaged (addForcedBounds pkg (managedBounds.${pkg} or null));
+    managed = addForcedBounds pkg (managedBounds.${pkg} or null);
+    managedNorm = util.version.normalizeManaged (ensureBaseBound pkg managed);
+
+    # If the managed version of `base` is `null`, we don't want to intersect the amended bounds with the configured
+    # version, since that will result in something like `(>= 4 && < 5) && (<5)`.
+    intersected =
+      if norm.version == null
+      then managedNorm
+      else if managed == null
+      then norm.version
+      else util.version.intersect norm.version managedNorm;
 
     version =
       # `resolving` means that the project is currently being built for a managed dependency mutation, so we need to
@@ -47,12 +72,12 @@
       # The flake bound should only be used when `mergeBounds` is enabled, irrespective of whether there's a defined
       # managed bound or not.
       if config.managed.mergeBounds
-      then util.version.intersect norm.version managed
+      then intersected
       else
       # We only want managed bounds, but local packages need manual versions
-      if managed == null && lib.isAttrs dep && dep.local or false
+      if managedNorm == null && lib.isAttrs dep && dep.local or false
       then norm.version
-      else managed
+      else managedNorm
       ;
 
   in { inherit (norm) name mixin; inherit version; };
