@@ -20,15 +20,17 @@
       fail "Running the main package produced the wrong output:\n$output"
     fi
 
+    step_run gen-cabal-quiet
+
     cabal_update()
     {
-      step_run 'gen-cabal-quiet'
       output_ignore
       error_ignore # Somehow bash complains about the forced locale not existing 🙄
-      step_develop 'cabal update'
+      step_develop cabal update
     }
 
     if_ci cabal_update
-    step_run 'hls'
+    error_match '3 files worked'
+    step_run hls
   '';
 }

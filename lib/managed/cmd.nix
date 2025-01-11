@@ -22,7 +22,7 @@
   withCheckFor = flag: name: main:
     if lib.attrByPath flag false conf
     then main
-    else util.scriptErr "managed-disabled" ''
+    else util.zscriptErrBin "managed-disabled" ''
     ${util.loadConsole}
     die "Set $(blue 'managed.${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
     '';
@@ -41,7 +41,7 @@
 
     desc = if lib.length envs == 1 then lib.head envs else "${cmd}-multi";
   in
-  util.zscript "managed-${desc}" ''
+  util.zscriptBin "managed-${desc}" ''
   if [[ -e "${conf.file}" ]]
   then
     initial=false

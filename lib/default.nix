@@ -179,7 +179,12 @@ let
   then dep.name
   else dep;
 
-  app = program: { type = "app"; program = "${program}"; meta = {}; };
+  app = program: let
+    main =
+      if program ? meta.mainProgram
+      then "${program}/bin/${program.meta.mainProgram}"
+      else "${program}";
+  in { type = "app"; program = main; meta = {}; };
 
   removeApp = a: removeAttrs a ["program" "type"];
 

@@ -35,6 +35,6 @@ let
   packagesDeps =
     pkgs.writeText "dep-versions" (util.unlines (util.concatMapAttrsToList packageDeps config.packages));
 
-in util.zscript "print-dep-versions" ''
+in util.zscriptBin "print-dep-versions" ''
   echo -e "$(cat ${packagesDeps})"
 ''

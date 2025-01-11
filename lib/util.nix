@@ -130,6 +130,16 @@ let
   ${text}
   '';
 
+  zscriptErrBin = name: text: pkgs.writeScriptBin name ''
+  #!${pkgs.zsh}/bin/zsh
+  ${text}
+  '';
+
+  zscriptBin = name: text: zscriptErrBin name ''
+  setopt err_exit
+  ${text}
+  '';
+
   zapp = name: test: util.app (zscript name test);
 
   exportPath = packages: ''
@@ -207,6 +217,21 @@ let
 
   dummyApp = pre: sub: basic.app (dummyAppScript pre sub);
 
+  legacyApp = package: exe:
+  package // { meta.mainProgram = exe; };
+
+  legacyAppScript = name: cmdline:
+  util.zscriptErrBin name ''
+  exec ${cmdline} $*
+  '';
+
+  ensureLegacyApp = name: exe:
+  if exe ? meta.mainProgram
+  then exe
+  else legacyAppScript name exe;
+
+  ensureLegacyApps = lib.mapAttrs ensureLegacyApp;
+
   exposeDefault = {
     appimage = true;
     internals = true;
@@ -245,6 +270,8 @@ let
     zscriptPure
     zscriptErr
     zscript
+    zscriptErrBin
+    zscriptBin
     zapp
     exportPath
     exportPathOptional
@@ -257,6 +284,10 @@ let
     envSystemAllowed
     runBuildApp
     dummyApp
+    legacyApp
+    legacyAppScript
+    ensureLegacyApp
+    ensureLegacyApps
     expose
     ;
 

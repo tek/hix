@@ -1,8 +1,6 @@
-{ config, lib, util, ... }:
+{ config, lib, ... }:
 let
   inherit (lib) types;
-
-  logic = import ../lib/hackage.nix { inherit util; };
 
   isNix = file: builtins.match ".*\.nix" file != null;
 
@@ -204,29 +202,9 @@ in {
 
     };
 
-    output = {
-
-      packages = lib.mkOption {
-        description = "Internal option";
-        type = types.unspecified;
-      };
-
-      apps = lib.mkOption {
-        description = "Internal option";
-        type = types.unspecified;
-      };
-
-    };
-
   };
 
   config.hackage = {
-
-    output = {
-      packages = lib.mkDefault logic.packages;
-
-      apps = lib.mkDefault logic.apps;
-    };
 
     uploadCommand = lib.mkDefault (
       { publish, doc, path }:

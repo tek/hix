@@ -6,14 +6,16 @@
 
   apps = cmds: util.mapValues util.app (paths cmds);
 
+  legacyApps = cmds: util.ensureLegacyApps (paths cmds);
+
 in {
 
-  apps =
-    { cmd = apps build.commands.default; }
+  legacyPackages =
+    { cmd = legacyApps build.commands.default; }
     //
-    apps (lib.filterAttrs (_: c: c.expose) build.commands.default)
+    { env = util.mapValues legacyApps build.commands.envs; }
     ;
 
-  appsFull = util.mapValues apps build.commands.envs;
+  apps = apps (lib.filterAttrs (_: c: c.expose) build.commands.default);
 
 }

@@ -6,6 +6,11 @@
 
 in {
 
-  apps = { env = util.mapValues envApps config.envs; };
+  legacyPackages =
+    util.mergeAll [
+      { env = util.mapValues envApps config.envs; }
+      util.managed.output.apps
+      util.managed.output.gen
+    ];
 
 }

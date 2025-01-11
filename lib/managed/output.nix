@@ -1,5 +1,5 @@
 {util}: let
-  inherit (util) config lib app;
+  inherit (util) config lib;
 
   appsWith = cons: {
     bump = cons { cmd = util.managed.cmd.bump; env = "latest"; sub = null; };
@@ -11,14 +11,14 @@
     };
   };
 
-  appsForEnvs = envs: appsWith ({cmd, env, sub}: util.app (cmd [envs.${env}]));
+  appsForEnvs = envs: appsWith ({cmd, env, sub}: cmd [envs.${env}]);
 
   managedCmdMulti = envSort: cmd: sets: let
     envName = name: "${envSort}-${name}";
     envs = map (name: envName name) sets;
   in
-  lib.genAttrs sets (name: app (cmd [(envName name)])) //
-  app (cmd envs);
+  lib.genAttrs sets (name: cmd [(envName name)]) //
+  cmd envs;
 
   managedMulti = sets: appsWith ({cmd, env, ...}: managedCmdMulti env cmd sets);
 
@@ -67,7 +67,7 @@
     cp ${gaWorkflow sort} $target
     chmod 600 $target
     '';
-  in app script;
+  in util.app script;
 
   gen = {
     managed = {

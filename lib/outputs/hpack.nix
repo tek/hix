@@ -4,9 +4,9 @@
 
 in {
 
-  legacyApps = {
-    hpack = internal.warn.deprecatedApp "hpack" ".#gen-cabal" config.hpack.script;
-    hpack-quiet = internal.warn.deprecatedApp "hpack-quiet" ".#gen-cabal-quiet" config.hpack.scriptQuiet;
+  deprecatedApps = {
+    hpack = internal.warn.deprecatedLegacyApp "hpack" ".#gen-cabal" config.hpack.script;
+    hpack-quiet = internal.warn.deprecatedLegacyApp "hpack-quiet" ".#gen-cabal-quiet" config.hpack.scriptQuiet;
   };
 
 }

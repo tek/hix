@@ -1,11 +1,11 @@
-{config, lib, util, ...}:
+{util, ...}:
 {
   path ? ""
 }:
-with builtins;
-with lib;
+with util.lib;
 let
 
+  inherit (util) config;
   inherit (config.internal) pkgs;
   inherit (util.console) color indent;
 

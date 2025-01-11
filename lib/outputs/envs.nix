@@ -14,17 +14,17 @@
   legacyEnv = env: outputs:
   lib.optionalAttrs util.expose.internals
   { inherit (env.ghc) pkgs ghc; ghc0 = env.ghc.vanillaGhc; }
-  //
-  outputs
   ;
 
-  appsEnv = env: outputs: { dep-versions = util.app (depVersions env.name); };
+  appsEnv = env: outputs: { dep-versions = depVersions env.name; };
 
 in {
 
-  legacyPackages.env = internal.envs.mapMaybe legacyEnv validBuildEnvs;
-
-  apps = internal.envs.mapMaybe appsEnv (internal.envs.filterExposed "apps" validBuildEnvs);
+  legacyPackages =
+    { env = internal.envs.mapMaybe legacyEnv validBuildEnvs; }
+    //
+    (internal.envs.mapMaybe appsEnv (internal.envs.filterExposed "apps" validBuildEnvs))
+    ;
 
   shells = util.mapValues (e: e.shell) (internal.envs.filterExposed "shell" validEnvs);
 

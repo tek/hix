@@ -151,6 +151,12 @@ let
     ${script}
     '';
 
+  scriptBin = name: script:
+    util.zscriptBin name ''
+    setopt no_unset
+    ${script}
+    '';
+
   readArgs = ''
   new_version=""
   while [[ -n ''${1:-} ]]
@@ -204,7 +210,7 @@ let
 
   uploadAll = source: publish: let
     hookArgs = { inherit source publish; };
-  in mkScript "cabal-upload-all" (util.unlines (
+  in scriptBin "cabal-upload-all" (util.unlines (
     ["version=\${1:-}"] ++
     optionals source (sourceCommands publish) ++
     docCommands publish ++
@@ -217,7 +223,7 @@ let
   let
     file = config.packages.${pkg}.versionFile;
     type = if publish then "release" else "candidate";
-  in mkScript "cabal-upload-${pkg}" ''
+  in scriptBin "cabal-upload-${pkg}" ''
   new_version=''${1:-}
   version=''${1:-}
   ${handleVersion file type}
@@ -226,7 +232,7 @@ let
   '';
 
   uploadPackage = source: publish: name:
-  mkScript "cabal-upload-package" (util.unlines (
+  scriptBin "cabal-upload-package" (util.unlines (
     ["version=\${1:-}"] ++
     optional source (sourceCommand publish name) ++
     [(docCommand publish name)] ++
@@ -236,8 +242,8 @@ let
 
   uploadPackageApps = source: publish: type:
     let
-      upload = n: app "${uploadPackage source publish n}";
-      version = n: app "${packageVersion publish n}";
+      upload = uploadPackage source publish;
+      version = packageVersion publish;
       target = n: {
         upload = { "${type}-${n}" = upload n; };
         bump = { "${type}-${n}" = version n; };
@@ -261,19 +267,20 @@ let
 
   uploadMainApps = {
     hackage.upload = {
-      candidates = app "${uploadAll true false}";
-      release = app "${uploadAll true true}";
-      docs = app "${uploadAll false true}";
+      candidates = uploadAll true false;
+      release = uploadAll true true;
+      docs = uploadAll false true;
     };
   };
 
 in {
-  apps =
+  legacyPackages =
     util.mergeAllAttrs [
       uploadCandidates
       uploadReleases
       uploadDocs
       uploadMainApps
-      mainApps
     ];
+
+  apps = mainApps;
 }

@@ -7,6 +7,12 @@
   hix.lib._hix_test {
     main = "pkg1";
 
+    output.expose = {
+      appimage = false;
+      internals = false;
+      cross = false;
+    };
+
     packages = {
 
       pkg1 = {
@@ -45,7 +51,7 @@
           packages = false;
           apps = false;
           checks = false;
-          scoped = true;
+          scoped = false;
         };
 
         executable.enable = true;
@@ -75,7 +81,7 @@
 
     envs.dev.packages = ["pkg1" "pkg2" "pkg3"];
     envs.p2 = {
-      expose = { apps = true; };
+      expose = { apps = true; scoped = true; };
       packages = ["pkg2"];
     };
   };

@@ -19,7 +19,8 @@
     message = "${desc} is deprecated${suggestion}.";
   in warnWith handler "deprecated.${key}" message;
 
-  appHandler = exe: isEnabled: message: let
+  # TODO does "$(cat ${warning})" cause problems with quotes in the file?
+  scriptHandler = exe: isEnabled: message: let
     warning = config.pkgs.writeText "hix-warning" ''
     ${chevrons} Warning: ${message}
     '';
@@ -31,7 +32,13 @@
       ''
       else exe
       ;
-  in util.app wrapped;
+  in wrapped;
+
+  appHandler = exe: isEnabled: message:
+  util.app (scriptHandler exe isEnabled message);
+
+  legacyAppHandler = exe: isEnabled: message:
+  util.ensureLegacyApp "deprecated-app" (scriptHandler exe isEnabled message);
 
   warnEval = warnWith lib.warnIf;
 
@@ -41,11 +48,15 @@
   deprecatedApp = name: replacement: exe:
   deprecatedWith (appHandler exe) "app.${name}" "The app ${colors.blue ".#${name}"}" replacement;
 
+  deprecatedLegacyApp = name: replacement: exe:
+  deprecatedWith (legacyAppHandler exe) "app.${name}" "The app ${colors.blue ".#${name}"}" replacement;
+
 in {
   inherit
   warnWith
   deprecatedWith
   deprecatedOutput
   deprecatedApp
+  deprecatedLegacyApp
   ;
 }

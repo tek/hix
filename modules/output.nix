@@ -1,24 +1,14 @@
 { lib, config, util, outputs, ... }:
 let
   inherit (lib) optionalAttrs mkOption types;
-  inherit (util) app;
 
   tags = import ../lib/tags.nix { inherit config util; };
-
-  showConfig = import ../lib/show-config.nix { inherit config lib util; };
 
   genOverrides = import ../lib/gen-overrides.nix { inherit config lib util; };
 
   showOverrides = import ../lib/show-overrides.nix { inherit util; };
 
   depVersions = env: import ../lib/dep-versions.nix { inherit config lib util env; };
-
-  # TODO use the json method and print in cli
-  show-config = util.paramApp {
-    name = "show-config";
-    func = showConfig;
-    params = ["path"];
-  };
 
   genAll = quiet: util.script "hix-gen-all" ''
   ${if quiet then config.hpack.scriptQuiet else config.hpack.script}
@@ -125,11 +115,11 @@ in {
 
       prefix = config.buildOutputsPrefix;
 
-      basicApps = util.mapValues app {
+      basicApps = {
         gen-cabal = config.hpack.script;
         gen-cabal-quiet = config.hpack.scriptQuiet;
         tags = tags.app;
-        show-config = show-config.appScript;
+        show-config = outputs.internals.show-config.app;
         cli = "${config.internal.hixCli.package}/bin/hix";
         gen-overrides = genOverrides.script;
         gen = genAll false;
@@ -138,38 +128,19 @@ in {
         dep-versions = depVersions "dev";
       };
 
-      basicEnvApps = {
-        env = util.mergeAll [
-          outputs.commands.appsFull
-          outputs.packages.apps
-        ];
-      };
-
       lowPrio = {
 
-        legacyPackages =
-          util.mergeAll [
-            {
-              inherit config;
-              inherit (config.envs.dev.ghc) pkgs ghc;
-              ghc0 = config.envs.dev.ghc.vanillaGhc;
-              show-config = show-config.shell;
-            }
-            outputs.envs.legacyPackages
-            outputs.packages.legacyPackages
-          ];
-
-        apps = util.mergeAllAttrs [
-          outputs.hpack.legacyApps
-          config.hackage.output.apps
-          basicApps
-          outputs.managed.apps
-          util.managed.output.apps
-          basicEnvApps
-          util.managed.output.gen
-          outputs.packages.apps
-          outputs.envs.apps
+        legacyPackages = util.mergeAll [
+          outputs.internals.legacyPackages
+          outputs.envs.legacyPackages
+          outputs.packages.legacyPackages
+          outputs.hackage.legacyPackages
+          outputs.commands.legacyPackages
+          outputs.managed.legacyPackages
+          outputs.hpack.deprecatedApps
         ];
+
+        apps = util.mapValues util.app basicApps;
 
       };
 
@@ -181,6 +152,7 @@ in {
         legacyPackages = {
           overrides = config.exportedOverrides;
           ${prefix}.env = util.managed.output.envGhcs;
+          ${util.internalScope} = lib.mapAttrs util.ensureLegacyApp basicApps;
         };
 
         devShells = outputs.envs.shells // { default = outputs.envs.shells.dev; };
@@ -188,23 +160,31 @@ in {
         apps =
           util.mergeAll [
             outputs.commands.apps
-            (util.removeApp outputs.packages.apps.dev)
+            (util.removeApp outputs.packages.apps.dev or {})
+            outputs.hackage.apps
           ];
       };
 
-      withPrio = name: let
-        low = util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; };
-        full = optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
-      in full // { ${util.internalScope} = removeAttrs full [prefix]; };
+      withPrio = name: (lowPrio.${name} or {}) // highPrio.${name};
 
-      asDefault = name: util.mapValues lib.mkDefault (withPrio name);
+      withPrefix = name: let
+        low = util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; };
+      in optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
+
+      asDefault = util.mapValues lib.mkDefault;
+
+      withInternal = outputs:
+      util.mergeAll [
+        outputs
+        { ${util.internalScope} = removeAttrs outputs [util.internalScope]; }
+      ];
 
     in {
-      packages = asDefault "packages";
-      checks = asDefault "checks";
-      legacyPackages = asDefault "legacyPackages";
-      devShells = asDefault "devShells";
-      apps = asDefault "apps";
+      packages = asDefault (withPrefix "packages");
+      checks = asDefault (withPrefix "checks");
+      legacyPackages = asDefault (withInternal (withPrefix "legacyPackages"));
+      devShells = asDefault (withPrefix "devShells");
+      apps = asDefault (withPrio "apps");
     };
 
   };
