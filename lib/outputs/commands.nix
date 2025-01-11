@@ -8,12 +8,10 @@
 
 in {
 
-  apps =
-    { cmd = apps build.commands.default; }
-    //
-    apps (lib.filterAttrs (_: c: c.expose) build.commands.default)
-    ;
+  legacyApps.cmd = apps build.commands.default;
 
-  appsFull = util.mapValues apps build.commands.envs;
+  apps = apps (lib.filterAttrs (_: c: c.expose) build.commands.default);
+
+  appsFull.env = util.mapValues apps build.commands.envs;
 
 }

@@ -14,8 +14,6 @@
   legacyEnv = env: outputs:
   lib.optionalAttrs util.expose.internals
   { inherit (env.ghc) pkgs ghc; ghc0 = env.ghc.vanillaGhc; }
-  //
-  outputs
   ;
 
   appsEnv = env: outputs: { dep-versions = util.app (depVersions env.name); };

@@ -5,20 +5,11 @@ let
 
   tags = import ../lib/tags.nix { inherit config util; };
 
-  showConfig = import ../lib/show-config.nix { inherit config lib util; };
-
   genOverrides = import ../lib/gen-overrides.nix { inherit config lib util; };
 
   showOverrides = import ../lib/show-overrides.nix { inherit config lib util; };
 
   depVersions = env: import ../lib/dep-versions.nix { inherit config lib util env; };
-
-  # TODO use the json method and print in cli
-  show-config = util.paramApp {
-    name = "show-config";
-    func = showConfig;
-    params = ["path"];
-  };
 
   genAll = quiet: util.script "hix-gen-all" ''
   ${if quiet then config.hpack.scriptQuiet else config.hpack.script}
@@ -129,7 +120,7 @@ in {
         gen-cabal = config.hpack.script;
         gen-cabal-quiet = config.hpack.scriptQuiet;
         tags = tags.app;
-        show-config = show-config.appScript;
+        show-config = outputs.internals.show-config.app;
         cli = "${config.internal.hixCli.package}/bin/hix";
         gen-overrides = genOverrides.script;
         gen = genAll false;
@@ -138,37 +129,44 @@ in {
         dep-versions = depVersions "dev";
       };
 
-      basicEnvApps = {
-        env = util.mergeAll [
-          outputs.commands.appsFull
-          outputs.packages.apps
+      lowPrio = let
+
+        toApp = name: conf: let
+          prog = conf.program or conf;
+        in util.zscriptErrBin name ''
+        exec ${prog} $*
+        '';
+
+        recurseApps = conf:
+        lib.mapAttrs toApps (util.removeKeys ["program" "type" "meta"] conf);
+
+        toApps = name: conf:
+        recurseApps conf //
+        lib.optionalAttrs (conf ? program) (toApp name conf);
+
+        legacyBasic = [
+          outputs.internals.legacyPackages
+          outputs.envs.legacyPackages
+          outputs.packages.legacyPackages
         ];
-      };
 
-      lowPrio = {
-
-        legacyPackages =
-          util.mergeAll [
-            {
-              inherit config;
-              inherit (config.envs.dev.ghc) pkgs ghc;
-              ghc0 = config.envs.dev.ghc.vanillaGhc;
-              show-config = show-config.shell;
-            }
-            outputs.envs.legacyPackages
-            outputs.packages.legacyPackages
-          ];
-
-        apps = util.mergeAllAttrs [
+        legacyApps = [
           outputs.hpack.legacyApps
           config.hackage.output.apps
-          basicApps
           outputs.managed.apps
           util.managed.output.apps
-          basicEnvApps
+          outputs.commands.appsFull
           util.managed.output.gen
-          outputs.packages.apps
           outputs.envs.apps
+          outputs.commands.legacyApps
+        ];
+
+      in {
+
+        legacyPackages = util.mergeAll (legacyBasic ++ map recurseApps legacyApps);
+
+        apps = util.mergeAllAttrs [
+          basicApps
         ];
 
       };
@@ -188,23 +186,29 @@ in {
         apps =
           util.mergeAll [
             outputs.commands.apps
-            (util.removeApp outputs.packages.apps.dev)
+            (util.removeApp outputs.packages.apps.dev or {})
           ];
       };
 
-      withPrio = name: let
-        low = util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; };
-        full = optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
-      in full // { ${util.internalScope} = removeAttrs full [prefix]; };
+      withPrio = name: (lowPrio.${name} or {}) // highPrio.${name};
 
-      asDefault = name: util.mapValues lib.mkDefault (withPrio name);
+      withPrefix = name: let
+        low = util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; };
+      in optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
+
+      asDefault = name: util.mapValues lib.mkDefault (withPrefix name);
+
+      withInternal = outputs:
+      util.mapValues lib.mkDefault outputs
+      //
+      { ${util.internalScope} = removeAttrs outputs [prefix]; };
 
     in {
       packages = asDefault "packages";
       checks = asDefault "checks";
-      legacyPackages = asDefault "legacyPackages";
+      legacyPackages = withInternal (withPrefix "legacyPackages");
       devShells = asDefault "devShells";
-      apps = asDefault "apps";
+      apps = withInternal (withPrio "apps");
     };
 
   };

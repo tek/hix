@@ -130,6 +130,16 @@ let
   ${text}
   '';
 
+  zscriptErrBin = name: text: pkgs.writeScriptBin name ''
+  #!${pkgs.zsh}/bin/zsh
+  ${text}
+  '';
+
+  zscriptBin = name: text: zscriptErrBin name ''
+  setopt err_exit
+  ${text}
+  '';
+
   zapp = name: test: util.app (zscript name test);
 
   exportPath = packages: ''
@@ -245,6 +255,8 @@ let
     zscriptPure
     zscriptErr
     zscript
+    zscriptErrBin
+    zscriptBin
     zapp
     exportPath
     exportPathOptional

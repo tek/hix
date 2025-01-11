@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) build internal;
+  inherit (util) build internal lib;
 
   mainAppimage = outputs:
   internal.package.setWithExe (exe: { inherit (outputs.executables.${exe.name}) appimage; });
@@ -17,17 +17,36 @@
 
   in build.bimapTargetsFor "scoped" envMain target;
 
-  legacyDev = env: pkg: outputs: {
-    inherit (outputs) cross static release musl executables;
-  };
+  specialOutputs = outputs:
+  lib.optionalAttrs util.expose.cross { inherit (outputs) cross; }
+  //
+  { inherit (outputs) static release musl; }
+  ;
 
-  fullPackage = env: pkg: outputs: { inherit (outputs) cross static musl release executables; } // outputs.package;
+  legacyDev = env: pkg: outputs:
+  specialOutputs outputs
+  //
+  { inherit (outputs) executables; }
+  ;
 
+  fullPackage = env: pkg: outputs: legacyDev env pkg outputs // outputs.package;
+
+  # Expose packages using the path `<package>.<env>`.
+  # Expose keys `packages` (for packages) and `envKeyed` (for envs, defaults to `false`).
+  # Uses vanilla derivations.
+  # The purpose is to expose derivations from special envs, like `min` and `profiled`:
+  # `{ legacyPackages.hix = { min = <drv>; profiled = <drv>; } }`
+  # These derivations used to be attached to the `build.packages` nodes, like `cross` and `musl` are, but since the
+  # effects in `min` and `profiled` are caused by overrides, they are env-specific, so they can't just be added to all
+  # package outputs.
   envKeyed =
     util.mergeValues (
-    internal.envs.filterExposed "envKeyed" (
-      build.targetsPackagesFor "packages" (
-        env: _: outputs: { ${env.name} = outputs.package; })));
+      internal.envs.filterExposed "envKeyed" (
+        build.targetsPackagesFor "packages" (
+          env: _: outputs: { ${env.name} = outputs.package; }
+        )
+      )
+    );
 
   envApps = env: pkg: outputs:
   util.mapValues (exe: exe.app) outputs.executables;
@@ -44,9 +63,9 @@
   envKeyed.${name} or {}
   ;
 
-  envExes = pkgsExes: pkg: let
-    pkgExes = pkgsExes.${pkg.name};
-  in pkgExes // internal.package.setWithExe (exe: pkgExes.${exe.name}) pkg;
+  envExes = pkgsExes: main: let
+    mainExes = pkgsExes.${main.name};
+  in mainExes // internal.package.setWithExe (exe: mainExes.${exe.name}) main;
 
   appsEnv = env: pkgExes:
   util.mergeAll [
@@ -54,7 +73,45 @@
     (internal.env.setWithMain (envExes pkgExes) env)
   ];
 
-  apps = build.bimapTargetsFor "apps" appsEnv envApps;
+  envExecutables = env: packages: let
+    packageExecutables = util.mapValues (outputs: outputs.executables) packages;
+    exePackages = util.mapValues (exe: exe.package);
+    executables = lib.concatMapAttrs (_: exePackages) packageExecutables;
+    mainOutputs = name: specialOutputs packages.${name} // exePackages packageExecutables.${name};
+  in
+  { inherit executables; }
+  //
+  executables
+  //
+  internal.env.setWithMain (main: mainOutputs main.name) env
+  //
+  packages
+  ;
+
+  unrestricted.env = build.bimapTargets envExecutables fullPackage;
+
+  scoped = build.bimapTargetsFor "scoped" envExecutables fullPackage;
+
+  # This excludes the main derivation at the root of each package because those are already present in
+  # `outputs.packages`.
+  # It uses the exposure key `packages` because the outputs aren't contained in env-key scopes.
+  devOnly = (build.targetsFor "packages" legacyDev).dev;
+
+  appimage = [
+    { env = appimages; }
+    appimages
+    appimages.dev
+  ];
+
+  legacyPackages = [
+    envKeyed
+    unrestricted
+    scoped
+    devOnly
+  ]
+  ++
+  lib.optionals util.expose.appimage appimage
+  ;
 
 in {
 
@@ -69,16 +126,7 @@ in {
   #     ...
   #   };
   # }
-  legacyPackages =
-    util.mergeAll [
-      (build.targetsFor "packages" legacyDev).dev
-      { env = build.mapTargets fullPackage; }
-      envKeyed
-      { env = appimages; }
-      appimages
-      appimages.dev
-      (build.targetsFor "packages" fullPackage)
-    ];
+  legacyPackages = util.mergeAll legacyPackages;
 
   # Unconditionally exposing the main package, seems reasonable.
   packages =
@@ -87,7 +135,7 @@ in {
     internal.packages.setWithMain mainPackageOutputs
     ;
 
-  inherit apps;
+  apps = build.bimapTargetsFor "apps" appsEnv envApps;
 
   checks = internal.env.prefixed (build.targetsFor "checks" (_: _: outputs: outputs.package));
 
