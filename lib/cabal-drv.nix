@@ -57,15 +57,17 @@ let
 
     deps = c: concatMap depspec (c.dependencies or []);
 
+    compDeps = sort: concatMap deps (attrValues (conf.${sort} or {}));
+
   in self.callPackage ({mkDerivation}: mkDerivation ({
     inherit pname;
     src = srcWithCabal pkgs conf pname pkg.src;
     version = attr "version";
     license = attr "license";
-    libraryHaskellDepends = deps (conf.library or {});
-    executableHaskellDepends = concatMap deps (attrValues (conf.executables or {}));
-    testHaskellDepends = concatMap deps (attrValues (conf.tests or {}));
-    benchmarkHaskellDepends = concatMap deps (attrValues (conf.benchmarks or {}));
+    libraryHaskellDepends = deps (conf.library or {}) ++ compDeps "internal-libraries";
+    executableHaskellDepends = compDeps "executables";
+    testHaskellDepends = compDeps "tests";
+    benchmarkHaskellDepends = compDeps "benchmarks";
   } // conf.passthru or {})) {};
 
   drv = api: pname:

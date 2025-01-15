@@ -48,7 +48,6 @@
           enable = true;
           source-dirs = "src";
           dependencies = [
-            "aeson"
             {
               name = "array";
               version = "0.5.4.0";
@@ -66,7 +65,7 @@
           };
           lib2 = {
             public = true;
-            dependencies = ["transformers" config.libraries.lib1.dep.exact];
+            dependencies = ["transformers" "aeson" config.libraries.lib1.dep.exact];
           };
         };
 
