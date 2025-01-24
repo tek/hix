@@ -47,12 +47,12 @@ let
 
   cat > $_hix_test_bin/nix << EOF
   #!/bin/sh
-  exec $_hix_test_system_bin_nix/nix --quiet --quiet \$*
+  exec $_hix_test_system_bin_nix/nix --quiet --quiet "\$@"
   EOF
 
   cat > $_hix_test_bin/nix-vanilla << EOF
   #!/bin/sh
-  exec $_hix_test_system_bin_nix/nix \$*
+  exec $_hix_test_system_bin_nix/nix "\$@"
   EOF
 
   chmod +x $_hix_test_bin/*

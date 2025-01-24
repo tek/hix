@@ -1,6 +1,6 @@
 {...}:
 {
-  test = builtins.toFile "new-static-test" ''
+  source = ''
     mkdir root
     cd ./root
     nix run "path:$hix_dir#new" -- --name 'red-panda' --author='Red Panda'
