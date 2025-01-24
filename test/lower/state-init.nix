@@ -49,12 +49,12 @@
         hash = "0zj83viziy80f7nybpmc1hki8wrd8pzps31fxns9vxhc1p7l9chj";
       };
       text-iso8601 = {
-        version = "0.1.1";
-        hash = "0lk8y0g5p2zamkgvxy7i5lqfpa4wnic9vg2bl87s801fniwdij3m";
+        version = "0.1";
+        hash = "0zsqjrks9spakiwhbc7xi4dqsx68lb2cd4rvrin3iclyrqg3a6xg";
       };
       th-compat = {
-        version = "0.1.5";
-        hash = "0qnm29nh7mrcw8cfw61q862ny71lfw56fiwwcmpv1ny3qwmfxc2p";
+        version = "0.1.4";
+        hash = "1h5p7hgjhrrkr2k97c1wmv6lhw9zs8wkq7ja2r2119va55k2ldwz";
       };
     };
   };
