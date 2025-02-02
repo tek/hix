@@ -1,6 +1,6 @@
 {...}:
 {
-  test = builtins.toFile "multi-exe-test" ''
+  source = ''
     cd ./root
     flake_update
 

@@ -1,13 +1,15 @@
 {...}: {
-  test = builtins.toFile "packages-test" ''
+  source = ''
     cd ./root
     flake_update
-    nix run .#gen-cabal-quiet
 
-    check_diff ${./dep.cabal} dep/dep-lib.cabal "The generated Cabal file for 'dep-lib' differs from the target."
+    describe "Generate Cabal files for $(blue dep-lib) and $(blue root)"
+    file_exact ${./dep.cabal} dep/dep-lib.cabal
+    file_exact ${./root.cabal} root.cabal
+    step_run gen-cabal-quiet
 
-    check_diff ${./root.cabal} root.cabal "The generated Cabal file for 'root' differs from the target."
-
-    check 'nix run .#run' 'string/lib2/lib1' 'Output is wrong'
+    describe "Run executable $(blue run) whose dependencies are added via $(yellow cabal.meta)"
+    output_exact 'string/lib2/lib1'
+    step_run run
   '';
 }

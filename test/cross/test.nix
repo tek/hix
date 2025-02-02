@@ -1,6 +1,6 @@
 {...}:
 {
-  test = builtins.toFile "cross-test" ''
+  source = ''
     cd ./root
     flake_update
 

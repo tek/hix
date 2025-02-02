@@ -1,6 +1,6 @@
 {...}:
 {
-  test = builtins.toFile "basic-test" ''
+  source = ''
     cd ./root
     flake_update
     nix run .#gen-cabal-quiet
