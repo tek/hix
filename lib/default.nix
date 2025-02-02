@@ -22,19 +22,6 @@ let
     };
   };
 
-  packageSubpath = base: pp:
-  let
-    new = lib.strings.removePrefix (toString base + "/") (toString pp);
-    failed = new == toString pp;
-  in
-  if builtins.isPath pp || builtins.substring 0 1 (toString pp) == "/"
-  then
-  if pp == base then "."
-  else if failed then throw "invalid package path ${pp} for base ${base}" else new
-  else pp;
-
-  relativePackages = base: mapAttrs (_: packageSubpath base);
-
   mergeOverrides = lib.zipAttrsWith (_: lib.concatLists);
 
   concatOverrides = lib.foldl (a: b: lib.toList a ++ lib.toList b) [];
@@ -395,8 +382,6 @@ in {
   utilWithConfig
   utilModule
   flake-utils
-  packageSubpath
-  relativePackages
   mergeOverrides
   concatOverrides
   normalizeOverrides

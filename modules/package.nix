@@ -144,6 +144,21 @@ in {
       example = literalExpression "./packages/api";
     };
 
+    relativePath = lib.mkOption {
+      description = ''
+      A string representation of [](#opt-package-src) relative to the project root.
+      Its value is inferred if possible, but if [](#opt-package-src) is not a plain path, it must be set explicitly.
+      A common reason for this is when the path is constructed with a source filter, causing the creation a separate
+      store path for the subdirectory.
+      In the basic case, Hix infers the root directory (for [](#opt-general-base)) by taking the prefix `/nix/store/*/`
+      from one of the package paths, and stripping it from each package's [](#opt-package-src).
+      This works well for simple projects, but it helps to provide [](#opt-general-base), as well as this option,
+      explicitly.
+      If the package is at the project root, this value should be `"."`.
+      '';
+      type = types.str;
+    };
+
     library = mkOption {
       description = ''
       The library for this package.
@@ -370,6 +385,8 @@ in {
 
   config = {
 
+    relativePath = lib.mkDefault (util.path.relative config.src);
+
     rootModule = mkDefault (concatMapStringsSep "." util.toTitle (splitString "-" config.name));
 
     hackageLink = mkDefault "https://hackage.haskell.org/package/${config.name}";
@@ -378,7 +395,7 @@ in {
 
     description = mkDefault "See ${config.hackageRootLink}";
 
-    subpath = util.packageSubpath global.base config.src;
+    subpath = config.relativePath;
 
     dep = {
 

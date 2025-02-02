@@ -12,8 +12,6 @@ let
 
   hsLib = config.pkgs.haskell.lib;
 
-  packageRel = basic.packageSubpath config.base;
-
   overridesDeps = name: config.internal.overridesDeps.${name} or [];
 
   overridesFromDeps = extra:
@@ -248,7 +246,6 @@ let
     hsLib
     paramApp
     types
-    packageRel
     overridesDeps
     overridesFromDeps
     overridesGlobal
@@ -290,6 +287,8 @@ let
     ensureLegacyApps
     expose
     ;
+
+    path = import ./path.nix { inherit util; };
 
     ghc = import ./ghc.nix { inherit config lib util; };
 
