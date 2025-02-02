@@ -16,7 +16,7 @@ let
   '';
 
 in {
-  options = with lib.types; {
+  options = {
 
     output = {
 
@@ -28,7 +28,7 @@ in {
         This may be a simple Hackage package like `aeson` or a local package that is added in
         [](#opt-general-overrides) due to the way its source is obtained.
         '';
-        type = listOf str;
+        type = types.listOf types.str;
         default = [];
       };
 
@@ -78,22 +78,22 @@ in {
 
       packages = mkOption {
         description = "The flake output attribute `packages`.";
-        type = lazyAttrsOf raw;
+        type = types.lazyAttrsOf types.raw;
       };
 
       checks = mkOption {
         description = "The flake output attribute `checks`.";
-        type = lazyAttrsOf raw;
+        type = types.lazyAttrsOf types.raw;
       };
 
       legacyPackages = mkOption {
         description = "The flake output attribute `legacyPackages`.";
-        type = lazyAttrsOf raw;
+        type = types.lazyAttrsOf types.raw;
       };
 
       devShells = mkOption {
         description = "The flake output attribute `devShells`.";
-        type = lazyAttrsOf raw;
+        type = types.lazyAttrsOf types.raw;
       };
 
       apps = mkOption {
