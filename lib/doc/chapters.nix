@@ -15,7 +15,7 @@
       src = "<src>";
       sort = "<component type>";
       desc = "<component type>";
-      suffix = null;
+      suffixOption = null;
       single = false;
     })
   ];

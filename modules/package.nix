@@ -102,11 +102,11 @@ let
 
   withoutVerbatim = set: removeAttrs set ["cabal"];
 
-  component = main: src: desc: sort: suffix: single:
+  component = main: src: desc: sort: suffixOption: single:
     types.submoduleWith {
       modules = [
         cabalOptionsModule
-        (cabalComponentModule { inherit pkgName src sort desc suffix single; })
+        (cabalComponentModule { inherit pkgName src sort desc suffixOption single; })
         (withoutVerbatim global.cabal)
         (withoutVerbatim global.internal.cabal-extra)
         (withoutVerbatim pkgConfig.cabal)
