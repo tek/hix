@@ -204,9 +204,12 @@ in {
       This is a convenience variant of [](#opt-env-buildInputs) that provides the environment's GHC package set (without
       overrides) as a function argument.
       This is intended for tooling like `fourmolu`.
+      The default consists of `cabal-install`, since that's a crucial tool most users would expect to be available.
+      If you want to provide a custom `cabal-install` package, you'll have to set `haskellTools = lib.mkForce (...)`,
+      since the built-in definition doesn't use `mkDefault` to ensure that adding tools in your project won't
+      mysteriously remove `cabal-install` from all shells.
       '';
       type = functionTo (listOf package);
-      default = _: [];
       example = literalExpression ''ghc: [ghc.fourmolu]'';
     };
 
@@ -322,6 +325,8 @@ in {
     name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
     pkgs = mkDefault config.envs.dev.ghc.pkgs;
+
+    haskellTools = ghc: [ghc.cabal-install];
 
     internal = {
 
