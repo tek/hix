@@ -5,6 +5,7 @@
 
   outputs = { hix, ... }:
   hix.lib._hix_test {
+
     packages.root = {
       src = builtins.path { path = ./.; filter = (_: _: true); };
       cabal.dependencies = ["aeson"];
@@ -18,5 +19,12 @@
     envs.dev.overrides = {hackage, ...}: {
       fourmolu = hackage "0.14.0.0" "1bhfx6j79hc32q22c7dagirby5j5dhydm0cm9av7dhhjd71rr2xk";
     };
+
+    packages.dep = {
+      src = ./dep;
+      library.enable = true;
+    };
+
   };
+
 }
