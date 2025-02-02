@@ -8,24 +8,6 @@ let
   packageModule = import ./package.nix { inherit global util; };
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
-  baseFromPackages = let
-    paths = attrValues config.internal.packagePaths;
-    pkg = head paths;
-    next = p:
-      if p == "/"
-      then throw "Could not determine project root dir: Invalid package path ${pkg}"
-      else if isStorePath p || pathExists "${p}/flake.nix"
-      then p
-      else next (dirOf p);
-  in
-  if length paths == 0
-  then throw ''
-   Could not determine project root dir.
-   Either specify `base = ./.;` or add entries to `packages`.
-   See https://tryp.io/hix/index.html#packages for more.
-  ''
-  else next pkg;
-
 in {
   options = {
 
@@ -35,7 +17,7 @@ in {
 
       Will be inferred from package source directories if unset.
       If the Hix project is a subdirectory of a git repository and `flake.nix` isn't tracked by git, this option has to
-      be set manually to `./.`.
+      be set to `./.` explicitly.
       '';
       example = literalExpression "./.";
       type = path;
@@ -292,7 +274,7 @@ in {
   };
 
   config = {
-    base = mkDefault baseFromPackages;
+    base = mkDefault util.path.inferBase;
 
     main = mkDefault (let
       names = config.internal.packageNames;
@@ -336,9 +318,9 @@ in {
 
       packageNames = attrNames config.packages;
 
-      packagePaths = mapAttrs (_: p: p.src) config.packages;
+      packagePaths = util.mapValues (p: p.src) config.packages;
 
-      relativePackages = util.relativePackages config.base config.internal.packagePaths;
+      relativePackages = util.mapValues (p: p.relativePath) config.packages;
 
       hixVersion = "0.7.1";
 
