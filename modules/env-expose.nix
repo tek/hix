@@ -14,7 +14,7 @@ in
     };
 
     envKeyed = mkOption {
-      description = "Whether to expose packages in this env as an output named after the env (like `profiled`).";
+      description = "Whether to expose packages in this env as a root output named after the env (like `profiled`).";
       type = types.bool;
       default = false;
     };

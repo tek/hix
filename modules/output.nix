@@ -1,6 +1,6 @@
 { lib, config, util, outputs, ... }:
 let
-  inherit (lib) optionalAttrs mkOption;
+  inherit (lib) optionalAttrs mkOption types;
   inherit (util) app;
 
   tags = import ../lib/tags.nix { inherit config util; };
@@ -42,12 +42,44 @@ in {
         default = [];
       };
 
+      expose = {
+
+        appimage = lib.mkOption {
+          description = "Include AppImage derivations for all executables in the outputs.";
+          type = types.bool;
+          default = true;
+        };
+
+        internals = lib.mkOption {
+          description = "Include the config set, GHC packages and other misc data in the outputs.";
+          type = types.bool;
+          default = true;
+        };
+
+        managed = lib.mkOption {
+          description = ''
+          Include apps for managed dependencies in the outputs, even as stubs if the feature is disabled.
+          '';
+          type = types.bool;
+          default = true;
+        };
+
+        cross = lib.mkOption {
+          description = "Include full cross-compilation system sets in the outputs (like
+          `hix.cross.{mingw32,aarch64-android,...}`).";
+          type = types.bool;
+          default = true;
+        };
+
+      };
+
       final = mkOption {
         description = ''
-        The final flake outputs computed by Hix, defaulting to the set in [outputs](#opt-general-outputs.packages).
+        The final flake outputs computed by Hix, defaulting to the set in [outputs](#opt-general-outputs.packages) and
+        its siblings.
         May be overriden for unusual customizations.
         '';
-        type = raw;
+        type = types.raw;
       };
 
     };
