@@ -12,6 +12,7 @@
   depVersions = env: import ../dep-versions.nix { inherit config lib util env; };
 
   legacyEnv = env: outputs:
+  lib.optionalAttrs util.expose.internals
   { inherit (env.ghc) pkgs ghc; ghc0 = env.ghc.vanillaGhc; }
   //
   outputs

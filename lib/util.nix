@@ -207,6 +207,15 @@ let
 
   dummyApp = pre: sub: basic.app (dummyAppScript pre sub);
 
+  exposeDefault = {
+    appimage = true;
+    internals = true;
+    managed = true;
+    cross = true;
+  };
+
+  expose = exposeDefault // util.config.output.expose;
+
   util = basic // {
     inherit
     config
@@ -248,6 +257,7 @@ let
     envSystemAllowed
     runBuildApp
     dummyApp
+    expose
     ;
 
     ghc = import ./ghc.nix { inherit config lib util; };
