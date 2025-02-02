@@ -72,7 +72,7 @@ let
   then throw ''
   'mergeAuto' can not be used with sets containing competing derivations!
     Key: ${name}
-    Derivation names: ${a.pname} / ${b.pname}
+    Derivation names: ${a.pname or a.name or "<none>"} / ${b.pname or b.name or "<none>"}
   ''
   else b // a
   else if isDerivation b
