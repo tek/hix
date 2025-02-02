@@ -298,7 +298,7 @@ let
   {
     for t in $failed
     do
-      message " $(yellow '*') $(magenta $t)"
+      message " $(yellow '*') $(bold $(magenta $t))"
     done
   }
 

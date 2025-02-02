@@ -39,32 +39,62 @@ let
   presult = ghc.override { overrides = dep.reify (util.concatOverrides poverrides); };
 
 in {
-  test = builtins.toFile "overrides-test" ''
+  source = ''
     cd ./dep
     flake_update
     nix run .#gen-overrides
     cd ../root
     flake_update
 
-    check_eq '${finalSingle.version}' '2.1.2.1' 'Wrong version for aeson (single)'
-    check_eq '${finalMulti.version}' '2.1.2.1' 'Wrong version for aeson (multi)'
-    check_eq '${builtins.toJSON finalSingle.doCheck}' 'true' 'tests not enabled for single'
-    check_eq '${builtins.toJSON finalMulti.doCheck}' 'false' 'tests not disabled for multi'
-    check_eq '${withOverrides.aeson.version}' '2.0.1.0' 'Rightmost override doesn'''t supersede previous'
-    check_eq '${presult.test}' '2: 3/4' 'Options incorrectly applied'
+    describe "Version for $(yellow aeson) (single)"
+    output_exact '2.1.2.1'
+    step 'print ${finalSingle.version}'
 
-    error_target="The option 'gen-overrides.enable' is set, but the file 'ops/overrides.nix' doesn't exist."
-    check_match_err 'nix eval .#legacyPackages.${pkgs.system}.ghc.aeson.version' $error_target 'Wrong error before gen-overrides'
-    nix run .#gen-overrides
-    check 'ls ops' 'overrides.nix' 'No overrides.nix in ops/'
+    describe "Version for $(yellow aeson) (multi)"
+    output_exact '2.1.2.1'
+    step 'print ${finalMulti.version}'
 
-    check 'nix eval .#legacyPackages.${pkgs.system}.ghc.aeson.version' '"2.1.2.1"' 'aeson version wrong after gen-overrides'
+    describe 'Tests enabled for single'
+    output_exact 'true'
+    step 'print ${builtins.toJSON finalSingle.doCheck}'
 
-    nix build .#root1
-    nix --quiet --quiet flake check
+    describe 'Tests disabled for multi'
+    output_exact 'false'
+    step 'print ${builtins.toJSON finalMulti.doCheck}'
+
+    describe 'Rightmost override supersedes previous'
+    output_exact '2.0.1.0'
+    step 'print ${withOverrides.aeson.version}'
+
+    describe 'Options correctly applied'
+    output_exact '2: 3/4'
+    step 'print ${presult.test}'
+
+    describe 'Error message before gen-overrides'
+    error_match "The option 'gen-overrides.enable' is set, but the file 'ops/overrides.nix' doesn't exist."
+    exit_code 1
+    step_eval 'legacyPackages.${pkgs.system}.ghc.aeson.version'
+
+    step_run gen-overrides
+
+    describe "$(color_path overrides.nix) exists in $(color_path ops/)"
+    output_exact 'overrides.nix'
+    step 'ls ops'
+
+    describe "$(yellow aeson) version after gen-overrides"
+    output_exact '"2.1.2.1"'
+    step_eval 'legacyPackages.${pkgs.system}.ghc.aeson.version'
+
+    step_nix build .#root1
+
+    error_ignore
+    step_nix flake check
 
     sed -i 's/2\.1/5.8/' flake.nix
-    error_target="Please run 'nix run .#gen-overrides' again."
-    check_match_err 'nix eval .#legacyPackages.${pkgs.system}.ghc.aeson.version' $error_target 'Wrong error after changing overrides'
+
+    describe 'Error message after changing overrides'
+    error_match "Please run 'nix run .#gen-overrides' again."
+    exit_code 1
+    step_eval 'legacyPackages.${pkgs.system}.ghc.aeson.version'
   '';
 }
