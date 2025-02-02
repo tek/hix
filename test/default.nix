@@ -13,6 +13,7 @@ let
     dep-versions = test "dep-versions";
     deps = test "deps";
     direnv = test "direnv";
+    gen-cabal = test "gen-cabal";
     ghci = test "ghci";
     hackage = test "hackage";
     local-prelude = test "local-prelude";
