@@ -21,7 +21,6 @@ jobs:
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             extra-substituters = https://tek.cachix.org
             extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
-      - uses: DeterminateSystems/magic-nix-cache-action@main
       - uses: cachix/cachix-action@v15
         with:
           name: tek

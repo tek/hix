@@ -51,7 +51,6 @@
           with:
             extra-conf: |
               access-tokens = github.com=''${{ secrets.GITHUB_TOKEN }}
-        - uses: DeterminateSystems/magic-nix-cache-action@main
         - id: bounds
           run: nix run .#${sort} -- --output=ga-pr
         - name: pr
