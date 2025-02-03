@@ -177,7 +177,7 @@ let
   then dep.name
   else dep;
 
-  app = program: { type = "app"; program = "${program}"; };
+  app = program: { type = "app"; program = "${program}"; meta = {}; };
 
   removeApp = a: removeAttrs a ["program" "type"];
 
