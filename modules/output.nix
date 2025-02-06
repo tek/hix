@@ -9,7 +9,7 @@ let
 
   genOverrides = import ../lib/gen-overrides.nix { inherit config lib util; };
 
-  showOverrides = import ../lib/show-overrides.nix { inherit config lib util; };
+  showOverrides = import ../lib/show-overrides.nix { inherit util; };
 
   depVersions = env: import ../lib/dep-versions.nix { inherit config lib util env; };
 
