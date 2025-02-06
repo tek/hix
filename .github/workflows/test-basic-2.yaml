@@ -25,6 +25,8 @@ jobs:
         name: tek
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
     - run: rm -rf /opt/hostedtoolcache
+    - run: |
+        sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
     - run: git config --global user.name hix
     - run: git config --global user.email hix@tryp.io
     - run: nix run .#test-basic-2
