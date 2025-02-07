@@ -38,8 +38,12 @@ let
 
   ${sharedPreamble}
 
-  if_ci 'export hix_test_full_output=1'
-  if_ci 'export hix_test_show_stderr_failure=1'
+  if_ci '
+    export hix_test_full_output=1
+    export hix_test_show_stderr_failure=1
+    export LC_ALL="C.utf8"
+    export LANG="C.utf8"
+  '
 
   _hix_test_bin="$tmp_dir/bin"
   mkdir -p $_hix_test_bin
