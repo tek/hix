@@ -1,23 +1,23 @@
-{...}:
 {
+  genCabal = true;
+
   source = ''
-    cd ./root
-    flake_update
-    nix run .#gen-cabal-quiet
+    output_exact '[ "dev-dep" "dev-root" "ghc90-dep" "ghc90-root" "ghc92-dep" "ghc92-root" "ghc94-dep" "ghc94-root" "ghc96-dep" "ghc96-root" ]'
+    step_eval checks.x86_64-linux --apply builtins.attrNames
 
-    target='[ "dev-dep" "dev-root" "ghc90-dep" "ghc90-root" "ghc92-dep" "ghc92-root" "ghc94-dep" "ghc94-root" "ghc96-dep" "ghc96-root" ]'
-    check 'nix eval .#checks.x86_64-linux --apply builtins.attrNames' $target
+    output_exact '[ "default" "dep" "min" "musl" "profiled" "root" "static" ]'
+    step_eval packages.x86_64-linux --apply builtins.attrNames
 
-    target='[ "default" "dep" "min" "musl" "profiled" "root" "static" ]'
-    check 'nix eval .#packages.x86_64-linux --apply builtins.attrNames' $target
+    output_exact 'The Glorious Glasgow Haskell Compilation System, version 9.4.8'
+    step_develop_in ghc94 ghc --version
 
-    check 'nix develop .#ghc94 -c ghc --version' 'The Glorious Glasgow Haskell Compilation System, version 9.4.8'
+    step_build ghc92.root
 
-    nix build .#ghc92.root
-    check 'result/bin/root' 'string'
+    output_exact 'string'
+    step result/bin/root
 
-    target='fourmolu 0.14.0.0
+    output_exact 'fourmolu 0.14.0.0
     using ghc-lib-parser 9.6.5.20240423'
-    check 'nix develop -c fourmolu --version' $target
+    step_develop fourmolu --version
   '';
 }

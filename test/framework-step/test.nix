@@ -1,4 +1,7 @@
-{...}: {
+{
+  root = false;
+  updateLock = false;
+
   source = ''
   setopt local_options no_err_return
   unset hix_test_show_stderr_failure

@@ -1,18 +1,25 @@
-{...}:
 {
-  test = builtins.toFile "ghci-test" ''
-    cd ./root
-    flake_update
-    nix run .#gen-cabal-quiet
+  genCabal = true;
 
-    ghci_match '.#ghci -- -p root -m Root.LibGhc' 'one module loaded' 'ghc library not visible'
+  source = ''
+  describe 'GHC library visible'
+  output_match 'one module loaded'
+  step_ghci ghci -p root -m Root.LibGhc
 
-    ghci_match ".#ghci -- --root $PWD -c lib -m Root.Lib -r cwd" "$PWD/pkg/" 'ghci cwd with cd printed wrong directory'
+  describe 'GHCi changes directory'
+  output_match "$PWD/pkg/"
+  step_ghci ghci --root $PWD -c lib -m Root.Lib -r cwd
 
-    ghci_match '.#ghci -- -c lib -m Root.Lib -r cwd -- --no-cd' "$PWD/" 'ghci cwd with no-cd printed wrong directory'
+  describe 'GHCi does not change directory with --no-cd'
+  output_match "$PWD/"
+  step_ghci ghci -- -c lib -m Root.Lib -r cwd --no-cd
 
-    ghci_match '.#ghci -- -p root -c lib -m Root.Lib -r print' 'print success' "ghci output for 'print' runner does not contain 'print success'"
+  describe "GHCi 'print' runner"
+  output_match 'print success'
+  step_ghci ghci -p root -c lib -m Root.Lib -r print
 
-    ghci_match '.#ghci-app' 'print success' "ghci-app did not output 'print success'"
+  describe 'Run ghci-app'
+  output_match 'print success'
+  step_ghci ghci-app
   '';
 }

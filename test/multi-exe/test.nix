@@ -1,9 +1,5 @@
-{...}:
 {
   source = ''
-    cd ./root
-    flake_update
-
     output_exact '{"bump":"/nix/store/hash-managed-disabled","exe1":"/nix/store/hash-exe1-0.1.0.0","exe2":"/nix/store/hash-exe2-0.1.0.0","exe3":"/nix/store/hash-exe3-0.1.0.0","executables":{"exe1":"/nix/store/hash-exe1-0.1.0.0","exe2":"/nix/store/hash-exe2-0.1.0.0","exe3":"/nix/store/hash-exe3-0.1.0.0","pkg1":"/nix/store/hash-pkg1_main-0.1.0.0","pkg1_exe1":"/nix/store/hash-pkg1_exe1-0.1.0.0","pkg1_main":"/nix/store/hash-pkg1_main-0.1.0.0","pkg2":"/nix/store/hash-pkg2-0.1.0.0","pkg2_exe2":"/nix/store/hash-pkg2_exe2-0.1.0.0","pkg3":"/nix/store/hash-pkg3-0.1.0.0"},"ghci":"/nix/store/hash-ghci","ghcid":"/nix/store/hash-ghcid","hls":"/nix/store/hash-hls","lower":"/nix/store/hash-managed-disabled","musl":"/nix/store/hash-pkg1-0.1.0.0","pkg1":"/nix/store/hash-pkg1-0.1.0.0","pkg1_exe1":"/nix/store/hash-pkg1_exe1-0.1.0.0","pkg1_main":"/nix/store/hash-pkg1_main-0.1.0.0","pkg2":"/nix/store/hash-pkg2-0.1.0.0","pkg2_exe2":"/nix/store/hash-pkg2_exe2-0.1.0.0","pkg3":"/nix/store/hash-pkg3-0.1.0.0","release":"/nix/store/hash-pkg1-0.1.0.0","run":"/nix/store/hash-run","static":"/nix/store/hash-pkg1-static-x86_64-unknown-linux-musl-0.1.0.0"}'
     preproc_output sub_store_hash
     step_eval legacyPackages.x86_64-linux.env.dev --json

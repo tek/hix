@@ -1,19 +1,22 @@
-{pkgs, ...}: let
+{pkgs, ...}: {
+  path = pkgs: [pkgs.direnv];
 
-  direnv = "${pkgs.direnv}/bin/direnv";
-
-in {
-  test = pkgs.writeText "direnv-test" ''
-    cd ./root
-    flake_update
+  source = ''
     cat > .envrc <<EOF
     source ${pkgs.nix-direnv}/share/nix-direnv/direnvrc
     use flake
     EOF
-    eval "$(${direnv} hook zsh)"
-    ${direnv} allow .
+
+    eval "$(direnv hook zsh)"
+
+    step direnv allow .
+
     cd . &>/dev/null
-    check_match 'which ghc' 'bin/ghc' 'GHC not present in direnv'
+
+    describe "GHC is in path in direnv"
+    output_match 'bin/ghc'
+    step which ghc
+
     cd .. &>/dev/null
   '';
 }

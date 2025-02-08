@@ -1,30 +1,36 @@
-{...}: let
+let
   args = "--root $PWD --handlers test --index-state 2024-01-01T00:00:00Z aeson extra path";
 in {
-  test = builtins.toFile "bump-test" ''
-    cd ./root
-    flake_update
-    git init --quiet
-    git add .
-    git commit -m "init" --quiet
+  git = true;
 
-    check 'nix eval .#checks.x86_64-linux --apply builtins.attrNames' \
-      '[ "dev-local1" "dev-local2" "dev-local3" "latest-main-local1" "latest-other-local2" "latest-other-local3" ]'
+  source = ''
+  output_exact '[ "dev-local1" "dev-local2" "dev-local3" "latest-main-local1" "latest-other-local2" "latest-other-local3" ]'
+  step_output_names checks.x86_64-linux
 
-    nix run .#bump -- ${args} --output=commit-msg > commit-msg-out || fail 'bump commit-msg failed'
-    check_diff '${./state.nix}' 'ops/managed.nix' 'ops/managed.nix is wrong after batch run (state.nix)'
-    check_diff '${./commit-msg}' $PWD/commit-msg-out 'commit message is wrong'
+  describe 'Batch run for commit message (state.nix)'
+  file_exact ${./state.nix} 'ops/managed.nix'
+  output_exact ${./commit-msg}
+  step_run bump ${args} --output=commit-msg
 
-    git reset --hard --quiet
-    export GITHUB_OUTPUT="$PWD/github-output-out"
-    nix run .#bump -- ${args} --output=ga-pr || fail 'bump ga-pr failed'
-    sed -i 's#hix-managed/bump-.*#hix-managed/bump-0#' $GITHUB_OUTPUT
-    check_diff '${./github-output}' $GITHUB_OUTPUT 'github actions pr output is wrong (github-output)'
+  step git reset --hard --quiet
 
-    git reset --hard --quiet
-    nix run .#env.latest-main.bump -- ${args} || fail 'bump env failed'
-    check_diff '${./state-main.nix}' 'ops/managed.nix' 'ops/managed.nix is wrong after env run (state-main.nix)'
-    check_diff '${./local1.cabal}' 'packages/local1/local1.cabal' 'cabal is wrong (local1.cabal)'
-    check_diff '${./local3.cabal}' 'packages/local3/local3.cabal' 'cabal is wrong (local3.cabal)'
+  sub_timestamp()
+  {
+    sed 's#hix-managed/bump-.*#hix-managed/bump-0#' $*
+  }
+
+  export GITHUB_OUTPUT="$PWD/github-output-out"
+  describe 'Github actions PR output'
+  file_exact ${./github-output} $GITHUB_OUTPUT
+  preproc_files sub_timestamp
+  step_run bump ${args} --output=ga-pr
+
+  step git reset --hard --quiet
+
+  describe 'Env run (state-main.nix)'
+  file_exact ${./state-main.nix} 'ops/managed.nix'
+  file_exact ${./local1.cabal} 'packages/local1/local1.cabal'
+  file_exact ${./local3.cabal} 'packages/local3/local3.cabal'
+  step_run env.latest-main.bump ${args}
   '';
 }

@@ -1,9 +1,9 @@
-{...}:
 {
-  test = builtins.toFile "local-prelude-test" ''
-    cd ./root
-    flake_update
+  root = true;
+  updateLock = true;
 
-    ghci_match ".#ghci -- -p root -t main" "success" 'local-prelude broken'
+  source = ''
+  output_match 'success'
+  step_ghci ghci -p root -t main
   '';
 }

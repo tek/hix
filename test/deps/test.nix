@@ -1,36 +1,32 @@
 {pkgs, ...}:
 {
   source = ''
-    cd ./root
-    flake_update
+  output_match 'Hackage: 1.0.0'
+  step_run show-overrides dev
 
-    check_match 'nix run .#show-overrides -- dev' 'Hackage: 1.0.0'
+  describe "stm-chans version override in 'root' supersedes the one from 'dep1'."
+  output_exact '"2.0.0"'
+  step_eval stm-chans-version.${pkgs.system}
 
-    version=$(nix eval .#stm-chans-version.${pkgs.system})
-    if [[ $version != '"2.0.0"' ]]
-    then
-      fail "stm-chans version override in 'root' doesn't supersede the one from 'dep1' (is $version)."
-    fi
+  step_build root.min
 
-    nix build .#root.min
-    nix build
-    output=$(result/bin/run)
-    if [[ $output != 'success66' ]]
-    then
-      fail "Running the main package produced the wrong output:\n$output"
-    fi
+  step_build
 
-    step_run gen-cabal-quiet
+  describe 'Run the main package'
+  output_exact 'success66'
+  step result/bin/run
 
-    cabal_update()
-    {
-      output_ignore
-      error_ignore # Somehow bash complains about the forced locale not existing 🙄
-      step_develop cabal update
-    }
+  step_run gen-cabal-quiet
 
-    if_ci cabal_update
-    error_match '3 files worked'
-    step_run hls
+  cabal_update()
+  {
+    output_ignore
+    error_ignore # Somehow bash complains about the forced locale not existing 🙄
+    step_develop cabal update
+  }
+
+  if_ci cabal_update
+  error_match '3 files worked'
+  step_run hls
   '';
 }

@@ -1,14 +1,13 @@
 {...}: {
-  test = builtins.toFile "lower-stabilize-test" ''
-    cd ./root
-    flake_update
+  source = ''
+  describe 'Initial build'
+  step_build env.lower.root
 
-    nix build .#env.lower.root || fail 'Initial build failed'
+  describe 'Introduce breaking import change'
+  cp ../RootUpdate.hs lib/Root.hs
 
-    cp ../RootUpdate.hs lib/Root.hs
-
-    nix run .#lower.stabilize -- --root $PWD
-
-    check_diff ${./state.nix} 'ops/managed.nix' 'ops/managed.nix is wrong after stabilize'
+  describe 'Stabilize lower bounds'
+  file_exact ${./state.nix} 'ops/managed.nix'
+  step_run lower.stabilize --root $PWD
   '';
 }

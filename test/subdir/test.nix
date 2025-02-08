@@ -1,12 +1,9 @@
-{...}:
 {
-  test = builtins.toFile "subdir-test" ''
-    cd ./root
-    git init --quiet
-    git add .
-    cd sub
-    flake_update
+  git = true;
 
-    nix run .#gen-cabal-quiet
+  source = ''
+    cd sub
+
+    step_run gen-cabal-quiet
   '';
 }

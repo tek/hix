@@ -3,33 +3,12 @@
 
   inputs.hix.url = "path:HIX";
 
-  outputs = { hix, ... }:
-  hix.lib._hix_test {
+  outputs = {hix, ...}: hix.lib._hix_test {
     packages.root = {
       src = ./.;
-      description = "A test package for hix";
-      versionFile = "version.nix";
-
-      cabal = {
-
-        version = import ./version.nix;
-        license = "BSD-2-Clause-Patent";
-        license-file = "LICENSE";
-        author = "Author McCodeface";
-
-        meta = {
-          synopsis = "root";
-          category = "Test";
-        };
-
-      };
-
-      library = {
-        enable = true;
-        base = "base >= 4 && < 6";
-      };
-
+      versionFile = "root.cabal";
     };
+    ifd = true;
     compat.enable = false;
     hackage = {
       commit = true;
@@ -40,7 +19,7 @@
       askVersion = false;
       confirm = false;
       check = false;
-      versionFile = "version.nix";
+      versionFile = "root.cabal";
       setChangelogVersion = true;
       hooks = {
         postUploadAll = {...}: ''

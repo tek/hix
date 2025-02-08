@@ -8,7 +8,6 @@
   describe 'release-all-pristine-version run'
   preproc_output 'sub_store_hash | take 2'
   output_exact $pristine_target
-  file_exact "\"$pristine_version\"" version.nix
   step_run release
 
   describe 'release-all-pristine-version commit message'
@@ -32,7 +31,6 @@
   describe 'release-all-version run'
   preproc_output 'sub_store_hash | take 2'
   output_exact $version_target
-  file_exact "\"$version\"" version.nix
   file_exact "$version: feature 1" changelog
   file_exact "# $version" ChangeLog.md
   step_run release -v $version
@@ -47,13 +45,12 @@
 
   bump_manually()
   {
-    print "\"$manual_version\"" > version.nix
+    sed -i "s/^version:\(\s*\).*/version:\1$manual_version/" root.cabal
     git add .
     git commit -m "bump manually" --quiet
   }
 
-  describe "Substitute version manually in $(color_path version.nix)"
-  file_exact "\"$manual_version\"" version.nix
+  describe "Substitute version manually in $(color_path root.cabal)"
   step bump_manually
 
   describe 'release-all-version-manual run'

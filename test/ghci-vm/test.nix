@@ -1,12 +1,18 @@
 {...}:
 {
-  test = builtins.toFile "ghci-vm-test" ''
-    cd ./root
-    flake_update
-    nix run .#gen-cabal-quiet
+  root = true;
+  updateLock = true;
+  genCabal = true;
 
-    ghci_match '.#ghci -- -p root -t main' 'test-endpoint' "ghci service output with component env does not contain 'test-endpoint'"
+  source = ''
+  describe 'Run service for GHCi app with component env'
+  output_match 'test-endpoint'
+  error_match 'Shutting down VM'
+  step_ghci ghci -p root -t main
 
-    ghci_match '.#env.hix-ghci-test.ghci -- -t main' 'test-endpoint' "ghci service output with explicit env does not contain 'test-endpoint'"
+  describe 'Run service for GHCi app with explicit env'
+  output_match 'test-endpoint'
+  error_match 'Shutting down VM'
+  step_ghci env.hix-ghci-test.ghci -t main
   '';
 }

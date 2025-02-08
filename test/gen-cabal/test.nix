@@ -1,9 +1,5 @@
-{...}: {
-
+{
   source = ''
-    cd ./root
-    flake_update
-
     file_exact ${./a.cabal} a/a.cabal
     step_run gen-cabal-quiet
 

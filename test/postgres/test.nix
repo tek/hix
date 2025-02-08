@@ -1,18 +1,11 @@
-{...}:
 {
-  test = builtins.toFile "postgres-test" ''
-    cd ./root
-    flake_update
-    output=$(nix run .#cmd.db-test 2>/dev/null | tail -n5)
-
-    target=' ?column? 
+  source = ''
+    output_exact ' ?column? 
     ----------
             1
     (1 row)'
-
-    if [[ $output != $target ]]
-    then
-      fail "invalid output of db test command:\n$output"
-    fi
+    preproc_output 'drop_end 1 | take_end 4'
+    error_match 'Shutting down VM'
+    step_run cmd.db-test
   '';
 }
