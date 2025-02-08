@@ -148,7 +148,7 @@ in {
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
         $exe new --hix-url '${config.internal.hixUrl}' "$@"
         '' ''
-        ${util.nixC} run .#gen-cabal-quiet
+        nix run .#gen-cabal-quiet
         '';
       in util.app prog;
 
@@ -161,7 +161,7 @@ in {
         $exe bootstrap --hix-url '${config.internal.hixUrl}' "$@"
         ''
         ''
-        ${util.nixC} run .#gen-cabal-quiet
+        nix run .#gen-cabal-quiet
         '';
       in util.app prog;
 
