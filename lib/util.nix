@@ -108,6 +108,16 @@ let
   ${text}
   '';
 
+  scriptErrBin = name: text: pkgs.writeScriptBin name ''
+  #!${pkgs.runtimeShell}
+  ${text}
+  '';
+
+  scriptBin = name: text: scriptErrBin name ''
+  set -e
+  ${text}
+  '';
+
   zwrap = pkgs.writeScript "zsh-pure" ''
   #!/bin/sh
   exec ${pkgs.zsh}/bin/zsh -o no_global_rcs -o no_rcs $@
@@ -140,6 +150,15 @@ let
 
   zapp = name: test: util.app (zscript name test);
 
+  nixWrapper = scriptBin "nix" ''
+  if [[ -n ''${hix_nix_quiet:-} ]]
+  then
+    exec ${pkgs.nix}/bin/nix --quiet --quiet --quiet "$@"
+  else
+    exec ${pkgs.nix}/bin/nix "$@"
+  fi
+  '';
+
   exportPath = packages: ''
   export PATH="${lib.makeBinPath packages}:$PATH"
   '';
@@ -150,11 +169,16 @@ let
     path ? [],
     console ? true,
     verbose ? true,
-  }:
+    nix ? false,
+  }: let
+
+    extraPath = optional nix nixWrapper;
+
+  in
   basic.unlines (
     lib.optional console (basic.loadConsoleWith { inherit verbose; })
     ++
-    exportPathOptional path
+    exportPathOptional (extraPath ++ path)
   );
 
   downloadStaticCli = ''
@@ -165,40 +189,34 @@ let
   }
   trap quit EXIT
   exe="$tmp/hix"
-  ${config.pkgs.curl}/bin/curl --no-progress-meter --location --output $exe ${config.internal.hixCli.staticExeUrl}
+  ${pkgs.curl}/bin/curl --no-progress-meter --location --output $exe ${config.internal.hixCli.staticExeUrl}
   chmod +x $exe
   '';
 
-  nixC = "${config.pkgs.nix}/bin/nix --option extra-substituters 'https://tek.cachix.org' --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk='";
+  nixC = "nix --option extra-substituters 'https://tek.cachix.org' --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk='";
 
-  bootstrapWithStaticCli = name: pre: post: script name ''
-  ${downloadStaticCli}
+  bootstrapMain = pre: post: ''
   ${pre}
   if ! git status &>/dev/null
   then
-    ${pkgs.git}/bin/git init -q
+    git init -q
   fi
-  ${pkgs.git}/bin/git add .
-  ${nixC} flake update --quiet --quiet
-  ${pkgs.git}/bin/git add flake.lock
+  git add .
+  nix flake update --quiet --quiet
+  git add flake.lock
   ${post}
+  '';
+
+  bootstrapWithStaticCli = name: pre: post: script name ''
+  ${setupScript { path = [pkgs.git]; nix = true; }}
+  ${downloadStaticCli}
+  ${bootstrapMain pre post}
   '';
 
   bootstrapWithDynamicCli = name: pre: post: script name ''
+  ${setupScript { path = [pkgs.git]; nix = true; }}
   exe="${util.build.packages.min.hix.package}/bin/hix"
-  ${pre}
-  if ! ${pkgs.git}/bin/git status &>/dev/null
-  then
-    ${pkgs.git}/bin/git init -q
-  fi
-  ${pkgs.git}/bin/git add .
-  ${nixC} flake update --quiet --quiet
-  ${pkgs.git}/bin/git add flake.lock
-  ${post}
-  '';
-
-  cacheWrapper = self: name: app: script name ''
-  ${nixC} run ${self}#${app} -- "$@"
+  ${bootstrapMain pre post}
   '';
 
   envSystemAllowed = env:
@@ -277,7 +295,6 @@ let
     nixC
     bootstrapWithStaticCli
     bootstrapWithDynamicCli
-    cacheWrapper
     envSystemAllowed
     runBuildApp
     dummyApp
