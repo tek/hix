@@ -17,7 +17,7 @@ _step_unclutter_cmd()
       | _sub_store_bin \
       | _sub_store_hash
   )
-  if [[ $step_cmd[1,3] == 'nix' ]]
+  if [[ $step_cmd[1] == 'nix' ]]
   then
     sed -e 's/ --show-trace -L//' -e 's/ --\s*$//' -e 's/path:\.#/.#/' <<< $general
   else
@@ -256,6 +256,7 @@ _step_check_combined()
   fi
 }
 
+# TODO add an option to pass -n to print to avoid adding a trailing newline to the expectation
 _step_diff()
 {
   local actual_file=$1 expected=$2 headline=$3
@@ -306,24 +307,33 @@ _step_check_exact_err()
 
 _step_check_rg_gen()
 {
-  local desc=$1 repr=$2 actual_file=$3 args=($@[4,$])
-  rg $args $actual_file &> $step_match
+  local input_desc=$1 desc=$2 repr=$3 actual_file=$4 result_file=$5 args=($@[6,$])
+  rg $args $actual_file &> $result_file
   if (( $? != 0 ))
   then
     _step_failed
-    _step_validate_stream
-    message "$(_step_stream_desc_upper) doesn't match $desc:"
+    message "$input_desc doesn't match $desc:"
     message_part_hang "$bold_start$yellow_start"
     # TODO is this still necessary with the new sgr hack? Was the reason for this that the global zsh option interfered
     # with parsing? If so, we've now made the test case runner hermetic.
     _hix_redirect print -rn -- $repr
     _hix_redirect print -- "$reset_sgr"
-    _step_show_output $actual_file
-    if ! _step_file_empty $step_match
+    if ! _step_file_empty $result_file
     then
       message 'rg output:'
-      hix_cat $step_match
+      _hix_redirect head -n 10 $result_file
     fi
+    return 1
+  fi
+}
+
+_step_check_rg_stream_gen()
+{
+  local desc=$1 repr=$2 actual_file=$3 args=($@[4,$])
+  _step_validate_stream
+  if ! _step_check_rg_gen $(_step_stream_desc_upper) $desc $repr $actual_file $step_match $args
+  then
+    _step_show_output $actual_file
     return 1
   fi
 }
@@ -333,13 +343,13 @@ _step_check_rg()
   local actual_file=$1
   local args=($@[2,$])
   local repr=(${(q-)args})
-  _step_check_rg_gen "$(color_command rg) query" "$repr" $actual_file $args
+  _step_check_rg_stream_gen "$(color_command rg) query" "$repr" $actual_file $args
 }
 
 _step_check_regex()
 {
   local actual_file=$1 regex=$2
-  _step_check_rg_gen 'regex' "$regex" $actual_file '-e' "$regex"
+  _step_check_rg_stream_gen 'regex' "$regex" $actual_file '-e' "$regex"
 }
 
 _step_check_rg_out()
@@ -408,21 +418,37 @@ _step_bad_file()
   return 1
 }
 
+_step_check_file_prepare()
+{
+  local file=$1 processed=$2 preproc=${_step_preproc_files:-cat}
+  if [[ ! -e $file ]]
+  then
+    _step_bad_file $file 'was not created'
+  elif [[ -d $file ]]
+  then
+    _step_bad_file $file 'is a directory'
+  elif [[ ! -r $file ]]
+  then
+    _step_bad_file $file 'is not readable'
+  else
+    _step_apply_preproc "File ($(color_path $file))" $preproc $file $processed
+  fi
+}
+
 _step_check_file_exact()
 {
   local file=$1 expected=$2
-  if [[ ! -e $file ]]
-  then
-    _step_bad_file 'was not created'
-  elif [[ -d $file ]]
-  then
-    _step_bad_file 'is a directory'
-  elif [[ ! -r $file ]]
-  then
-    _step_bad_file 'is not readable'
-  else
-    _step_diff $file $expected "Content of $(color_path $file) does not match expectation:"
-  fi
+  local processed="${file}.processed"
+  _step_check_file_prepare $file $processed &&
+    _step_diff $processed $expected "Content of $(color_path $file) does not match expectation:"
+}
+
+_step_check_file_match()
+{
+  local file=$1 regex=$2
+  local processed="${file}.processed"
+  _step_check_file_prepare $file $processed &&
+    _step_check_rg_gen "$(color_path $file)" 'regex' "$regex" $processed $step_file_match '-e' "$regex"
 }
 
 _step_check_files_exact()
@@ -437,9 +463,22 @@ _step_check_files_exact()
   fi
 }
 
+_step_check_files_match()
+{
+  if (( ${+_step_files_match} == 1 ))
+  then
+    local f
+    for f in ${(k)_step_files_match}
+    do
+      _step_check_file_match $f $_step_files_match[$f] || return 1
+    done
+  fi
+}
+
 _step_check_files()
 {
-  _step_check_files_exact
+  _step_check_files_exact &&
+  _step_check_files_match
 }
 
 # Main
@@ -455,23 +494,38 @@ step()
   fi
   (( step_number ++ ))
 
+  # Global parameters, because the test might want to inspect them after the step.
   step_dir="$test_base/step-${step_number}"
   step_stdout="$step_dir/stdout"
   step_stderr="$step_dir/stderr"
   step_diff="$step_dir/diff"
   step_match="$step_dir/match"
-  step_cmd="$*"
+  step_file_match="$step_dir/file_match"
+  step_cmd=($*)
 
   mkdir -p $step_dir
   touch $step_stdout
   touch $step_stderr
 
+  # If enabled, print the command and description.
   _step_show_verbose
+
+  # Running the command as `$step_cmd` instead of using `eval` ensures that positional parameters are preserved in their
+  # quoting.
+  # This requires any combinators like `step_nix` to forward arguments isomorphically, rather than quoting multiple
+  # arguments into one.
+  # It also requires `$step_cmd`, as above, to be assigned with array parentheses from the array parameter `$*`.
+  # (It would also work to simply execute `$*` here.)
+  #
+  # For example, in the command `step git commit -m "the message"`, the quotes would be consumed by `eval`, requiring
+  # the quoted argument, or the entire list of arguments, to be quoted once more.
+  # But if that were to be required, arguments with quotes not intended for the shell, like `sed "s/\"/'/"`, would need
+  # multiple levels of escaping, which may even accumulate with each nested combinator.
   if (( ${_step_combined_output-0} == 1 ))
   then
-    eval "$step_cmd" &> $step_stdout
+    $step_cmd &> $step_stdout
   else
-    eval "$step_cmd" 1> $step_stdout 2> $step_stderr
+    $step_cmd 1> $step_stdout 2> $step_stderr
   fi
   local step_exit_code=$?
 
@@ -499,8 +553,10 @@ step()
     _step_err_processed \
     _step_require_exit_code \
     _step_files_exact \
+    _step_files_match \
     _step_preproc_out \
     _step_preproc_err \
+    _step_preproc_files \
     _step_allow_failure \
     _step_combined_output \
     _step_validated_out \
@@ -513,22 +569,44 @@ step()
 
 step_nix()
 {
-  step "nix $@"
+  step nix $@
+}
+
+step_build()
+{
+  step_nix build "path:.#$1" ${@[2,$]}
 }
 
 step_run()
 {
-  step_nix "run path:.#$1 -- ${@[2,$]}"
+  step_nix run "path:.#$1" -- ${@[2,$]}
+}
+
+step_develop_in()
+{
+  step_nix develop "path:.#$1" -c ${@[2,$]}
 }
 
 step_develop()
 {
-  step_nix "develop -c $@"
+  step_develop_in '' $*
 }
 
 step_eval()
 {
-  step_nix "eval path:.#$@"
+  step_nix 'eval' "path:.#$@"
+}
+
+step_output_names()
+{
+  step_eval $1 --apply builtins.attrNames ${@[2,$]}
+}
+
+# Other runners
+
+step_ghci()
+{
+  step_run $* <<< ':quit'
 }
 
 # Process output matchers
@@ -581,6 +659,15 @@ file_exact()
   _step_files_exact+=([$2]=$1)
 }
 
+file_match()
+{
+  if (( ${+_step_files_match} == 0 ))
+  then
+    typeset -gA _step_files_match
+  fi
+  _step_files_match+=([$2]=$1)
+}
+
 # Output preprocessing
 
 preproc_output()
@@ -591,6 +678,11 @@ preproc_output()
 preproc_error()
 {
   _step_preproc_err=$*
+}
+
+preproc_files()
+{
+  _step_preproc_files=$*
 }
 
 # Behavior modifiers
@@ -620,9 +712,33 @@ describe()
   _step_description="$*"
 }
 
-# Helpers
+# Output preprocessors
 
 sub_store_hash()
 {
   _sub_store_hash
+}
+
+# Haskell shorthand for `head -n`
+take()
+{
+  head -n$*
+}
+
+# Haskell shorthand for `tail -n`
+take_end()
+{
+  tail -n$*
+}
+
+# Haskell shorthand for `tail -n+`
+drop()
+{
+  tail -n+$*
+}
+
+# Haskell shorthand for `head -n-`
+drop_end()
+{
+  head -n-$*
 }

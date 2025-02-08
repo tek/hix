@@ -1,11 +1,17 @@
 {self, util, ...}:
 let
-  inherit (util) config;
-  inherit (config) pkgs;
+  inherit (util) config pkgs lib;
 
   framework = import ./internal/framework.nix { inherit self util; };
 
-  test = name: import (./. + "/${name}/test.nix") { inherit config util pkgs; };
+  testlib = {
+  };
+
+  test = name: let
+    expr = import (./. + "/${name}/test.nix");
+  in if lib.isAttrs expr
+  then expr
+  else expr { inherit config util pkgs testlib; };
 
   tests-basic-1 = {
     app-rec = test "app-rec";

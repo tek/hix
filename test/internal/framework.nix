@@ -50,7 +50,12 @@ let
 
   cat > $_hix_test_bin/nix << EOF
   #!/bin/sh
-  exec $_hix_test_system_bin_nix/nix --quiet --quiet --show-trace "\$@"
+  if [ -n ''${hix_nix_quiet:-} ]
+  then
+    exec $_hix_test_system_bin_nix/nix --quiet --quiet --show-trace "\$@"
+  else
+    exec $_hix_test_system_bin_nix/nix --show-trace "\$@"
+  fi
   EOF
 
   cat > $_hix_test_bin/nix-vanilla << EOF
@@ -65,6 +70,8 @@ let
   export GIT_CONFIG_NOSYSTEM=1
   git config --global user.name hix-test
   git config --global user.email hix-test@localhost
+
+  export hix_nix_quiet=1
   '';
 
   asserts = ''
@@ -273,7 +280,7 @@ let
     cd "$work_dir"
 
     rm test.nix
-    sub $(print **/flake.nix(N))
+    sub **/flake.nix(N)
 
     message "Running test $(bold $(magenta $current))"
     ${testWrapper} $test_base $test
@@ -281,15 +288,13 @@ let
   '';
 
   main = ''
-  local failure=0
   local failed=()
   local t
-  for t in $=targets
+  for t in $targets
   do
     if ! runtest $t
     then
       error_message "Test failed: $t"
-      (( failure ++ ))
       failed+=($t)
     fi
   done
@@ -302,19 +307,20 @@ let
     done
   }
 
-  if (( $failure == 0 ))
+  local failures=$#failed
+  if (( $failures == 0 ))
   then
     message 'All tests succeeded.'
-  elif (( $failure > 1 ))
+  elif (( $failures > 1 ))
   then
-    error_message "$failure tests failed:"
+    error_message "$failures tests failed:"
     list_failures
   elif (( $#targets > 1 ))
     error_message "One test failed:"
     list_failures
   then
   fi
-  if (( $failure > 0 ))
+  if (( $failures > 0 ))
   then
     exit 1
   fi
@@ -327,19 +333,69 @@ let
   defineTargets = set: ''
   if (( $# == 0 ))
   then
-    targets="${toString (lib.attrNames set)}"
+    targets=(${toString (lib.attrNames set)})
   else
-    targets="$@"
+    targets=($*)
   fi
   typeset -A tests
   set -A tests ${testsAssocArray set}
   '';
 
-  # TODO run common steps like flake_update based on flags on the set.
-  casePreamble  = conf: [];
+  # TODO at least updateLock and root should probably be true, since these are used by almost all tests
+  defaultCase = {
+    path = [];
+    updateLock = false;
+    root = false;
+    git = false;
+    genCabal = false;
+  };
 
-  writeCase = name: conf: let
-    path = util.exportPathOptional (conf.path or []);
+  updateLock = ''
+  update_lock()
+  {
+    local flake
+    for flake in **/flake.nix(N)
+    do
+      pushd ''${flake%/flake.nix}
+      step_nix --quiet flake update
+      popd
+    done
+  }
+  update_lock
+  '';
+
+  cdRoot = ''
+  if [[ -d ./root ]]
+  then
+    cd root
+  fi
+  '';
+
+  genCabal = ''
+  step_run gen-cabal-quiet
+  '';
+
+  gitInit = ''
+  print 'result' >> .gitignore
+  step git init --quiet
+  step git add .
+  step git commit -m 'init' --quiet
+  '';
+
+  casePreamble = conf:
+  lib.optional conf.updateLock updateLock
+  ++
+  lib.optional conf.root cdRoot
+  ++
+  lib.optional conf.git gitInit
+  ++
+  lib.optional conf.genCabal genCabal
+  ;
+
+  writeCase = name: caseConf: let
+    conf = defaultCase // caseConf;
+    casePath = if lib.isFunction conf.path then conf.path pkgs else conf.path;
+    path = util.exportPathOptional casePath;
     test = conf.source or "source ${conf.test}";
   in pkgs.writeText "hix-test-${name}" (util.unlines (path ++ casePreamble conf ++ [test]));
 
