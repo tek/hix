@@ -74,137 +74,6 @@ let
   export hix_nix_quiet=1
   '';
 
-  asserts = ''
-  flake_update()
-  {
-    nix flake update
-  }
-
-  fail()
-  {
-    error_message $*
-    return 1
-  }
-
-  check_eq()
-  {
-    setopt local_options no_err_return
-    if [[ $1 != $2 ]]
-    then
-      fail "$3:"
-      print ""
-      diff <(print $1) <(print $2)
-      print ""
-      print "< $(red 'actual')
-  ---
-  > $(green 'expected')"
-      return 1
-    fi
-  }
-
-  check_re()
-  {
-    if [[ ! $1 =~ $2 ]]
-    then
-      fail "$3:\n$1"
-    fi
-  }
-
-  check_note()
-  {
-    check_eq "$(eval $1)" $2 "Output mismatch for\n    $(bold $(blue $1))\n    Note: $3\n    $(red Output diff)"
-  }
-
-  check()
-  {
-    local msg
-    if (( $# < 3 ))
-    then
-      msg="Output mismatch for $(bold $(blue $1))"
-    else
-      msg="$3"
-    fi
-    check_eq "$(eval $1)" $2 $msg
-  }
-
-  check_match()
-  {
-    if (( $# < 3 ))
-    then
-      msg="No match for $(bold $(green $2))\n    $(red in output of) $(bold $(blue $1))"
-    else
-      msg="$3"
-    fi
-    check_re "$(eval $1)" $2 $msg
-  }
-
-  check_err()
-  {
-    setopt local_options no_err_return
-    check_eq "$(eval $1 2>&1)" $2 $3
-  }
-
-  check_match_err()
-  {
-    setopt local_options no_err_return
-    check_re "$(eval $1 2>&1)" $2 $3
-  }
-
-  check_diff()
-  {
-    if ! diff $1 $2
-    then
-      fail "$3"
-      return 1
-    fi
-  }
-
-  nonempty()
-  {
-    setopt local_options err_return
-    local file=$1
-    [[ -f $file ]]
-    local size=$(stat -c %s $file)
-    (( $size > 0 ))
-  }
-
-  show_output()
-  {
-    local fd=$1 name=$2
-    if nonempty $fd
-    then
-      message "$(blue $name):"
-      echo ""
-      echo -e "$(cat $fd)"
-      echo ""
-    else
-      message "$(blue $name) empty"
-    fi
-  }
-
-  check_exit()
-  {
-    setopt local_options no_unset
-    local output_base=$(mktemp -d "$output_dir/check.XXX")
-    local stdout="$output_base/stdout" stderr="$output_base/stderr"
-    setopt local_options no_err_return
-    eval $1 1>$stdout 2>$stderr
-    local code=$?
-    if [[ $code != 0 ]]
-    then
-      error_message "$1 terminated with code $(yellow $code)$(red .)"
-      show_output $stdout stdout
-      show_output $stderr stderr
-      return 1
-    fi
-  }
-
-  ghci_match()
-  {
-    check_match "nix run $1 <<< ':quit' 2>&1" $2 $3
-  }
-  '';
-
   rsyncFilter = pkgs.writeText "hix-test-rsync-filter" ''
   + /*.nix
   + /flake.lock
@@ -228,7 +97,6 @@ let
   test_script=$2
   ${sharedVars}
   step_number=0
-  ${asserts}
   source ${./step.zsh}
   _hix_test_scope()
   {
@@ -341,12 +209,18 @@ let
   set -A tests ${testsAssocArray set}
   '';
 
-  # TODO at least updateLock and root should probably be true, since these are used by almost all tests
+  # These flags are available to test cases to control what kinds of automated setup is performed.
+  # `updateLock` and `root` default to `true`, since most tests require them.
   defaultCase = {
+    # Build inputs for the tests, i.e. packages that should be in `$PATH`.
     path = [];
-    updateLock = false;
-    root = false;
+    # Run `nix flake update` in all subdirectories that contain a `flake.nix`.
+    updateLock = true;
+    # Change the working directory to `./root` before starting the test, if it exists.
+    root = true;
+    # Initialize a git repo and create a commit, most likely in `./root` due to the above flag.
     git = false;
+    # Run `.#gen-cabal-quiet` before starting the test, but after initializing the git repo.
     genCabal = false;
   };
 

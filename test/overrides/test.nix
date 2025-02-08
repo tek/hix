@@ -40,61 +40,59 @@ let
 
 in {
   source = ''
-    cd ./dep
-    flake_update
+    pushd ../dep
     nix run .#gen-overrides
-    cd ../root
-    flake_update
+    popd
 
     describe "Version for $(yellow aeson) (single)"
     output_exact '2.1.2.1'
-    step 'print ${finalSingle.version}'
+    step print ${finalSingle.version}
 
     describe "Version for $(yellow aeson) (multi)"
     output_exact '2.1.2.1'
-    step 'print ${finalMulti.version}'
+    step print ${finalMulti.version}
 
     describe 'Tests enabled for single'
     output_exact 'true'
-    step 'print ${builtins.toJSON finalSingle.doCheck}'
+    step print ${builtins.toJSON finalSingle.doCheck}
 
     describe 'Tests disabled for multi'
     output_exact 'false'
-    step 'print ${builtins.toJSON finalMulti.doCheck}'
+    step print ${builtins.toJSON finalMulti.doCheck}
 
     describe 'Rightmost override supersedes previous'
     output_exact '2.0.1.0'
-    step 'print ${withOverrides.aeson.version}'
+    step print ${withOverrides.aeson.version}
 
     describe 'Options correctly applied'
     output_exact '2: 3/4'
-    step 'print ${presult.test}'
+    step print ${presult.test}
 
     describe 'Error message before gen-overrides'
     error_match "The option 'gen-overrides.enable' is set, but the file 'ops/overrides.nix' doesn't exist."
     exit_code 1
-    step_eval 'legacyPackages.${pkgs.system}.ghc.aeson.version'
+    step_eval legacyPackages.${pkgs.system}.ghc.aeson.version
 
     step_run gen-overrides
 
     describe "$(color_path overrides.nix) exists in $(color_path ops/)"
     output_exact 'overrides.nix'
-    step 'ls ops'
+    step ls ops
 
     describe "$(yellow aeson) version after gen-overrides"
     output_exact '"2.1.2.1"'
-    step_eval 'legacyPackages.${pkgs.system}.ghc.aeson.version'
+    step_eval legacyPackages.${pkgs.system}.ghc.aeson.version
 
-    step_nix build .#root1
+    step_build root1
 
     error_ignore
     step_nix flake check
 
-    sed -i 's/2\.1/5.8/' flake.nix
+    step sed -i 's/2\.1/5.8/' flake.nix
 
     describe 'Error message after changing overrides'
     error_match "Please run 'nix run .#gen-overrides' again."
     exit_code 1
-    step_eval 'legacyPackages.${pkgs.system}.ghc.aeson.version'
+    step_eval legacyPackages.${pkgs.system}.ghc.aeson.version
   '';
 }

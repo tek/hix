@@ -5,6 +5,7 @@ let
   framework = import ./internal/framework.nix { inherit self util; };
 
   testlib = {
+    hackage = import ./internal/hackage.nix { inherit pkgs; };
   };
 
   test = name: let
@@ -22,6 +23,7 @@ let
     gen-cabal = test "gen-cabal";
     ghci = test "ghci";
     hackage = test "hackage";
+    hackage-legacy = test "hackage-legacy";
     local-prelude = test "local-prelude";
     multi-exe = test "multi-exe";
     packages = test "packages";

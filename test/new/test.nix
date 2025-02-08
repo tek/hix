@@ -1,11 +1,24 @@
-{...}:
 {
-  test = builtins.toFile "new-test" ''
+  root = false;
+  updateLock = false;
+
+  source = ''
     mkdir root
     cd ./root
-    nix run path:$hix_dir#cli -- new --hix-url="path:$hix_dir" --name 'red-panda' --author 'Panda'
-    nix --quiet --quiet run .#gen-cabal-quiet
-    ghci_match '.#ghci -- -p red-panda -t main' 'passed 1 test' 'Running tests in generated project failed'
-    check_match 'nix run' 'Hello red-panda' 'App in generated project failed'
+
+    step_nix run path:$hix_dir#cli -- new --hix-url="path:$hix_dir" --name 'red-panda' --author 'Panda'
+
+    step_nix --quiet flake update
+
+    step_run gen-cabal-quiet
+
+    describe 'Run tests in generated project'
+    output_match 'passed 1 test'
+    error_ignore
+    step_ghci ghci -p red-panda -t main
+
+    describe 'Run app in generated project'
+    output_match 'Hello red-panda'
+    step_run
   '';
 }
