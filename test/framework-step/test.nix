@@ -76,7 +76,7 @@
   local number=9
 
   output_exact 'equal: 9'
-  require_success 'echo "equal: $number"' || return 1
+  require_success echo "equal: $number" || return 1
 
   local target_step2="[1m[35m>>>[0m[0m [31mStep [36m2[0m[31m failed:[0m
   [1m[35m>>>[0m[0m [31m  [1m[34mecho output_exact is reset after a step[0m[31m[1m[0m[31m[0m
@@ -86,10 +86,10 @@
   output_exact is reset after a step
   "
 
-  require_output $target_step2 'echo output_exact is reset after a step' || return 1
+  require_output $target_step2 echo 'output_exact is reset after a step' || return 1
 
   output_exact 'distinct: 8'
-  require_failure 'echo distinct: $number' || return 1
+  require_failure eval 'echo distinct: $number' || return 1
 
   both_output()
   {
@@ -151,22 +151,22 @@
   [1m[35m>>>[0m[0m [31m  [1m[34mboth_output[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Output doesn't match regex:
   [1m[35m>>>[0m[0m   [1m[33mstdout mes\\\\n[0m
-  [1m[35m>>>[0m[0m Output:
-
-  stdout message
-
   [1m[35m>>>[0m[0m rg output:
   rg: the literal \"\\\\n\" is not allowed in a regex
 
   Consider enabling multiline mode with the --multiline flag (or -U for short).
-  When multiline mode is enabled, new line characters can be matched."
+  When multiline mode is enabled, new line characters can be matched.
+  [1m[35m>>>[0m[0m Output:
+
+  stdout message
+  "
 
   output_match 'stdout mes\n'
   require_output $target_step13 both_output || return 1
 
   preproc_output sub_store_hash
   output_exact '/nix/store/hash-pkg-1.0'
-  require_success 'print /nix/store/aaa555zzzz999-pkg-1.0' || return 1
+  require_success print /nix/store/aaa555zzzz999-pkg-1.0 || return 1
 
   bad_preproc()
   {
