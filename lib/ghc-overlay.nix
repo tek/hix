@@ -13,7 +13,7 @@ let
 
   reified = deps.reify ghc.overrides;
 
-  path = "${config.base}/${gen.file}";
+  path = "${util.project.base}/${gen.file}";
 
   noOverridesFile = file: ''
   The option 'gen-overrides.enable' is set, but the file '${file}' doesn't exist.

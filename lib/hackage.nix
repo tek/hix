@@ -2,7 +2,7 @@
 with builtins;
 with util.lib;
 let
-  inherit (util) app build config;
+  inherit (util) app build config project;
 
   pkgs = config.internal.pkgs;
 
@@ -14,7 +14,7 @@ let
 
   allTargets = if cfg.packages == null then config.internal.packageNames else cfg.packages;
 
-  allCabals = concatMapStringsSep " " (n: "${config.internal.relativePackages.${n}}/${n}.cabal") allTargets;
+  allCabals = concatMapStringsSep " " (n: "${project.packages.${n}.path}/${n}.cabal") allTargets;
 
   confirm = type: ''
     print -n ">>> Upload ${type} now? [yN] "

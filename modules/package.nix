@@ -125,7 +125,7 @@ let
 
   versionFromFile = let
     f = config.versionFile;
-  in optionalAttrs (f != null && hasSuffix ".nix" f) { version = import "${global.base}/${f}"; };
+  in optionalAttrs (f != null && hasSuffix ".nix" f) { version = import "${project.base}/${f}"; };
 
 in {
 
@@ -156,7 +156,8 @@ in {
       explicitly.
       If the package is at the project root, this value should be `"."`.
       '';
-      type = types.str;
+      type = types.nullOr types.str;
+      default = null;
     };
 
     library = mkOption {
@@ -384,8 +385,6 @@ in {
   };
 
   config = {
-
-    relativePath = lib.mkDefault (util.path.relative config.src);
 
     rootModule = mkDefault (concatMapStringsSep "." util.toTitle (splitString "-" config.name));
 

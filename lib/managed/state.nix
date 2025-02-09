@@ -2,7 +2,7 @@
   inherit (util) config lib internal;
 
   current = let
-    file = "${config.base}/${config.managed.file}";
+    file = "${util.project.base}/${config.managed.file}";
   in
   { bounds = {}; overrides = {}; initial = {}; resolving = false; } //
   lib.optionalAttrs (config.managed.enable && lib.pathExists file) (import file);
