@@ -1,18 +1,21 @@
 # Unreleased
 
 * Add a reusable workflow for managed bounds updates.
-* Parse Nix json output messages to diagnose problems; add overrides for installed packages that fail with a bounds
-  error printed by Cabal.
+* Parse Nix json output messages to diagnose problems in managed bounds apps; add overrides for installed packages that
+  fail with a bounds error printed by Cabal.
 * Replace `envs.<env>.derivations` by per-output-category flags in `packages.<package>.expose` to control which packages
   are included in outputs.
-* Added `envs.<env>.expose` analogous to package exposition config.
-* Added `dev` to the scoped envs to allow access to excluded derivations.
+* Add `envs.<env>.expose`, analogous to package exposition config.
+* Add `dev` to the scoped envs to allow access to excluded derivations.
 * Add override combinators for toggling Cabal flags.
 * Remove packages with env name prefix (`ghc96-hix`) in favor of scoped derivations in `legacyPackages` (`ghc96.hix`).
 * Expose intermediate and final build outputs as nested sets of environments and packages via module arguments `build`
   and `outputs`.
+* Expose some computed attributes via the module argument `project` that were previously read-only module options.
 * Add an override combinator for fetching from a different Hackage server.
 * Add an override combinator for specifying the Hackage revision.
+* Move some non-package outputs in `legacyPackages` to the attr scope `project`.
+* Move all nested outputs in `apps` to `legacyPackages` to adapt to stricter validation in Nix 2.19.
 
 # 0.7.0: Hix Unbound: Majors Apart
 
