@@ -30,6 +30,7 @@ let
     packages = test "packages";
     subdir = test "subdir";
     update-cli-version = test "update-cli-version";
+    warning = test "warning";
   };
 
   tests-basic-2 = {

@@ -2,6 +2,7 @@
 { name, lib, config, ... }:
 with lib;
 let
+  inherit (util) internal project;
 
   pkgConfig = config;
   pkgName = name;
@@ -394,7 +395,17 @@ in {
 
     description = mkDefault "See ${config.hackageRootLink}";
 
-    subpath = config.relativePath;
+    subpath =
+      internal.warn.deprecatedOptionReadOnly
+      {
+        key = "packages.subpath";
+        option = "packages.*.subpath";
+        replacement = "project.packages.*.path";
+        extra = ''
+
+        For instructions on how to access 'project', see [https://tryp.io/hix#intermediate-outputs].'';
+      }
+      project.packages.${name}.path;
 
     dep = {
 
