@@ -23,7 +23,7 @@ in {
   legacyPackages =
     { env = internal.envs.mapMaybe legacyEnv validBuildEnvs; }
     //
-    (internal.envs.mapMaybe appsEnv (internal.envs.filterExposed "apps" validBuildEnvs))
+    (internal.envs.mapMaybe appsEnv (internal.envs.filterExposed "scoped" validBuildEnvs))
     ;
 
   shells = util.mapValues (e: e.shell) (internal.envs.filterExposed "shell" validEnvs);
