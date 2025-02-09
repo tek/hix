@@ -223,7 +223,7 @@ let
   env.systems == null || (elem config.system env.systems);
 
   runBuildApp = name:
-  "nix --quiet --quiet --quiet run .#${util.internalScope}.${name}";
+  "nix --quiet --quiet --quiet --show-trace run .#${util.internalScope}.${name}";
 
   dummyAppScript = pre: sub: script "hix-dummy-app" ''
   ${basic.loadConsole}
