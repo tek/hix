@@ -20,7 +20,8 @@ in {
       be set to `./.` explicitly.
       '';
       example = literalExpression "./.";
-      type = path;
+      type = types.nullOr path;
+      default = null;
     };
 
     packages = mkOption {
@@ -237,16 +238,6 @@ in {
         readOnly = true;
       };
 
-      packagePaths = mkOption {
-        type = attrsOf path;
-        readOnly = true;
-      };
-
-      relativePackages = mkOption {
-        type = attrsOf str;
-        readOnly = true;
-      };
-
       cabal-extra = mkOption {
         type = attrsOf unspecified;
         default = {};
@@ -274,35 +265,10 @@ in {
   };
 
   config = {
-    base = mkDefault util.path.inferBase;
 
-    main = mkDefault (let
-      names = config.internal.packageNames;
-      count = length names;
-    in
-      if count == 1
-      then head names
-      else if count == 0
-      then ''
-      This action requires at least one package to be defined, as in:
-      {
-        packages.my-project = { src = ./.; };
-      }
-      ''
-      else let
-        autoMain = internal.packages.selectMain (lib.attrNames config.packages);
-      in if autoMain != null
-      then autoMain
-      else throw ''
-      Could not determine the main package.
-      This should only happen if all packages depend on each other cyclically.
-      If that is not the case, please report a bug at: https://github.com/tek/hix/issues
-      You can specify the main package explicitly:
-      {
-        main = "my-package";
-      }
-      ''
-    );
+    packages = mkDefault internal.project.defaultPackages;
+
+    main = mkDefault internal.project.defaultMain;
 
     name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
@@ -317,10 +283,6 @@ in {
       basicGhc = config.internal.pkgs.haskell.packages.${config.compiler};
 
       packageNames = attrNames config.packages;
-
-      packagePaths = util.mapValues (p: p.src) config.packages;
-
-      relativePackages = util.mapValues (p: p.relativePath) config.packages;
 
       hixVersion = "0.7.1";
 

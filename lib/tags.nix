@@ -1,6 +1,7 @@
 {config, util}:
 let
 
+  inherit (util) project;
   inherit (config.envs.dev.ghc) compiler pkgs ghc;
 
   thax = import (builtins.fetchTarball {
@@ -9,17 +10,17 @@ let
   }) { inherit pkgs compiler; };
 
   withPrefix =
-    name: dir:
+    name: pkg:
     let
       p = ghc.${name};
     in
-      if dir == "."
+      if pkg.path == "."
       then p
-      else p // { tagsPrefix = dir; };
+      else p // { tagsPrefix = pkg.path; };
 
   projectTags =
     thax.combined.all {
-      targets = pkgs.lib.attrsets.mapAttrsToList withPrefix config.internal.relativePackages;
+      targets = pkgs.lib.attrsets.mapAttrsToList withPrefix project.packages;
     };
 
 in {

@@ -18,7 +18,7 @@ let
   in {
     _module.args = {
       inherit util;
-      inherit (util) internal build outputs;
+      inherit (util) internal project build outputs pkgs;
     };
   };
 

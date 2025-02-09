@@ -321,6 +321,8 @@ let
 
     internal = import ./internal/default.nix { inherit util; };
 
+    project = import ./project/default.nix { inherit util; };
+
     build = import ./build/default.nix { inherit util; };
 
     outputs = import ./outputs/default.nix { inherit util; };

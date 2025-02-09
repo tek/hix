@@ -26,6 +26,7 @@ let
     hackage-legacy = test "hackage-legacy";
     local-prelude = test "local-prelude";
     multi-exe = test "multi-exe";
+    package-default = test "package-default";
     packages = test "packages";
     subdir = test "subdir";
     update-cli-version = test "update-cli-version";

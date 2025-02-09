@@ -1,17 +1,16 @@
 {config, util}:
 {verbose}:
-with builtins;
 let
+  inherit (util) lib project;
   inherit (config.hpack.internal) packages;
-  inherit (config.internal) pkgs;
 
   packageCall = n: p:
-  if hasAttr n packages
-  then "synthetic ${n} ${p} ${toFile "package.yaml" (toJSON packages.${n})}"
+  if lib.hasAttr n packages
+  then "synthetic ${n} ${p} ${builtins.toFile "package.yaml" (builtins.toJSON packages.${n})}"
   else "regular ${n} ${p}";
 
   packageCalls =
-    pkgs.lib.mapAttrsToList packageCall config.internal.relativePackages;
+    lib.mapAttrsToList packageCall (util.mapValues (p: p.path) project.packages);
 
 in util.zscript "hpack.zsh" ''
   setopt no_unset
@@ -57,5 +56,5 @@ in util.zscript "hpack.zsh" ''
   }
 
   message 'Generating Cabal files...'
-  ${concatStringsSep "\n" packageCalls}
+  ${lib.concatStringsSep "\n" packageCalls}
 ''

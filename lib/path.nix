@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config lib;
+  inherit (util) internal lib project;
 
   noRoot = message: throw ''
   Could not determine the project's root directory in the store.
@@ -48,7 +48,7 @@
 
   in step path;
 
-  packageRoots = lib.mapAttrs findRoot config.internal.packagePaths;
+  packageRoots = lib.mapAttrs findRoot internal.project.packagePaths;
 
   inferBase = let
     roots = lib.attrValues packageRoots;
@@ -62,7 +62,7 @@
 
   relative = specRaw:
   let
-    base = config.base;
+    base = project.base;
     spec = toString specRaw;
     new = lib.strings.removePrefix (toString base + "/") spec;
     failed = new == spec;

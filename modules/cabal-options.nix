@@ -4,6 +4,8 @@ with lib;
 
 let
 
+  inherit (util) project;
+
   preludeModule = {
 
     options = with types; {
@@ -57,7 +59,7 @@ in {
         f = global.hackage.versionFile;
       in
         if (f != null && hasSuffix ".nix" f)
-        then import "${global.base}/${f}"
+        then import "${project.base}/${f}"
         else "0.1.0.0";
     };
 
