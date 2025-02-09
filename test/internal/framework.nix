@@ -49,8 +49,8 @@ let
   mkdir -p $_hix_test_bin
 
   cat > $_hix_test_bin/nix << EOF
-  #!/bin/sh
-  if [ -n ''${hix_nix_quiet:-} ]
+  #!${pkgs.runtimeShell}
+  if [[ -n "\''${hix_nix_quiet:-}" ]]
   then
     exec $_hix_test_system_bin_nix/nix --quiet --quiet --show-trace "\$@"
   else

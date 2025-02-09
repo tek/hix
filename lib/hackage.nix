@@ -86,7 +86,7 @@ let
     if [[ -n $new_version ]]
     then
       ${cfg.versionFileUpdate file}
-      ${if needsGenCabal file then "nix --quiet --quiet --quiet run '.#gen-cabal-quiet'" else ""}
+      ${if needsGenCabal file then util.runBuildApp "gen-cabal-quiet" else ""}
       ${if gitAdd && file != null then addFiles file else ""}
       ${if cfg.setChangelogVersion then bumpChangelogs else ""}
     fi
@@ -227,7 +227,7 @@ let
   new_version=''${1:-}
   version=''${1:-}
   ${handleVersion file type}
-  ${if publish && cfg.check then "nix -L flake check" else ""}
+  ${if publish && cfg.check then "nix flake check" else ""}
   ${util.runBuildApp "hackage.upload.${if publish then "release" else "candidate"}-${pkg}"} $version
   '';
 
