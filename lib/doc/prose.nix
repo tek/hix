@@ -1333,6 +1333,138 @@ in {
 
   Prints all components' dependencies and their actual versions in the dev environment, or the named environment in the
   second variant.
+
+  ### Access to intermediate outputs {#intermediate-outputs}
+
+  Packages and environments are subjected to several stages of transformation in order to arrive at the final flake
+  outputs from the initial configuration obtained from module options.
+  In order to make this process more transparent and flexible, in particular for overriding outputs without having to
+  reimplement substantial parts of Hix's internals, intermediate data is exposed in the module arguments `project`,
+  `build`, and `outputs`.
+  This means that the module that constitutes the Hix flake config can access these arguments by listing them in its
+  parameter set:
+
+  ```
+  {
+    outputs = {hix, ...}: hix ({config, project, build, outputs, ...}: {
+      packages.core.src = ./core;
+      outputs.packages.custom-build = build.packages.dev.core.static.overrideAttrs (...);
+    });
+  }
+  ```
+
+  For now, these sets don't have a stable API, but here is a brief overview:
+
+  - `project` contains values that are closely related to the config options they are computed from, to be used by a
+    wide spectrum of consumers:
+    - `project.base` contains the project's base directory in the nix store, which is either [](#opt-general-base) if
+      that's non-null, or the directory inferred from [](#opt-package-src) if only the package config contains paths.
+    - `project.packages.*.path` contains the relative path to a package, either given by [](#opt-package-relativePath)
+      if that's non-null, or the directory inferred from `project.base`.
+
+  - `build` contains the full set of derivations for each package in each env.
+    Its API looks roughly like this:
+    ```
+    {
+      packages = {
+        dev = {
+          core = {
+            package = <derivation>;
+            static = <derivation>;
+            musl = <derivation>;
+            cross = {
+              aarch64-android = <derivation>;
+              ...
+            };
+            release = <derivation>;
+            ghc = { <package set used for this package> };
+            cabal = { <cabal config for this package> };
+            expose = true;
+            executables = {
+              <name> = {
+                package = <derivation>;
+                static = <derivation>;
+                musl = <derivation>;
+                app = <flake app>;
+                appimage = <derivation>;
+              };
+              ...
+            };
+          };
+          api = {
+            ...
+          };
+          ...
+        };
+        ghc910 = {
+          ...
+        };
+        ...
+      };
+      envs = {
+        dev = {
+          # Like above, but only for the main package of the set
+          static = <derivation>;
+          musl = <derivation>;
+          cross = <attrs>;
+          release = <derivation>;
+          # Main executable of the main package
+          api = <derivation>;
+          # All executables of all packages, flattened
+          executables = <attrs>;
+        };
+        ...
+      };
+      commands = {
+        default = {
+          # All built-in and custom commands using their default env env
+          ghci = <derivation>;
+          hls = <derivation>;
+          ...
+        };
+        envs = {
+          dev = {
+            # All built-in and custom commands using this env
+            ghci = <derivation>;
+            hls = <derivation>;
+            ...
+          };
+        };
+      };
+    }
+    ```
+
+  - `outputs` contains most of what will eventually end up in the flake outputs, keyed by output type.
+
+  All of this data is also exposed in the flake outputs, and can therefore be inspected from `nix repl`:
+  ```
+  Welcome to Nix 2.18.5. Type :? for help.
+
+  nix-repl> :load-flake .
+  Added 19 variables.
+
+  nix-repl> legacyPackages.x86_64-linux.project
+  {
+    # Values from `project`
+    base = /nix/store/ga9ifpvqzqgi6sqcfqhdvhj0qmfms8hk-source;
+    packages = { ... };
+    # The sets `build` and `outputs`, as attributes of `project` for simpler scoping
+    build = { ... };
+    outputs = { ... };
+    # Other internal data
+    config = <full config>;
+    ghc = <dev ghc set>;
+    ghc0 = <dev ghc set without overrides>;
+    pkgs = <dev nixpkgs>;
+    show-config = <see above>;
+  }
+
+  nix-repl> legacyPackages.x86_64-linux.project.build.packages.dev.hix.package
+  «derivation /nix/store/qys3qc4kyvfx6wlsqkvjxk40dyq28gl3-hix-0.7.2.drv»
+
+  nix-repl> packages.x86_64-linux.hix
+  «derivation /nix/store/qys3qc4kyvfx6wlsqkvjxk40dyq28gl3-hix-0.7.2.drv»
+  ```
   '';
 
 }
