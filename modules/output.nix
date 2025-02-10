@@ -147,12 +147,13 @@ in {
       highPrio = {
         packages = outputs.packages.packages;
 
-        checks = outputs.packages.checks;
-
         legacyPackages = {
           overrides = config.exportedOverrides;
           ${prefix}.env = util.managed.output.envGhcs;
-          ${util.internalScope} = lib.mapAttrs util.ensureLegacyApp basicApps;
+          ${util.internalScope} =
+            lib.mapAttrs util.ensureLegacyApp basicApps
+            //
+            { cli-context = outputs.cli-context; };
         };
 
         devShells = outputs.envs.shells // { default = outputs.envs.shells.dev; };
@@ -171,7 +172,7 @@ in {
         low = util.mergeAuto lowPrio.${name} { ${prefix} = removeAttrs lowPrio.${name} [prefix]; };
       in optionalAttrs (lib.hasAttr name lowPrio) low // highPrio.${name};
 
-      asDefault = util.mapValues lib.mkDefault;
+      asDefault = lib.mapAttrs (name: if name == util.internalScope then lib.id else lib.mkDefault);
 
       withInternal = outputs:
       util.mergeAll [
@@ -181,7 +182,7 @@ in {
 
     in {
       packages = asDefault (withPrefix "packages");
-      checks = asDefault (withPrefix "checks");
+      checks = asDefault outputs.packages.checks;
       legacyPackages = asDefault (withInternal (withPrefix "legacyPackages"));
       devShells = asDefault (withPrefix "devShells");
       apps = asDefault (withPrio "apps");

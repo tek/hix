@@ -68,10 +68,12 @@ in {
     output_exact '2: 3/4'
     step print ${presult.test}
 
+    aeson_version="legacyPackages.${pkgs.system}.env.dev.ghc.aeson.version"
+
     describe 'Error message before gen-overrides'
     error_match "The option 'gen-overrides.enable' is set, but the file 'ops/overrides.nix' doesn't exist."
     exit_code 1
-    step_eval legacyPackages.${pkgs.system}.ghc.aeson.version
+    step_eval $aeson_version
 
     step_run gen-overrides
 
@@ -81,7 +83,7 @@ in {
 
     describe "$(yellow aeson) version after gen-overrides"
     output_exact '"2.1.2.1"'
-    step_eval legacyPackages.${pkgs.system}.ghc.aeson.version
+    step_eval $aeson_version
 
     step_build root1
 
@@ -93,6 +95,6 @@ in {
     describe 'Error message after changing overrides'
     error_match "Please run 'nix run .#gen-overrides' again."
     exit_code 1
-    step_eval legacyPackages.${pkgs.system}.ghc.aeson.version
+    step_eval $aeson_version
   '';
 }

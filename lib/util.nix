@@ -47,7 +47,7 @@ let
 
     packageConf = pkg: {
       inherit (pkg) name;
-      src = pkg.subpath;
+      src = util.project.packages.${pkg.name}.path;
       components = mapAttrs (_: componentConf) (util.internal.packages.normalized pkg);
     };
 

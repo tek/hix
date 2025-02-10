@@ -1,6 +1,6 @@
 {config, pkgs, util, prose}: let
 
-  inherit (util) outputs internal;
+  inherit (util) internal;
 
   global = config;
   lib = pkgs.lib;

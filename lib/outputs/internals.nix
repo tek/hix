@@ -15,11 +15,16 @@ in {
 
   show-config.app = show-config.appScript;
 
-  legacyPackages = {
-    inherit config;
-    inherit (config.envs.dev.ghc) pkgs ghc;
-    ghc0 = config.envs.dev.ghc.vanillaGhc;
-    show-config = show-config.shell;
-  };
+  legacyPackages.project =
+    util.mergeAll [
+      util.project
+      {
+        inherit (util) build outputs;
+        inherit config;
+        inherit (config.envs.dev.ghc) pkgs ghc;
+        ghc0 = config.envs.dev.ghc.vanillaGhc;
+        show-config = show-config.shell;
+      }
+    ];
 
 }
