@@ -31,7 +31,7 @@ let
     pregen = lib.optionalAttrs exists (import path);
     stored = lib.optionalAttrs exists (pregen.${ghc.name} or {});
     error = if exists then if lib.hasAttr ghc.name pregen then null else noOverridesGhc else noOverridesFile gen.file;
-  in deps.replace error stored ghc.overrides self super;
+  in deps.replace error ghc.name stored ghc.overrides self super;
 
   computeOverrides =
     if gen.enable && ghc.gen-overrides && !util.managed.state.current.resolving

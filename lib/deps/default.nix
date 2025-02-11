@@ -17,27 +17,23 @@ let
 
   reifySpec = self: super: pkg: spec.reify { inherit pkgs self super pkg; };
 
+  # Directly reify the override combinators, without using pregenerated derivations.
   reify = overrides: self: super:
   lib.mapAttrs (reifySpec self super) (normalize overrides self super);
 
-  replaceSrc = src: drv:
-  pkgs.haskell.lib.overrideCabal drv (_: { inherit src; });
-
-  noPackage = pkg: desc: ''
+  noPackage = ghcName: pkg: desc: ''
   The package '${pkg}' is declared in the overrides as a pregenerated derivation (${desc}),
-  but the generated file does not contain an entry for it.
+  but the generated file does not contain an entry for it in the GHC set named '${ghcName}'.
   Please run 'nix run .#gen-overrides'.
   If that doesn't resolve the issue, the override combinator supplying the derivation might be buggy.
   '';
 
-  pregenDecl = fileError: pregen: pkg: decl: let
+  pregenDecl = fileError: ghcName: pregen: pkg: decl: let
     stored = pregen.${pkg};
 
     properSrc = decl.pregen.src decl.meta pkg;
 
-    impl = meta: {self, ...}: replaceSrc properSrc (self.callPackage meta.drv {});
-
-    d = spec.decl "pregen" "Pregen derivation for '${pkg}'" { drv = stored.drv; } impl;
+    d = spec.decl "pregen" "Pregen derivation for '${pkg}'" { drv = stored.drv; } (decl.pregen.hydrate properSrc);
 
     checkMeta =
       if stored.meta != decl.meta
@@ -57,16 +53,19 @@ let
   in
   if lib.hasAttr pkg pregen
   then checkMeta
-  else throw (if fileError == null then noPackage pkg decl.desc else fileError);
+  else throw (if fileError == null then noPackage ghcName pkg decl.desc else fileError);
 
-  replaceDecl = error: self: super: pregen: pkg: comp: let
+  replaceDecl = error: ghcName: self: super: pregen: pkg: comp: let
     canReplace = comp.decl != null && comp.decl.pregen.enable;
-    replaced = comp // lib.optionalAttrs canReplace { decl = pregenDecl error pregen pkg comp.decl; };
+    replaced = comp // lib.optionalAttrs canReplace { decl = pregenDecl error ghcName pregen pkg comp.decl; };
   in spec.reifyComp { inherit pkgs self super pkg; } replaced;
 
-  replace = error: pregen: overrides: self: super: let
+  # Use the pregenerated derivations in `pregen`, which were read from the persisted file, in combination with the OC
+  # declarations in `overrides`, to produce final derivations with transformations applied.
+  replace = error: ghcName: pregen: overrides: self: super: let
+    # Directly compiled OCs, containing non-persistable transformations like `jailbreak`.
     comp = compile overrides self super;
-  in lib.mapAttrs (replaceDecl error self super pregen) comp;
+  in lib.mapAttrs (replaceDecl error ghcName self super pregen) comp;
 
 in {
   inherit normalize compile reify replace;

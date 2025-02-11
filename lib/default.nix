@@ -127,6 +127,8 @@ let
 
   apMaybe = lib.mapNullable;
 
+  fromMaybe = alt: maybe alt lib.id;
+
   filterNulls = filterAttrs (_: a: a != null);
 
   restrictKeys = allow: lib.filterAttrs (k: _: lib.elem k allow);
@@ -408,6 +410,7 @@ in {
   mapMaybe
   maybe
   apMaybe
+  fromMaybe
   filterNulls
   restrictKeys
   removeKeys

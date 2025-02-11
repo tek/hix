@@ -41,7 +41,7 @@ let
 in {
   source = ''
     pushd ../dep
-    nix run .#gen-overrides
+    step_run gen-overrides
     popd
 
     describe "Version for $(yellow aeson) (single)"
@@ -68,7 +68,8 @@ in {
     output_exact '2: 3/4'
     step print ${presult.test}
 
-    aeson_version="legacyPackages.${pkgs.system}.env.dev.ghc.aeson.version"
+    aeson="legacyPackages.${pkgs.system}.env.dev.ghc.aeson"
+    aeson_version="''${aeson}.version"
 
     describe 'Error message before gen-overrides'
     error_match "The option 'gen-overrides.enable' is set, but the file 'ops/overrides.nix' doesn't exist."
@@ -84,6 +85,10 @@ in {
     describe "$(yellow aeson) version after gen-overrides"
     output_exact '"2.1.2.1"'
     step_eval $aeson_version
+
+    describe "$(yellow aeson) revision after gen-overrides"
+    output_exact '"2"'
+    step_eval ''${aeson}.passthru.revision
 
     step_build root1
 
