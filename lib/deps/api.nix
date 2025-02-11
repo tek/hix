@@ -47,6 +47,9 @@ let
 
   cabalOverrides = spec.option "cabal2nix-overrides" "Cabal2nix overrides";
 
+  revision = revision: sha256:
+  spec.option "revision" "Hackage revision" { revision = toString revision; inherit sha256; };
+
   unknownHackage = name: ''
   An override refers to the nonexistent Hackage server config '${name}'.
   '';
@@ -81,7 +84,7 @@ let
 in transformers // {
   inherit (c2n) hackageAt source;
   inherit self super pkgs;
-  inherit reset transform transform_ transformDrv noHpack cabalOverrides drv;
+  inherit reset transform transform_ transformDrv noHpack cabalOverrides revision drv;
   inherit hackageConfGen hackageConf hackage;
   inherit (spec) option;
   hsLib = hl;

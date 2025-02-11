@@ -7,6 +7,7 @@
   outputs = { hix, dep, ... }: hix.lib._hix_test ({config, lib, ...}: {
     systems = ["x86_64-linux" "aarch64-darwin"];
     depsFull = [dep];
+    ghcVersions = [];
     packages.root = {
       src = ./.;
       library.enable = true;
@@ -18,8 +19,9 @@
     };
     compat.enable = false;
     gen-overrides.enable = true;
-    overrides = {self, pkgs, hackage, jailbreak, buildInputs, minimal, ...}: {
-      aeson = minimal (jailbreak (hackage "2.1.2.1" "1f1f6h2r60ghz4p1ddi6wnq6z3i07j60sgm77hx2rvmncz4vizp0"));
+    overrides = {self, pkgs, hackage, revision, jailbreak, buildInputs, minimal, ...}: {
+      aeson = minimal (jailbreak (revision 2 "sha256-yE5ZRHn17Gd8qt42Pqou9Ln9xvrjPtBxxuuGAsrD05s=" (
+        revision 3 "invalid" (hackage "2.1.2.1" "sha256-4P64yWe27iw6PKc+DYw8II5vsOUmthYu+fABkwU0Lrg="))));
       extra = jailbreak;
       root1 = jailbreak self.root;
       root = buildInputs [pkgs.git];

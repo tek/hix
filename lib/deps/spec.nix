@@ -45,9 +45,9 @@ let
     else if spec.type == "decl"
     then { found = true; inherit result; }
     else if spec.type == "option"
-    then { found = false; result = result ++ [spec]; }
+    then { found = false; result = result // { ${spec.name} = (result.${spec.name} or []) ++ [spec.meta]; }; }
     else { found = false; inherit result; };
-  in (foldl folder { found = false; result = []; } specs).result;
+  in (foldl folder { found = false; result = {}; } specs).result;
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ let
     else if spec.type == "transform"
     then spin (acc // { trans = acc.trans ++ [spec]; }) specs
     else if spec.type == "option"
-    then spin (acc // { options = acc.options // { ${spec.name} = acc.options.${spec.name} or [] ++ [spec.meta]; }; }) specs
+    then spin (acc // { options = acc.options // { ${spec.name} = (acc.options.${spec.name} or []) ++ [spec.meta]; }; }) specs
     else if spec.type == "no-pregen"
     then spin acc
     else throw "invalid spec type '${spec.type}'";
@@ -134,12 +134,15 @@ let
     impl = {};
   };
 
+  # Entry point for applying OCs to a GHC set to pregenerate derivations in order to persist them to disk.
   reifyPregen = args: specs: let
     norm = listOC specs;
     spec = finalDecl norm;
     options = collectOptions norm;
     pregen = if spec == null then null else runPregen args options spec;
   in if pregen == null then noPregen else pregen;
+
+# ----------------------------------------------------------------------------------------------------------------------
 
   transform = name: desc: meta: f: mkOC {
     inherit name desc meta;
@@ -159,7 +162,15 @@ let
     impl = meta;
   };
 
-  pregen = src: impl: old: old // { single = old.single // {  pregen = { enable = true; inherit src impl; }; }; };
+  pregen = src: impl: hydrate: old:
+  old // {
+    single = old.single // {
+      pregen = {
+        enable = true;
+        inherit src impl hydrate;
+      };
+    };
+  };
 
   drv = d: decl "drv" "Explicit derivation" { drv = d; } (meta: _: meta.drv);
 

@@ -9,71 +9,98 @@
 
   option = name: options: options.${name} or [];
 
+  optionCat = name: options: util.catSets (option name options);
+
+  optionWords = name: options: util.unwords (option name options);
+
+# ----------------------------------------------------------------------------------------------------------------------
+
   pregenCabal2nixDrv = drv:
   builtins.readFile "${drv.passthru.cabal2nixDeriver}/default.nix";
 
-  # TODO check if this chooses the expected override, i.e. for `revision 2 h1 (revision 1 h2 (super.aeson))` it should
-  # pick 2.
+  replaceCabal2nixSrc = src: drv:
+  pkgs.haskell.lib.overrideCabal drv (_: { inherit src; });
+
   hackageRev = options: let
     values = option "revision" options;
   in if values == [] then { revision = null; sha256 = null; } else lib.head values;
 
-  hackageDrv = meta: {self, pkg, options, ...}: let
+  setRevision = pkgs: options: let
+    rev = hackageRev options;
+  in pkgs.haskell.lib.compose.overrideCabal ({passthru ? null, ...}: {
+    revision = rev.revision;
+    editedCabalFile = rev.sha256;
+    passthru = util.fromMaybe {} passthru // { inherit (rev) revision; };
+  });
 
-    hackageArgs = { inherit (meta) ver sha256; inherit pkg; rev = hackageRev options; };
-
-    c2nArgs = util.catSets (option "cabal2nix-overrides" options);
-
-  in self.callHackageDirect hackageArgs c2nArgs;
-
-  srcHackage = meta: pkg: let
+  srcHackage = mkBaseUrl: meta: pkg: let
     pkgver = "${pkg}-${meta.ver}";
   in pkgs.fetchzip {
-    url = "mirror://hackage/${pkgver}/${pkgver}.tar.gz";
+    url = "${mkBaseUrl meta}/${pkgver}/${pkgver}.tar.gz";
     inherit (meta) sha256;
   };
 
-  pregenHackage = meta: args:
-  pregenCabal2nixDrv (hackageDrv meta args);
+  hydrateCabal2nix = properSrc: meta: {self, options, pkgs, ...}: let
+    c2nArgs = optionCat "cabal2nix-overrides" options;
+  in setRevision pkgs options (replaceCabal2nixSrc properSrc (self.callPackage meta.drv c2nArgs));
+
+  genHackageDrv = createDrv: meta: args@{self, pkg, options, pkgs, ...}: let
+
+    c2nArgs = optionCat "cabal2nix-overrides" options;
+
+  in setRevision pkgs options (createDrv meta args c2nArgs);
+
+  genHackage = {name, desc, meta, mkBaseUrl, createDrv}: let
+    src = srcHackage mkBaseUrl;
+    mkDrv = genHackageDrv (meta: args: createDrv (src meta args) meta args);
+    pregen = meta': args: pregenCabal2nixDrv (mkDrv meta' args);
+    d = decl name desc meta mkDrv;
+  in spec.pregen src pregen hydrateCabal2nix d;
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+  callHackage = meta: {self, pkg, ...}:
+  self.callHackageDirect { inherit (meta) ver sha256; inherit pkg; };
 
   hackage = ver: sha256:
-  spec.pregen srcHackage pregenHackage (decl "hackage" "Hackage: ${ver}" { inherit ver sha256; } hackageDrv);
-
-  srcHackageAt = meta: pkg: let
-    pkgver = "${pkg}-${meta.ver}";
-  in pkgs.fetchzip {
-    url = "${meta.url}/package/${pkgver}/${pkgver}.tar.gz";
-    inherit (meta) sha256;
+  genHackage {
+    name = "hackage";
+    desc = "Hackage: ${ver}";
+    meta = { inherit ver sha256; };
+    mkBaseUrl = _: "mirror://hackage";
+    createDrv = _: callHackage;
   };
 
-  hackageAtDrv = meta: {self, pkg, options, pkgs, ...}:
-    let
-      c2nArgs = util.catSets (option "cabal2nix-overrides" options);
+# ----------------------------------------------------------------------------------------------------------------------
 
-      firstRevision = self.callCabal2nix pkg (srcHackageAt meta pkg) c2nArgs;
-
-      rev = hackageRev options;
-    in
-    pkgs.haskell.lib.compose.overrideCabal (_: { revision = rev.revision; editedCabalFile = rev.sha256; }) firstRevision;
-
-  pregenHackageAt = meta: args:
-  pregenCabal2nixDrv (hackageAtDrv meta args);
+  callHackageAt = src: meta: {self, pkg, ...}: c2nArgs:
+  self.callCabal2nix pkg src c2nArgs;
 
   # TODO add a test with local hackage for this
-  hackageAt = url: ver: sha256: let
-    d = decl "hackage-at" "Hackage at ${url}: ${ver}" { inherit url ver sha256; } hackageAtDrv;
-  in spec.pregen srcHackageAt pregenHackageAt d;
+  hackageAt = url: ver: sha256:
+  genHackage {
+    name = "hackage-at";
+    desc = "Hackage at ${url}: ${ver}";
+    meta = { inherit url ver sha256; };
+    mkBaseUrl = meta: "${meta.url}/package";
+    createDrv = callHackageAt;
+  };
+
+# ----------------------------------------------------------------------------------------------------------------------
 
   cabal2nixDrv = {src}: {self, pkg, options, ...}:
-  self.callCabal2nixWithOptions pkg src (util.unwords options.cabal2nix or []) (util.catSets options.cabal2nix-overrides or []);
+  self.callCabal2nixWithOptions pkg src (optionWords "cabal2nix" options) (optionCat "cabal2nix-overrides" options);
 
   srcCabal2nix = meta: pkg: meta.src;
 
   pregenCabal2nix = meta: args:
   pregenCabal2nixDrv (cabal2nixDrv meta args);
 
-  cabal2nix = src:
-  spec.pregen srcCabal2nix pregenCabal2nix (decl "cabal2nix" "Cabal2nix derivation from ${src}" { inherit src; } cabal2nixDrv);
+  cabal2nix = src: let
+    d = decl "cabal2nix" "Cabal2nix derivation from ${src}" { inherit src; } cabal2nixDrv;
+  in spec.pregen srcCabal2nix pregenCabal2nix hydrateCabal2nix d;
+
+# ----------------------------------------------------------------------------------------------------------------------
 
   source = {
     root = cabal2nix;
