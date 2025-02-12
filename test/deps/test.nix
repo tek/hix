@@ -21,7 +21,6 @@
   cabal_update()
   {
     output_ignore
-    error_ignore # Somehow bash complains about the forced locale not existing 🙄
     step_develop cabal update
   }
 

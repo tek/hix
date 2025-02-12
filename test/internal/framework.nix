@@ -41,8 +41,6 @@ let
   if_ci '
     export hix_test_full_output=1
     export hix_test_show_stderr_failure=1
-    export LC_ALL="C.utf8"
-    export LANG="C.utf8"
   '
 
   _hix_test_bin="$tmp_dir/bin"
@@ -309,6 +307,8 @@ let
         -k hix_test_full_output \
         -k hix_test_ci \
         -k hix_test_verbose \
+        -k LANG \
+        -k LC_ALL \
         path:${self}#hix-test -c ${conf.main} $@
     fi
     '';
