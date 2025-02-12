@@ -31,6 +31,7 @@ let
     subdir = test "subdir";
     update-cli-version = test "update-cli-version";
     warning = test "warning";
+    tags = test "tags";
   };
 
   tests-basic-2 = {
