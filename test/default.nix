@@ -72,8 +72,8 @@ let
     basic-3 = framework.suite tests-basic-3;
     vm = framework.suite tests-vm;
     managed = framework.suite tests-managed;
-    all = framework.suite tests // { attr = "test"; };
     framework = framework.suite tests-framework;
+    all = framework.suite (tests // tests-framework) // { attr = "test"; };
   };
 
 in {
