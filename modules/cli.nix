@@ -4,6 +4,11 @@ let
 
   ghcModule = import ./ghc.nix { global = config; inherit util; };
 
+  cliNixpkgs = builtins.fetchTarball {
+    url = "https://github.com/nixos/nixpkgs/archive/e913ae340076bbb73d9f4d3d065c2bca7caafb16.tar.gz";
+    sha256 = "07qjibn85hc6p8c7lwg00fwpyqjlmaxncz9wa2l6qpy1hsk51k8f";
+  };
+
 in {
 
     options.internal.hixCli = with types; {
@@ -70,7 +75,7 @@ in {
       name = "hix";
       compiler = "ghc98";
       overrides = mkForce config.internal.hixCli.overrides;
-      nixpkgs = config.inputs.nixpkgs;
+      nixpkgs = cliNixpkgs;
       nixpkgsOptions = {};
       overlays = [];
     };
