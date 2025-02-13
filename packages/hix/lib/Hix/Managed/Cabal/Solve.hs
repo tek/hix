@@ -1,3 +1,5 @@
+{-# language CPP #-}
+
 module Hix.Managed.Cabal.Solve where
 
 import Distribution.Client.Dependency (
@@ -10,7 +12,6 @@ import Distribution.Client.Dependency (
   setAllowBootLibInstalls,
   standardInstallPolicy,
   )
-import Distribution.Client.Dependency.Types (Solver (Modular))
 import Distribution.Client.SolverInstallPlan (SolverInstallPlan)
 import Distribution.Client.Types (UnresolvedSourcePackage)
 import Distribution.Simple.Utils (debugNoWrap)
@@ -31,6 +32,10 @@ import Hix.Managed.Cabal.Data.SolverState (SolverState (SolverState), compileSol
 import Hix.Managed.Cabal.Targets (solveTargets)
 import Hix.Monad (M, tryIOMAs)
 
+#if ! MIN_VERSION_Cabal(3,14,0)
+import Distribution.Client.Dependency.Types (Solver (Modular))
+#endif
+
 newtype Unresolvable =
   Unresolvable Text
   deriving stock (Eq, Show, Generic)
@@ -48,7 +53,11 @@ solveSpecifiers ::
   IO (Either String SolverInstallPlan)
 solveSpecifiers res mapParams pkgSpecifiers prefs =
   foldProgress (logMsg res.conf.verbosity) (pure . Left) (pure . Right) $
+#if MIN_VERSION_Cabal(3,14,0)
+  resolveDependencies res.platform res.compiler (Just res.pkgConfigDb) params
+#else
   resolveDependencies res.platform res.compiler res.pkgConfigDb Modular params
+#endif
   where
     params =
       mapParams $

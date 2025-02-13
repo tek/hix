@@ -1,3 +1,5 @@
+{-# language CPP #-}
+
 module Hix.Cabal where
 
 import Control.Monad.Trans.Except (ExceptT (ExceptT), throwE)
@@ -31,6 +33,10 @@ import System.IO.Error (tryIOError)
 import Hix.Compat (readGenericPackageDescription)
 import Hix.Data.Error (Error (..))
 import Hix.Error (pathText, sourceError)
+
+#if MIN_VERSION_Cabal(3,14,0)
+import Distribution.Utils.Path (makeSymbolicPath)
+#endif
 
 noMatch :: Text -> Path b File -> ExceptT Error IO a
 noMatch reason source =
@@ -71,7 +77,11 @@ findCabal source =
 parseCabal :: Path Abs File -> ExceptT Error IO GenericPackageDescription
 parseCabal path =
   ExceptT $ fmap (first (PreprocError . show)) $ tryIOError do
+#if MIN_VERSION_Cabal(3,14,0)
+    readGenericPackageDescription Cabal.verbose Nothing (makeSymbolicPath (toFilePath path))
+#else
     readGenericPackageDescription Cabal.verbose (toFilePath path)
+#endif
 
 buildInfo ::
   (a -> BuildInfo) ->

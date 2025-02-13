@@ -1,3 +1,5 @@
+{-# language CPP #-}
+
 module Hix.Managed.Cabal.Repo where
 
 import Data.Time (
@@ -34,6 +36,10 @@ import Hix.Managed.Cabal.Data.Config (
   )
 import Hix.Monad (M, catchIOM, eitherFatalShow, noteFatal, tryIOM, tryIOMWith, withLower)
 import Hix.Pretty (showP)
+
+#if MIN_VERSION_Cabal(3,14,0)
+import Distribution.Client.IndexUtils (Index (RepoIndex))
+#endif
 
 withRepoContextM ::
   SolveConfig ->
@@ -119,7 +125,11 @@ currentIndexState ::
   Repo ->
   M (Maybe HackageIndexState)
 currentIndexState verbosity ctx repo =
+#if MIN_VERSION_Cabal(3,14,0)
+  catchIOM (Just . HackageIndexState <$> currentIndexTimestamp verbosity (RepoIndex ctx repo)) (const (pure Nothing))
+#else
   catchIOM (Just . HackageIndexState <$> currentIndexTimestamp verbosity ctx repo) (const (pure Nothing))
+#endif
 
 indexProblem ::
   SolveConfig ->

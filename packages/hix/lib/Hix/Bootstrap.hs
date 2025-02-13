@@ -1,3 +1,5 @@
+{-# language CPP #-}
+
 module Hix.Bootstrap where
 
 import Control.Monad.Trans.Class (lift)
@@ -38,6 +40,10 @@ import Hix.Monad (AppResources (AppResources), noteBootstrap)
 import Hix.NixExpr (mkAttrs, multi, multiOrSingle, nonEmptyAttrs, renderRootExpr, single, singleOpt)
 import qualified Hix.Prelude
 import Hix.Prelude (Prelude, findPrelude)
+
+#if MIN_VERSION_Cabal(3,14,0)
+import Distribution.Utils.Path (makeSymbolicPath)
+#endif
 
 data CabalInfo =
   CabalInfo {
@@ -87,7 +93,11 @@ readCabal ::
   Path Rel File ->
   M CabalInfo
 readCabal cwd path = do
+#if MIN_VERSION_Cabal(3,14,0)
+  info <- liftIO (readGenericPackageDescription Cabal.verbose Nothing (makeSymbolicPath (toFilePath (cwd </> path))))
+#else
   info <- liftIO (readGenericPackageDescription Cabal.verbose (toFilePath (cwd </> path)))
+#endif
   pure CabalInfo {path = dir, info}
   where
     dir = parent path

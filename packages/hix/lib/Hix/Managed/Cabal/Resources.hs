@@ -1,10 +1,12 @@
+{-# language CPP #-}
+
 module Hix.Managed.Cabal.Resources where
 
 import Control.Monad.Trans.Reader (asks)
 import Distribution.Client.IndexUtils (getInstalledPackages, getSourcePackages)
 import qualified Distribution.Client.NixStyleOptions
 import Distribution.Client.Setup (configCompilerAux', withRepoContext)
-import Distribution.Simple (PackageDB (GlobalPackageDB), PackageDBStack, compilerInfo)
+import Distribution.Simple (pattern GlobalPackageDB, compilerInfo)
 import Distribution.Solver.Types.PkgConfigDb (readPkgConfigDb)
 import Distribution.Verbosity (lessVerbose, silent, verbose)
 
@@ -22,7 +24,18 @@ import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Monad (tryIOM)
 
+#if MIN_VERSION_Cabal(3,14,0)
+import Distribution.Simple (PackageDBStackCWD)
+import Distribution.Solver.Types.PkgConfigDb (PkgConfigDb (..))
+#else
+import Distribution.Simple (PackageDBStack)
+#endif
+
+#if MIN_VERSION_Cabal(3,14,0)
+packageDbs :: PackageDBStackCWD
+#else
 packageDbs :: PackageDBStack
+#endif
 packageDbs = [GlobalPackageDB]
 
 -- | This adds the 'ManagedPackage's to the source package DB, which is the set of available package IDs.
@@ -54,6 +67,9 @@ resources packages conf = do
       installedPkgIndex = installedPkgIndex,
       sourcePkgDb = SourcePackage.dbWithManaged packages sourcePkgDb,
       solverParams = id,
+#if MIN_VERSION_Cabal(3,14,0)
+      pkgConfigDb = fromMaybe (PkgConfigDb []) pkgConfigDb,
+#endif
       ..
     }
 

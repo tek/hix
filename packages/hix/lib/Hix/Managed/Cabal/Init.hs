@@ -1,3 +1,5 @@
+{-# language CPP #-}
+
 module Hix.Managed.Cabal.Init where
 
 import Distribution.Client.Config (defaultCacheDir)
@@ -17,6 +19,10 @@ import qualified Hix.Managed.Cabal.Data.Config
 import Hix.Managed.Cabal.Data.Config (GhcPath (GhcPath), HackageRepoName, SolveConfig)
 import Hix.Managed.Cabal.Repo (ensureHackageIndex)
 import Hix.Monad (M, throwM, tryIOMWith)
+
+#if MIN_VERSION_Cabal(3,14,0)
+import Distribution.Simple.Setup (CommonSetupFlags (..))
+#endif
 
 data SolveFlags =
   SolveFlags {
@@ -62,12 +68,26 @@ mainFlags conf =
   where
     basic = defaultNixStyleFlags ()
 
+
+#if MIN_VERSION_Cabal(3,14,0)
+    configFlags =
+      configDef {
+        configHcPath = pathFlag [relfile|ghc|],
+        configHcPkg = pathFlag [relfile|ghc-pkg|],
+        configCommonFlags = configDef.configCommonFlags {
+          setupVerbosity = toFlag conf.verbosity
+        }
+      }
+
+    configDef = defaultConfigFlags defaultProgramDb
+#else
     configFlags =
       (defaultConfigFlags defaultProgramDb) {
         configHcPath = pathFlag [relfile|ghc|],
         configHcPkg = pathFlag [relfile|ghc-pkg|],
         configVerbosity = toFlag conf.verbosity
       }
+#endif
 
     pathFlag exe = maybeToFlag (ghcPath exe <$> conf.ghc)
 
