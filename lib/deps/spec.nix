@@ -13,6 +13,8 @@ let
   then oc.multi
   else if oc ? single
   then [oc.single]
+  else if oc == null
+  then [disable.single]
   else throw "Bad value for listOC: ${generators.toPretty {} oc}";
 
   composeOC = cur: prev: {
@@ -174,7 +176,9 @@ let
 
   drv = d: decl "drv" "Explicit derivation" { drv = d; } (meta: _: meta.drv);
 
+  disable = decl "disable" "No derivation" { drv = null; } (meta: _: meta.drv);
+
 in {
-  inherit transform decl option pregen drv isOC listOC show compile reifyComp reify reifyPregen;
+  inherit transform decl option pregen drv disable isOC listOC show compile reifyComp reify reifyPregen;
   transform_ = name: f: transform name name {} (_: _: f);
 }

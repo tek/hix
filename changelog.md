@@ -16,6 +16,7 @@
 * Add an override combinator for specifying the Hackage revision.
 * Add an override combinator for specifying extra GHC options.
 * Add an override combinator, `force`, that combines `unbreak`, `jailbreak`, `nodocs`, `nobench` and `notest`.
+* Add an override combinator for disabling a dependency (and interpret `null` like that as well).
 * Move some non-package outputs in `legacyPackages`, like `ghc` and `config`, to a subset with attribute name `project`.
 * Move all nested outputs in `apps` and `packages` to `legacyPackages` to adapt to stricter validation in Nix 2.19.
 * Expose `haskell.lib.compose` to override functions as `hsLibC`.
