@@ -45,7 +45,11 @@ let
 
   noHpack = spec.option "cabal2nix" "Cabal2nix option --no-hpack" "--no-hpack";
 
-  cabalOverrides = spec.option "cabal2nix-overrides" "Cabal2nix overrides";
+  cabal2nixOverrides = spec.option "cabal2nix-overrides" "Cabal2nix overrides";
+
+  cabalOverrides = cabal2nixOverrides;
+
+  cabal2nixArgs = spec.option "cabal2nix" "Pass a CLI flag to cabal2nix";
 
   revision = revision: sha256:
   spec.option "revision" "Hackage revision" { revision = toString revision; inherit sha256; };
@@ -84,7 +88,7 @@ let
 in transformers // {
   inherit (c2n) hackageAt source;
   inherit self super pkgs;
-  inherit reset transform transform_ transformDrv noHpack cabalOverrides revision drv;
+  inherit reset transform transform_ transformDrv noHpack cabalOverrides cabal2nixOverrides cabal2nixArgs revision drv;
   inherit hackageConfGen hackageConf hackage;
   inherit (spec) option;
   hsLib = pkgs.haskell.lib;

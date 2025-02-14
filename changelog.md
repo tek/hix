@@ -19,6 +19,7 @@
 * Move some non-package outputs in `legacyPackages` to the attr scope `project`.
 * Move all nested outputs in `apps` to `legacyPackages` to adapt to stricter validation in Nix 2.19.
 * Expose `haskell.lib.compose` to override functions as `hsLibC`.
+* Rename OC `cabalOverrides` to `cabal2nixOverrides`.
 
 # 0.7.0: Hix Unbound: Majors Apart
 
