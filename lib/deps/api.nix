@@ -36,6 +36,7 @@ let
     noprofiling = transform_ "noprofiling" modifiers.noprofiling;
     unbreak = transform_ "unbreak" modifiers.unbreak;
     fast = transform_ "fast" modifiers.fast;
+    force = transform_ "force" modifiers.force;
     notest = transform_ "notest" modifiers.notest;
     nodoc = transform_ "nodoc" modifiers.nodoc;
     bench = transform_ "bench" modifiers.bench;

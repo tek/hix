@@ -601,8 +601,9 @@ in {
   - `nodoc` – Disable Haddock
   - `bench` – Enable benchmarks
   - `nobench` – Disable benchmarks
-  - `minimal` – Disable profiling libraries, Haddock, benchmarks and tests
+  - `minimal` – Unbreak and disable profiling libraries, Haddock, benchmarks and tests
   - `fast` – Disable profiling and Haddock
+  - `force` – Unbreak, jailbreak and disable Haddock, benchmarks and tests
   - `noprofiling` – Disable profiling libraries for the package
   - `profiling` – Enable executable profiling for the package
   - `configure` – Add a Cabal configure CLI option

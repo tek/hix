@@ -21,8 +21,10 @@ let
 
   minimal = p: noprofiling (nodoc (nobench (notest (unbreak p))));
 
-in {
-  inherit unbreak jailbreak profiling noprofiling minimal notest bench nobench nodoc;
-
   fast = p: noprofiling (nodoc p);
+
+  force = p: nodoc (nobench (notest (unbreak (jailbreak p))));
+
+in {
+  inherit unbreak jailbreak profiling noprofiling minimal fast force notest bench nobench nodoc;
 }
