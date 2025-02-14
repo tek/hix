@@ -622,6 +622,9 @@ in {
   - `keep` – Reset the previous combinators and use the default package
   - `noHpack` – A modifier for the `source` combinators instructing cabal2nix not to use HPack
   - `hsLib` – The entire nixpkgs tool set `haskell.lib`
+  - `hsLibC` – The entire nixpkgs tool set `haskell.lib.compose`.
+    This is preferable to `hsLib`, but for historic reasons that one ended up in here first, and it's gonna stay for
+    compatibility.
   - `compilerName` – The `name` attribute of the GHC package
   - `compilerVersion` – The `version` attribute of the GHC package
 

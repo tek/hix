@@ -8,25 +8,23 @@
 }:
 let
   inherit (pkgs) lib;
-  inherit (lib) flip;
 
   modifiers = import ./modifiers.nix { inherit pkgs; };
   spec = import ./spec.nix { inherit lib; };
   c2n = import ./cabal2nix.nix { inherit pkgs; };
 
   inherit (spec) transform transform_ transformDrv drv;
-  hl = pkgs.haskell.lib;
+  hsLibC = pkgs.haskell.lib.compose;
 
   transformers = {
     transformDrv = transform_ "transform-drv";
     jailbreak = transform_ "jailbreak" modifiers.jailbreak;
-    # TODO why does this use `flip`? The functions appear to take the flag arg first
-    configure = flag: transform_ "configure" (flip hl.appendConfigureFlag flag);
-    configures = flags: transform_ "configures" (flip hl.appendConfigureFlags flags);
-    enable = flag: transform_ "enable" (flip hl.enableCabalFlag flag);
-    disable = flag: transform_ "disable" (flip hl.disableCabalFlag flag);
-    ghcOptions = flag: transform_ "ghcOptions" (hl.compose.appendConfigureFlag "--ghc-options=${flag}");
-    override = conf: transform_ "override" (flip hl.overrideCabal conf);
+    configure = flag: transform_ "configure" (hsLibC.appendConfigureFlag flag);
+    configures = flags: transform_ "configures" (hsLibC.appendConfigureFlags flags);
+    enable = flag: transform_ "enable" (hsLibC.enableCabalFlag flag);
+    disable = flag: transform_ "disable" (hsLibC.disableCabalFlag flag);
+    ghcOptions = flag: transform_ "ghcOptions" (hsLibC.appendConfigureFlag "--ghc-options=${flag}");
+    override = conf: transform_ "override" (hsLibC.overrideCabal conf);
     overrideAttrs = f: transform_ "overrideAttrs" (drv: drv.overrideAttrs f);
     buildInputs = inputs: transform_ "buildInputs" (drv:
       drv.overrideAttrs ({buildInputs ? [], ...}: { buildInputs = buildInputs ++ inputs; })
@@ -89,7 +87,8 @@ in transformers // {
   inherit reset transform transform_ transformDrv noHpack cabalOverrides revision drv;
   inherit hackageConfGen hackageConf hackage;
   inherit (spec) option;
-  hsLib = hl;
+  hsLib = pkgs.haskell.lib;
+  inherit hsLibC;
   inherit (pkgs) system lib;
   ghcName = self.ghc.name;
   ghcVersion = self.ghc.version;
