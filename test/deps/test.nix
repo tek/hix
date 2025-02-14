@@ -21,7 +21,7 @@
   cabal_update()
   {
     output_ignore
-    step_develop cabal update
+    step_develop cabal update -v0
   }
 
   if_ci cabal_update
