@@ -25,6 +25,7 @@ let
     configures = flags: transform_ "configures" (flip hl.appendConfigureFlags flags);
     enable = flag: transform_ "enable" (flip hl.enableCabalFlag flag);
     disable = flag: transform_ "disable" (flip hl.disableCabalFlag flag);
+    ghcOptions = flag: transform_ "ghcOptions" (hl.compose.appendConfigureFlag "--ghc-options=${flag}");
     override = conf: transform_ "override" (flip hl.overrideCabal conf);
     overrideAttrs = f: transform_ "overrideAttrs" (drv: drv.overrideAttrs f);
     buildInputs = inputs: transform_ "buildInputs" (drv:

@@ -14,6 +14,7 @@
 * Expose some computed attributes via the module argument `project` that were previously read-only module options.
 * Add an override combinator for fetching from a different Hackage server.
 * Add an override combinator for specifying the Hackage revision.
+* Add an override combinator for specifying extra GHC options.
 * Move some non-package outputs in `legacyPackages` to the attr scope `project`.
 * Move all nested outputs in `apps` to `legacyPackages` to adapt to stricter validation in Nix 2.19.
 

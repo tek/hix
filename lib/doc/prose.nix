@@ -609,6 +609,7 @@ in {
   - `configures` – Add multiple Cabal configure CLI options (in a list)
   - `enable` – Enable a Cabal flag (`-f<flag>`)
   - `disable` – Disable a Cabal flag (`-f-<flag>`)
+  - `ghcOptions` – Pass GHC options to Cabal (`--ghc-options`)
   - `override` – Call `overrideCabal` on the derivation, allowing arbitrary Cabal manipulation
   - `overrideAttrs` – Call `overrideAttrs` on the derivation
   - `buildInputs` – Add Nix build inputs
