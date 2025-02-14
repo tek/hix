@@ -83,11 +83,11 @@ in {
     step ls ops
 
     describe "$(yellow aeson) version after gen-overrides"
-    output_exact '"2.1.2.1"'
+    output_exact '"2.2.2.0"'
     step_eval $aeson_version
 
     describe "$(yellow aeson) revision after gen-overrides"
-    output_exact '"2"'
+    output_exact '"1"'
     step_eval ''${aeson}.passthru.revision
 
     step_build root1
@@ -95,7 +95,7 @@ in {
     error_ignore
     step_nix flake check
 
-    step sed -i 's/2\.1/5.8/' flake.nix
+    step sed -i 's/2\.2/5.8/' flake.nix
 
     describe 'Error message after changing overrides'
     error_match "Please run 'nix run .#gen-overrides' again."

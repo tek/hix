@@ -45,7 +45,7 @@ in {
       The GHC versions for which to create envs, specified by their attribute names in `pkgs.haskell.packages`.
       '';
       type = listOf str;
-      default = ["ghc90" "ghc92" "ghc94" "ghc96"];
+      default = ["ghc94" "ghc96" "ghc98" "ghc910"];
     };
 
     # TODO deprecate

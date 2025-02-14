@@ -22,7 +22,7 @@
   step_run env.three.number-nocomp
 
   describe 'Run command'
-  output_exact 'The Glorious Glasgow Haskell Compilation System, version 9.4.8'
+  output_exact 'The Glorious Glasgow Haskell Compilation System, version 9.8.4'
   step_run cmd.run ghc --version
   '';
 }

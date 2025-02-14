@@ -21,7 +21,7 @@
 
     check_musl "root.cross.musl64.static"
 
-    check_musl "ghc94.root.cross.musl64.static"
+    check_musl "ghc98.root.cross.musl64.static"
 
     check_musl "env.cross.static-override"
 
@@ -64,10 +64,10 @@
 
     check_appimage 'alias.appimage'
 
-    check_appimage 'env.ghc94.appimage'
+    check_appimage 'env.ghc98.appimage'
 
-    check_appimage 'env.ghc94.root.appimage'
+    check_appimage 'env.ghc98.root.appimage'
 
-    check_appimage 'env.ghc94.exe.appimage'
+    check_appimage 'env.ghc98.exe.appimage'
   '';
 }

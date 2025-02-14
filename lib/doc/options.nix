@@ -28,7 +28,6 @@ let
   optionsDoc = exclude: options: pkgs.nixosOptionsDoc {
     inherit options;
     revision = "default";
-    allowDocBook = false;
     documentType = "none";
     transformOptions = opt: opt // { declarations = map (removePrefix "${toString ../..}/") opt.declarations; } // {
       visible = opt.visible && !(excludeGlobal opt.loc) && !(excludedByAny opt.loc exclude);

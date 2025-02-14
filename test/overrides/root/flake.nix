@@ -20,8 +20,8 @@
     compat.enable = false;
     gen-overrides.enable = true;
     overrides = {self, pkgs, hackage, revision, jailbreak, buildInputs, minimal, ...}: {
-      aeson = minimal (jailbreak (revision 2 "sha256-yE5ZRHn17Gd8qt42Pqou9Ln9xvrjPtBxxuuGAsrD05s=" (
-        revision 3 "invalid" (hackage "2.1.2.1" "sha256-4P64yWe27iw6PKc+DYw8II5vsOUmthYu+fABkwU0Lrg="))));
+      aeson = minimal (jailbreak (revision 1 "sha256-rA0N/BBUwCGJGjQnnkdPgAkIchZ2IpbufWV3+LCnb6I=" (
+        revision 2 "invalid" (hackage "2.2.2.0" "sha256-1wVhkorow5G69wC3FC7nyhYRJVsAAhJkzB/pRn8GmYo="))));
       extra = jailbreak;
       root1 = jailbreak self.root;
       root = buildInputs [pkgs.git];

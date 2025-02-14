@@ -7,13 +7,13 @@
       };
       base = {
         lower = null;
-        upper = "4.18";
+        upper = "4.20";
       };
     };
     local2 = {
       base = {
         lower = null;
-        upper = "4.18";
+        upper = "4.20";
       };
       path = {
         lower = null;
@@ -23,9 +23,9 @@
   };
   versions.latest-main = {
     aeson = "2.1.0.0";
-    base = "4.17.2.1";
+    base = "4.19.2.0";
   };
   versions.latest-other = {
-    base = "4.17.2.1";
+    base = "4.19.2.0";
   };
 }

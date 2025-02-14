@@ -1,7 +1,7 @@
 body<<EOF
 New versions:
 
-* aeson-2.2.0.0 [old range matches]
+* aeson-2.2.3.0 [old range matches]
 * extra-1.7.14 [<1.8]
 * path-0.9.5 [<0.10]
 EOF
@@ -11,7 +11,7 @@ Bump aeson, extra, path
 
 New versions:
 
-* aeson-2.2.0.0 [old range matches]
+* aeson-2.2.3.0 [old range matches]
 * extra-1.7.14 [<1.8]
 * path-0.9.5 [<0.10]
 EOF

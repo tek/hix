@@ -50,7 +50,7 @@
           dependencies = [
             {
               name = "array";
-              version = "0.5.4.0";
+              version = "0.5.8.0";
               mixin = ["hiding (Data.Array)"];
             }
           ];

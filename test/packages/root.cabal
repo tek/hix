@@ -1,6 +1,6 @@
 cabal-version: 3.0
 
--- This file has been generated from package.yaml by hpack version 0.36.0.
+-- This file has been generated from package.yaml by hpack version 0.36.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -21,7 +21,7 @@ library
       DataKinds
   ghc-options: -Wunused-imports
   build-depends:
-      array ==0.5.4.0
+      array ==0.5.8.0
     , base ==4.*
   mixins:
       array hiding (Data.Array)

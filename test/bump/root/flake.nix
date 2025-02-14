@@ -13,7 +13,7 @@
         main = ["local1"];
         other = ["local2" "local3"];
       };
-      latest.compiler = "ghc94";
+      latest.compiler = "ghc98";
       forceBounds.base.upper = "5";
     };
     compat.enable = false;

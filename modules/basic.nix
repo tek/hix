@@ -129,7 +129,7 @@ in {
       This is an attribute name in the nixpkgs set `haskell.packages`, which is usually in the format `ghc96`.
       '';
       type = str;
-      default = "ghc94";
+      default = "ghc98";
     };
 
     compat = {

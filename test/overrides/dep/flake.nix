@@ -10,7 +10,7 @@
       cabal.dependencies = ["some"];
     };
     overrides = {hackage, ...}: {
-      some = hackage "1.0.5" "1kngk5p1nxcd69m2kma75ym61w6l09pa7260pg8vsq44cwf35ip0";
+      some = hackage "1.0.6" "1afwapqlkhyp6mrd9qypbkj6hqppxi3sq4c5jjvvic556i9xly02";
     };
     gen-overrides.enable = true;
   };
