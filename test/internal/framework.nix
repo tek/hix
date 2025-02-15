@@ -2,7 +2,7 @@
 let
   inherit (util) pkgs lib;
 
-  testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter pkgs.gnused];
+  testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter pkgs.gnused pkgs.rsync];
 
   sharedPreamble = ''
   if_ci()
@@ -17,7 +17,7 @@ let
   '';
 
   preamble = ''
-  hix_src_dir=$PWD
+  hix_src_dir=${self}
   tmp_dir=$(mktemp -d --tmpdir hix-test.XXXXXXXX)
   mkdir -p $tmp_dir
   export HOME=$tmp_dir
@@ -136,16 +136,16 @@ let
     }
 
     mkdir -p $hix_dir
-    ${pkgs.rsync}/bin/rsync -rlt --filter='merge ${rsyncFilter}' $hix_src_dir/ $hix_dir/
+    rsync -rlt --chmod=u+w --filter='merge ${rsyncFilter}' $hix_src_dir/ $hix_dir/
 
     if [[ -f $test_config ]]
     then
       local test_config_target="$hix_dir/ops/test-config.nix"
-      cp $test_config $test_config_target
+      rsync -lt --chmod=u+w $test_config $test_config_target
       sub $test_config_target
     fi
 
-    cp -r "$test_src" "$work_dir"
+    rsync -rlt --chmod=u+w ''${test_src}/ ''${work_dir}/
     cd "$work_dir"
 
     rm test.nix
