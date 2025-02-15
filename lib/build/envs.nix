@@ -8,4 +8,4 @@
   { executables = lib.concatMapAttrs (_: outputs: outputs.executables) packages; }
   ;
 
-in internal.envs.mapMaybe buildEnv build.packages
+in internal.envs.map buildEnv (internal.envs.filterEnabled build.packages)

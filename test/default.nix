@@ -26,6 +26,7 @@ let
       "ghci"
       "hackage"
       "hackage-legacy"
+      "lazy"
       "local-prelude"
       "multi-exe"
       "package-default"

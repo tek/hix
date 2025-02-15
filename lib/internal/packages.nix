@@ -33,7 +33,6 @@
 
   setWithExe = withExe {};
 
-  # it itself for the single components...that doesn't seem right.
   normalized = pkg: let
     withNames = util.mapKeys (_: comp: comp.name);
   in
@@ -48,7 +47,7 @@
     ;
 
   pkgDeps = pkg:
-  lib.concatMap (c: map util.cabalDepPackage c.dependencies) (lib.attrValues (normalized pkg));
+  lib.concatMap (c: lib.map util.cabalDepPackage c.dependencies) (lib.attrValues (normalized pkg));
 
   pkgsDeps = util.mapValues (pkg: { inherit (pkg) name; deps = pkgDeps pkg; }) config.packages;
 
@@ -64,16 +63,19 @@
 
   in lib.findFirst isNoDep null pkgNames;
 
+  mapPkg = f: pkgName: a: f (util.justAttr pkgName config.packages) a;
+
+  # map ::
+  #   (Maybe Package -> a -> b) ->
+  #   Map PackageName a ->
+  #   Map PackageName b
+  map = f: lib.mapAttrs (mapPkg f);
+
   # mapMaybe ::
   #   (Maybe Package -> a -> Maybe b) ->
   #   Map PackageName a ->
   #   Map PackageName b
-  mapMaybe = f: let
-    mapPkg = pkgName: a: f (config.packages.${pkgName} or null) a;
-  in util.mapMaybe mapPkg;
-
-  filterExposed = purpose:
-  mapMaybe (internal.package.justExposed purpose);
+  mapMaybe = f: util.mapMaybe (mapPkg f);
 
 in {
   inherit
@@ -84,7 +86,7 @@ in {
   setWithExe
   normalized
   selectMain
+  map
   mapMaybe
-  filterExposed
   ;
 }

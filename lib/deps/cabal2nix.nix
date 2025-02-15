@@ -30,7 +30,7 @@
   in pkgs.haskell.lib.compose.overrideCabal ({passthru ? null, ...}: {
     revision = rev.revision;
     editedCabalFile = rev.sha256;
-    passthru = util.fromMaybe {} passthru // { inherit (rev) revision; };
+    passthru = util.fromMaybeNull {} passthru // { inherit (rev) revision; };
   });
 
   srcHackage = mkBaseUrl: meta: pkg: let

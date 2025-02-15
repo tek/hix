@@ -1,7 +1,7 @@
 {lib}:
 let
 
-  inherit (lib) mapAttrs isAttrs isList concatStringsSep attrNames isDerivation length head tail filterAttrs;
+  inherit (lib) mapAttrs isAttrs isList concatStringsSep attrNames isDerivation length head tail;
 
   internalScope = "__hix-internal__";
 
@@ -117,19 +117,9 @@ let
   mergeValues = a:
   mergeAllAttrs (lib.attrValues a);
 
-  # Attrs (Maybe a) -> Attrs a
-  catMaybes = lib.filterAttrs (_: a: a != null);
+  maybeNull = alt: f: a: if a == null then alt else f a;
 
-  # (a -> Maybe b) -> Attrs a -> Attrs b
-  mapMaybe = f: a: catMaybes (lib.mapAttrs f a);
-
-  maybe = alt: f: a: if a == null then alt else f a;
-
-  apMaybe = lib.mapNullable;
-
-  fromMaybe = alt: maybe alt lib.id;
-
-  filterNulls = filterAttrs (_: a: a != null);
+  fromMaybeNull = alt: maybeNull alt lib.id;
 
   restrictKeys = allow: lib.filterAttrs (k: _: lib.elem k allow);
 
@@ -377,6 +367,45 @@ let
 
   loadConsole = loadConsoleWith {};
 
+  # data Maybe =
+  #  Just { __maybe :: Bool, value :: a | __maybe == True }
+  #  |
+  #  Nothing { __maybe :: Bool | __maybe == False }
+  just = value: { __maybe = true; inherit value; };
+  nothing = { __maybe = false; };
+
+  justIf = pred: value: if pred then just value else nothing;
+
+  justAttr = name: attrs: justIf (attrs ? ${name}) attrs.${name};
+
+  assertMaybe = ma: b:
+  if ma ? __maybe
+  then b
+  else throw "Invalid maybe value: ${lib.generators.toPretty {} ma}";
+
+  isJust = ma: assertMaybe ma ma.__maybe;
+
+  maybe = alt: f: ma:
+  assertMaybe ma (
+    if ma.__maybe
+    then f ma.value
+    else alt
+  );
+
+  fromMaybe = alt: maybe alt lib.id;
+
+  # Attrs (Maybe a) -> Attrs a
+  catMaybes = as: mapValues (ma: ma.value) (lib.filterAttrs (_: isJust) as);
+
+  # (a -> Maybe b) -> Attrs a -> Attrs b
+  mapMaybe = f: a: catMaybes (lib.mapAttrs f a);
+
+  apMaybe = f: ma:
+  if isJust ma
+  then ma // { value = f ma.value; }
+  else ma
+  ;
+
 in {
   inherit
   lib
@@ -406,12 +435,8 @@ in {
   mergeAll
   mergeAllAttrs
   mergeValues
-  catMaybes
-  mapMaybe
-  maybe
-  apMaybe
-  fromMaybe
-  filterNulls
+  maybeNull
+  fromMaybeNull
   restrictKeys
   removeKeys
   toTitle
@@ -427,6 +452,15 @@ in {
   messageStream
   loadConsoleWith
   loadConsole
+  just
+  nothing
+  justIf
+  justAttr
+  maybe
+  fromMaybe
+  catMaybes
+  mapMaybe
+  apMaybe
   ;
 
   version = import ./version.nix { inherit lib; };

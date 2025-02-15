@@ -23,7 +23,7 @@
   { inherit (outputs) static release musl; }
   ;
 
-  legacyDev = env: pkg: outputs:
+  legacyDev = env: _pkg: outputs:
   specialOutputs outputs
   //
   { inherit (outputs) executables; }
@@ -48,7 +48,7 @@
       )
     );
 
-  envApps = env: pkg: outputs:
+  envApps = env: _pkg: outputs:
   util.mapValues (exe: exe.app) outputs.executables;
 
   mainPackageOutputs = pkg: let
@@ -58,7 +58,7 @@
       inherit (outputs) musl static;
     };
   in
-  util.maybe {} basic (build.targets.dev.${name} or null)
+  util.maybe {} basic (util.justAttr name build.targets.dev)
   //
   envKeyed.${name} or {}
   ;

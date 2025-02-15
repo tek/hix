@@ -15,6 +15,8 @@
   ${message}
   Disable this warning by setting ${colorIf color (lib.pipe [colors.yellow bold]) ''ui.warnings.keys."${key}" = false;''}'';
 
+  warnEval = pred: warnWith false (enabled: lib.warnIf (pred && enabled));
+
   deprecatedWith = {handler, key, desc, replacement, color ? true, extra ? null}: let
     suggestion = if replacement == null then "" else " in favor of ${colorIf color colors.blue replacement}";
     message = "${desc} is deprecated${suggestion}. ${extra}";
@@ -65,6 +67,7 @@
 in {
   inherit
   warnWith
+  warnEval
   deprecatedWith
   deprecatedEval
   deprecatedOptionReadOnly

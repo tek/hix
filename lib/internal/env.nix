@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config internal lib;
+  inherit (util) config internal lib justIf;
 
   waitScript = env: let
     waitSeconds = toString env.wait;
@@ -37,7 +37,7 @@
     else internal.packages.selectMain targets;
 
   withMain = alt: f: env:
-  util.maybe alt (pkgName: f config.packages.${pkgName}) (envMainPackage env);
+  util.maybeNull alt (pkgName: f config.packages.${pkgName}) (envMainPackage env);
 
   setWithMain = withMain {};
 
@@ -50,6 +50,10 @@
 
   prefixed = lib.concatMapAttrs prefixedWith;
 
+  # TODO do we need `systemAllowed` here?
+  justEnabled = env:
+  justIf (env.enable or false);
+
   isExposed = purpose: env:
   if isNull env
   then false
@@ -58,13 +62,13 @@
   then env.expose.${purpose}
   else env.expose;
 
-  justExposed = purpose: env: a:
-  if isExposed purpose env then a else null;
+  justExposed = purpose: env:
+  justIf (isExposed purpose env);
 
-  filterExposed = purpose:
-  internal.packages.mapMaybe (internal.package.justExposed purpose);
-
-  targets = env: if env.packages == null then config.internal.packageNames else env.packages;
+  targets = env:
+  if (env.packages or null) == null
+  then config.internal.packageNames
+  else env.packages;
 
   isTarget = envName: pkgName:
   lib.elem pkgName (withEnv targets envName);
@@ -79,9 +83,9 @@ in {
   setWithExe
   prefixedWith
   prefixed
+  justEnabled
   isExposed
   justExposed
-  filterExposed
   targets
   isTarget
   ;

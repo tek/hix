@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) lib;
+  inherit (util) lib justIf;
 
   # Null check because `withPackage` and `mapMaybe` permit names that don't correspond to packages, since these
   # functions are used on sets that operate on a more generic level.
@@ -12,7 +12,7 @@
   else expose.${purpose} or true;
 
   justExposed = purpose: pkg: outputs:
-  if isExposed purpose pkg outputs then outputs else null;
+  justIf (isExposed purpose pkg outputs) outputs;
 
   executables = pkg:
   lib.filterAttrs (_: e: e.enable) ({ __main = pkg.executable; } // pkg.executables);
@@ -28,7 +28,7 @@
 
   withExe = alt: f: pkg: let
     exe = mainExe pkg;
-  in util.maybe alt f exe;
+  in util.maybeNull alt f exe;
 
   setWithExe = withExe {};
 

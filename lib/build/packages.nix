@@ -73,7 +73,7 @@
     };
   in
   generic //
-  util.maybe nonlocal (local env generic) (config.packages.${pkgName} or null)
+  util.maybeNull nonlocal (local env generic) (config.packages.${pkgName} or null)
   ;
 
   buildPackages = envName: env: let

@@ -8,6 +8,10 @@
     systems = ["x86_64-linux" "aarch64-darwin"];
     depsFull = [dep];
     ghcVersions = [];
+
+    envs.profiled.enable = false;
+    envs.min.enable = false;
+
     packages.root = {
       src = ./.;
       library.enable = true;
