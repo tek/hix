@@ -8,63 +8,68 @@ let
     hackage = import ./internal/hackage.nix { inherit pkgs; };
   };
 
-  test = name: let
+  testConf = name: let
     expr = import (./. + "/${name}/test.nix");
   in if lib.isAttrs expr
   then expr
   else expr { inherit config util pkgs testlib; };
 
-  tests-basic-1 = {
-    basic = test "basic";
-    dep-versions = test "dep-versions";
-    deps = test "deps";
-    direnv = test "direnv";
-    gen-cabal = test "gen-cabal";
-    ghci = test "ghci";
-    hackage = test "hackage";
-    hackage-legacy = test "hackage-legacy";
-    local-prelude = test "local-prelude";
-    multi-exe = test "multi-exe";
-    package-default = test "package-default";
-    packages = test "packages";
-    subdir = test "subdir";
-    update-cli-version = test "update-cli-version";
-    warning = test "warning";
-    tags = test "tags";
-  };
+  testsNamed = names: lib.genAttrs names testConf;
 
-  tests-basic-2 = {
-    cross = test "cross";
-    env = test "env";
-    overrides = test "overrides";
-  };
+  tests-basic-1 =
+    testsNamed [
+      "basic"
+      "dep-versions"
+      "deps"
+      "direnv"
+      "gen-cabal"
+      "ghci"
+      "hackage"
+      "hackage-legacy"
+      "local-prelude"
+      "multi-exe"
+      "package-default"
+      "packages"
+      "subdir"
+      "update-cli-version"
+      "warning"
+      "tags"
+    ];
 
-  tests-basic-3 = {
-    bootstrap = test "bootstrap";
-    new = test "new";
-    new-static = test "new-static";
-    new-static-github = test "new-static-github";
-  };
+  tests-basic-2 =
+    testsNamed [
+      "cross"
+      "env"
+      "overrides"
+    ];
 
-  tests-vm = {
-    ghci-vm = test "ghci-vm";
-    postgres = test "postgres";
-    service = test "service";
-  };
+  tests-basic-3 =
+    testsNamed [
+      "bootstrap"
+      "new"
+      "new-static"
+      "new-static-github"
+    ];
 
-  tests-managed = {
-    bump = test "bump";
-    lower = test "lower";
-    lower-local = test "lower-local";
-    lower-stabilize = test "lower-stabilize";
-    managed-nom = test "managed-nom";
-  };
+  tests-vm =
+    testsNamed [
+    "ghci-vm"
+    "postgres"
+    "service"
+  ];
+
+  tests-managed =
+    testsNamed [
+      "bump"
+      "lower"
+      "lower-local"
+      "lower-stabilize"
+      "managed-nom"
+    ];
 
   tests = tests-basic-1 // tests-basic-2 // tests-basic-3 // tests-vm // tests-managed;
 
-  tests-framework = {
-    framework-step = test "framework-step";
-  };
+  tests-framework = testsNamed ["framework-step"];
 
   suites = {
     basic-1 = framework.suite tests-basic-1;
