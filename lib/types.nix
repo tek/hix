@@ -79,58 +79,6 @@ let
     merge = mergeOneOption;
   };
 
-  explainAppRecErr = def: let
-    a = def.value or {};
-    reason =
-      if !(a ? type)
-      then "Does not have the attribute 'type'"
-      else if !(a ? program)
-      then "Does not have the attribute 'program'"
-      else if !(isString a.type)
-      then "Attribute 'type' is not a string"
-      else "Unknown reason"
-      ;
-  in "${options.showDefs [def]}\n  :: ${reason}";
-
-  appRecErr = loc: allInvalid:
-    throw (
-      "A definition for option `${showOption loc}' is not a valid flake app tree." +
-      " It must have the attributes 'type' and 'program', both of which must be strings, or neither of them." +
-      " Definition values:${lib.concatMapStrings explainAppRecErr allInvalid}"
-    );
-
-  attrsOfFlakeAppRec = lazyAttrsOf flakeAppRec;
-
-  flakeAppRec = mkOptionType {
-    name = "flake-app-rec";
-    description = "flake app tree";
-    descriptionClass = "noun";
-    check = isAttrs;
-
-    merge = loc: defs: let
-
-      isRoot = loc == ["outputs" "apps"];
-      maybeApps =
-        if isRoot
-        then []
-        else lib.filter (a: a.value ? program || a.value ? type) defs;
-      validatedApps = lib.partition (a: checkFlakeApp a.value) maybeApps;
-      apps =
-        if validatedApps.wrong != []
-        then appRecErr loc validatedApps.wrong
-        else map (a: a // { value = { inherit (a.value) type program; }; }) validatedApps.right;
-      nested =
-        if isRoot
-        then defs
-        else map (a: a // { value = removeAttrs a.value ["type" "program"]; }) defs;
-      merged = attrsOfFlakeAppRec.merge loc nested;
-      # TODO improve this
-      dummyUnlessRoot = optionalAttrs (!isRoot) (util.dummyApp loc (attrNames merged));
-      app = if apps == [] then dummyUnlessRoot else mergeEqualOption loc apps;
-
-    in merged // app;
-  };
-
   cabalOverridesVia = desc: mkOptionType {
     name = "cabal-overrides";
     description = "Haskell package override function specified in the Hix DSL";
@@ -140,7 +88,7 @@ let
   };
 
 in {
-  inherit nestedPackages flakeApp flakeAppRec cabalOverridesVia app;
+  inherit nestedPackages flakeApp cabalOverridesVia app;
 
   nixpkgs = mkOptionType {
     name = "nixpkgs";

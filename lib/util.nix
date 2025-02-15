@@ -225,14 +225,6 @@ let
   runBuildApp = name:
   "nix --quiet --quiet --quiet --show-trace run .#${util.internalScope}.${name}";
 
-  dummyAppScript = pre: sub: script "hix-dummy-app" ''
-  ${basic.loadConsole}
-  message "This app cannot be run, it is a namespace node with contents:"
-  ${basic.unlinesMap (n: ''message_hang "$(yellow '*') $(blue .#${concatStringsSep "." (pre ++ [n])})"'') sub}
-  '';
-
-  dummyApp = pre: sub: basic.app (dummyAppScript pre sub);
-
   legacyApp = package: exe:
   package // { meta.mainProgram = exe; };
 
@@ -297,7 +289,6 @@ let
     bootstrapWithDynamicCli
     envSystemAllowed
     runBuildApp
-    dummyApp
     legacyApp
     legacyAppScript
     ensureLegacyApp

@@ -175,7 +175,7 @@ let
       else "${program}";
   in { type = "app"; program = main; meta = {}; };
 
-  removeApp = a: removeAttrs a ["program" "type"];
+  removeApp = a: removeAttrs a ["program" "type" "meta"];
 
   console = import ./console.nix { inherit lib; };
 

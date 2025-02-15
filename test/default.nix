@@ -15,7 +15,6 @@ let
   else expr { inherit config util pkgs testlib; };
 
   tests-basic-1 = {
-    app-rec = test "app-rec";
     basic = test "basic";
     dep-versions = test "dep-versions";
     deps = test "deps";
