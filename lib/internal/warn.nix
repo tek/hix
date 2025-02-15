@@ -66,6 +66,7 @@ in {
   inherit
   warnWith
   deprecatedWith
+  deprecatedEval
   deprecatedOptionReadOnly
   deprecatedApp
   deprecatedLegacyApp
