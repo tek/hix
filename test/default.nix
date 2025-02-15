@@ -12,7 +12,7 @@ let
     expr = import (./. + "/${name}/test.nix");
   in if lib.isAttrs expr
   then expr
-  else expr { inherit config util pkgs testlib; };
+  else expr { inherit config util pkgs testlib; inherit (pkgs) system; };
 
   testsNamed = names: lib.genAttrs names testConf;
 
