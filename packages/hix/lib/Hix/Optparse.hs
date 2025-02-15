@@ -5,7 +5,21 @@ import Data.Aeson (Value, eitherDecodeFileStrict', eitherDecodeStrict')
 import Distribution.Parsec (eitherParsec)
 import Exon (exon)
 import Options.Applicative (ReadM, eitherReader)
-import Path (Abs, Dir, File, Path, Rel, parseAbsDir, parseAbsFile, parseRelDir, parseRelFile, toFilePath)
+import Path (
+  Abs,
+  Dir,
+  File,
+  Path,
+  Rel,
+  SomeBase (..),
+  parseAbsDir,
+  parseAbsFile,
+  parseRelDir,
+  parseRelFile,
+  parseSomeFile,
+  toFilePath,
+  (</>),
+  )
 import qualified Text.Show as Show
 
 import Hix.Data.OutputFormat (OutputFormat (..))
@@ -21,13 +35,32 @@ pathOption desc parse =
   eitherReader \ raw ->
     first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw)
 
+absPathOrCwdOption ::
+  String ->
+  (String -> Either e (SomeBase t)) ->
+  Path Abs Dir ->
+  ReadM (Path Abs t)
+absPathOrCwdOption desc parse cwd =
+  eitherReader \ raw ->
+    first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw) <&> \case
+      Abs p -> p
+      Rel p -> cwd </> p
+
 -- | An absolute file path option for @optparse-applicative@.
 absFileOption :: ReadM (Path Abs File)
 absFileOption = pathOption "absolute file" parseAbsFile
 
+-- | An absolute file path option for @optparse-applicative@.
+absFileOrCwdOption :: Path Abs Dir -> ReadM (Path Abs File)
+absFileOrCwdOption = absPathOrCwdOption "absolute or relative file" parseSomeFile
+
 -- | A relative file path option for @optparse-applicative@.
 relFileOption :: ReadM (Path Rel File)
 relFileOption = pathOption "relative file" parseRelFile
+
+-- | A file path option for @optparse-applicative@.
+someFileOption :: ReadM (SomeBase File)
+someFileOption = pathOption "some file" parseSomeFile
 
 -- | A relative dir path option for @optparse-applicative@.
 absDirOption :: ReadM (Path Abs Dir)
