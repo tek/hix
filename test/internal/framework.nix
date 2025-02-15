@@ -70,6 +70,9 @@ let
   git config --global user.email hix-test@localhost
 
   export hix_nix_quiet=1
+
+  # Get microsecond accuracy from the zsh clock
+  typeset -F SECONDS
   '';
 
   rsyncFilter = pkgs.writeText "hix-test-rsync-filter" ''
@@ -149,7 +152,11 @@ let
     sub **/flake.nix(N)
 
     message "Running test $(bold $(magenta $current))"
+    local start_time=$SECONDS
     ${testWrapper} $test_base $test
+    local result=$?
+    message_hang "$(cyan $(print -f "%.2f" $(( $SECONDS - $start_time )) ) )s"
+    return $result
   }
   '';
 
