@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{config, lib, env}:
 with builtins;
 with lib;
 let
@@ -46,7 +46,8 @@ let
     dep = n:
     if hasAttr n self
     then self.${n}
-    else throw "The Cabal config for '${pname}' has a dependency on the nonexistent package '${n}'.";
+    else
+    throw "The Cabal config for '${pname}' in the env '${env}' has a dependency on the nonexistent package '${n}'.";
 
     depspec = spec: let
       name = depPkg spec;
@@ -74,5 +75,5 @@ let
   drvWith config.hpack.internal.packages.${pname} api pname;
 
 in {
-  inherit drv;
+  inherit drvWith drv;
 }

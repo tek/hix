@@ -5,21 +5,21 @@
   libraryProfiling,
   profiling,
   localPackage,
+  env,
 }:
-with lib;
 let
-  cabalDrv = import ../cabal-drv.nix { inherit config lib; };
+  cabalDrv = import ../cabal-drv.nix { inherit config lib env; };
 
   localProfiling = api:
   if profiling
   then api.profiling
   else
   if libraryProfiling
-  then id
+  then lib.id
   else api.noprofiling;
 
   buildInputs = api: opt:
-  if isFunction opt
+  if lib.isFunction opt
   then opt api.pkgs
   else opt;
 
@@ -34,4 +34,4 @@ let
 
   mkPackage = api: name: pkg: override api pkg (checkIfd api name pkg);
 
-in api: builtins.mapAttrs (mkPackage api) config.packages
+in api: lib.mapAttrs (mkPackage api) config.packages

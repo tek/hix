@@ -644,6 +644,7 @@ in {
           config = global;
           inherit lib;
           inherit (config) ifd localPackage libraryProfiling profiling;
+          env = config.name;
         };
 
         overridesEnvUnmanaged = lib.toList config.overrides;
