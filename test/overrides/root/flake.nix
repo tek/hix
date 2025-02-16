@@ -4,8 +4,7 @@
   inputs.hix.url = "path:HIX";
   inputs.dep.url = "path:BASE/dep";
 
-  outputs = { hix, dep, ... }: hix.lib._hix_test ({config, lib, ...}: {
-    systems = ["x86_64-linux" "aarch64-darwin"];
+  outputs = { hix, dep, ... }: hix.lib._hix_test {
     depsFull = [dep];
     ghcVersions = [];
 
@@ -31,5 +30,5 @@
       root = buildInputs [pkgs.git];
     };
     output.extraPackages = ["root1"];
-  });
+  };
 }

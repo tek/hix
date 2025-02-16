@@ -11,7 +11,7 @@ let
   });
 
   utilWithConfig = config:
-  import ../lib/util.nix { inherit config lib; };
+  import ./util.nix { inherit config lib; };
 
   utilModule = extra: {config, ...}: let
     util = utilWithConfig config // extra;

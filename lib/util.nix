@@ -304,8 +304,6 @@ let
 
     managed = import ./managed/default.nix { inherit util; };
 
-    package = import ./package.nix { inherit util; };
-
     command = import ./command.nix { inherit util; };
 
     hpack = import ./hpack/default.nix { inherit util; };
