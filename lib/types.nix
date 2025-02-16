@@ -87,6 +87,29 @@ let
     merge = _: defs: util.overridesVia desc (concatLists (map (a: toList a.value) defs));
   };
 
+  passwordModule = {
+
+    options = {
+
+      type = lib.mkOption {
+        description = ''
+        How to interpret the password value.
+        * `plain` means the password is literally in-place
+        * `env-var` means the value is the name of an env variable containing the password
+        * `exec` means the value is the path to an executable that prints the password
+        '';
+        type = types.enum ["plain" "env-var" "exec"];
+      };
+
+      value = lib.mkOption {
+        description = "The password or a reference to it.";
+        type = types.str;
+      };
+
+    };
+
+  };
+
 in {
   inherit nestedPackages flakeApp cabalOverridesVia app;
 
@@ -159,5 +182,7 @@ in {
     check = isBool;
     merge = _: defs: all id (map (a: a.value) defs);
   };
+
+  password = types.either types.str (submodule passwordModule);
 
 }

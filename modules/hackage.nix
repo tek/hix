@@ -1,8 +1,10 @@
-{ config, lib, ... }:
+{ config, lib, util, ... }:
 let
   inherit (lib) types;
 
   isNix = file: builtins.match ".*\.nix" file != null;
+
+  repoModule = import ./hackage-repo.nix { inherit util; };
 
 in {
   options.hackage = {
@@ -15,6 +17,16 @@ in {
       '';
       type = types.nullOr (types.listOf types.str);
       default = null;
+    };
+
+    repos = lib.mkOption {
+      description = ''
+      Hackage repos used by the CLI for several tasks, like resolving managed dependencies and publishing packages and
+      revisions.
+      The default config consists of the usual server at `hackage.haskell.org`.
+      '';
+      type = types.attrsOf (types.submodule repoModule);
+      default = {};
     };
 
     allPackages = lib.mkOption {
@@ -211,7 +223,14 @@ in {
       "cabal ${config.hackage.cabalArgs} upload ${config.hackage.cabalUploadArgs} ${if publish then "--publish " else ""}${if doc then "--documentation " else ""}${path}"
     );
 
-  };
+    repos."hackage.haskell.org" = {
+      description = lib.mkDefault "central Hackage";
+      location = lib.mkDefault "https://hackage.haskell.org";
+      solver = lib.mkDefault true;
+      publish = lib.mkDefault true;
+      secure = lib.mkDefault true;
+    };
 
+  };
 
 }

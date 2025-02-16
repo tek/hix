@@ -567,7 +567,7 @@ in {
   - `hackageAt` is like `hackage`, but takes an additional first argument specifying the address of the server.
 
   - `hackageConf` is like `hackageAt`, but instead of an address, it takes the name of an item in
-    [](#opt-hackage-hackage.servers).
+    [](#opt-hackage-hackage.repos).
     If a server with the key `hix-override` is configured, the combinator `hackage` will automatically use it instead of
     nixpkgs' built-in logic.
 

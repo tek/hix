@@ -55,30 +55,30 @@ let
   spec.option "revision" "Hackage revision" { revision = toString revision; inherit sha256; };
 
   unknownHackage = name: ''
-  An override refers to the nonexistent Hackage server config '${name}'.
+  An override refers to the nonexistent Hackage repo config '${name}'.
   '';
 
   hackageLocation = error: name: let
-    server = config.hackage.servers.${name} or null;
+    repo = config.hackage.repos.${name} or null;
   in
-  if server == null
+  if repo == null
   then throw (error name)
-  else server.location;
+  else repo.location;
 
   hackageNoConfig = name: throw ''
-  Internal error: An override refers to the Hackage server '${name}', but no config was passed to the API.
+  Internal error: An override refers to the Hackage repo '${name}', but no config was passed to the API.
   '';
 
-  hackageConfGen = error: server:
-  if lib.attrByPath ["hackage" "servers"] null config == null
-  then hackageNoConfig server
-  else c2n.hackageAt (hackageLocation error server)
+  hackageConfGen = error: repo:
+  if lib.attrByPath ["hackage" "repos"] null config == null
+  then hackageNoConfig repo
+  else c2n.hackageAt (hackageLocation error repo)
   ;
 
   hackageConf = hackageConfGen unknownHackage;
 
   hackage = let
-    conf = lib.attrByPath ["hackage" "servers" "hix-override"] null config;
+    conf = lib.attrByPath ["hackage" "repos" "hix-override"] null config;
   in
   if conf == null
   then c2n.hackage
