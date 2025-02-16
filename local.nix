@@ -5,7 +5,6 @@
 
   cabalInstallFix = {
     overrides = {super, ...}: {
-      semaphore-compat = null;
       cabal-install = super.cabal-install.overrideScope (cself: csuper: {
         semaphore-compat = null;
       });
