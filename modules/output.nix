@@ -55,8 +55,9 @@ in {
         };
 
         cross = lib.mkOption {
-          description = "Include full cross-compilation system sets in the outputs (like
-          `hix.cross.{mingw32,aarch64-android,...}`).";
+          description = ''
+          Include full cross-compilation system sets in the outputs (like `hix.cross.{mingw32,aarch64-android,...}`).
+          '';
           type = types.bool;
           default = true;
         };
