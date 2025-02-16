@@ -14,7 +14,7 @@
 
 in {
   compiler = "ghc98";
-  ghcVersions = ["ghc96" "ghc98"];
+  ghcVersions = ["ghc96" "ghc98" "ghc910"];
 
   hackage = {
     versionFile = "ops/version.nix";
@@ -34,7 +34,7 @@ in {
       enable = true;
       package = {
         name = "incipit-base";
-        version = "^>= 0.5";
+        version = ">=0.5 && <0.7";
       };
       module = "IncipitBase";
     };
@@ -71,7 +71,7 @@ in {
       "casing ^>= 0.1.4"
       "containers"
       "exceptions ^>= 0.10"
-      "exon >= 1.4 && < 1.7"
+      "exon >= 1.4 && < 1.8"
       "extra ^>= 1.7"
       "filepattern ^>= 0.1"
       "http-client ^>= 0.7"
@@ -79,7 +79,7 @@ in {
       "http-types ^>= 0.12"
       "generic-lens ^>= 2.2"
       "generics-sop ^>= 0.5"
-      "lens >= 5.1 && < 5.3"
+      "lens >= 5.1 && < 5.4"
       "lens-regex-pcre ^>= 1.1"
       "optparse-applicative >= 0.17 && <0.19"
       "path ^>= 0.9"
@@ -99,7 +99,7 @@ in {
     test.dependencies = [
       "aeson >= 2.0 && < 2.3"
       "Cabal"
-      "exon >= 1.4 && < 1.7"
+      "exon >= 1.4 && < 1.8"
       "extra ^>= 1.7"
       "hedgehog >= 1.1 && < 1.5"
       "path ^>= 0.9"
@@ -114,6 +114,12 @@ in {
 
   envs.dev = cabalInstallFix;
   envs.ghc98 = cabalInstallFix;
+  envs.ghc910.overrides = {hackage, jailbreak, notest, ...}: {
+    exon = hackage "1.7.1.0" "16vf84nnpivxw4a46g7jsy2hg4lpla7grkv3gp8nd69zlv43777l";
+    generics-sop = jailbreak (hackage "0.5.1.4" "0ai089kly1cajn4djqnplkg2jmnapqlb3crrsyvfnadcyzc9h3km");
+    incipit-base = hackage "0.6.1.0" "0iyyvxpyyybn5ygr875pav6g5hbs00wa9jbr7qslszqpkfpy5x33";
+    pcre-heavy = notest;
+  };
 
   internal.cabal-extra.default-extensions = ["StrictData"];
 

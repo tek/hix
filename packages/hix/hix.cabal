@@ -242,7 +242,7 @@ library
     , casing >=0.1.4 && <0.2
     , containers
     , exceptions ==0.10.*
-    , exon >=1.4 && <1.7
+    , exon >=1.4 && <1.8
     , extra ==1.7.*
     , filepattern ==0.1.*
     , generic-lens ==2.2.*
@@ -250,8 +250,8 @@ library
     , http-client ==0.7.*
     , http-client-tls ==0.3.*
     , http-types ==0.12.*
-    , incipit-base ==0.5.*
-    , lens >=5.1 && <5.3
+    , incipit-base >=0.5 && <0.7
+    , lens >=5.1 && <5.4
     , lens-regex-pcre ==1.1.*
     , optparse-applicative >=0.17 && <0.19
     , path ==0.9.*
@@ -314,7 +314,7 @@ executable hix
   build-depends:
       base ==4.*
     , hix
-    , incipit-base ==0.5.*
+    , incipit-base >=0.5 && <0.7
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -397,11 +397,11 @@ test-suite hix-test
       Cabal
     , aeson >=2.0 && <2.3
     , base ==4.*
-    , exon >=1.4 && <1.7
+    , exon >=1.4 && <1.8
     , extra ==1.7.*
     , hedgehog >=1.1 && <1.5
     , hix
-    , incipit-base ==0.5.*
+    , incipit-base >=0.5 && <0.7
     , path ==0.9.*
     , path-io >=1.7 && <1.9
     , tasty ==1.4.*
