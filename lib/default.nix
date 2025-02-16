@@ -463,5 +463,7 @@ in {
   apMaybe
   ;
 
+  inherit (console.s) colors colorsBg;
+
   version = import ./version.nix { inherit lib; };
 }
