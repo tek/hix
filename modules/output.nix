@@ -78,12 +78,12 @@ in {
 
       packages = mkOption {
         description = "The flake output attribute `packages`.";
-        type = types.lazyAttrsOf types.raw;
+        type = types.lazyAttrsOf types.package;
       };
 
       checks = mkOption {
         description = "The flake output attribute `checks`.";
-        type = types.lazyAttrsOf types.raw;
+        type = types.lazyAttrsOf types.package;
       };
 
       legacyPackages = mkOption {
@@ -93,7 +93,7 @@ in {
 
       devShells = mkOption {
         description = "The flake output attribute `devShells`.";
-        type = types.lazyAttrsOf types.raw;
+        type = types.lazyAttrsOf types.package;
       };
 
       apps = mkOption {
