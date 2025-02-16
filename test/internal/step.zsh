@@ -179,7 +179,12 @@ _step_ensure_validated()
       _step_failed
       message "Command produced $desc, but no check was defined."
       eval "_step_show_std$slug"
-      return 1
+      if (( ${+hix_test_debug} == 1 )) && [[ $slug == 'err' ]]
+      then
+        message "Accepting stderr because $(color_variable '$hix_test_debug') is set."
+      else
+        return 1
+      fi
     fi
   fi
 }

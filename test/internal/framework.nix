@@ -314,6 +314,7 @@ let
         -k hix_test_full_output \
         -k hix_test_ci \
         -k hix_test_verbose \
+        -k hix_test_debug \
         -k LANG \
         -k LC_ALL \
         path:${self}#hix-test -c ${conf.main} $@
