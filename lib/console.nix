@@ -1,5 +1,7 @@
 {...}: let
 
+  inherit (builtins) mapAttrs;
+
   indentLine = l: "  " + l;
 
   colorOffsets = {
@@ -13,7 +15,7 @@
     white = 7;
   };
 
-  colorsBased = base: builtins.mapAttrs (_: o: base + o) colorOffsets;
+  colorsBased = base: mapAttrs (_: o: base + o) colorOffsets;
 
   colors = colorsBased 30;
 
@@ -49,7 +51,13 @@
     command = "blue";
     variable = "cyan";
     error = "red";
+    option = "magenta";
+    package = "blue";
   };
+
+  withAliases = render: let
+    palette = mapAttrs (_: render) colors;
+  in palette // mapAttrs (_: color: palette.${color}) aliases;
 
 in {
 
@@ -74,8 +82,8 @@ in {
 
   indent = map indentLine;
 
-  s.colors = builtins.mapAttrs (_: sgr) colors;
-  s.colorsBg = builtins.mapAttrs (_: sgr) colorsBg;
+  s.colors = withAliases sgr;
+  s.colorsBg = mapAttrs (_: sgr) colorsBg;
 
   start.colors = builtins.mapAttrs (_: startSgr) colors;
   start.colorsBg = builtins.mapAttrs (_: startSgr) colorsBg;
