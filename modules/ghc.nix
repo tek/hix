@@ -104,7 +104,7 @@ with lib;
 
     crossPkgs = mkDefault config.pkgs;
 
-    vanillaGhc = mkDefault (config.pkgs.haskell.packages.${config.compiler});
+    vanillaGhc = mkDefault (config.crossPkgs.haskell.packages.${config.compiler});
 
     ghc = config.crossPkgs.hixPackages;
 
