@@ -5,7 +5,7 @@ with lib;
 
   options = with types; {
 
-    enable = mkEnableOption ("this service");
+    enable = mkEnableOption "this service";
 
     config = mkOption {
       description = "";

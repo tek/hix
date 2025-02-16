@@ -163,7 +163,7 @@ let
 in {
   options = with types; {
 
-    enable = mkEnableOption ("this environment");
+    enable = mkEnableOption "this environment";
 
     name = mkOption {
       description = "Name of this environment.";
@@ -356,7 +356,7 @@ in {
     };
 
     ghcid = {
-      enable = mkEnableOption ("GHCid for this env") // { default = true; };
+      enable = mkEnableOption "GHCid for this env" // { default = true; };
 
       package = mkOption {
         description = "The package for GHCid, defaulting to the one from the env's GHC without overrides.";
@@ -366,7 +366,7 @@ in {
     };
 
     hls = {
-      enable = mkEnableOption ("HLS for this env");
+      enable = mkEnableOption "HLS for this env";
 
       package = mkOption {
         description = "The package for HLS, defaulting to the one from the env's GHC without overrides.";
@@ -459,7 +459,7 @@ in {
 
     vm = {
 
-      enable = mkEnableOption ("the service VM for this env");
+      enable = mkEnableOption "the service VM for this env";
 
       name = mkOption {
         description = "Name of the VM, used in the directory housing the image file.";

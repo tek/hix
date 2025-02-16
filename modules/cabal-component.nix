@@ -32,7 +32,7 @@ in {
 
   options = with types; {
 
-    enable = mkEnableOption (enableDesc) // { default = !single; };
+    enable = mkEnableOption enableDesc // { default = !single; };
 
     name = mkOption {
       description =

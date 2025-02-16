@@ -9,7 +9,7 @@ let
   preludeModule = {
 
     options = with types; {
-      enable = mkEnableOption ("an alternative Prelude");
+      enable = mkEnableOption "an alternative Prelude";
 
       package = mkOption {
         description = "The package containing the alternative Prelude.";
