@@ -13,7 +13,7 @@ homepage:       https://git.tryp.io/tek/hix
 bug-reports:    https://github.com/tek/hix/issues
 author:         Torsten Schmits
 maintainer:     hackage@tryp.io
-copyright:      2023 Torsten Schmits
+copyright:      2025 Torsten Schmits
 license:        BSD-2-Clause-Patent
 license-file:   LICENSE
 build-type:     Simple

@@ -77,7 +77,7 @@ in {
       The year for the copyright string.
       '';
       type = str;
-      default = "2023";
+      default = "2025";
     };
 
     copyright = mkOption {
