@@ -32,7 +32,8 @@ import Hix.Data.Options (
 import Hix.Env (envRunner)
 import Hix.Ghci (assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
 import Hix.Monad (runM)
-import Hix.Test.Utils (UnitTest)
+import Hix.Test.Utils (UnitTest, unitTest)
+import Test.Tasty (TestTree, testGroup)
 
 root :: Path Abs Dir
 root =
@@ -213,3 +214,12 @@ test_moduleName :: UnitTest
 test_moduleName = do
   conf <- evalEither =<< liftIO (runM root (assemble options.ghci { component = spec4 }))
   target_moduleName === conf.script
+
+test_ghci :: TestTree
+test_ghci =
+  testGroup "ghci" [
+    unitTest "run ghcid" test_ghcid,
+    unitTest "main package" test_mainPackage,
+    unitTest "component env" test_componentEnv,
+    unitTest "extract module name from path" test_moduleName
+  ]

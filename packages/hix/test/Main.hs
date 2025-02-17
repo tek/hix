@@ -4,7 +4,7 @@ import Hix ()
 import Hix.Test.BootstrapTest (test_bootstrap)
 import Hix.Test.BoundsTest (test_bounds)
 import Hix.Test.CabalTest (test_cabal)
-import Hix.Test.GhciTest (test_componentEnv, test_ghcid, test_moduleName)
+import Hix.Test.GhciTest (test_ghci)
 import Hix.Test.ManagedTest (test_managed)
 import Hix.Test.NewTest (test_new)
 import Hix.Test.PreprocTest (
@@ -32,9 +32,7 @@ tests =
       unitTest "self exporting module, separate line" test_preprocSelfExport2,
       unitTest "self exporting module, separate line" test_preprocNoPrelude,
       unitTest "modules starting with 'Prelude'" test_preprocPreludePrefix,
-      unitTest "run ghcid" test_ghcid,
-      unitTest "component env" test_componentEnv,
-      unitTest "extract module name from path" test_moduleName,
+      test_ghci,
       unitTest "generate a project" test_new,
       unitTest "bootstrap a project" test_bootstrap
     ],
