@@ -1,5 +1,7 @@
 module Hix where
 
+import System.Exit (exitFailure)
+
 import Hix.Bootstrap (bootstrapProject)
 import qualified Hix.Console as Console
 import Hix.Console (errorMessage)
@@ -61,7 +63,12 @@ runCommand = \case
     LowerStabilizeCmd opts -> lowerStabilizeCli opts
     LowerAutoCmd opts -> lowerAutoCli opts
 
+failure :: Bool -> Error -> IO ()
+failure verbose err = do
+  printError verbose err
+  exitFailure
+
 main :: IO ()
 main = do
   Options global cmd <- parseCli
-  leftA (printError global.verbose) =<< runMWith global (runCommand cmd)
+  leftA (failure global.verbose) =<< runMWith global (runCommand cmd)
