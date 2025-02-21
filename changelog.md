@@ -1,4 +1,4 @@
-# Unreleased
+# 0.8.0
 
 * Add a reusable workflow for managed bounds updates.
 * Parse Nix json output messages to diagnose problems in managed bounds apps; add overrides for installed packages that

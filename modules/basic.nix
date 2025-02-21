@@ -284,7 +284,7 @@ in {
 
       packageNames = attrNames config.packages;
 
-      hixVersion = "0.7.1";
+      hixVersion = "0.8.0";
 
     };
   };
