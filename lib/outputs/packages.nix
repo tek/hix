@@ -17,10 +17,17 @@
 
   in build.bimapTargetsFor "scoped" envMain target;
 
+  muslOutput = outputs:
+  lib.optionalAttrs (util.config.system == "x86_64-linux") {
+    inherit (outputs) musl;
+  };
+
   specialOutputs = outputs:
   lib.optionalAttrs util.expose.cross { inherit (outputs) cross; }
   //
-  { inherit (outputs) static release musl; }
+  { inherit (outputs) static release; }
+  //
+  muslOutput outputs
   ;
 
   legacyDev = env: _pkg: outputs:
@@ -55,8 +62,8 @@
     name = pkg.name;
     basic = outputs: {
       default = outputs.package;
-      inherit (outputs) musl static;
-    };
+      inherit (outputs) static;
+    } // muslOutput outputs;
   in
   util.maybe {} basic (util.justAttr name build.targets.dev)
   //
