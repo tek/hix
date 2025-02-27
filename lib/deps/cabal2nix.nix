@@ -52,15 +52,15 @@
 
   genHackage = {name, desc, meta, mkBaseUrl, createDrv}: let
     src = srcHackage mkBaseUrl;
-    mkDrv = genHackageDrv (meta: args: createDrv (src meta args) meta args);
+    mkDrv = genHackageDrv (meta: args: createDrv (src meta args.pkg) meta args);
     pregen = meta': args: pregenCabal2nixDrv (mkDrv meta' args);
     d = decl name desc meta mkDrv;
   in spec.pregen src pregen hydrateCabal2nix d;
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-  callHackage = meta: {self, pkg, ...}:
-  self.callHackageDirect { inherit (meta) ver sha256; inherit pkg; };
+  callHackage = meta: {self, pkg, ...}: c2nArgs:
+  self.callHackageDirect { inherit (meta) ver sha256; inherit pkg; } c2nArgs;
 
   hackage = ver: sha256:
   genHackage {
