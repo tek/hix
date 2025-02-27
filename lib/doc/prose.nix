@@ -609,7 +609,7 @@ in {
   }
   ```
 
-  Its arguments consist of `dep`'s Haskell and system dependencies as well as the `mkDerivation` function.
+  Its arguments consist of `dep`'s Haskell and system dependencies as well as the function `mkDerivation`.
   All of these are ultimately provided by the GHC package set, and `callCabal2nix` wraps this generated function with
   the common
   [`callPackage`](https://nixos.org/manual/nixpkgs/unstable#function-library-lib.customisation.callPackageWith)
@@ -621,10 +621,16 @@ in {
   let
     callPackage = lib.callPackageWith ghc;
     ghc = {
-      # These two are defined in `pkgs/development/haskell-modules/make-package-set.nix`
+      # These two are defined in nixpkgs.
+
+      # In `pkgs/development/haskell-modules/make-package-set.nix`
       mkDerivation = pkgs.callPackage ./generic-builder.nix { ... };
+
+      # In the generated `pkgs/development/haskell-modules/hackage-packages.nix`
       aeson = callPackage aesonDrv {};
+
       ...
+
       api = callPackage cabal2nix_dep {
         aeson = someCustomAesonDerivation; # Haskell package override
         pcre = pkgs.pcre; # System package override
