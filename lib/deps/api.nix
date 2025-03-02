@@ -13,7 +13,7 @@ let
   spec = import ./spec.nix { inherit lib; };
   c2n = import ./cabal2nix.nix { inherit pkgs; };
 
-  inherit (spec) transform transform_ transformDrv drv;
+  inherit (spec) transform transform_ drv;
   hsLibC = pkgs.haskell.lib.compose;
 
   transformers = {
@@ -88,7 +88,7 @@ let
 in transformers // {
   inherit (c2n) hackageAt source;
   inherit self super pkgs;
-  inherit reset transform transform_ transformDrv noHpack cabalOverrides cabal2nixOverrides cabal2nixArgs revision drv;
+  inherit reset transform transform_ noHpack cabalOverrides cabal2nixOverrides cabal2nixArgs revision drv;
   inherit hackageConfGen hackageConf hackage;
   inherit (spec) option;
   hsLib = pkgs.haskell.lib;
