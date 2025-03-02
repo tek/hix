@@ -699,9 +699,14 @@ in {
   - `enable` – Enable a Cabal flag (`-f<flag>`)
   - `disable` – Disable a Cabal flag (`-f-<flag>`)
   - `ghcOptions` – Pass GHC options to Cabal (`--ghc-options`)
-  - `override` – Call `overrideCabal` on the derivation, allowing arbitrary Cabal manipulation
-  - `overrideAttrs` – Call `overrideAttrs` on the derivation
-  - `buildInputs` – Add Nix build inputs
+  - `override` – Use `overrideCabal` to modify the arguments passed to the Haskell-specific derivation builder (the
+    function `mkDerivation` explained below).
+    Similar to the more general `stdenv.mkDerivation` used by most nixpkgs packages (and wrapped by the Haskell
+    builder).
+  - `overrideAttrs` – Call the function `overrideAttrs` that is added by `stdenv.mkDerivation`.
+    This allows overriding the arguments that the Haskell builder passes to the `stdenv` builder.
+  - `buildInputs` – Add generic build inputs, like C libraries.
+    Can be a function, in which case it is applied to `pkgs`.
 
   The third class consists of "options", which modify the behavior of other override combinators:
 

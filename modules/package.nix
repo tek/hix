@@ -292,8 +292,8 @@ in {
       description = ''
       Manipulate the package's derivation using the combinators described in [](#overrides-combinators).
       '';
-      type = functionTo (functionTo unspecified);
-      default = _: id;
+      type = functionTo unspecified;
+      default = {id, ...}: id;
     };
 
     cabal = mkOption {

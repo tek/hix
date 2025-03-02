@@ -388,15 +388,14 @@ in {
 
     localPackage = mkOption {
       description = ''
-        A function that takes override combinators and a derivation and returns a modified version of that derivation.
-        Called for each cabal2nix derivation of the local packages before inserting it into the overrides.
-        Like [](#opt-general-overrides), but applies to all packages when building with this env.
+      A function returning a single [override combinator expression](#opt-general-overrides) that is applied to all
+      local packages in this environment.
       '';
       example = literalExpression ''
         { fast, nobench, ... }: pkg: nobench (fast pkg);
       '';
-      type = unspecified;
-      default = api: id;
+      type = functionTo unspecified;
+      default = {id, ...}: id;
     };
 
     libraryProfiling = mkOption {
@@ -641,8 +640,7 @@ in {
       in {
 
         overridesLocal = import ../lib/deps/local.nix {
-          config = global;
-          inherit lib;
+          inherit util;
           inherit (config) ifd localPackage libraryProfiling profiling;
           env = config.name;
         };

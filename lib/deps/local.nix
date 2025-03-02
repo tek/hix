@@ -1,6 +1,5 @@
 {
-  config,
-  lib,
+  util,
   ifd,
   libraryProfiling,
   profiling,
@@ -8,6 +7,8 @@
   env,
 }:
 let
+  inherit (util) config lib;
+
   cabalDrv = import ../cabal-drv.nix { inherit config lib env; };
 
   localProfiling = api:
@@ -15,7 +16,7 @@ let
   then api.profiling
   else
   if libraryProfiling
-  then lib.id
+  then api.id
   else api.noprofiling;
 
   buildInputs = api: opt:
@@ -23,15 +24,21 @@ let
   then opt api.pkgs
   else opt;
 
-  override = api: pkg: drv:
-  api.buildInputs (buildInputs api config.buildInputs)
-  (api.buildInputs (buildInputs api pkg.buildInputs) (pkg.override api (localPackage api (localProfiling api drv))));
+  override = api: pkg:
+  lib.pipe (localProfiling api) [
+    (localPackage api)
+    (pkg.override api)
+    (api.buildInputs (buildInputs api pkg.buildInputs))
+    (api.buildInputs (buildInputs api config.buildInputs))
+  ];
 
   checkIfd = api: name: pkg:
   if ifd
   then api.source.root pkg.src
   else api.drv (cabalDrv.drv api name pkg);
 
-  mkPackage = api: name: pkg: override api pkg (checkIfd api name pkg);
+  transformPackage = api: name: pkg: override api pkg;
 
-in api: lib.mapAttrs (mkPackage api) config.packages
+  mkPackage = api: name: pkg: checkIfd api name pkg;
+
+in [(api: lib.mapAttrs (mkPackage api) config.packages) (api: lib.mapAttrs (transformPackage api) config.packages)]

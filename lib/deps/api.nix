@@ -16,8 +16,13 @@ let
   inherit (spec) transform transform_ drv;
   hsLibC = pkgs.haskell.lib.compose;
 
+  overrideAttrsCabal = f: drv:
+  (drv.override (args: args // { mkDerivation = drv: (args.mkDerivation drv).overrideAttrs f; }))
+  // { overrideScope = scope: overrideAttrsCabal f (drv.overrideScope scope); };
+
   transformers = {
     transformDrv = transform_ "transform-drv";
+    id = transform_ "id" lib.id;
     jailbreak = transform_ "jailbreak" modifiers.jailbreak;
     configure = flag: transform_ "configure" (hsLibC.appendConfigureFlag flag);
     configures = flags: transform_ "configures" (hsLibC.appendConfigureFlags flags);
@@ -25,9 +30,9 @@ let
     disable = flag: transform_ "disable" (hsLibC.disableCabalFlag flag);
     ghcOptions = flag: transform_ "ghcOptions" (hsLibC.appendConfigureFlag "--ghc-options=${flag}");
     override = conf: transform_ "override" (hsLibC.overrideCabal conf);
-    overrideAttrs = f: transform_ "overrideAttrs" (drv: drv.overrideAttrs f);
-    buildInputs = inputs: transform_ "buildInputs" (drv:
-      drv.overrideAttrs ({buildInputs ? [], ...}: { buildInputs = buildInputs ++ inputs; })
+    overrideAttrs = f: transform_ "overrideAttrs" (overrideAttrsCabal f);
+    buildInputs = inputs: transform_ "buildInputs" (
+      hsLibC.overrideCabal ({buildDepends ? [], ...}: { buildDepends = buildDepends ++ inputs; })
     );
     minimal = transform_ "minimal" modifiers.minimal;
     profiling = transform_ "profiling" modifiers.profiling;
