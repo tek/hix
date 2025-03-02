@@ -390,7 +390,7 @@ in {
       description = ''
         A function that takes override combinators and a derivation and returns a modified version of that derivation.
         Called for each cabal2nix derivation of the local packages before inserting it into the overrides.
-        Like [](#opt-general-overrides), but applies too all packages when building with this env.
+        Like [](#opt-general-overrides), but applies to all packages when building with this env.
       '';
       example = literalExpression ''
         { fast, nobench, ... }: pkg: nobench (fast pkg);
