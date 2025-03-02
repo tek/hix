@@ -28,7 +28,7 @@ mockSolveResources packages GhcPackages {installed, available} = do
     flags = emptySolveFlags,
     platform = Platform X86_64 Linux,
     compiler = unknownCompilerInfo buildCompilerId NoAbiTag,
-#if MIN_VERSION_Cabal(3,14,0)
+#if MIN_VERSION_cabal_install_solver(3,14,0)
     pkgConfigDb = PkgConfigDb mempty,
 #else
     pkgConfigDb = NoPkgConfigDb,

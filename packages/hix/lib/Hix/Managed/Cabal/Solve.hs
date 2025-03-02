@@ -32,7 +32,7 @@ import Hix.Managed.Cabal.Data.SolverState (SolverState (SolverState), compileSol
 import Hix.Managed.Cabal.Targets (solveTargets)
 import Hix.Monad (M, tryIOMAs)
 
-#if ! MIN_VERSION_Cabal(3,14,0)
+#if ! MIN_VERSION_cabal_install(3,12,0)
 import Distribution.Client.Dependency.Types (Solver (Modular))
 #endif
 
@@ -53,8 +53,10 @@ solveSpecifiers ::
   IO (Either String SolverInstallPlan)
 solveSpecifiers res mapParams pkgSpecifiers prefs =
   foldProgress (logMsg res.conf.verbosity) (pure . Left) (pure . Right) $
-#if MIN_VERSION_Cabal(3,14,0)
+#if MIN_VERSION_cabal_install(3,14,0)
   resolveDependencies res.platform res.compiler (Just res.pkgConfigDb) params
+#elif MIN_VERSION_cabal_install(3,12,0)
+  resolveDependencies res.platform res.compiler res.pkgConfigDb params
 #else
   resolveDependencies res.platform res.compiler res.pkgConfigDb Modular params
 #endif

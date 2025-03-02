@@ -26,9 +26,12 @@ import Hix.Monad (tryIOM)
 
 #if MIN_VERSION_Cabal(3,14,0)
 import Distribution.Simple (PackageDBStackCWD)
-import Distribution.Solver.Types.PkgConfigDb (PkgConfigDb (..))
 #else
 import Distribution.Simple (PackageDBStack)
+#endif
+
+#if MIN_VERSION_cabal_install_solver(3,14,0)
+import Distribution.Solver.Types.PkgConfigDb (PkgConfigDb (..))
 #endif
 
 #if MIN_VERSION_Cabal(3,14,0)
@@ -67,7 +70,7 @@ resources packages conf = do
       installedPkgIndex = installedPkgIndex,
       sourcePkgDb = SourcePackage.dbWithManaged packages sourcePkgDb,
       solverParams = id,
-#if MIN_VERSION_Cabal(3,14,0)
+#if MIN_VERSION_cabal_install_solver(3,14,0)
       pkgConfigDb = fromMaybe (PkgConfigDb []) pkgConfigDb,
 #endif
       ..
