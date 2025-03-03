@@ -15,12 +15,18 @@
   justIf util.expose.internals { inherit (env.ghc) pkgs ghc; ghc0 = env.ghc.vanillaGhc; }
   ;
 
-  appsEnv = env: outputs: { dep-versions = depVersions env.name; };
+  appsEnv = env: outputs: { dep-versions = depVersions env.name;  inherit (env) shell; };
+
+  prefixed.env =
+    util.mergeAll [
+      (internal.envs.mapMaybe legacyEnv validBuildEnvs)
+      (internal.envs.map appsEnv validBuildEnvs)
+    ];
 
 in {
 
   legacyPackages =
-    { env = internal.envs.mapMaybe legacyEnv validBuildEnvs; }
+    prefixed
     //
     (internal.envs.map appsEnv (internal.envs.filterExposed "scoped" validBuildEnvs))
     ;

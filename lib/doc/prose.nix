@@ -1456,11 +1456,14 @@ in {
 
   ```
   nix run .#dep-versions
+  nix run .#ghc96.dep-versions
   nix run .#env.ghc96.dep-versions
   ```
 
   Prints all components' dependencies and their actual versions in the dev environment, or the named environment in the
   second variant.
+  The second variant is only available for envs with `expose.scoped = true;`, while the third variant is available for
+  any env.
 
   ### Access to intermediate outputs {#intermediate-outputs}
 
