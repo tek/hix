@@ -40,11 +40,13 @@ let
 
   nameModule = { _module.args.name = mkOptionDefault namePh; };
 
+  importMod = name: import (moduleDir + "/${name}.nix");
+
   modulesWithout = exclude: modules: let
     result = evalModules { modules = modules ++ [nameModule]; };
   in json exclude result.options;
 
-  importMod = name: import (moduleDir + "/${name}.nix");
+  modules = modulesWithout [];
 
   moduleWithout = exclude: name: args: let
     mod = importMod name args;
@@ -53,5 +55,5 @@ let
   module = name: args: moduleWithout [] name args;
 
 in {
-  inherit importMod module moduleWithout modulesWithout namePh;
+  inherit importMod modulesWithout modules moduleWithout module namePh;
 }

@@ -38,12 +38,19 @@
   ];
   mod-package = options.moduleWithout packageExclude "package" { global = config; inherit util; };
 
+  mod-packageExpose = options.module "expose" { inherit util; type = "package"; default = true; };
+
   envExclude = [
     { type = "sub"; path = ["ghc"]; }
     { type = "sub"; path = ["services"]; }
     { type = "full"; path = ["internal"]; }
   ];
   mod-env = options.moduleWithout envExclude "env" { global = config; inherit util; };
+
+  mod-envExpose = options.modules [
+    (options.importMod "expose" { inherit util; type = "env"; default = false; })
+    (options.importMod "env-expose" { inherit util; })
+  ];
 
   ghcExclude = [
   ];
@@ -113,6 +120,7 @@
         (optWith prose.cabalOptionsHeader "cabal" "Cabal" mod-cabal-options)
         (text prose.package)
         (opt "package" "Package" mod-package)
+        (opt "package-expose" "Package exposure" mod-packageExpose)
         (opt "general" "General" mod-general)
         (text prose.ifd)
         (text prose.ui)
@@ -125,6 +133,7 @@
       fragments = [
         (text prose.environments)
         (opt "env" "Environment" mod-env)
+        (opt "env-expose" "Environment exposure" mod-envExpose)
         (opt "ghc" "GHC" mod-ghc)
         (opt "command" "Command" mod-command)
         (opt "ghci" "GHCi(d)" mod-ghci)

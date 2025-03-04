@@ -504,6 +504,9 @@ in {
   For instance, the default devshell uses this environment when entered with `nix develop` without an explicit argument.
   Running `cabal build` in that shell will use the configured GHC.
 
+  All environments are exposed in the flake output namespace `devShells` (so they can be used with
+  `nix develop .#<env-name>`), unless the option [](#opt-env-expose-shell) is set to `false`.
+
   ### Configuring GHC {#ghc}
 
   The most important part of an environment is the associated GHC.
@@ -1432,7 +1435,7 @@ in {
   };
   ```
 
-  ## Release maintenance
+  ## Release maintenance {#managed-maint}
 
   ::: {.note}
   This feature is highly experimental and needs to be unlocked in the config:
@@ -1470,17 +1473,18 @@ in {
   Release branches use the naming schema `release/<package>/<version>` and will be created per-package, choosing base
   tags that are named either `<package>-<version>` or `<version>`.
 
-  ### Hackage credentials
+  ### Hackage credentials {#managed-hackage}
 
   Revision uploads naturally require authentication, so you need to specify your hackage password somehow.
-  The simplest way is to use [](#opt-hackage-hackage.repos.password), but it can also be passed on the command line:
+  The simplest way is to use [](#opt-hackage-hackage.repos._name_.password), but it can also be passed on the command
+  line:
 
   ```
   nix run .#revision -- --branch 'release/api/0.5' --hackage="hackage.haskell.org:password:$hackage_password"
   ```
 
-  The app will upload to all Hackage repos for which [](#opt-hackage-hackage.repos.publish) is `true`, so you'll need to
-  provide credentials for each of them.
+  The app will upload to all Hackage repos for which [](#opt-hackage-hackage.repos._name_.publish) is `true`, so you'll
+  need to provide credentials for each of them.
 
   The user name can be specified in the same manner.
 
