@@ -181,12 +181,12 @@ in {
         { ${util.internalScope} = removeAttrs outputs [util.internalScope]; }
       ];
 
-    in {
-      packages = asDefault (withPrefix "packages");
-      checks = asDefault outputs.packages.checks;
-      legacyPackages = asDefault (withInternal (withPrefix "legacyPackages"));
-      devShells = asDefault (withPrefix "devShells");
-      apps = asDefault (withPrio "apps");
+    in util.mapValues asDefault {
+      packages = withPrefix "packages";
+      checks = outputs.packages.checks;
+      legacyPackages = withInternal (withPrefix "legacyPackages");
+      devShells = withPrefix "devShells";
+      apps = withPrio "apps";
     };
 
   };
