@@ -378,6 +378,8 @@ in {
       `nix build .#<env>.<package>`.
       If the value is boolean, all parts are affected.
       If it is a set, submodule options configure the individual parts.
+
+      See [](#options-package-expose) for individual attributes.
       '';
       type = types.either types.bool (types.submodule exposeModule);
       default = true;
