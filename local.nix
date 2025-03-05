@@ -8,44 +8,6 @@ in {
   ghcVersions = ["ghc96" "ghc98" "ghc910"];
   main = "hix";
 
-  hackage = {
-    versionFile = "ops/version.nix";
-    tag = false;
-    formatTag = {name, version}: if name == null then version else "${name}-${version}";
-    setChangelogVersion = lib.mkForce false;
-    commit = false;
-    add = true;
-    hooks.postUploadAll = {source, publish}:
-    if source && publish
-    then release.updateCliVersion
-    else "";
-  };
-
-  cabal = {
-    prelude = {
-      enable = true;
-      package = {
-        name = "incipit-base";
-        version = ">=0.5 && <0.7";
-      };
-      module = "IncipitBase";
-    };
-    paths = false;
-
-    license = "BSD-2-Clause-Patent";
-    license-file = "LICENSE";
-    author = "Torsten Schmits";
-
-    meta = {
-      maintainer = "hackage@tryp.io";
-      category = "Build";
-      git = "https://git.tryp.io/tek/hix";
-      homepage = "https://git.tryp.io/tek/hix";
-      bug-reports = "https://github.com/tek/hix/issues";
-      synopsis = "Haskell/Nix development build tools";
-    };
-  };
-
   packages.hix = {
     src = ./packages/hix;
 
@@ -152,6 +114,44 @@ in {
 
     expose = false;
 
+  };
+
+  cabal = {
+    prelude = {
+      enable = true;
+      package = {
+        name = "incipit-base";
+        version = ">=0.5 && <0.7";
+      };
+      module = "IncipitBase";
+    };
+    paths = false;
+
+    license = "BSD-2-Clause-Patent";
+    license-file = "LICENSE";
+    author = "Torsten Schmits";
+
+    meta = {
+      maintainer = "hackage@tryp.io";
+      category = "Build";
+      git = "https://git.tryp.io/tek/hix";
+      homepage = "https://git.tryp.io/tek/hix";
+      bug-reports = "https://github.com/tek/hix/issues";
+      synopsis = "Haskell/Nix development build tools";
+    };
+  };
+
+  hackage = {
+    versionFile = "ops/version.nix";
+    tag = false;
+    formatTag = {name, version}: if name == null then version else "${name}-${version}";
+    setChangelogVersion = lib.mkForce false;
+    commit = false;
+    add = true;
+    hooks.postUploadAll = {source, publish}:
+    if source && publish
+    then release.updateCliVersion
+    else "";
   };
 
   commands.integration-hackage = {
