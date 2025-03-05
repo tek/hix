@@ -54,20 +54,20 @@
   justEnabled = env:
   justIf (env.enable or false);
 
-  isExposed = purpose: env:
-  if isNull env
+  isExposed = purpose: item:
+  if isNull item
   then false
   else
-  if lib.isAttrs env.expose
-  then env.expose.${purpose}
-  else env.expose;
+  if lib.isAttrs item.expose
+  then item.expose.${purpose}
+  else item.expose;
 
   justExposed = purpose: env:
   justIf (isExposed purpose env);
 
   targets = env:
   if (env.packages or null) == null
-  then config.internal.packageNames
+  then lib.attrNames (lib.filterAttrs (_: isExposed "target") config.packages)
   else env.packages;
 
   isTarget = envName: pkgName:

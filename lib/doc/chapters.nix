@@ -38,7 +38,10 @@
   ];
   mod-package = options.moduleWithout packageExclude "package" { global = config; inherit util; };
 
-  mod-packageExpose = options.module "expose" { inherit util; type = "package"; default = true; };
+  mod-packageExpose = options.modules [
+    (options.importMod "expose" { inherit util; type = "package"; default = true; })
+    (options.importMod "package-expose" { inherit util; })
+  ];
 
   envExclude = [
     { type = "sub"; path = ["ghc"]; }
