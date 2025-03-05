@@ -1,4 +1,8 @@
+{-# language CPP #-}
+
+#if __GLASGOW_HASKELL__ >= 908
 {-# language TypeAbstractions #-}
+#endif
 
 module Hix.Managed.Handlers.Context where
 
