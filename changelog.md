@@ -1,6 +1,7 @@
 # Unreleased
 
 * Add an experimental app, `maint`, that uploads Hackage revisions for previous tags when bounds can be bumped.
+* Add `package.<package>.expose.target`, controlling whether a package is included in the default targets of envs.
 
 # 0.8.0
 

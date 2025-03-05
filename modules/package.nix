@@ -10,6 +10,7 @@ let
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
   cabalComponentModule = import ./cabal-component.nix { inherit global util; };
   exposeModule = import ./expose.nix { inherit util; type = "package"; };
+  packageExposeModule = import ./package-expose.nix { inherit util; };
 
   anyEnabled = set: any (a: a.enable) (attrValues set);
 
@@ -381,7 +382,7 @@ in {
 
       See [](#options-package-expose) for individual attributes.
       '';
-      type = types.either types.bool (types.submodule exposeModule);
+      type = types.either types.bool (types.submoduleWith { modules = [exposeModule packageExposeModule]; });
       default = true;
     };
 
