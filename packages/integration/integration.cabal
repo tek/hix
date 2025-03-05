@@ -195,7 +195,7 @@ test-suite integration-test
     , hix ==0.8.0
     , incipit-base >=0.5 && <0.7
     , integration
-    , lens >=5.1 && <5.3
+    , lens >=5.1 && <5.4
     , path ==0.9.*
     , path-io >=1.7 && <1.9
     , tasty ==1.4.*
