@@ -3,22 +3,6 @@
 
   release = import ./lib/release.nix { inherit config util; };
 
-  cabalInstallFix = {
-    overrides = {super, ...}: {
-      cabal-install = super.cabal-install.overrideScope (cself: csuper: {
-        semaphore-compat = null;
-      });
-    };
-  };
-
-  hackageServer = config.pkgs.fetchFromGitea {
-    domain = "git.tryp.io";
-    owner = "tek";
-    repo = "hackage-server";
-    sha256 = "sha256-bm9jpskrYM4QKbP5tjdBy3BemSZnMH/Tx2yUuvuhr8c=";
-    rev = "678022773f7cd7db9264d8f9bf275e0ead9ea28a";
-  };
-
 in {
   compiler = "ghc98";
   ghcVersions = ["ghc96" "ghc98" "ghc910"];
@@ -171,27 +155,6 @@ in {
 
   };
 
-  envs.integration = {
-    expose = false;
-    packages = ["hix" "integration"];
-    env = {
-      hackage_data_dir = "${hackageServer}/datafiles";
-      hix_dir = "${inputs.self}";
-    };
-
-    overrides = api@{hackage, fast, source, force, self, minimal, overrideAttrs, ...}:
-    cabalInstallFix.overrides api // {
-      hix = minimal;
-      integration = fast (overrideAttrs (old: {
-        hackage_data_dir = "${hackageServer}/datafiles";
-      }));
-      hackage-security = self.hackage-security_0_6_2_6;
-      hackage-server = force (source.root hackageServer);
-      tar = hackage "0.6.3.0" "02nq0l9bsnkk5w8lbp493anc01fyf45l7zbcahhzji02agjwxkqm";
-    };
-
-  };
-
   commands.integration-hackage = {
     env = "integration";
     command = ''
@@ -202,15 +165,56 @@ in {
 
   commands.hls.env = lib.mkForce "integration";
 
-  envs.dev = cabalInstallFix // {
-    packages = ["hix"];
-  };
-  envs.ghc98 = cabalInstallFix;
-  envs.ghc910.overrides = {hackage, jailbreak, notest, ...}: {
-    exon = hackage "1.7.1.0" "16vf84nnpivxw4a46g7jsy2hg4lpla7grkv3gp8nd69zlv43777l";
-    generics-sop = jailbreak (hackage "0.5.1.4" "0ai089kly1cajn4djqnplkg2jmnapqlb3crrsyvfnadcyzc9h3km");
-    incipit-base = hackage "0.6.1.0" "0iyyvxpyyybn5ygr875pav6g5hbs00wa9jbr7qslszqpkfpy5x33";
-    pcre-heavy = notest;
+  envs = let
+
+    cabalInstallFix = {
+      overrides = {super, ...}: {
+        cabal-install = super.cabal-install.overrideScope (cself: csuper: {
+          semaphore-compat = null;
+        });
+      };
+    };
+
+    hackageServer = config.pkgs.fetchFromGitea {
+      domain = "git.tryp.io";
+      owner = "tek";
+      repo = "hackage-server";
+      sha256 = "sha256-bm9jpskrYM4QKbP5tjdBy3BemSZnMH/Tx2yUuvuhr8c=";
+      rev = "678022773f7cd7db9264d8f9bf275e0ead9ea28a";
+    };
+
+  in {
+
+    integration = {
+      expose = false;
+      packages = ["hix" "integration"];
+      env = {
+        hackage_data_dir = "${hackageServer}/datafiles";
+        hix_dir = "${inputs.self}";
+      };
+
+      overrides = api@{hackage, fast, source, force, self, minimal, overrideAttrs, ...}:
+      cabalInstallFix.overrides api // {
+        hix = minimal;
+        integration = fast (overrideAttrs (old: { hackage_data_dir = "${hackageServer}/datafiles"; }));
+        hackage-security = self.hackage-security_0_6_2_6;
+        hackage-server = force (source.root hackageServer);
+        tar = hackage "0.6.3.0" "02nq0l9bsnkk5w8lbp493anc01fyf45l7zbcahhzji02agjwxkqm";
+      };
+
+    };
+
+    dev = cabalInstallFix;
+
+    ghc98 = cabalInstallFix;
+
+    ghc910.overrides = {hackage, jailbreak, notest, ...}: {
+      exon = hackage "1.7.1.0" "16vf84nnpivxw4a46g7jsy2hg4lpla7grkv3gp8nd69zlv43777l";
+      generics-sop = jailbreak (hackage "0.5.1.4" "0ai089kly1cajn4djqnplkg2jmnapqlb3crrsyvfnadcyzc9h3km");
+      incipit-base = hackage "0.6.1.0" "0iyyvxpyyybn5ygr875pav6g5hbs00wa9jbr7qslszqpkfpy5x33";
+      pcre-heavy = notest;
+    };
+
   };
 
   internal.cabal-extra.default-extensions = ["StrictData"];
