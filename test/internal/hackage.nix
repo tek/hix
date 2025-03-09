@@ -7,20 +7,25 @@
 
     source = ''
     port_file="$test_base/port"
-    unit="hackage-$RANDOM"
+    hackage_log="$test_base/hackage.log"
 
     hackage_quit()
     {
-      systemctl --quiet --user stop $unit
+      if (( ''${+integration_pid} == 1 )) kill $integration_pid
       return $1
+    }
+
+    hackage_run()
+    {
+      nix run path:$hix_dir#integration-hackage -- --port-file $port_file &> $hackage_log
     }
 
     hackage_scope()
     {
       setopt local_options local_traps err_return
       nix build path:$hix_dir#env.integration.integration
-      systemd-run --quiet --user --collect --unit=$unit --property=Type=exec \
-        nix run path:$hix_dir#integration-hackage -- --port-file $port_file --debug
+      coproc hackage_run
+      integration_pid=$!
       trap 'hackage_quit 0' EXIT
       trap 'trap - EXIT; hackage_quit 130' INT
       for i in {1..120}
@@ -34,8 +39,9 @@
       done
       if [[ -z $port ]]
       then
-        fail "Port file didn't appear. Unit status:"
-        _hix_redirect systemctl --user status $unit
+        error_message "Port file didn't appear. Output:"
+        cat $hackage_log
+        return 1
       fi
 
       local _hackage_url="http://localhost:$port"
