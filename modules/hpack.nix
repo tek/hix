@@ -33,6 +33,7 @@ in {
       internal.packages = mkOption {
         type = types.attrsOf util.types.strict;
       };
+
     };
   };
 

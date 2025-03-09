@@ -2,6 +2,7 @@
 
 * Add an experimental app, `maint`, that uploads Hackage revisions for previous tags when bounds can be bumped.
 * Add `package.<package>.expose.target`, controlling whether a package is included in the default targets of envs.
+* Add an env, `hix-build-tools`, to configure packages used internally; like `cabal-install` and `hpack`.
 
 # 0.8.0
 
