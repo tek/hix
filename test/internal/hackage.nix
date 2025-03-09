@@ -17,13 +17,13 @@
 
     hackage_run()
     {
-      nix run path:$hix_dir#integration-hackage -- --port-file $port_file &> $hackage_log
+      nix run path:$hix_dir#integration-hackage -- --port-file $port_file --debug --cabal-verbose # &> $hackage_log
     }
 
     hackage_scope()
     {
       setopt local_options local_traps err_return
-      nix build path:$hix_dir#env.integration.integration
+      step nix build path:$hix_dir#env.integration.integration
       coproc hackage_run
       integration_pid=$!
       trap 'hackage_quit 0' EXIT
