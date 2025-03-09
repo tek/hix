@@ -63,7 +63,7 @@ let
 
   chmod +x $_hix_test_bin/*
 
-  export PATH="$_hix_test_bin:$_hix_test_system_bin_nix:$PATH"
+  export PATH="$_hix_test_bin:$_hix_test_system_bin_nix:$_hix_test_system_bin_systemd:$PATH"
 
   export GIT_CONFIG_NOSYSTEM=1
   git config --global user.name hix-test
@@ -89,6 +89,7 @@ let
   sharedVars = ''
   local work_dir="$test_base/work"
   local hix_dir="$test_base/hix"
+  local output_dir="$test_base/output"
   '';
 
   testWrapper = util.zscriptPure "hix-test-wrapper" ''
@@ -124,6 +125,7 @@ let
     fi
 
     mkdir -p $test_base
+    mkdir -p $output_dir
 
     local sub() {
       if (( $# > 0 ))
@@ -297,13 +299,16 @@ let
   app = conf:
     util.zapp "hix-test-app-${conf.suiteName}" ''
     export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
+    export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
     if [[ -n $hix_test_impure ]]
     then
       exec ${conf.main} $@
     else
       exec nix develop \
         --ignore-environment \
+        -k DBUS_SESSION_BUS_ADDRESS \
         -k _hix_test_system_bin_nix \
+        -k _hix_test_system_bin_systemd \
         -k hix_test_show_stderr \
         -k hix_test_show_stderr_failure \
         -k hix_test_full_output \
