@@ -87,7 +87,7 @@ handlersProd options config cabal = do
   manager <- httpManager
   publishHackages <- HackageClient.handlersProdFor (Just manager) ForPublish cabal
   pure MaintHandlers {
-    git = if config.ci then gitApiMaintHermetic config else gitApiMaintProd config,
+    git = if config.ci || True then gitApiMaintHermetic config else gitApiMaintProd config,
     context,
     runBump = runBumpProd context options,
     publishHackages

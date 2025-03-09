@@ -17,17 +17,25 @@
 
     hackage_run()
     {
-      nix run path:$hix_dir#integration-hackage -- --port-file $port_file &> $hackage_log
+      nix -L run path:$hix_dir#integration-hackage -- --port-file $port_file --debug --cabal-verbose &> $hackage_log
     }
 
     hackage_scope()
     {
       setopt local_options local_traps err_return
+
       step nix build path:$hix_dir#env.integration.integration
+
+      output_ignore
+      error_ignore
+      step_develop which cabal
+
+      # TODO try systemd once more when this is fixed – maybe it failed because of integration being broken?
       coproc hackage_run
       integration_pid=$!
       trap 'hackage_quit 0' EXIT
       trap 'trap - EXIT; hackage_quit 130' INT
+
       for i in {1..120}
       do
         if [[ -f $port_file ]]

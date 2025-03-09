@@ -38,4 +38,4 @@ jobs:
         sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
     - run: git config --global user.name hix
     - run: git config --global user.email hix@tryp.io
-    - run: nix run .#test-debug
+    - run: nix run .#test -- maint
