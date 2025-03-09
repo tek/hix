@@ -118,6 +118,12 @@
     then
       abort 'Tests failed.'
     fi
+  elif ask 'Run VM tests?'
+  then
+    if ! nix run .#test-vm
+    then
+      abort 'Tests failed.'
+    fi
   fi
   sed -i 's/ref=[^"#]\+/ref='"$version/" readme.md examples/*/flake.nix
   sed -Ei 's/~[[:digit:]]+\.[[:digit:]]+\.tar/~'"''${version%.*}.tar/" readme.md
