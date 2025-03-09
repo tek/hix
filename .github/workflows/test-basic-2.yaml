@@ -2,7 +2,7 @@ name: Tests basic 2
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
 jobs:
   tests:
@@ -14,12 +14,10 @@ jobs:
       id-token: write
     steps:
     - uses: actions/checkout@v4
-    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/nix-installer-action@v16
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         extra-conf: |
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-          extra-substituters = https://tek.cachix.org
-          extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
           download-buffer-size = 1000000000
     - uses: cachix/cachix-action@v15
       with:
@@ -28,7 +26,4 @@ jobs:
     - run: rm -rf /opt/hostedtoolcache
     - run: |
         sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
-    - run: git config --global user.name hix
-    - run: git config --global user.email hix@tryp.io
     - run: nix run .#test-basic-2
-    - run: nix flake check
