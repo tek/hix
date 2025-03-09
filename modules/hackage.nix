@@ -227,7 +227,7 @@ in {
 
     uploadCommand = lib.mkDefault (
       { publish, doc, path }:
-      "cabal ${config.hackage.cabalArgs} upload ${config.hackage.cabalUploadArgs} ${if publish then "--publish " else ""}${if doc then "--documentation " else ""}${path}"
+      "${config.envs.dev.ghc.vanillaGhc.cabal-install}/bin/cabal ${config.hackage.cabalArgs} upload ${config.hackage.cabalUploadArgs} ${if publish then "--publish " else ""}${if doc then "--documentation " else ""}${path}"
     );
 
     repos."hackage.haskell.org" = {
