@@ -21,12 +21,19 @@ let
   ];
 
   allowedEnvVarsCi = keepVars [
+    "NIX_USER_CONF_FILES"
+    "XDG_RUNTIME_DIR"
   ];
 
   sharedPreamble = ''
+  in_ci()
+  {
+    [[ -n ''${hix_test_ci-} ]]
+  }
+
   if_ci()
   {
-    if [[ -n ''${hix_test_ci-} ]]
+    if in_ci
     then
       eval $@
     fi
@@ -82,7 +89,7 @@ let
 
   chmod +x $_hix_test_bin/*
 
-  export PATH="$_hix_test_bin:$_hix_test_system_bin_nix:$PATH"
+  export PATH="$_hix_test_bin:$_hix_test_system_bin_nix:$_hix_test_system_bin_systemd:$PATH"
 
   export GIT_CONFIG_NOSYSTEM=1
   git config --global user.name hix-test
@@ -317,6 +324,7 @@ let
     util.zapp "hix-test-app-${conf.suiteName}" ''
     ${sharedPreamble}
     export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
+    export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
     if [[ -n $hix_test_impure ]]
     then
       exec ${conf.main} $@

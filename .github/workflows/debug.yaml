@@ -27,8 +27,6 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         extra-conf: |
           download-buffer-size = 1000000000
-          extra-substituters = https://tek.cachix.org
-          extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
     - uses: cachix/cachix-action@v15
       with:
         name: tek
@@ -38,4 +36,4 @@ jobs:
         sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
     - run: git config --global user.name hix
     - run: git config --global user.email hix@tryp.io
-    - run: nix run .#test-debug
+    - run: nix run .#test -- maint
