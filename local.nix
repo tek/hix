@@ -218,7 +218,16 @@ in {
 
   internal.cabal-extra.default-extensions = ["StrictData"];
 
-  outputs = {
+  outputs = let
+
+    # The test runner does not copy `./test` to the temporary directory.
+    # When the flake is evaluated in a test, this import would cause an exception without a guard.
+    tests =
+      if builtins.pathExists ./test
+      then import ./test/default.nix { inherit util; inherit (inputs) self; }
+      else { apps = {}; };
+
+  in {
 
     packages = let
       docs = import ./lib/doc/default.nix { inherit inputs; inherit (config) pkgs; inherit (config.internal) hixUrl; };
@@ -229,13 +238,6 @@ in {
     devShells.hix-test = config.pkgs.mkShell {};
 
     apps = let
-
-      # The test runner does not copy `./test` to the temporary directory.
-      # When the flake is evaluated in a test, this import would cause an exception without a guard.
-      tests =
-        if builtins.pathExists ./test
-        then import ./test/default.nix { inherit util; inherit (inputs) self; }
-        else { apps = {}; };
 
       cli = util.app "${build.packages.min.hix.package}/bin/hix";
 
