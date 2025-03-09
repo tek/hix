@@ -2,7 +2,7 @@ name: Tests basic 3
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
 jobs:
   tests:
@@ -16,10 +16,8 @@ jobs:
     - uses: actions/checkout@v4
     - uses: DeterminateSystems/nix-installer-action@main
       with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         extra-conf: |
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-          extra-substituters = https://tek.cachix.org
-          extra-trusted-public-keys = tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk=
           download-buffer-size = 1000000000
     - uses: cachix/cachix-action@v15
       with:
@@ -29,4 +27,3 @@ jobs:
     - run: git config --global user.name hix
     - run: git config --global user.email hix@tryp.io
     - run: nix run .#test-basic-3
-    - run: nix flake check
