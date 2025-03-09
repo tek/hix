@@ -18,6 +18,7 @@ let
     ./cli.nix
     ./managed.nix
     ./ui.nix
+    ./build-tools.nix
     inputsConfig
   ];
 
