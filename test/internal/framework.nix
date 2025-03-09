@@ -89,7 +89,6 @@ let
   sharedVars = ''
   local work_dir="$test_base/work"
   local hix_dir="$test_base/hix"
-  local output_dir="$test_base/output"
   '';
 
   testWrapper = util.zscriptPure "hix-test-wrapper" ''
@@ -125,7 +124,6 @@ let
     fi
 
     mkdir -p $test_base
-    mkdir -p $output_dir
 
     local sub() {
       if (( $# > 0 ))

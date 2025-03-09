@@ -39,5 +39,4 @@
 in test // {
   genCabal = true;
   git = true;
-  path = pkgs: [pkgs.xh];
 }

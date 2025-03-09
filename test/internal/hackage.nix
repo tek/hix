@@ -3,7 +3,7 @@
   # TODO Can't we set up the test user in the integration app?
   withServer = main: {
 
-    path = [pkgs.xh];
+    path = [pkgs.xh pkgs.which];
 
     source = ''
     port_file="$test_base/port"
@@ -18,9 +18,15 @@
     hackage_scope()
     {
       setopt local_options local_traps err_return
-      nix build path:$hix_dir#env.integration.integration
+
+      step nix build path:$hix_dir#env.integration.integration
+
+      output_ignore
+      error_ignore
+      step_develop which cabal
+
       systemd-run --quiet --user --collect --unit=$unit --property=Type=exec \
-        nix run path:$hix_dir#integration-hackage -- --port-file $port_file --debug
+        nix run path:$hix_dir#integration-hackage -- --port-file $port_file
       trap 'hackage_quit 0' EXIT
       trap 'trap - EXIT; hackage_quit 130' INT
       for i in {1..120}
