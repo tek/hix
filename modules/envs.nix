@@ -111,6 +111,13 @@ in {
         packages = [];
       };
 
+      hix-build-tools = {
+        packages = [];
+        localDeps = false;
+        localOverrides = false;
+        internal.overridesInherited = mkForce [];
+      };
+
     };
 
     devGhc = mkDefault config.envs.dev.ghc;

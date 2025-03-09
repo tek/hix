@@ -20,7 +20,7 @@ in util.zscript "hpack.zsh" ''
 
   run()
   {
-    ${config.internal.basicGhc.hpack}/bin/hpack --canonical --force ${if verbose then ">&2" else "1>/dev/null"}
+    ${config.build-tools.hpack.package}/bin/hpack --canonical --force ${if verbose then ">&2" else "1>/dev/null"}
   }
 
   regular()
