@@ -299,7 +299,7 @@ let
     export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
     if [[ -n $hix_test_impure ]]
     then
-    exec ${conf.main} $@
+      exec ${conf.main} $@
     else
       exec nix develop \
         --ignore-environment \
