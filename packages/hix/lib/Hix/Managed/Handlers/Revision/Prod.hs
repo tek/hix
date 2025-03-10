@@ -16,6 +16,6 @@ handlersProd config cabal = do
   manager <- httpManager
   publishHackages <- HackageClient.handlersProdFor (Just manager) ForPublish cabal
   pure RevisionHandlers {
-    git = if config.ci then gitApiRevisionHermetic config else gitApiRevisionProd config,
+    git = (if config.globalGit then gitApiRevisionProd else gitApiRevisionHermetic) config,
     publishHackages
   }
