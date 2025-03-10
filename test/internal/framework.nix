@@ -4,16 +4,49 @@ let
 
   testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter pkgs.gnused pkgs.rsync];
 
+  keepVars = lib.concatMapStringsSep " " (var: "-k ${var}");
+
+  allowedEnvVars = keepVars [
+    # systemd access
+    "DBUS_SESSION_BUS_ADDRESS"
+
+    "_hix_test_system_bin_nix"
+    "_hix_test_system_bin_systemd"
+    "hix_test_show_stderr"
+    "hix_test_show_stderr_failure"
+    "hix_test_full_output"
+    "hix_test_ci"
+    "hix_test_verbose"
+    "hix_test_debug"
+  ];
+
+  allowedEnvVarsCi = keepVars [
+    # These contain config added by actions, like cachix
+    "NIX_USER_CONF_FILES"
+
+    # systemd access
+    "XDG_RUNTIME_DIR"
+
+    # Writing UTF-8 to stdio from the CLI fails without these
+    "LANG"
+    "LC_ALL"
+  ];
+
   sharedPreamble = ''
+  in_ci()
+  {
+    [[ -n ''${hix_test_ci-} ]]
+  }
+
   if_ci()
   {
-    if [[ -n ''${hix_test_ci-} ]]
+    if in_ci
     then
       eval $@
     fi
   }
 
-  ${util.setupScript {path = testTools;}}
+  ${util.setupScript { path = testTools; }}
   '';
 
   preamble = ''
@@ -296,25 +329,18 @@ let
 
   app = conf:
     util.zapp "hix-test-app-${conf.suiteName}" ''
+    ${sharedPreamble}
     export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
     export _hix_test_system_bin_systemd=''${$(readlink -f =systemctl):h}
     if [[ -n $hix_test_impure ]]
     then
       exec ${conf.main} $@
     else
+      local keep=(${allowedEnvVars})
+      if_ci 'keep+=(${allowedEnvVarsCi})'
       exec nix develop \
         --ignore-environment \
-        -k DBUS_SESSION_BUS_ADDRESS \
-        -k _hix_test_system_bin_nix \
-        -k _hix_test_system_bin_systemd \
-        -k hix_test_show_stderr \
-        -k hix_test_show_stderr_failure \
-        -k hix_test_full_output \
-        -k hix_test_ci \
-        -k hix_test_verbose \
-        -k hix_test_debug \
-        -k LANG \
-        -k LC_ALL \
+        $keep \
         path:${self}#hix-test -c ${conf.main} $@
     fi
     '';
