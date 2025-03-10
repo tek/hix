@@ -37,6 +37,7 @@ in {
       expose = true;
     };
 
+    # TODO The executable could probably be moved to `hix-build-tools`.
     ghcid = {
       ghci.enable = true;
       ghci.ghcid = true;
@@ -45,7 +46,6 @@ in {
     };
 
     hls = {
-      env = "dev";
       command = ''
       ${if config.hls.genCabal then "nix run .#gen-cabal-quiet" else ""}
       ${config.envs.hls.hls.package}/bin/haskell-language-server "$@"
