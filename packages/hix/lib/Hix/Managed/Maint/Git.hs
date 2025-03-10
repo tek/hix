@@ -11,6 +11,7 @@ import Hix.Data.PackageName (LocalPackage)
 import Hix.Managed.BuildOutput.CommitMsg (commitModified)
 import Hix.Managed.Data.BuildOutput (ModifiedId)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
+import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import Hix.Managed.Git (
   BranchName (..),
   GitApi,
@@ -24,7 +25,6 @@ import Hix.Managed.Git (
   )
 import Hix.Monad (clientError, fatalError)
 import Hix.Pretty (showP)
-import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 
 data GitMaint =
   GitMaint {
@@ -79,7 +79,7 @@ switchBranch git branch = do
   pure branchName
 
 gitMaintNative :: MaintConfig -> GitNative -> GitMaint
-gitMaintNative MaintConfig {push, ci, pr} git =
+gitMaintNative MaintConfig {push, fetch, pr} git =
   GitMaint {
     listTargetBranches = listTargetBranches git,
     switchBranch = switchBranch git,
@@ -92,7 +92,7 @@ gitMaintNative MaintConfig {push, ci, pr} git =
         clientError [exon|Git tree is dirty:
 stdout: #{Text.unlines out}
 stderr: #{Text.unlines err}|]
-      when ci do
+      when fetch do
         git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
       initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
       mainRemote <- traverse (branchRemote git) initialBranch
@@ -129,7 +129,7 @@ gitApiMaintHermetic :: MaintConfig -> GitApi GitMaint
 gitApiMaintHermetic config = gitApiHermetic (gitMaintNative config)
 
 gitRevisionNative :: RevisionConfig -> GitNative -> GitRevision
-gitRevisionNative RevisionConfig {ci} git =
+gitRevisionNative RevisionConfig {fetch} git =
   GitRevision {
     listTargetBranches = listTargetBranches git,
     switchBranch = switchBranch git,
@@ -142,7 +142,7 @@ gitRevisionNative RevisionConfig {ci} git =
         clientError [exon|Git tree is dirty:
 stdout: #{Text.unlines out}
 stderr: #{Text.unlines err}|]
-      when ci do
+      when fetch do
         git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
       initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
       mainRemote <- traverse (branchRemote git) initialBranch
