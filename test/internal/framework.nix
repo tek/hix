@@ -4,6 +4,25 @@ let
 
   testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter pkgs.gnused pkgs.rsync];
 
+  keepVars = lib.concatMapStringsSep " " (var: "-k ${var}");
+
+  allowedEnvVars = keepVars [
+    "DBUS_SESSION_BUS_ADDRESS"
+    "_hix_test_system_bin_nix"
+    "_hix_test_system_bin_systemd"
+    "hix_test_show_stderr"
+    "hix_test_show_stderr_failure"
+    "hix_test_full_output"
+    "hix_test_ci"
+    "hix_test_verbose"
+    "hix_test_debug"
+    "LANG"
+    "LC_ALL"
+  ];
+
+  allowedEnvVarsCi = keepVars [
+  ];
+
   sharedPreamble = ''
   if_ci()
   {
@@ -296,22 +315,17 @@ let
 
   app = conf:
     util.zapp "hix-test-app-${conf.suiteName}" ''
+    ${sharedPreamble}
     export _hix_test_system_bin_nix=''${$(readlink -f =nix):h}
     if [[ -n $hix_test_impure ]]
     then
       exec ${conf.main} $@
     else
+      local keep=(${allowedEnvVars})
+      if_ci 'keep+=(${allowedEnvVarsCi})'
       exec nix develop \
         --ignore-environment \
-        -k _hix_test_system_bin_nix \
-        -k hix_test_show_stderr \
-        -k hix_test_show_stderr_failure \
-        -k hix_test_full_output \
-        -k hix_test_ci \
-        -k hix_test_verbose \
-        -k hix_test_debug \
-        -k LANG \
-        -k LC_ALL \
+        $keep \
         path:${self}#hix-test -c ${conf.main} $@
     fi
     '';
