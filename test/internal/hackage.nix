@@ -3,7 +3,7 @@
   # TODO Can't we set up the test user in the integration app?
   withServer = main: {
 
-    path = [pkgs.xh];
+    path = [pkgs.xh pkgs.which];
 
     source = ''
     port_file="$test_base/port"
@@ -23,7 +23,14 @@
     hackage_scope()
     {
       setopt local_options local_traps err_return
+
       step nix build path:$hix_dir#env.integration.integration
+
+      output_ignore
+      error_ignore
+      step_develop which cabal
+
+      # TODO try systemd once more when this is fixed – maybe it failed because of integration being broken?
       coproc hackage_run
       integration_pid=$!
       trap 'hackage_quit 0' EXIT
