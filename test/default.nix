@@ -75,6 +75,8 @@ let
 
   tests-framework = testsNamed ["framework-step"];
 
+  tests-debug = testsNamed ["debug"];
+
   suites = {
     basic-1 = framework.suite tests-basic-1;
     basic-2 = framework.suite tests-basic-2;
@@ -82,6 +84,7 @@ let
     vm = framework.suite tests-vm;
     managed = framework.suite tests-managed;
     framework = framework.suite tests-framework;
+    debug = framework.suite tests-debug;
     all = framework.suite (tests // tests-framework) // { attr = "test"; };
   };
 
