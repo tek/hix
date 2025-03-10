@@ -238,7 +238,8 @@ maintConfig =
     revision = True,
     targets = Nothing,
     push = False,
-    ci = False,
+    fetch = False,
+    globalGit = False,
     pr = False
   }
 

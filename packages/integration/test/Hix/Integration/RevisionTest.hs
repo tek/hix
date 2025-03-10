@@ -35,7 +35,7 @@ import Hix.Managed.Data.ManagedPackage (ManagedPackage (..))
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (..))
-import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
+import Hix.Managed.Data.RevisionConfig (RevisionConfig)
 import Hix.Managed.Flake (runFlakeFor)
 import qualified Hix.Managed.Git as Git
 import Hix.Managed.Git (GitNative, runGitNativeHermetic)
@@ -274,10 +274,7 @@ options =
 
 revisionConfig :: RevisionConfig
 revisionConfig =
-  RevisionConfig {
-    targets = Nothing,
-    ci = False
-  }
+  def
 
 revisionHandlers :: Port -> M RevisionHandlers
 revisionHandlers port = do

@@ -349,9 +349,10 @@ maintConfigParser = do
   noFailures <- switch (long "no-failures" <> help "Only commit or publish a package if no dependency update fails")
   commit <- switch (long "commit" <> help "Commit dependency updates")
   push <- switch (long "push" <> help "Commit and push dependency updates")
+  pr <- switch (long "pr" <> help "Don't publish revisions and create branches with timestamps for PRs")
   revision <- switch (long "revision" <> help "Publish a revision to Hackage")
-  ci <- switch (long "ci" <> help "Perform tasks necessary in Github Actions: Fetch tags, set up git identity")
-  pr <- switch (long "pr" <> help "Don't publish revisions, and create branches with timestamps for PRs")
+  globalGit <- switch (long "global-git" <> help "Use the global git ID rather than hix@tryp.io")
+  fetch <- switch (long "fetch" <> help "Fetch tags and branches, useful in CI")
   pure MaintConfig {commit = commit || push || pr, push = push || pr, ..}
 
 -- TODO Since this includes ManagedOptions, some options may be ineffective or counterproductive.
@@ -368,7 +369,8 @@ revisionConfigParser :: Parser RevisionConfig
 revisionConfigParser = do
   packages <- fmap Left <$> many (strOption (long "package" <> help "Packages that should be processed"))
   branches <- fmap Right <$> many (strOption (long "branch" <> help "Release branches that should be processed"))
-  ci <- switch (long "ci" <> help "Perform tasks necessary in Github Actions: Fetch tags, set up git identity")
+  globalGit <- switch (long "global-git" <> help "Use the global git ID rather than hix@tryp.io")
+  fetch <- switch (long "fetch" <> help "Fetch tags and branches, useful in CI")
   pure RevisionConfig {targets = nonEmpty (packages ++ branches), ..}
 
 revisionParser :: Parser RevisionOptions

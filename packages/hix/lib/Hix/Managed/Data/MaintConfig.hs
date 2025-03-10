@@ -8,12 +8,14 @@ data MaintConfig =
     noFailures :: Bool,
     commit :: Bool,
     push :: Bool,
-    revision :: Bool,
-    -- | Fetch tags etc.
-    ci :: Bool,
     -- | Create commits on new, timestamped, branches; so that a CI workflow may create pull requests.
     -- Omit publishing revisions.
-    pr :: Bool
+    pr :: Bool,
+    revision :: Bool,
+    -- | Fetch tags and branches.
+    fetch :: Bool,
+    -- | Use the global git config rather than a synthetic committer ID (hix@tryp.io).
+    globalGit :: Bool
   }
   deriving stock (Eq, Show)
 
@@ -24,7 +26,8 @@ instance Default MaintConfig where
       noFailures = False,
       commit = False,
       push = False,
+      pr = False,
       revision = False,
-      ci = False,
-      pr = False
+      fetch = False,
+      globalGit = False
     }

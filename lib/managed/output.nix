@@ -71,7 +71,7 @@
 
       - uses: actions/checkout@v4
 
-      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/nix-installer-action@v16
         with:
           github-token: ''${{ secrets.GITHUB_TOKEN }}
 
@@ -104,7 +104,7 @@
 
       steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/nix-installer-action@v16
         with:
           github-token: ''${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/cachix-action@v15
@@ -113,7 +113,7 @@
       - id: maint
         name: Run maint
         run: |
-          nix run .#maint -- --pr --ci --output=json --target=github
+          nix run .#maint -- --pr --fetch --output=json --target=github
 
     maint-pr:
       name: Create PR for release bounds updates
@@ -151,7 +151,7 @@
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/nix-installer-action@v16
         with:
           github-token: ''${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/cachix-action@v15
@@ -160,7 +160,7 @@
       - id: revision
         name: Publish revision
         run: |
-          nix run .#revision -- --ci \
+          nix run .#revision -- --fetch \
             --hackage="hackage.haskell.org:password:''${{ secrets.hackage_password }}" \
             --branch "''${{ github.base_ref }}"
   '';

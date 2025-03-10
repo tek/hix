@@ -45,7 +45,8 @@ config =
     push = False,
     revision = True,
     targets = Nothing,
-    ci = False,
+    fetch = False,
+    globalGit = False,
     pr = False
   }
 

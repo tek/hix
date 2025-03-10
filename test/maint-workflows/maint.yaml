@@ -15,7 +15,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/nix-installer-action@v16
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
     - uses: cachix/cachix-action@v15
@@ -24,7 +24,7 @@ jobs:
     - id: maint
       name: Run maint
       run: |
-        nix run .#maint -- --pr --ci --output=json --target=github
+        nix run .#maint -- --pr --fetch --output=json --target=github
 
   maint-pr:
     name: Create PR for release bounds updates
