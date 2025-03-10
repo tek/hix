@@ -1,0 +1,39 @@
+name: Debug
+
+on:
+  push:
+    branches:
+      - 'debug/*'
+
+jobs:
+  debug:
+
+    env:
+      hix_test_ci: 1
+      hix_test_verbose: 1
+      hix_test_debug: 1
+      hix_test_show_stderr: 1
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@v16
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        extra-conf: |
+          download-buffer-size = 1000000000
+    - uses: cachix/cachix-action@v15
+      with:
+        name: tek
+        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+    - run: rm -rf /opt/hostedtoolcache
+    - run: |
+        sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
+    - run: git config --global user.name hix
+    - run: git config --global user.email hix@tryp.io
+    - run: nix run .#test-debug

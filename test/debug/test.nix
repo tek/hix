@@ -1,0 +1,7 @@
+{
+
+  source = ''
+  message "Debug test"
+  '';
+
+}
