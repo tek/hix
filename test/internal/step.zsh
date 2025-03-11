@@ -54,7 +54,7 @@ _step_should_retry()
   then
     stream=$step_stdout
   fi
-  rg --quiet 'unable to download.*narinfo' $stream
+  rg --quiet -e 'unable to download.*narinfo' -e 'Cannot serve NAR' $stream
 }
 
 # Current stream state
