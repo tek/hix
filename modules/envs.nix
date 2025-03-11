@@ -101,12 +101,8 @@ in {
         hls.enable = true;
         hls.package = mkDefault config.envs.hls.ghc.ghc.haskell-language-server;
         ghc.overrides = config.envs.hls.overrides;
-        # TODO this didn't use mkForce before, should that mean that all dep overrides are active in this env?
-        # ghc.overrides has an explicit redirect here, and the default for that option uses mkDefault, so that should
-        # solve the issue. still probably good to use mkForce here, to avoid confusing other consumers of
-        # overridesInherited.
-        internal.overridesInherited = mkForce [];
         localOverrides = false;
+        inheritOverrides = false;
         localDeps = false;
         packages = [];
       };
@@ -115,7 +111,7 @@ in {
         packages = [];
         localDeps = false;
         localOverrides = false;
-        internal.overridesInherited = mkForce [];
+        inheritOverrides = false;
       };
 
     };

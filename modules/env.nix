@@ -305,6 +305,14 @@ in {
       default = true;
     };
 
+    inheritOverrides = mkOption {
+      description = ''
+      Whether to include overrides from dependency flakes.
+      '';
+      type = bool;
+      default = true;
+    };
+
     setup-pre = mkOption {
       description = "Commands to run before the service VM has started.";
       type = str;
@@ -566,7 +574,7 @@ in {
 
       overridesInherited = mkOption {
         description = "The inherited overrides used for this env.";
-        type = util.types.cabalOverrides;
+        type = util.types.cabalOverridesVia "inherited by env ${config.name}";
         default = [];
       };
 
@@ -597,15 +605,17 @@ in {
 
     ghc = let
 
+      inherited = lib.optionals config.inheritOverrides;
+
       overrideSources =
         if config.managed
         then [
-          (util.overridesFromDeps ["local"])
+          (inherited (util.overridesFromDeps ["local"]))
           config.internal.overridesLocal
           config.internal.overridesEnv
         ]
         else [
-          config.internal.overridesInherited
+          (inherited config.internal.overridesInherited)
           config.internal.overridesLocal
           global.overrides
           config.internal.overridesEnv
