@@ -378,6 +378,8 @@ let
 
   justIf = pred: value: if pred then just value else nothing;
 
+  justNonNull = value: justIf (value != null) value;
+
   justAttr = name: attrs: justIf (attrs ? ${name}) attrs.${name};
 
   assertMaybe = ma: b:
@@ -394,19 +396,30 @@ let
     else alt
   );
 
+  # fromMaybe :: a -> Maybe a -> a
   fromMaybe = alt: maybe alt lib.id;
 
-  # Attrs (Maybe a) -> Attrs a
+  # expectJust :: String -> Maybe a -> a
+  expectJust = err: fromMaybe (throw err);
+
+  # catMaybes :: Attrs (Maybe a) -> Attrs a
   catMaybes = as: mapValues (ma: ma.value) (lib.filterAttrs (_: isJust) as);
 
-  # (a -> Maybe b) -> Attrs a -> Attrs b
+  # mapMaybe :: (a -> Maybe b) -> Attrs a -> Attrs b
   mapMaybe = f: a: catMaybes (lib.mapAttrs f a);
 
+  # apMaybe :: (a -> b) -> Maybe a -> Maybe b
   apMaybe = f: ma:
   if isJust ma
   then ma // { value = f ma.value; }
   else ma
   ;
+
+  bindMaybe = f:
+  maybe nothing f;
+
+  # find :: (a -> Bool) -> [a] -> Maybe a
+  find = pred: as: justNonNull (lib.findFirst pred null as);
 
 in {
   inherit
@@ -458,12 +471,16 @@ in {
   just
   nothing
   justIf
+  justNonNull
   justAttr
   maybe
   fromMaybe
+  expectJust
   catMaybes
   mapMaybe
   apMaybe
+  bindMaybe
+  find
   ;
 
   inherit (console.s) colors colorsBg;
