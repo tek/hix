@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config internal lib justIf colors;
+  inherit (util) config internal lib just justIf justAttr bindMaybe colors;
 
   waitScript = env: let
     waitSeconds = toString env.wait;
@@ -33,11 +33,11 @@
     targets = internal.env.targets env;
   in
     if lib.elem config.main targets
-    then config.main
+    then just config.main
     else internal.packages.selectMain targets;
 
   withMain = alt: f: env:
-  util.maybeNull alt (pkgName: f config.packages.${pkgName}) (envMainPackage env);
+  util.maybe alt f (bindMaybe (pkg: justAttr pkg config.packages) (envMainPackage env));
 
   setWithMain = withMain {};
 

@@ -53,7 +53,7 @@
 
   selectMain = pkgNames: let
 
-    deps = lib.attrVals pkgNames pkgsDeps;
+    deps = lib.attrValues (util.restrictKeys pkgNames pkgsDeps);
 
     hasDepOn = target: pkg:
     pkg.name != target &&
@@ -61,7 +61,7 @@
 
     isNoDep = pkg: !(lib.any (hasDepOn pkg) deps);
 
-  in lib.findFirst isNoDep null pkgNames;
+  in util.find isNoDep pkgNames;
 
   mapPkg = f: pkgName: a: f (util.justAttr pkgName config.packages) a;
 

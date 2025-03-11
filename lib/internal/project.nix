@@ -21,6 +21,16 @@
       };
     };
 
+  ambiguousMain = ''
+  Could not determine the main package.
+  This should only happen if all packages depend on each other cyclically.
+  If that is not the case, please report a bug at: https://github.com/tek/hix/issues
+  You can specify the main package explicitly:
+  {
+    main = "app";
+  }
+  '';
+
   defaultMain = let
       names = config.internal.packageNames;
       count = lib.length names;
@@ -36,17 +46,7 @@
       ''
       else let
         autoMain = internal.packages.selectMain (lib.attrNames config.packages);
-      in if autoMain != null
-      then autoMain
-      else throw ''
-      Could not determine the main package.
-      This should only happen if all packages depend on each other cyclically.
-      If that is not the case, please report a bug at: https://github.com/tek/hix/issues
-      You can specify the main package explicitly:
-      {
-        main = "app";
-      }
-      '';
+      in util.expectJust ambiguousMain autoMain;
 
   packagePaths = util.mapValues (p: p.src) config.packages;
 

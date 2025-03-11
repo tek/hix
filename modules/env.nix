@@ -201,7 +201,7 @@ in {
         starting `.#ghci` for this env
       - Managed dependencies envs use this to produce separate sets of bounds
       '';
-      type = nullOr (listOf util.types.localPackage);
+      type = types.nullOr (types.listOf types.str);
       default = null;
     };
 

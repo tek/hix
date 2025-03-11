@@ -77,8 +77,8 @@
   ;
 
   buildPackages = envName: env: let
-    all = config.internal.packageNames ++ config.output.extraPackages;
-    existing = lib.filter (p: env.ghc.ghc ? ${p}) all;
+    all = config.internal.packageNames ++ config.output.extraPackages ++ lib.toList env.packages;
+    existing = lib.filter (p: p != null && env.ghc.ghc ? ${p}) all;
   in lib.genAttrs existing (buildPackage env);
 
 in lib.mapAttrs buildPackages config.envs
