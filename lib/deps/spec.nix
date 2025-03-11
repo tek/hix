@@ -75,6 +75,13 @@ let
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+  # Construct a final derivation from a list of OCs.
+  # Usually, these consist of zero or more derivation OCs and zero or more transformations.
+  # If more than one derivation is present, `compile` will choose the last occurrence.
+  # If no derivation is present, the package defined in the GHC set is obtained from `args.super` (which is provided by
+  # the GHC set's `override` function).
+  # If the GHC set does not define this package either, this override will be ignored – it likely means that the project
+  # defines a global transformation override for a local package that isn't a target of the currently processed env.
   reifyComp = args: comp: let
 
     inherit (args) pkg;
@@ -85,21 +92,14 @@ let
       then args.super.${pkg} or null
       else decl.impl args comp.options;
 
-    noDecl = throw ''
-    The override for '${pkg}' does not declare a derivation and the default package set does not contain '${pkg}'!
-    '';
-
     apply = drv: trans:
     trans.impl drv args comp.options;
 
     transformed = foldl apply drv comp.trans;
 
     final =
-      if comp.trans == []
+      if comp.trans == [] || drv == null
       then drv
-      else
-      if drv == null
-      then noDecl
       else transformed;
 
   in final;

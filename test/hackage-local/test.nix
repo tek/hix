@@ -12,5 +12,5 @@ Package documentation successfully published. You can now view it at
 
 preproc_output 'sub_store_hash | drop_end 2'
 output_exact $target
-step nix run .#release -- -v 1.0.0.0
+step_run release -v 1.0.0.0
 ''

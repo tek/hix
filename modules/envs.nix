@@ -106,6 +106,7 @@ in {
         # solve the issue. still probably good to use mkForce here, to avoid confusing other consumers of
         # overridesInherited.
         internal.overridesInherited = mkForce [];
+        localOverrides = false;
         localDeps = false;
         packages = [];
       };

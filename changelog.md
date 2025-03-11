@@ -2,6 +2,8 @@
 
 * Add an experimental app, `maint`, that uploads Hackage revisions for previous tags when bounds can be bumped.
 * Add `package.<package>.expose.target`, controlling whether a package is included in the default targets of envs.
+* Add the option `envs.<env>.localOverrides` to control whether local packages are included in an env's GHC overrides,
+  independently of whether they're exposed.
 
 # 0.8.0
 

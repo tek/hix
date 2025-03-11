@@ -5,6 +5,7 @@
   profiling,
   localPackage,
   env,
+  packages,
 }:
 let
   inherit (util) config lib;
@@ -41,4 +42,4 @@ let
 
   mkPackage = api: name: pkg: checkIfd api name pkg;
 
-in [(api: lib.mapAttrs (mkPackage api) config.packages) (api: lib.mapAttrs (transformPackage api) config.packages)]
+in [(api: lib.mapAttrs (mkPackage api) packages) (api: lib.mapAttrs (transformPackage api) packages)]

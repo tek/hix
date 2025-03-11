@@ -186,7 +186,8 @@ in {
 
     packages = mkOption {
       description = ''
-      The subset of local [packages](#opt-general-packages) that should be built by this environment.
+      The subset of local [packages](#opt-general-packages) that should be built by this environment, called its
+      _targets_.
 
       Entries must correspond to existing keys in [](#opt-general-packages).
       If the value is `null`, all packages are included.
@@ -280,8 +281,27 @@ in {
     };
 
     localDeps = mkOption {
-      description = "Whether to add the dependencies of the env's local packages to GHC's package db.";
+      description = ''
+      Whether to add the dependencies of the env's local packages to GHC's package db.
+      This means that those packages are visible in GHCi when run in this env, for example.
+      '';
       type = bool;
+      default = true;
+    };
+
+    localOverrides = mkOption {
+      description = ''
+      Whether to add the local packages as overrides to this env's GHC package set.
+
+      This does not usually have any effect on outputs – it only exposes derivations on [](#opt-ghc-ghc) that can be
+      ignored.
+      However, if another package depends on a local package, that dep will be overridden by the local derivation.
+      Imagine defining a local package named `containers` and building `cabal-install` in this env.
+
+      If this option is set to `"targets"`, only the env's target [packages](#opt-env-packages) will be added.
+      The default is to include all local packages.
+      '';
+      type = types.either types.bool (types.enum ["targets"]);
       default = true;
     };
 
@@ -638,6 +658,12 @@ in {
           inherit util;
           inherit (config) ifd localPackage libraryProfiling profiling;
           env = config.name;
+          packages =
+            if config.localOverrides == "targets"
+            then util.restrictKeys (internal.env.targets config) global.packages
+            else if config.localOverrides
+            then global.packages
+            else {};
         };
 
         overridesEnvUnmanaged = lib.toList config.overrides;
