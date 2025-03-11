@@ -88,8 +88,14 @@ let
     all = framework.suite (tests // tests-framework) // { attr = "test"; };
   };
 
+  ci-tests = util.catSets [tests-basic-1 tests-basic-2 tests-basic-3 tests-managed tests-framework];
+
 in {
   inherit suites;
+
+  legacyPackages = {
+    ci-matrix = lib.attrNames ci-tests;
+  };
 
   apps = framework.apps suites;
 }
