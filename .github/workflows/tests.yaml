@@ -1,0 +1,73 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  hix_test_ci: 1
+
+jobs:
+
+  checks:
+    name: Prepare tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      tests: ${{ steps.ci-matrix.outputs.tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@v16
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          extra-conf: |
+            download-buffer-size = 1000000000
+      - uses: cachix/cachix-action@v15
+        with:
+          name: tek
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - name: Free up space
+        run: rm -rf /opt/hostedtoolcache
+      - name: Flake checks
+        run: nix flake check
+      - id: ci-matrix
+        name: Output CI matrix
+        run: |
+          echo -n "tests=" >> "$GITHUB_OUTPUT"
+          nix eval --json .#ci-matrix >> "$GITHUB_OUTPUT"
+
+  tests:
+    name: 🛠️ ${{ matrix.test }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    needs: checks
+    strategy:
+      matrix:
+        test: ${{ fromJSON(needs.checks.outputs.tests) }}
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          extra-conf: |
+            download-buffer-size = 1000000000
+      - name: Enable cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: tek
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - name: Free up space
+        run: rm -rf /opt/hostedtoolcache
+      - name: Configure apparmor to permit appimages to execute
+        run: sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Run test '${{ matrix.test }}'
+        run: nix run .#test -- ${{ matrix.test }}

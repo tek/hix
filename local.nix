@@ -225,7 +225,7 @@ in {
     tests =
       if builtins.pathExists ./test
       then import ./test/default.nix { inherit util; inherit (inputs) self; }
-      else { apps = {}; };
+      else { apps = {}; legacyPackages = {}; };
 
   in {
 
@@ -276,6 +276,8 @@ in {
       release-all = util.app release.all;
 
     };
+
+    legacyPackages = tests.legacyPackages;
 
   };
 
