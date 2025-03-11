@@ -5,9 +5,14 @@ _sub_store_hash()
   sed -r 's#/nix/store/[a-z0-9]+#/nix/store/hash#g' $*
 }
 
+# This is a very vague heuristic, since store paths presumably can contain any character that's not a directory
+# separator.
+# But since this tool may be applied to arbitrary data, it makes sense to be conservative since we don't want to get
+# false positives across structural delimiters, like in json:
+# `{"/nix/store/foo","blah/bin/exe"}`
 _sub_store_bin()
 {
-  sed -r 's#/nix/store/[^/ ]+/bin/##g' $*
+  sed -r "s#/nix/store/[^/ \"',;]+/bin/##g" $*
 }
 
 _step_unclutter_cmd()
