@@ -158,12 +158,14 @@ let
   then dep.name
   else dep;
 
-  app = program: let
+  appDesc = description: program: let
     main =
       if program ? meta.mainProgram
       then "${program}/bin/${program.meta.mainProgram}"
       else "${program}";
-  in { type = "app"; program = main; meta = {}; };
+  in { type = "app"; program = main; meta = { inherit description; }; };
+
+  app = appDesc "Hix app";
 
   removeApp = a: removeAttrs a ["program" "type" "meta"];
 
@@ -446,6 +448,7 @@ in {
   evalConfig
   overridesVia
   cabalDepPackage
+  appDesc
   app
   removeApp
   console
