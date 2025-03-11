@@ -108,7 +108,7 @@ in {
       };
 
       hix-build-tools = {
-        packages = [];
+        packages = ["hpack" "cabal-install"];
         localDeps = false;
         localOverrides = false;
         inheritOverrides = false;
