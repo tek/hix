@@ -42,6 +42,16 @@ _step_failed()
   _step_show_description
 }
 
+_step_should_retry()
+{
+  local stream=$step_stderr
+  if (( ${_step_combined_output-0} == 1 ))
+  then
+    stream=$step_stdout
+  fi
+  rg --quiet 'unable to download.*narinfo' $stream
+}
+
 # Current stream state
 
 _step_validate_stream()
@@ -491,7 +501,7 @@ _step_check_files()
 step()
 {
   setopt local_options no_err_return local_traps
-  local _step_diff result _step_stderr_shown=0 _step_stream='initial'
+  local _step_diff result=1 _step_stderr_shown=0 _step_stream='initial' _step_try=1
 
   if [[ -z $step_number ]]
   then
@@ -508,42 +518,52 @@ step()
   step_file_match="$step_dir/file_match"
   step_cmd=($*)
 
-  mkdir -p $step_dir
-  touch $step_stdout
-  touch $step_stderr
-
   # If enabled, print the command and description.
   _step_show_verbose
 
-  # Running the command as `$step_cmd` instead of using `eval` ensures that positional parameters are preserved in their
-  # quoting.
-  # This requires any combinators like `step_nix` to forward arguments isomorphically, rather than quoting multiple
-  # arguments into one.
-  # It also requires `$step_cmd`, as above, to be assigned with array parentheses from the array parameter `$*`.
-  # (It would also work to simply execute `$*` here.)
-  #
-  # For example, in the command `step git commit -m "the message"`, the quotes would be consumed by `eval`, requiring
-  # the quoted argument, or the entire list of arguments, to be quoted once more.
-  # But if that were to be required, arguments with quotes not intended for the shell, like `sed "s/\"/'/"`, would need
-  # multiple levels of escaping, which may even accumulate with each nested combinator.
-  if (( ${_step_combined_output-0} == 1 ))
-  then
-    $step_cmd &> $step_stdout
-  else
-    $step_cmd 1> $step_stdout 2> $step_stderr
-  fi
-  local step_exit_code=$?
+  try()
+  {
+    mkdir -p $step_dir
+    touch $step_stdout
+    touch $step_stderr
 
-  if _step_apply_preprocs &&
-     _step_check_exit_code &&
-     _step_check_out &&
-     _step_check_err &&
-     _step_check_files
-  then
-    result=0
-  else
-    result=1
-  fi
+    # Running the command as `$step_cmd` instead of using `eval` ensures that positional parameters are preserved in
+    # their quoting.
+    # This requires any combinators like `step_nix` to forward arguments isomorphically, rather than quoting multiple
+    # arguments into one.
+    # It also requires `$step_cmd`, as above, to be assigned with array parentheses from the array parameter `$*`.
+    # (It would also work to simply execute `$*` here.)
+    #
+    # For example, in the command `step git commit -m "the message"`, the quotes would be consumed by `eval`, requiring
+    # the quoted argument, or the entire list of arguments, to be quoted once more.
+    # But if that were to be required, arguments with quotes not intended for the shell, like `sed "s/\"/'/"`, would
+    # need multiple levels of escaping, which may even accumulate with each nested combinator.
+    if (( ${_step_combined_output-0} == 1 ))
+    then
+      $step_cmd &> $step_stdout
+    else
+      $step_cmd 1> $step_stdout 2> $step_stderr
+    fi
+    local step_exit_code=$?
+
+    if _step_apply_preprocs &&
+      _step_check_exit_code &&
+      _step_check_out &&
+      _step_check_err &&
+      _step_check_files
+    then
+      result=0
+    elif (( $_step_try < 3 )) && _step_should_retry
+    then
+      (( _step_try+=1 ))
+      rm -rf $step_dir
+      error_message "Intermittent failure detected, retrying in 10 seconds..."
+      sleep 10
+      try
+    fi
+  }
+
+  try
 
   _step_show_stderr_after $result
 
