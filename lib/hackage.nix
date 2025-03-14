@@ -179,7 +179,13 @@ let
   done
   '';
 
-  askAndUpload = publish:
+  appFor = doc: publish:
+  if publish then (if doc then "release" else "release-source") else "candidates";
+
+  packageAppFor = doc: publish:
+  if publish then (if doc then "release" else "release-source") else "candidate";
+
+  askAndUpload = doc: publish:
   let
     file = cfg.versionFile;
     type = if publish then "releases" else "candidates";
@@ -191,9 +197,9 @@ let
     then
       ${handleVersion file type}
       ${if publish && cfg.check then "nix flake check" else ""}
-      ${util.runBuildApp "hackage.upload.${if publish then "release" else "candidates"}"} $version
+      ${util.runBuildApp "hackage.upload.${appFor doc publish}"} $version
     else
-      ${util.runBuildApp ''hackage.bump.${if publish then "release" else "candidate"}-''${pkg}''} $version
+      ${util.runBuildApp ''hackage.bump.${packageAppFor doc publish}-''${pkg}''} $version
     fi
     '';
 
@@ -208,42 +214,42 @@ let
     fi
     '';
 
-  uploadAll = source: publish: let
+  uploadAll = source: doc: publish: let
     hookArgs = { inherit source publish; };
   in scriptBin "cabal-upload-all" (util.unlines (
     ["version=\${1:-}"] ++
     optionals source (sourceCommands publish) ++
-    docCommands publish ++
+    optionals doc (docCommands publish) ++
     [(cfg.hooks.postUploadAll hookArgs)] ++
     optional (source && publish && cfg.commit) commitFragment ++
     optional (source && publish && cfg.tag) tagFragment
   ));
 
-  packageVersion = publish: pkg:
+  packageVersion = publish: doc: pkg:
   let
     file = config.packages.${pkg}.versionFile;
-    type = if publish then "release" else "candidate";
+    type = packageAppFor doc publish;
   in scriptBin "cabal-upload-${pkg}" ''
   new_version=''${1:-}
   version=''${1:-}
   ${handleVersion file type}
   ${if publish && cfg.check then "nix flake check" else ""}
-  ${util.runBuildApp "hackage.upload.${if publish then "release" else "candidate"}-${pkg}"} $version
+  ${util.runBuildApp "hackage.upload.${type}-${pkg}"} $version
   '';
 
-  uploadPackage = source: publish: name:
+  uploadPackage = source: doc: publish: name:
   scriptBin "cabal-upload-package" (util.unlines (
     ["version=\${1:-}"] ++
     optional source (sourceCommand publish name) ++
-    [(docCommand publish name)] ++
+    optional doc (docCommand publish name) ++
     optional (source && publish && cfg.commit) (commitPackageFragment name) ++
     optional (source && publish && cfg.tag) (tagPackageFragment name)
   ));
 
-  uploadPackageApps = source: publish: type:
+  uploadPackageApps = source: doc: publish: type:
     let
-      upload = uploadPackage source publish;
-      version = packageVersion publish;
+      upload = uploadPackage source doc publish;
+      version = packageVersion publish doc;
       target = n: {
         upload = { "${type}-${n}" = upload n; };
         bump = { "${type}-${n}" = version n; };
@@ -251,25 +257,30 @@ let
     in { hackage = util.mergeAllAttrs (map target allTargets); };
 
   uploadCandidates =
-    uploadPackageApps true false "candidate";
+    uploadPackageApps true true false "candidate";
 
   uploadReleases =
-    uploadPackageApps true true "release";
+    uploadPackageApps true true true "release";
+
+  uploadReleasesSource =
+    uploadPackageApps true false true "release-source";
 
   uploadDocs =
-    uploadPackageApps false true "docs";
+    uploadPackageApps false true true "docs";
 
   mainApps = {
-    candidates = app "${askAndUpload false}";
-    release = app "${askAndUpload true}";
+    candidates = app "${askAndUpload true false}";
+    release = app "${askAndUpload true true}";
+    release-source = app "${askAndUpload false true}";
     docs = app "${checkUploadDocs}";
   };
 
   uploadMainApps = {
     hackage.upload = {
-      candidates = uploadAll true false;
-      release = uploadAll true true;
-      docs = uploadAll false true;
+      candidates = uploadAll true true false;
+      release = uploadAll true true true;
+      release-source = uploadAll true false true;
+      docs = uploadAll false true true;
     };
   };
 
@@ -278,6 +289,7 @@ in {
     util.mergeAllAttrs [
       uploadCandidates
       uploadReleases
+      uploadReleasesSource
       uploadDocs
       uploadMainApps
     ];

@@ -8,6 +8,7 @@
 * Add the option `envs.<env>.inheritOverrides` to control whether to include overrides from dependency flakes.
 * Allow specifying non-local packages in `envs.<env>.packages`.
 * Add the option `envs.<env>.globalOverrides` to control whether to include the global overrides.
+* Add the app `release-source` for uploading source tarballs without docs to Hackage.
 
 # 0.8.0
 
