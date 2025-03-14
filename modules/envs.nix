@@ -111,6 +111,7 @@ in {
         packages = ["hpack" "cabal-install"];
         localDeps = false;
         localOverrides = false;
+        globalOverrides = false;
         inheritOverrides = false;
       };
 
