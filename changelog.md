@@ -7,6 +7,7 @@
 * Add an env, `hix-build-tools`, to configure packages used internally; like `cabal-install` and `hpack`.
 * Add the option `envs.<env>.inheritOverrides` to control whether to include overrides from dependency flakes.
 * Allow specifying non-local packages in `envs.<env>.packages`.
+* Add the option `envs.<env>.globalOverrides` to control whether to include the global overrides.
 
 # 0.8.0
 

@@ -305,6 +305,14 @@ in {
       default = true;
     };
 
+    globalOverrides = mkOption {
+      description = ''
+      Whether to include overrides from the global option [](#opt-general-overrides).
+      '';
+      type = bool;
+      default = true;
+    };
+
     inheritOverrides = mkOption {
       description = ''
       Whether to include overrides from dependency flakes.
@@ -617,7 +625,7 @@ in {
         else [
           (inherited config.internal.overridesInherited)
           config.internal.overridesLocal
-          global.overrides
+          (lib.optionals config.globalOverrides global.overrides)
           config.internal.overridesEnv
         ];
 
