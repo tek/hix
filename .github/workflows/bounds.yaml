@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/nix-installer-action@v16
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
     - uses: cachix/cachix-action@v15
