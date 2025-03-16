@@ -88,7 +88,7 @@ let
     all = framework.suite (tests // tests-framework) // { attr = "test"; };
   };
 
-  ci-tests = util.catSets [tests-basic-1 tests-basic-2 tests-basic-3 tests-managed tests-framework];
+  ci-tests = util.catSets [tests-basic-1 tests-basic-2 tests-basic-3 tests-managed tests-vm tests-framework];
 
 in {
   inherit suites;
