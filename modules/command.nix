@@ -21,7 +21,10 @@ in {
 
     command = lib.mkOption {
       description = "The script executed by this command.";
-      type = types.str;
+      type = types.either types.str types.path;
+      default = ''
+      echo "The command '${config.name}' is missing an implementation in 'commands.${config.name}.command'."
+      '';
     };
 
     component = lib.mkOption {
