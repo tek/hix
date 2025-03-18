@@ -570,12 +570,6 @@ in {
         type = util.types.cabalOverridesVia "project";
       };
 
-      overridesEnvUnmanaged = mkOption {
-        description = "Overrides for this env, excluding extras like managed dependencies.";
-        type = util.types.cabalOverridesVia "computed env ${config.name} unmanaged";
-        readOnly = true;
-      };
-
       overridesEnv = mkOption {
         description = "Overrides for this env, including extras like managed dependencies.";
         type = util.types.cabalOverridesVia "computed env ${config.name}";
@@ -685,8 +679,6 @@ in {
             then global.packages
             else {};
         };
-
-        overridesEnvUnmanaged = lib.toList config.overrides;
 
         overridesEnv = util.concatOverrides (
           optional config.managed (internal.env.managedOverrides config.name)
