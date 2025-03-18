@@ -121,7 +121,9 @@ let
   };
 
   serviceConfig = service:
-  [service.nixos-base service.nixos (servicePorts service.ports)];
+  lib.toList service.nixos-base ++
+  lib.toList service.nixos ++
+  [(servicePorts service.ports)];
 
   resolved = filter (conf: conf.enable) (mapAttrsToList (_: s: s.resolve) config.internal.resolvedServices);
 

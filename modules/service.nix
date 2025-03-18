@@ -1,14 +1,15 @@
 {global, lib, util, ...}:
 {config, ...}:
-with lib;
 let
 
+  inherit (lib) mkOption types;
+
   portModule = {config, ...}: {
-    options = with types; {
+    options = {
 
       guest = mkOption {
         description = "Port used in the VM.";
-        type = port;
+        type = types.port;
       };
 
       host = mkOption {
@@ -16,24 +17,24 @@ let
         Port exposed in the system, relative to the env's [](#opt-env-basePort) unless [](#opt-service-ports._name_.absolute)
         is set.
         '';
-        type = port;
+        type = types.port;
       };
 
       absolute = mkOption {
         description = ''
         Whether the host port is an absolute number. If `false` (default), the port is added to [](#opt-env-basePort).
         '';
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
     };
 
-    config.host = mkDefault config.guest;
+    config.host = lib.mkDefault config.guest;
   };
 
 in {
-  options = with types; {
+  options = {
 
     enable = mkOption {
       description = "Enable this service";
@@ -43,25 +44,25 @@ in {
 
     nixos = mkOption {
       description = "NixOS config used for the service VM.";
-      type = deferredModule;
+      type = types.either types.deferredModule (types.listOf types.deferredModule);
       default = {};
     };
 
     nixos-base = mkOption {
       description = "NixOS base config used for the service VM.";
-      type = deferredModule;
+      type = types.either types.deferredModule (types.listOf types.deferredModule);
       default = {};
     };
 
     ports = mkOption {
       description = "Simple ports forwarded relative to the env's [](#opt-env-basePort).";
-      type = attrsOf (submodule portModule);
+      type = types.attrsOf (types.submodule portModule);
       default = {};
     };
 
     messages = mkOption {
       description = "Informational messages that will be echoed when an environment starts this service.";
-      type = functionTo (listOf str);
+      type = types.functionTo (types.listOf types.str);
       default = _: [];
     };
 
