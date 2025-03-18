@@ -86,6 +86,11 @@
     os = util.managed.state.current.overrides.${envName} or {};
   in lib.mapAttrs (managedOverride api) os;
 
+  mkBuildInputs = env: spec:
+  if lib.isFunction spec
+  then spec env.ghc.pkgs
+  else spec;
+
 in {
   inherit
   waitScript
@@ -102,5 +107,6 @@ in {
   targets
   isTarget
   managedOverrides
+  mkBuildInputs
   ;
 }

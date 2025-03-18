@@ -19,14 +19,9 @@ let
 
   envExposeModule = import ./env-expose.nix { inherit util; };
 
-  mkBuildInputs = def:
-    if isFunction def
-    then def config.ghc.pkgs
-    else def;
-
   buildInputs =
-    mkBuildInputs config.buildInputs ++
-    mkBuildInputs global.buildInputs ++
+    internal.env.mkBuildInputs config config.buildInputs ++
+    internal.env.mkBuildInputs config global.buildInputs ++
     config.haskellTools config.ghc.vanillaGhc ++
     global.haskellTools config.ghc.vanillaGhc ++
     optional config.hls.enable config.hls.package ++

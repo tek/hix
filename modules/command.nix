@@ -8,13 +8,22 @@ in {
   options = {
 
     name = lib.mkOption {
-      description = "Name";
+      description = "The name of this command.";
       type = types.str;
       default = name;
     };
 
     env = lib.mkOption {
-      description = "The default env for the command.";
+      description = ''
+      The default environment for this command.
+
+      This environment is used when the command is executed with `nix run .#cmd.<command-name>`, or with
+      `nix run .#<command-name>` if [](#opt-command-expose) is `true`.
+
+      An arbitrary environment can be selected with `nix run .#env.<env-name>.<command-name>`.
+
+      The selected environment determines which packages, in particular which GHC, is available.
+      '';
       type = util.types.env;
       default = "dev";
     };
@@ -27,9 +36,16 @@ in {
       '';
     };
 
+    buildInputs = lib.mkOption {
+      description = "Packages that should be in `$PATH` for this command.";
+      type = types.either (types.functionTo (types.listOf types.package)) (types.listOf types.package);
+      default = [];
+    };
+
     component = lib.mkOption {
       description = ''
-      Whether this command should determine the env based on a target component specified by command line arguments.
+      Whether this command should determine its default environment based on a target component specified by command
+      line arguments.
 
       ::: {.note}
       The component selector chooses a default component when no arguments are given.

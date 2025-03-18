@@ -19,6 +19,7 @@ let
   tests-basic-1 =
     testsNamed [
       "basic"
+      "command"
       "dep-versions"
       "deps"
       "direnv"

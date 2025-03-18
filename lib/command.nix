@@ -1,7 +1,7 @@
 {util}:
 let
 
-  inherit (util) lib;
+  inherit (util) lib internal;
 
   splitArgs = ''
   declare -a env_args=() cmd_args=()
@@ -44,7 +44,10 @@ let
   inEnv = {command, env}:
   lib.makeExtensible (self: {
 
-    exe = util.scriptErr "command-${command.name}" command.command;
+    exe =
+      if lib.isPath command.command
+      then command.command
+      else util.scriptErr "command-${command.name}" command.command;
 
     inherit cli;
 
@@ -64,6 +67,7 @@ let
 
     path = util.script "hix-command-${env.name}-${command.name}" ''
     set -u
+    export PATH="${lib.makeBinPath (internal.env.mkBuildInputs env command.buildInputs)}:$PATH"
     ${self.script}
     '';
 

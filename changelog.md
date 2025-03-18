@@ -10,6 +10,7 @@
 * Add the option `envs.<env>.globalOverrides` to control whether to include the global overrides.
 * Add the app `release-source` for uploading source tarballs without docs to Hackage.
 * Allow command scripts to be specified as paths as well as strings.
+* Add `commands.<command>.buildInputs` to configure packages in `$PATH` for commands.
 
 # 0.8.0
 
