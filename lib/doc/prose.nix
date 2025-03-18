@@ -1012,7 +1012,7 @@ in {
   `basePort + 22`:
 
   ```
-  ssh -p 1022 root@localhost
+  ssh -p 10022 root@localhost
   ```
 
   ### Defining modular services {#services-define}
@@ -1026,7 +1026,7 @@ in {
   {
     services.greet = ({config, lib, ...}: {
 
-      options.response = mkOption {
+      options.response = lib.mkOption {
         type = lib.types.str;
         default = "Hello";
       };
