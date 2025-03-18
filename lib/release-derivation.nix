@@ -5,7 +5,7 @@ let
 
   forHackage = d: util.hsLib.overrideCabal d (old: {
     doHaddock = true;
-    haddockFlags = old.haddockFlags or [] ++ ["--for-hackage"];
+    haddockFlags = (old.haddockFlags or []) ++ ["--for-hackage"];
   });
 
   addRelease = { pname, version, outputs, ...}:

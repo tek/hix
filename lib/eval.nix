@@ -21,7 +21,7 @@ let
   # TODO we can use `lib.mirrorFunctionArgs` for the wrapper
   onlySystemsConfig = m:
   if lib.isFunction m
-  then a@{util, build, outputs, project, ...}: onlySystemsConfig (m a)
+  then a@{util, pkgs, build, outputs, project, internal, ...}: onlySystemsConfig (m a)
   else
   lib.optionalAttrs (m ? systems) { inherit (m) systems; } //
   lib.optionalAttrs (m ? config && m.config ? systems) { config = { inherit (m.config) systems; }; }
