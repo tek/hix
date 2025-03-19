@@ -3,9 +3,11 @@
 # TODO remove
 with lib;
 let
-  inherit (util) internal;
+  inherit (util) internal build;
 
   envConfig = config;
+
+  built = build.envs.${name};
 
   serviceModule = import ./service.nix { inherit lib global util; };
 
@@ -19,73 +21,6 @@ let
 
   envExposeModule = import ./env-expose.nix { inherit util; };
 
-  buildInputs =
-    internal.env.mkBuildInputs config config.buildInputs ++
-    internal.env.mkBuildInputs config global.buildInputs ++
-    config.haskellTools config.ghc.vanillaGhc ++
-    global.haskellTools config.ghc.vanillaGhc ++
-    optional config.hls.enable config.hls.package ++
-    optional config.ghcid.enable config.ghcid.package ++
-    [config.ghcWithPackages]
-    ;
-
-  exportShellVars = vars: let
-    defs = toShellVars config.env;
-    exports = util.unlinesMap (n: "export ${n}") (attrNames config.env);
-  in optionalString (!(util.empty vars)) ''
-  ${defs}
-  ${exports}
-  '';
-
-  messages = util.unlinesConcatMap (s: map (m: ''echo ">>> ${m}" >&2'') (s.messages envConfig)) resolved;
-
-  preamble = ''
-    _hix_unrestricted() {
-      [[ -z ''${DIRENV_IN_ENVRC-} ]] && [[ -z ''${HIX_ONLY_ENV-} ]]
-    }
-    quitting=0
-    quit() {
-      if [[ $quitting == 0 ]]
-      then
-        quitting=1
-        if [[ -n ''${1-} ]]
-        then
-          echo ">>> Terminated by signal $1" >&2
-        fi
-        ${config.exit-pre}
-        ${optionalString config.vm.enable config.vm.exit}
-        ${config.exit}
-        # kill zombie GHCs
-        ${global.pkgs.procps}/bin/pkill -9 -x -P 1 ghc || true
-      fi
-      if [[ -n ''${1-} ]]
-      then
-        exit 1
-      fi
-    }
-    if _hix_unrestricted
-    then
-      if [[ -z ''${_hix_is_shell-} ]]
-      then
-        trap "quit INT" INT
-      fi
-      trap "quit TERM" TERM
-      trap "quit KILL" KILL
-      trap quit EXIT
-    fi
-    ${exportShellVars config.env}
-    export PATH="${makeBinPath buildInputs}:$PATH"
-    export env_args
-    if _hix_unrestricted
-    then
-      :
-      ${messages}
-      ${config.setup-pre}
-      ${optionalString config.vm.enable config.vm.setup}
-      ${optionalString (config.vm.enable && config.wait > 0) (internal.env.waitScript config)}
-      ${config.setup}
-    fi
-  '';
 
   runner = util.scriptErr "env-${config.name}-runner.bash" ''
    ${config.code}
@@ -120,12 +55,10 @@ let
   lib.toList service.nixos ++
   [(servicePorts service.ports)];
 
-  resolved = filter (conf: conf.enable) (mapAttrsToList (_: s: s.resolve) config.internal.resolvedServices);
-
   combinedConfig =
     [vmConfig] ++
     optional config.defaults nixosDefaults ++
-    concatMap serviceConfig resolved
+    concatMap serviceConfig built.resolvedServices
     ;
 
   resolveServiceModule = {name, config, ...}: let
@@ -631,7 +564,7 @@ in {
 
     shell = mkDefault (global.pkgs.stdenv.mkDerivation {
       inherit (config) name;
-      inherit buildInputs;
+      inherit (built) buildInputs;
       shellHook = ''
       _hix_is_shell=1
       ${config.code}
@@ -641,13 +574,13 @@ in {
     ghcWithPackages =
       util.ghc.packageDbFull config ({ withHoogle = config.hoogle; } // config.ghcWithPackagesArgs);
 
-    code = preamble;
+    code = internal.env.scripts.setup { env = config; };
 
     vm = {
 
       enable = let
         builtInCount = (if config.wait > 0 then 1 else 0) + (if config.defaults then 1 else 0);
-      in mkDefault (length resolved > builtInCount);
+      in mkDefault (length built.resolvedServices > builtInCount);
 
       derivation = mkDefault (
         let nixosArgs = {

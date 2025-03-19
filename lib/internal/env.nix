@@ -2,30 +2,13 @@
 
   inherit (util) config internal lib just justIf justAttr bindMaybe colors;
 
-  waitScript = env: let
-    waitSeconds = toString env.wait;
-    port = env.hostPorts.hix-internal-env-wait;
-  in util.hixScript "hix-vm-wait" { path = pkgs: [pkgs.socat]; } ''
-  running=0
-  message "Waiting ${waitSeconds} seconds for VM to boot..."
-  timeout=$(( $SECONDS + ${waitSeconds} ))
-  while (( $SECONDS < $timeout ))
-  do
-    pong=$(socat -T 1 - TCP:localhost:${toString port} <<< 'ping' 2>&1)
-    if [[ $pong == 'running' ]]
-    then
-      running=1
-      break
-    else
-      sleep 0.1
-    fi
-  done
-  if [[ $running == 0 ]]
-  then
-    error_message "VM wasn't ready after ${waitSeconds} seconds."
-    exit 1
-  fi
-  '';
+  scripts = {
+
+    wait = import ./scripts/wait.nix { inherit util; };
+
+    setup = import ./scripts/setup.nix { inherit util; };
+
+  };
 
   withEnv = f: envName: f config.envs.${envName};
 
@@ -91,9 +74,19 @@
   then spec env.ghc.pkgs
   else spec;
 
+  buildInputs = env:
+  mkBuildInputs env env.buildInputs ++
+  mkBuildInputs env config.buildInputs ++
+  env.haskellTools env.ghc.vanillaGhc ++
+  config.haskellTools env.ghc.vanillaGhc ++
+  lib.optional env.hls.enable env.hls.package ++
+  lib.optional env.ghcid.enable env.ghcid.package ++
+  [env.ghcWithPackages]
+  ;
+
 in {
   inherit
-  waitScript
+  scripts
   withEnv
   withMain
   setWithMain
@@ -108,5 +101,6 @@ in {
   isTarget
   managedOverrides
   mkBuildInputs
+  buildInputs
   ;
 }

@@ -5,7 +5,12 @@
   buildEnv = env: packages:
   internal.env.setWithMain (main: { inherit (packages.${main.name}) cross static musl release; }) env
   //
-  { executables = lib.concatMapAttrs (_: outputs: outputs.executables) packages; }
+  {
+    buildInputs = internal.env.buildInputs env;
+    executables = lib.concatMapAttrs (_: outputs: outputs.executables) packages;
+    resolvedServices =
+      lib.filter (conf: conf.enable) (lib.mapAttrsToList (_: s: s.resolve) env.internal.resolvedServices);
+  }
   ;
 
 in internal.envs.map buildEnv (internal.envs.filterEnabled build.packages)
