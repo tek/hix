@@ -165,21 +165,29 @@ let
 
   exportPathOptional = packages: lib.optional (!(basic.empty packages)) (exportPath packages);
 
+  mkPackages = spec:
+  if lib.isFunction spec
+  then spec config.pkgs
+  else spec;
+
   setupScript = {
     path ? [],
     console ? true,
     verbose ? true,
     nix ? false,
   }: let
-
     extraPath = optional nix nixWrapper;
-
   in
   basic.unlines (
     lib.optional console (basic.loadConsoleWith { inherit verbose; })
     ++
-    exportPathOptional (extraPath ++ path)
+    exportPathOptional (extraPath ++ mkPackages path)
   );
+
+  hixScript = name: conf: main: zscript name ''
+  ${setupScript conf}
+  ${main}
+  '';
 
   downloadStaticCli = ''
   tmp=$(mktemp -d)
@@ -285,6 +293,7 @@ let
     exportPath
     exportPathOptional
     setupScript
+    hixScript
     downloadStaticCli
     nixC
     bootstrapWithStaticCli
