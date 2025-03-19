@@ -52,7 +52,7 @@
 
   mod-envExpose = options.modules [
     (options.importMod "expose" { inherit util; type = "env"; default = false; })
-    (options.importMod "env-expose" { inherit util; })
+    (options.importMod "env/expose" { inherit util; })
   ];
 
   ghcExclude = [

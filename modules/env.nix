@@ -7,7 +7,7 @@ let
 
   built = build.envs.${name};
 
-  envServiceModule = import ./env-service.nix { inherit lib global; };
+  envServiceModule = import ./env/service.nix { inherit lib global; };
 
   ghcModule = import ./ghc.nix { inherit global util; };
 
@@ -15,7 +15,7 @@ let
 
   exposeModule = import ./expose.nix { inherit util; type = "env"; default = false; };
 
-  envExposeModule = import ./env-expose.nix { inherit util; };
+  envExposeModule = import ./env/expose.nix { inherit util; };
 
   resolveServiceModule = import ./env/resolve-service.nix { inherit util; env = config; };
 
