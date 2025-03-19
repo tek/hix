@@ -5,11 +5,7 @@ with lib;
 let
   inherit (util) internal build;
 
-  envConfig = config;
-
   built = build.envs.${name};
-
-  serviceModule = import ./service.nix { inherit lib global util; };
 
   envServiceModule = import ./env-service.nix { inherit lib global; };
 
@@ -21,6 +17,7 @@ let
 
   envExposeModule = import ./env-expose.nix { inherit util; };
 
+  resolveServiceModule = import ./env/resolve-service.nix { inherit util; env = config; };
 
   runner = util.scriptErr "env-${config.name}-runner.bash" ''
    ${config.code}
@@ -60,34 +57,6 @@ let
     optional config.defaults nixosDefaults ++
     concatMap serviceConfig built.resolvedServices
     ;
-
-  resolveServiceModule = {name, config, ...}: let
-    service = envConfig.services.${name};
-  in {
-    options = with types; {
-      name = mkOption {
-        description = "";
-        type = str;
-        default = name;
-      };
-
-      resolve = mkOption {
-        description = "";
-        type = submoduleWith {
-          modules = optionals (name != "‹name›") ([
-            serviceModule
-            { inherit (service) enable; }
-          ] ++
-          optional (hasAttr name global.services) global.services.${name} ++
-          optionals (hasAttr name global.internal.services) [
-            global.internal.services.${name}
-            service.config
-          ]);
-        };
-        default = {};
-      };
-    };
-  };
 
   ghcidMod = if util.minGhc "9.4" config then config.ghc.pkgs.haskell.lib.dontCheck else id;
 
@@ -518,7 +487,6 @@ in {
       resolvedServices = mkOption {
         description = "Magic modules that allow merging env-specific service config with their base config.";
         type = attrsOf (submodule resolveServiceModule);
-        default = mapAttrs (_: _: {}) config.services;
         readOnly = true;
       };
 
@@ -560,7 +528,7 @@ in {
       gen-overrides = mkDefault true;
     };
 
-    hostPorts = util.mapListCatAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) resolved;
+    hostPorts = util.mapListCatAttrs (s: mapAttrs (_: effectiveHostPort) s.ports) built.resolvedServices;
 
     shell = mkDefault (global.pkgs.stdenv.mkDerivation {
       inherit (config) name;
@@ -616,6 +584,9 @@ in {
         );
 
         overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
+
+        # Config is given by modules merged into the option declaration
+        resolvedServices = mapAttrs (_: _: {}) config.services;
 
       };
 

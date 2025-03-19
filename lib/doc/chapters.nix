@@ -70,7 +70,7 @@
 
   serviceExclude = [
   ];
-  mod-service = options.moduleWithout serviceExclude "service" { global = config; inherit lib util; };
+  mod-service = options.moduleWithout serviceExclude "service" { inherit util; };
 
   hackageExclude = [
     { type = "sub"; path = ["output"]; }

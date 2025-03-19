@@ -1,6 +1,8 @@
-{global, lib, util, ...}:
+{util}:
 {config, ...}:
 let
+
+  inherit (util) lib;
 
   inherit (lib) mkOption types;
 
