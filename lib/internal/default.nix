@@ -6,5 +6,6 @@
   packages = import ./packages.nix { inherit util; };
   project = import ./project.nix { inherit util; };
   warn = import ./warn.nix { inherit util; };
+  vm = import ./vm.nix { inherit util; };
 
 }

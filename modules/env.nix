@@ -10,8 +10,6 @@ let
 
   ghcModule = import ./ghc.nix { inherit global util; };
 
-  vmLib = import ../lib/vm.nix { inherit (global) pkgs; inherit util; };
-
   exposeModule = import ./expose.nix { inherit util; type = "env"; default = false; };
 
   envExposeModule = import ./env/expose.nix { inherit util; };
@@ -561,8 +559,8 @@ in {
         in (lib.nixosSystem nixosArgs).config.system.build.vm
         );
 
-        setup = lib.mkDefault "${vmLib.ensure config.basePort config.vm}";
-        exit = lib.mkDefault "${vmLib.kill config.vm}";
+        setup = lib.mkDefault "${internal.vm.ensure config.basePort config.vm}";
+        exit = lib.mkDefault "${internal.vm.kill config.vm}";
 
       };
 

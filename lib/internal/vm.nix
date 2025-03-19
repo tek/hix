@@ -1,5 +1,6 @@
-{pkgs, util}:
+{util}:
 let
+
   display = vm:
   if vm.headless then "-display none" else "";
 
