@@ -253,6 +253,7 @@ let
     internals = true;
     managed = true;
     cross = true;
+    static = true;
   };
 
   expose = exposeDefault // util.config.output.expose;

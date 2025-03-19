@@ -22,12 +22,19 @@
     inherit (outputs) musl;
   };
 
+  staticOutputs = outputs:
+  lib.optionalAttrs util.expose.static (
+    { inherit (outputs) static; }
+    //
+    muslOutput outputs
+  );
+
   specialOutputs = outputs:
   lib.optionalAttrs util.expose.cross { inherit (outputs) cross; }
   //
-  { inherit (outputs) static release; }
+  staticOutputs outputs
   //
-  muslOutput outputs
+  { inherit (outputs) release; }
   ;
 
   legacyDev = env: _pkg: outputs:
@@ -60,10 +67,10 @@
 
   mainPackageOutputs = pkg: let
     name = pkg.name;
-    basic = outputs: {
-      default = outputs.package;
-      inherit (outputs) static;
-    } // muslOutput outputs;
+    basic = outputs:
+    { default = outputs.package; }
+    //
+    staticOutputs outputs;
   in
   util.maybe {} basic (util.justAttr name build.targets.dev)
   //

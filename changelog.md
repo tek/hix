@@ -11,6 +11,7 @@
 * Add the app `release-source` for uploading source tarballs without docs to Hackage.
 * Allow command scripts to be specified as paths as well as strings.
 * Add `commands.<command>.buildInputs` to configure packages in `$PATH` for commands.
+* Add `output.expose.static` to control whether packages outputs include `musl`-linked executables.
 
 # 0.8.0
 

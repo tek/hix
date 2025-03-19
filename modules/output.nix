@@ -62,6 +62,14 @@ in {
           default = true;
         };
 
+        static = lib.mkOption {
+          description = ''
+          Include static executables in the outputs, built with `musl`.
+          '';
+          type = types.bool;
+          default = true;
+        };
+
       };
 
       final = mkOption {
