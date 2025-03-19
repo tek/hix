@@ -347,7 +347,6 @@ in {
       The shell script code that starts this env's services and sets its environment variables.
       '';
       type = str;
-      default = preamble;
     };
 
     shell = mkOption {
@@ -641,6 +640,8 @@ in {
 
     ghcWithPackages =
       util.ghc.packageDbFull config ({ withHoogle = config.hoogle; } // config.ghcWithPackagesArgs);
+
+    code = preamble;
 
     vm = {
 
