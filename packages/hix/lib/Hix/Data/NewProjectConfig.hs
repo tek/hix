@@ -21,6 +21,7 @@ newtype Author =
 data NewProjectConfig =
   NewProjectConfig {
     name :: ProjectName,
+    createDirectory :: Bool,
     packages :: Bool,
     hixUrl :: HixUrl,
     author :: Author

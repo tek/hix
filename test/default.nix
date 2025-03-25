@@ -52,6 +52,8 @@ let
       "new"
       "new-static"
       "new-static-github"
+      "new-with-dir"
+      "new-static-with-dir"
     ];
 
   tests-vm =

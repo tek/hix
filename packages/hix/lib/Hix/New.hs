@@ -13,7 +13,8 @@ import Hix.Data.NewProjectConfig (
   )
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
-import Hix.Monad (M, noteEnv)
+import Hix.Monad (M, noteEnv, local)
+import Hix.Data.Monad (AppResources (cwd))
 
 license :: Author -> Text
 license author =
@@ -167,10 +168,18 @@ newProjectFiles conf = do
     }
     ]
   where
-    pathError = noteEnv "Can't convert project name to file path"
     modName = toText modNameS
     modNameS = pascal (toString conf.name.unProjectName)
 
 newProject :: NewProjectConfig -> M ()
 newProject conf =
-  traverse_ createFile =<< newProjectFiles conf
+  if conf.createDirectory then do
+    nameDir <- pathError (parseRelDir (toString conf.name.unProjectName))
+    local (\res -> res { cwd = res.cwd </> nameDir }) newProject'
+  else newProject'
+  where
+    newProject' :: M ()
+    newProject' = traverse_ createFile =<< newProjectFiles conf
+
+pathError :: Maybe a -> M a
+pathError = noteEnv "Can't convert project name to file path"

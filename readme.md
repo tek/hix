@@ -30,6 +30,12 @@ You can create a new project in the current directory:
 nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#new' -- --name 'project-name' --author 'Your Name'
 ```
 
+Or in a new directory (named after the `--name` value)
+
+```
+nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#new' -- --name 'project-name' --author 'Your Name' --directory
+```
+
 The manual process consists of first adding Hix to your Haskell project flake by specifying the input:
 
 ```nix

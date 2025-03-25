@@ -203,8 +203,7 @@ let
 
   nixC = "nix --option extra-substituters 'https://tek.cachix.org' --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk='";
 
-  bootstrapMain = pre: post: ''
-  ${pre}
+  bootstrapPost = post: ''
   if ! git status &>/dev/null
   then
     git init -q
@@ -213,6 +212,18 @@ let
   nix flake update --quiet --quiet
   git add flake.lock
   ${post}
+  '';
+
+  bootstrapMain = pre: post: ''
+  ${pre}
+  if echo "${pre}" | grep -qE " -d( |$)| --directory( |$)"; then
+      name=$(echo "${pre}" | sed -n 's/.*--name[ =]\([^ ]*\).*/\1/p')
+      pushd "$name" &> /dev/null
+      ${bootstrapPost post}
+      popd &> /dev/null
+  else
+      ${bootstrapPost post}
+  fi
   '';
 
   bootstrapWithStaticCli = name: pre: post: script name ''

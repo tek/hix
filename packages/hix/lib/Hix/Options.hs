@@ -252,6 +252,7 @@ ghcidParser cwd = do
 newParser :: Parser NewOptions
 newParser = do
   name <- strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
+  createDirectory <- switch (long "directory" <> short 'd' <> help "Create a directory for the project using <name>")
   packages <- switch (long "packages" <> short 'p' <> help "Store packages in the 'packages/' subdirectory")
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
@@ -403,7 +404,7 @@ commands cwd =
   <>
   command "ghcid-cmd" (GhcidCmd <$> info (ghcidParser cwd) (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
   <>
-  command "new" (New <$> info newParser (progDesc "Create a new Hix project in the current directory"))
+  command "new" (New <$> info newParser (progDesc "Create a new Hix project"))
   <>
   command "bootstrap" (Bootstrap <$> info bootstrapParser (progDesc bootstrapDesc))
   <>

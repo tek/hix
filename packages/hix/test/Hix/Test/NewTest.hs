@@ -13,7 +13,7 @@ import Hix.Test.Utils (UnitTest)
 
 conf :: NewProjectConfig
 conf =
-  NewProjectConfig {name = "spider", packages = False, hixUrl = def, author = "Me"}
+  NewProjectConfig {name = "spider", packages = False, hixUrl = def, author = "Me", createDirectory = False}
 
 flake :: Text
 flake =
