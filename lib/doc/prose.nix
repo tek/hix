@@ -465,6 +465,8 @@ in {
           config = { name = "test-db"; };
         };
 
+        expose.shell = true;
+
       };
     });
   }
