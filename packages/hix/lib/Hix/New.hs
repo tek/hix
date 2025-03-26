@@ -1,20 +1,36 @@
 module Hix.New where
 
 import Exon (exon)
-import Path (parseRelDir, parseRelFile, reldir, relfile, (</>))
+import Path (
+  SomeBase (Abs, Rel),
+  dirname,
+  fromRelDir,
+  parseRelDir,
+  parseRelFile,
+  parseSomeDir,
+  reldir,
+  relfile,
+  (</>),
+  prjSomeBase
+  )
+import qualified Data.Text as Text
+import qualified Data.Text.IO as Text
 import Text.Casing (pascal)
 
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   Author,
   HixUrl (HixUrl),
-  NewProjectConfig (NewProjectConfig),
-  ProjectName (ProjectName),
+  InitProjectConfig (InitProjectConfig),
+  NewProjectConfigCommon (NewProjectConfigCommon),
+  ProjectName (ProjectName), NewProjectConfig,
   )
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Monad (M, noteEnv, local)
-import Hix.Data.Monad (AppResources (cwd))
+import Hix.Data.Monad (M(M), AppResources (AppResources, cwd))
+import Control.Monad.Trans.Reader (ask)
+import Hix.Error (pathText)
 
 license :: Author -> Text
 license author =
@@ -54,8 +70,11 @@ WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWIS
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 |]
 
-flake :: NewProjectConfig -> Text
-flake NewProjectConfig {name = ProjectName name, hixUrl = HixUrl url, ..} =
+flake :: InitProjectConfig -> Text
+flake InitProjectConfig {
+  name = ProjectName name,
+  config = NewProjectConfigCommon { hixUrl = HixUrl url, ..}
+} =
   [exon|{
   description = "A Haskell project";
 
@@ -101,7 +120,7 @@ flake NewProjectConfig {name = ProjectName name, hixUrl = HixUrl url, ..} =
     src | packages = [exon|packages/#{name}|]
         | otherwise = "."
 
-libModule :: NewProjectConfig -> Text -> Text
+libModule :: InitProjectConfig -> Text -> Text
 libModule conf modName =
   [exon|module #{modName} where
 
@@ -138,7 +157,7 @@ main :: IO ()
 main = defaultMain tests
 |]
 
-nameTestModule :: NewProjectConfig -> Text -> Text
+nameTestModule :: InitProjectConfig -> Text -> Text
 nameTestModule conf modName =
   [exon|module #{modName}.Test.NameTest where
 
@@ -150,14 +169,14 @@ test_name :: TestT IO ()
 test_name = "#{conf.name.unProjectName}" === name
 |]
 
-newProjectFiles :: NewProjectConfig -> M [ProjectFile]
+newProjectFiles :: InitProjectConfig -> M [ProjectFile]
 newProjectFiles conf = do
   nameDir <- pathError (parseRelDir modNameS)
-  let packageDir = if conf.packages then [reldir|packages|] </> nameDir else [reldir|.|]
+  let packageDir = if conf.config.packages then [reldir|packages|] </> nameDir else [reldir|.|]
   libFile <- pathError (parseRelFile [exon|#{modNameS}.hs|])
   pure [
     ProjectFile {path = [relfile|flake.nix|], content = flake conf},
-    ProjectFile {path = packageDir </> [relfile|LICENSE|], content = license conf.author},
+    ProjectFile {path = packageDir </> [relfile|LICENSE|], content = license conf.config.author},
     ProjectFile {path = packageDir </> [relfile|ops/version.nix|], content = [exon|"0.1.0.0"|]},
     ProjectFile {path = packageDir </> [reldir|lib|] </> libFile, content = libModule conf modName},
     ProjectFile {path = packageDir </> [relfile|app/Main.hs|], content = appMainModule modName},
@@ -171,15 +190,20 @@ newProjectFiles conf = do
     modName = toText modNameS
     modNameS = pascal (toString conf.name.unProjectName)
 
+initProject :: InitProjectConfig -> M ()
+initProject conf = traverse_ createFile =<< newProjectFiles conf
+
 newProject :: NewProjectConfig -> M ()
-newProject conf =
-  if conf.createDirectory then do
-    nameDir <- pathError (parseRelDir (toString conf.name.unProjectName))
-    local (\res -> res { cwd = res.cwd </> nameDir }) newProject'
-  else newProject'
-  where
-    newProject' :: M ()
-    newProject' = traverse_ createFile =<< newProjectFiles conf
+newProject conf = do
+  directory <- pathError (parseSomeDir (toString conf.directory.unProjectDirectory))
+  let name = prjSomeBase (Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname) directory
+  AppResources { cwd } <- M ask
+  let newCwd = case directory of
+        Abs p -> p
+        Rel p -> cwd </> p
+  when conf.printDirectory $ liftIO (Text.putStrLn (pathText newCwd))
+  local (\res -> res { cwd = newCwd }) $
+    initProject $ InitProjectConfig {name = ProjectName name, config = conf.config}
 
 pathError :: Maybe a -> M a
 pathError = noteEnv "Can't convert project name to file path"

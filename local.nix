@@ -246,9 +246,22 @@ in {
       inherit cli;
       default = cli;
 
+      init-nocache = let
+        prog = util.bootstrapWithDynamicCli "hix-init-nocache" ''
+        $exe init --hix-url '${config.internal.hixUrl}' "$@"
+        '' ''
+        nix run .#gen-cabal-quiet
+        '';
+      in util.app prog;
+
+      init = let
+        prog = util.script "hix-init" ''${util.nixC} run ${inputs.self}#init-nocache -- "$@"'';
+      in util.app prog;
+
       new-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
-        $exe new --hix-url '${config.internal.hixUrl}' "$@"
+        dir=$($exe new --hix-url '${config.internal.hixUrl}' --print-dir "$@")
+        cd "$dir"
         '' ''
         nix run .#gen-cabal-quiet
         '';

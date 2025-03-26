@@ -45,7 +45,11 @@ import Hix.Data.GlobalOptions (GlobalOptions (..))
 import Hix.Data.Json (JsonConfig)
 import Hix.Data.LogLevel (LogLevel (..))
 import qualified Hix.Data.NewProjectConfig
-import Hix.Data.NewProjectConfig (NewProjectConfig (NewProjectConfig))
+import Hix.Data.NewProjectConfig (
+  InitProjectConfig (InitProjectConfig),
+  NewProjectConfig (NewProjectConfig),
+  NewProjectConfigCommon (NewProjectConfigCommon),
+  )
 import qualified Hix.Data.Options
 import Hix.Data.Options (
   BootstrapOptions (..),
@@ -61,6 +65,7 @@ import Hix.Data.Options (
   GhciOptions (..),
   GhcidOptions (..),
   HackageCommand (..),
+  InitOptions (..),
   LowerCommand (..),
   LowerOptions (LowerOptions),
   ManagedOptions (ManagedOptions),
@@ -249,14 +254,25 @@ ghcidParser cwd = do
   extra <- extraGhcidParser
   pure GhcidOptions {..}
 
-newParser :: Parser NewOptions
-newParser = do
-  name <- strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
-  createDirectory <- switch (long "directory" <> short 'd' <> help "Create a directory for the project using <name>")
+initCommonParser :: Parser NewProjectConfigCommon
+initCommonParser = do
   packages <- switch (long "packages" <> short 'p' <> help "Store packages in the 'packages/' subdirectory")
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
-  pure NewOptions {config = NewProjectConfig {..}}
+  pure NewProjectConfigCommon {..}
+
+initParser :: Parser InitOptions
+initParser = do
+  name <- strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
+  config <- initCommonParser
+  pure InitOptions {config = InitProjectConfig {..}}
+
+newParser :: Parser NewOptions
+newParser = do
+  directory <- strArgument (metavar "DIR" <> help "Directory to create for the project")
+  printDirectory <- switch (long "print-dir" <> help "Print the created directory")
+  config <- initCommonParser
+  pure $ NewOptions {config = NewProjectConfig {..}}
 
 bootstrapParser :: Parser BootstrapOptions
 bootstrapParser = do
@@ -404,7 +420,9 @@ commands cwd =
   <>
   command "ghcid-cmd" (GhcidCmd <$> info (ghcidParser cwd) (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
   <>
-  command "new" (New <$> info newParser (progDesc "Create a new Hix project"))
+  command "init" (Init <$> info initParser (progDesc "Create a new Hix project in the current directory"))
+  <>
+  command "new" (New <$> info newParser (progDesc "Create a new Hix project in the specified directory"))
   <>
   command "bootstrap" (Bootstrap <$> info bootstrapParser (progDesc bootstrapDesc))
   <>

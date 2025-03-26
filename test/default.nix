@@ -51,9 +51,9 @@ let
       "bootstrap"
       "new"
       "new-static"
-      "new-static-github"
-      "new-with-dir"
-      "new-static-with-dir"
+      "init"
+      "init-static"
+      "init-static-github"
     ];
 
   tests-vm =
