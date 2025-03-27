@@ -50,6 +50,7 @@ import Hix.Data.NewProjectConfig (
   InitProjectConfig (InitProjectConfig),
   NewProjectConfig (NewProjectConfig),
   NewProjectConfigCommon (NewProjectConfigCommon),
+  ProjectName,
   )
 import qualified Hix.Data.Options
 import Hix.Data.Options (
@@ -263,15 +264,19 @@ initCommonParser = do
   author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
   pure NewProjectConfigCommon {..}
 
+projectNameParser :: Parser ProjectName
+projectNameParser = strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
+
 initParser :: Parser InitOptions
 initParser = do
-  name <- strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
+  name <- projectNameParser
   config <- initCommonParser
   pure InitOptions {config = InitProjectConfig {..}}
 
 newParser :: Path Abs Dir -> Parser NewOptions
 newParser cwd = do
-  directory <- argument (absDirOrCwdOption cwd) (metavar "DIR" <> help "Directory to create for the project, last component used as project name")
+  directory <- argument (absDirOrCwdOption cwd) (metavar "DIR" <> help "Directory to create for the project, last component used as project name default")
+  name <- optional projectNameParser
   printDirectory <- switch (long "print-dir" <> help "Print the created directory to stdout")
   config <- initCommonParser
   pure $ NewOptions {config = NewProjectConfig {..}}

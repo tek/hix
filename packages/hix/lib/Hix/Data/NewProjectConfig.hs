@@ -43,6 +43,7 @@ data InitProjectConfig =
 data NewProjectConfig =
   NewProjectConfig {
     directory :: Path Abs Dir,
+    name :: Maybe ProjectName,
     printDirectory :: Bool,
     config :: NewProjectConfigCommon
   }

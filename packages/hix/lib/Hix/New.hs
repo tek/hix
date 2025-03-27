@@ -191,10 +191,13 @@ initProject conf = traverse_ createFile =<< newProjectFiles conf
 
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
-  let name = Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ conf.directory
+  let name =
+        fromMaybe
+          (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ conf.directory)
+          conf.name
   when conf.printDirectory $ Console.out (pathText conf.directory)
   local (\res -> res { cwd = conf.directory }) $
-    initProject $ InitProjectConfig {name = ProjectName name, config = conf.config}
+    initProject $ InitProjectConfig {name = name, config = conf.config}
 
 pathError :: Maybe a -> M a
 pathError = noteEnv "Can't convert project name to file path"

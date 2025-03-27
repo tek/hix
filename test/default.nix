@@ -50,6 +50,7 @@ let
     testsNamed [
       "bootstrap"
       "new"
+      "new-with-name"
       "init"
       "init-static"
       "init-static-github"
