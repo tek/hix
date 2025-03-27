@@ -264,6 +264,10 @@ in {
 
       new-nocache = create-nocache "new" ''
       dir=$($exe new --hix-url '${config.internal.hixUrl}' --print-dir "$@")
+      echo "$dir"
+      if echo "$@" | grep -qE "(( |^)-h( |$)|( |^)--help( |$))"; then
+        exit 0
+      fi
       cd "$dir"
       '';
 
