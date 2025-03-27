@@ -11,6 +11,7 @@ import System.Process.Typed (ProcessConfig, proc, readProcess, setWorkingDir)
 import Hix.Data.Monad (M)
 import qualified Hix.Log as Log
 import Hix.Monad (eitherFatal)
+import qualified Hix.Color as Color
 
 outLines :: ([ByteString] -> a) -> ByteString -> a
 outLines f bs = f (ByteString.lines bs)
@@ -24,8 +25,8 @@ runFlakeFor ::
   [Text] ->
   (ProcessConfig () () () -> ProcessConfig stdin stdout stderr) ->
   M a
-runFlakeFor processOutput processError desc root args confProc = do
-  Log.debug [exon|Running flake: #{unwords args}|]
+runFlakeFor processOutput processError desc cwd args confProc = do
+  Log.debug [exon|Running flake: #{Color.shellCommand (unwords args)}|]
   readProcess conf >>= \case
     (ExitSuccess, stdout, _) ->
       eitherFatal (first decodeError (processOutput (toStrict stdout)))
@@ -34,7 +35,7 @@ runFlakeFor processOutput processError desc root args confProc = do
   where
     conf =
       confProc $
-      setWorkingDir (toFilePath root) $
+      setWorkingDir (toFilePath cwd) $
       proc "nix" (toString <$> args)
 
     decodeError msg = [exon|#{desc} produced invalid output: #{msg}|]
@@ -79,3 +80,23 @@ runFlakeRaw ::
   M ByteString
 runFlakeRaw =
   runFlakeFor Right flakeFailure
+
+runFlakeSimple ::
+  Text ->
+  Path Abs Dir ->
+  [Text] ->
+  M ()
+runFlakeSimple desc cwd args =
+  runFlakeFor (const unit) (const unit) desc cwd (["--quiet", "--quiet", "--quiet"] ++ args) id
+
+runFlakeLock :: Path Abs Dir -> M ()
+runFlakeLock cwd =
+  runFlakeSimple "create lock file" cwd ["flake", "lock"]
+
+runFlakeGen :: Path Abs Dir -> M ()
+runFlakeGen cwd =
+  runFlakeSimple "generate Cabal and overrides" cwd ["run", ".#gen"]
+
+runFlakeGenCabal :: Path Abs Dir -> M ()
+runFlakeGenCabal cwd =
+  runFlakeSimple "generate Cabal" cwd ["run", ".#gen-cabal-quiet"]
