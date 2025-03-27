@@ -27,13 +27,7 @@ nix run 'github:tek/hix?ref=0.8.0#bootstrap'
 You can create a new project in the current directory:
 
 ```
-nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#init' -- --name 'project-name' --author 'Your Name'
-```
-
-Or in a new directory
-
-```
-nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#new' -- 'project-name' --author 'Your Name' --directory
+nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#new' -- --name 'project-name' --author 'Your Name'
 ```
 
 The manual process consists of first adding Hix to your Haskell project flake by specifying the input:

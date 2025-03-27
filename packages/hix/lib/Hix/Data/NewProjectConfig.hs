@@ -1,5 +1,7 @@
 module Hix.Data.NewProjectConfig where
 
+import Path (Abs, Dir, Path)
+
 newtype ProjectName =
   ProjectName { unProjectName :: Text }
   deriving stock (Eq, Show, Generic)
@@ -40,7 +42,7 @@ data InitProjectConfig =
 
 data NewProjectConfig =
   NewProjectConfig {
-    directory :: ProjectDirectory,
+    directory :: Path Abs Dir,
     printDirectory :: Bool,
     config :: NewProjectConfigCommon
   }

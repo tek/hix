@@ -2,21 +2,18 @@ module Hix.New where
 
 import Exon (exon)
 import Path (
-  SomeBase (Abs, Rel),
   dirname,
   fromRelDir,
   parseRelDir,
   parseRelFile,
-  parseSomeDir,
   reldir,
   relfile,
   (</>),
-  prjSomeBase
   )
 import qualified Data.Text as Text
-import qualified Data.Text.IO as Text
 import Text.Casing (pascal)
 
+import qualified Hix.Console as Console
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   Author,
@@ -28,8 +25,7 @@ import Hix.Data.NewProjectConfig (
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Monad (M, noteEnv, local)
-import Hix.Data.Monad (M(M), AppResources (AppResources, cwd))
-import Control.Monad.Trans.Reader (ask)
+import Hix.Data.Monad (AppResources (cwd))
 import Hix.Error (pathText)
 
 license :: Author -> Text
@@ -195,14 +191,9 @@ initProject conf = traverse_ createFile =<< newProjectFiles conf
 
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
-  directory <- pathError (parseSomeDir (toString conf.directory.unProjectDirectory))
-  let name = prjSomeBase (Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname) directory
-  AppResources { cwd } <- M ask
-  let newCwd = case directory of
-        Abs p -> p
-        Rel p -> cwd </> p
-  when conf.printDirectory $ liftIO (Text.putStrLn (pathText newCwd))
-  local (\res -> res { cwd = newCwd }) $
+  let name = Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ conf.directory
+  when conf.printDirectory $ Console.out (pathText conf.directory)
+  local (\res -> res { cwd = conf.directory }) $
     initProject $ InitProjectConfig {name = ProjectName name, config = conf.config}
 
 pathError :: Maybe a -> M a

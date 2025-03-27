@@ -6,6 +6,7 @@ import Options.Applicative (
   Mod,
   Parser,
   ReadM,
+  argument,
   auto,
   bashCompleter,
   command,
@@ -90,6 +91,7 @@ import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import Hix.Optparse (
   absDirOption,
   absFileOption,
+  absDirOrCwdOption,
   absFileOrCwdOption,
   buildHandlersOption,
   hackageRepoFieldOption,
@@ -267,10 +269,10 @@ initParser = do
   config <- initCommonParser
   pure InitOptions {config = InitProjectConfig {..}}
 
-newParser :: Parser NewOptions
-newParser = do
-  directory <- strArgument (metavar "DIR" <> help "Directory to create for the project")
-  printDirectory <- switch (long "print-dir" <> help "Print the created directory")
+newParser :: Path Abs Dir -> Parser NewOptions
+newParser cwd = do
+  directory <- argument (absDirOrCwdOption cwd) (metavar "DIR" <> help "Directory to create for the project, last component used as project name")
+  printDirectory <- switch (long "print-dir" <> help "Print the created directory to stdout")
   config <- initCommonParser
   pure $ NewOptions {config = NewProjectConfig {..}}
 
@@ -422,7 +424,7 @@ commands cwd =
   <>
   command "init" (Init <$> info initParser (progDesc "Create a new Hix project in the current directory"))
   <>
-  command "new" (New <$> info newParser (progDesc "Create a new Hix project in the specified directory"))
+  command "new" (New <$> info (newParser cwd) (progDesc "Create a new Hix project in the specified directory"))
   <>
   command "bootstrap" (Bootstrap <$> info bootstrapParser (progDesc bootstrapDesc))
   <>

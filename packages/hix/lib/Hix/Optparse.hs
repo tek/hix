@@ -17,6 +17,7 @@ import Path (
   parseAbsFile,
   parseRelDir,
   parseRelFile,
+  parseSomeDir,
   parseSomeFile,
   toFilePath,
   (</>),
@@ -57,6 +58,10 @@ absFileOption = pathOption "absolute file" parseAbsFile
 -- | An absolute file path option for @optparse-applicative@.
 absFileOrCwdOption :: Path Abs Dir -> ReadM (Path Abs File)
 absFileOrCwdOption = absPathOrCwdOption "absolute or relative file" parseSomeFile
+
+-- | An absolute directory path option for @optparse-applicative@
+absDirOrCwdOption :: Path Abs Dir -> ReadM (Path Abs Dir)
+absDirOrCwdOption = absPathOrCwdOption "absolute or relative directory" parseSomeDir
 
 -- | A relative file path option for @optparse-applicative@.
 relFileOption :: ReadM (Path Rel File)
