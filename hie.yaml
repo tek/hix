@@ -1,0 +1,9 @@
+cradle:
+  multi:
+  - path: "./"
+    config: { cradle: { none: } }
+  - path: "./packages"
+    config:
+      cradle:
+        cabal:
+          cabalProject: "./ops/hls.cabal.project"
