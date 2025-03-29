@@ -36,12 +36,17 @@
       microlens = {
         version = "0.4.0.1";
         hash = "0fib31m9fbj9a3kn1vqnq52glipc2fzxsjg6kj62ycx09wbdrrrb";
+        repo = "hackage.haskell.org";
       };
       semigroups = {
         version = "0.19.1";
         hash = "0ng4j78di5p2yqx3m4bnfcz9cplp5px7d95374w2qxi20spjabpi";
+        repo = "hackage.haskell.org";
       };
     };
+  };
+  solver = {
+    lower = {};
   };
   resolving = false;
 }

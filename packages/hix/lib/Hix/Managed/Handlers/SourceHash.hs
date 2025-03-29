@@ -8,11 +8,11 @@ import Hix.Pretty (showP)
 
 data SourceHashHandlers =
   SourceHashHandlers {
-    fetchHash :: PackageId -> M (SourceHash, Maybe HackageName)
+    fetchHash :: PackageId -> M (Either Text (SourceHash, Maybe HackageName))
   }
 
 handlersNull :: SourceHashHandlers
 handlersNull =
   SourceHashHandlers {
-    fetchHash = \ package -> pure (SourceHash (showP package), Nothing)
+    fetchHash = \ package -> pure (Right (SourceHash (showP package), Nothing))
   }

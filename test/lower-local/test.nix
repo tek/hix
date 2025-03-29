@@ -1,5 +1,6 @@
 {
   git = true;
+  genCabal = true;
 
   source = ''
   file_exact ${./state-init.nix} 'ops/managed.nix'

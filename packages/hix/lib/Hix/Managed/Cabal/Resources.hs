@@ -11,6 +11,7 @@ import Distribution.Verbosity (Verbosity, lessVerbose, silent, verbose)
 
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M, appRes)
+import Hix.Data.PackageName (LocalPackage)
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Data.Config (
   CabalConfig (..),
@@ -24,8 +25,7 @@ import qualified Hix.Managed.Cabal.Init
 import Hix.Managed.Cabal.Init (initialize)
 import Hix.Managed.Cabal.Mock (mockSolveResources)
 import qualified Hix.Managed.Cabal.Mock.SourcePackage as SourcePackage
-import Hix.Managed.Data.ManagedPackage (ManagedPackage)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages (..))
 import Hix.Monad (tryIOM)
 
 #if MIN_VERSION_Cabal(3,14,0)
@@ -45,40 +45,42 @@ packageDbs :: PackageDBStack
 #endif
 packageDbs = [GlobalPackageDB]
 
--- | This adds the 'ManagedPackage's to the source package DB, which is the set of available package IDs.
+-- | This adds 'ManagedPackage's to the source package DB (the set of available package IDs) if there is no available
+-- candidate in Cabal's snapshots for a given local package.
+-- This may happen when the package hasn't been published to Hackage yet.
+--
 -- This means that the solver will find our local packages (for targets that depend on packages in other envs) like it
--- finds Hackage packages, and therefore local deps will be included in the plan.
+-- finds Hackage packages, and therefore non-target local deps will be included in the plan.
 --
 -- Because we don't want local packages in the plan (as they are not mutable, but static in the Nix build), it would be
 -- tempting to add 'ManagedPackage's to the installed package index instead, which would exclude them from the plan's
 -- overrides.
--- However, their metadata must include concrete unit IDs for their dependencies with fixed versions, which would
--- require us to choose versions for them and might interfere with solving.
---
--- Maybe the basic installed package index could be queried to determine the dep versions.
--- Not sure this would be better than just filtering the plan.
-resources ::
-  Packages ManagedPackage ->
+-- However, the metadata of installed packages must include concrete unit IDs for their dependencies with fixed
+-- versions, which would require us to choose versions for them and might interfere with solving.
+solveResources ::
+  ProjectPackages ->
   SolveConfig ->
-  M SolveResources
-resources packages conf = do
+  M (SolveResources, Set LocalPackage)
+solveResources packages conf = do
   flags <- initialize conf
   Log.debug "Acquiring Cabal resources."
   tryIOM $ withRepoContext conf.verbosity flags.global \ repoContext -> do
     (compiler, platform, progdb) <- configCompilerAux' flags.main.configFlags
     pkgConfigDb <- readPkgConfigDb conf.verbosity progdb
     installedPkgIndex <- getInstalledPackages conf.verbosity compiler packageDbs progdb
-    sourcePkgDb <- getSourcePackages conf.verbosity repoContext
-    pure SolveResources {
-      compiler = compilerInfo compiler,
-      installedPkgIndex = installedPkgIndex,
-      sourcePkgDb = SourcePackage.dbWithManaged packages sourcePkgDb,
-      solverParams = id,
+    remoteSourcePkgDb <- getSourcePackages conf.verbosity repoContext
+    let
+      (sourcePkgDb, localUnavailable) = SourcePackage.dbWithManaged (coerce packages) remoteSourcePkgDb
+      resources = SolveResources {
+        compiler = compilerInfo compiler,
+        installedPkgIndex = installedPkgIndex,
+        solverParams = id,
 #if MIN_VERSION_cabal_install_solver(3,14,0)
-      pkgConfigDb = fromMaybe (PkgConfigDb []) pkgConfigDb,
+        pkgConfigDb = fromMaybe (PkgConfigDb []) pkgConfigDb,
 #endif
-      ..
-    }
+        ..
+      }
+    pure (resources, localUnavailable)
 
 cabalVerbosity :: M Verbosity
 cabalVerbosity =
@@ -91,13 +93,13 @@ cabalVerbosity =
 --
 -- just add the managed packages to the result.
 acquire ::
-  Packages ManagedPackage ->
+  ProjectPackages ->
   CabalConfig ->
   GhcDb ->
-  M SolveResources
+  M (SolveResources, Set LocalPackage)
 acquire packages cabal = \case
   GhcDbSystem ghc -> do
     verbosity <- cabalVerbosity
-    resources packages SolveConfig {hackageRepos = allHackages cabal, verbosity, ghc, allowBoot = False, cabal}
+    solveResources packages SolveConfig {hackageRepos = allHackages cabal, verbosity, ghc, allowBoot = False, cabal}
   GhcDbSynthetic db ->
-    pure (mockSolveResources packages db)
+    pure (mockSolveResources (coerce packages) db)

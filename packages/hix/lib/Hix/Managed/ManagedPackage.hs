@@ -8,14 +8,14 @@ import Hix.Data.Bounds (Ranges)
 import Hix.Data.Dep (Dep (..))
 import Hix.Data.PackageName (LocalPackage, PackageName)
 import qualified Hix.Managed.Data.ManagedPackage
-import Hix.Managed.Data.ManagedPackage (ManagedPackage)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage, ProjectPackages)
 import qualified Hix.Managed.Data.Mutable as Mutable
 import Hix.Managed.Data.Mutable (MutableRanges)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.Targets (Targets, sortTargets)
 
 forTargets ::
-  Packages ManagedPackage ->
+  ProjectPackages ->
   [LocalPackage] ->
   (Targets, MutableRanges)
 forTargets packages targetNames =

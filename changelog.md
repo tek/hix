@@ -14,6 +14,7 @@
 * Add `output.expose.static` to control whether packages outputs include `musl`-linked executables.
 * Remove `nodoc` from the OC `force`, add `force'` as an alias of the old behavior.
 * Add OC `modify` as a less unwieldy alias of `transformDrv`.
+* Automatically compute overrides for the solver package set when managing deps.
 
 # 0.8.0
 

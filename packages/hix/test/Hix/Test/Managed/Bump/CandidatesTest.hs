@@ -1,7 +1,7 @@
 module Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump) where
 
 import Distribution.Version (Version)
-import Hedgehog (evalEither, (===))
+import Hedgehog ((===))
 
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.VersionBounds (VersionBounds)
@@ -15,7 +15,8 @@ import qualified Hix.Managed.Handlers.AvailableVersions as AvailableVersions
 import Hix.Managed.Handlers.Build (BuildHandlers (..), handlersNull)
 import Hix.Managed.QueryDep (simpleQueryDep)
 import Hix.Monad (M, clientError)
-import Hix.Test.Utils (UnitTest, runMTest')
+import Hix.Test.Run (runMTestDir)
+import Hix.Test.Utils (UnitTest, toTestT)
 
 deps :: [(MutableDep, VersionBounds)]
 deps =
@@ -101,8 +102,8 @@ target =
 
 test_candidatesBump :: UnitTest
 test_candidatesBump = do
-  mutations <- evalEither =<< liftIO do
-    runMTest' def do
+  mutations <- toTestT do
+    runMTestDir def do
       catMaybes <$> traverse (candidatesBump handlersTest) query
   sortOn (.package) target === sortOn (.package) (toList mutations)
   where

@@ -8,8 +8,7 @@ import Distribution.Compat.Lens ((.~))
 import Distribution.Version (mkVersion)
 import Exon (exon)
 import Hedgehog ((===))
-import Path (Abs, Dir, File, Path, Rel, reldir, relfile, (</>))
-import System.Environment (lookupEnv)
+import Path (Abs, Dir, Path, reldir, relfile, (</>))
 
 import Hix.Class.Map (nGen, nMap)
 import Hix.Data.Dep (Dep (..))
@@ -21,7 +20,7 @@ import Hix.Data.VersionBounds (unsafeVersionBoundsFromRange)
 import Hix.Error (pathText)
 import Hix.Http (httpManager)
 import Hix.Integration.Hackage (withHackage)
-import Hix.Integration.Utils (UnitTest, addFile, runMTest)
+import Hix.Integration.Utils (UnitTest, add, addP, eqLines, libHs, local1, runMTest, withHixDir)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
@@ -36,12 +35,12 @@ import Hix.Managed.Data.EnvConfig (EnvConfig (..))
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.MaintContext (MaintContext (..), MaintPackage (..))
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (..))
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (..), ProjectPackages)
 import Hix.Managed.Data.Mutable (unsafeMutableDep)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (..))
-import Hix.Managed.Flake (runFlakeFor)
+import Hix.Managed.Flake (runFlakeGen, runFlakeLock)
 import qualified Hix.Managed.Git as Git
 import Hix.Managed.Git (GitNative, runGitNativeHermetic)
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
@@ -142,17 +141,6 @@ initialStateFile =
 }
 |]
 
-local1 :: Path Rel Dir
-local1 = [reldir|packages/local1|]
-
-add :: GitNative -> Path Rel File -> Text -> M ()
-add git path content = do
-  addFile git.repo path content
-  git.cmd_ ["add", pathText path]
-
-addP :: GitNative -> Path Rel File -> Text -> M ()
-addP git path = add git (local1 </> path)
-
 setupProject :: Text -> GitNative -> M (Path Abs Dir)
 setupProject hixRoot git = do
   git.cmd_ ["init"]
@@ -161,24 +149,20 @@ setupProject hixRoot git = do
   git.cmd_ ["commit", "-m", "1"]
   git.cmd_ ["tag", "--no-sign", "0.1.0"]
   addP git [relfile|lib/Lib.hs|] libHs
-  runFlakeFor (const unit) (const unit) "create lock file" git.repo ["--quiet", "--quiet", "--quiet", "flake", "lock"] id
+  runFlakeLock git.repo
   git.cmd_ ["add", "flake.lock"]
-  runFlakeFor (const unit) (const unit) "generate Cabal" git.repo ["run", ".#gen"] id
+  runFlakeGen git.repo
   git.cmd_ ["add", pathText (local1 </> [relfile|local1.cabal|])]
   git.cmd_ ["commit", "-m", "2"]
   git.cmd_ ["tag", "--no-sign", "0.2.0"]
   pure (git.repo </> local1)
 
-libHs :: Text
-libHs =
-  [exon|module Lib where|]
-
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   [("local1", ManagedPackage {name = "local1", version = mkVersion [0, 2, 0], deps = initialDeps})]
 
 envConfigs :: Envs EnvConfig
-envConfigs = [("latest", EnvConfig {targets = ["local1"], ghc = GhcDbSystem Nothing})]
+envConfigs = [("latest", EnvConfig {targets = ["local1"], ghc = Just (GhcDbSystem Nothing)})]
 
 envTargets :: Envs [LocalPackage]
 envTargets = [("latest", ["local1"])]
@@ -346,9 +330,9 @@ library
         semigroups >=0.19 && <0.21
 |]
 
-targetCommit :: [Text]
+targetCommit :: Text
 targetCommit =
-  Text.lines [exon|
+  [exon|
     Bump base, extra, semigroups
     Maintenance for 'local1'
     New versions:
@@ -357,10 +341,10 @@ targetCommit =
     * semigroups-0.20 [>=0.19 && <0.21]
 
 diff --git a/ops/managed.nix b/ops/managed.nix
-index a4cb674..29b2934 100644
+index a4cb674..0e77542 100644
 --- a/ops/managed.nix
 +++ b/ops/managed.nix
-@@ -3,33 +3,35 @@
+@@ -3,34 +3,39 @@
      local1 = {
        base = {
          lower = null;
@@ -405,11 +389,15 @@ index a4cb674..29b2934 100644
 +      extra = {
 +        version = "1.8";
 +        hash = "0cnk9ncn0k7fv24g0v3rhqd3z9zcz9cgz0rf59vs6v9kappbidmx";
-+        server = "hackage.haskell.org";
++        repo = "hackage.haskell.org";
 +      };
      };
    };
++  solver = {
++    latest = {};
++  };
    resolving = false;
+ }
 diff --git a/packages/local1/local1.cabal b/packages/local1/local1.cabal
 index bbfba8c..76b20d4 100644
 --- a/packages/local1/local1.cabal
@@ -427,26 +415,24 @@ index bbfba8c..76b20d4 100644
 
 test_releaseMaintenance :: UnitTest
 test_releaseMaintenance =
-  liftIO (lookupEnv "hix_dir") >>= \case
-    Nothing -> unit
-    Just hixRoot -> do
-      (maintResults, revisedCabalContents, commitText) <- runMTest True do
-        withTempRoot "test-maint" \ root ->
-          withTempDir "hackage" \ tmp ->
-            withHackage tmp \ port -> do
-              handlers <- maintHandlers port
-              packageDir <- runGitNativeHermetic root "test: project setup" (setupProject (toText hixRoot))
-              let localHackage = remoteRepo (testRepo port)
-              appContextDebug "publishing test package" do
-                flags <- Cabal.solveFlags [localHackage] def
-                targz <- sourceDistribution packageDir initialPackage
-                verbosity <- cabalVerbosity
-                publishPackage UploadConfig {verbosity, user = "test", password = "test"} flags targz
-              maintResults <- releaseMaintenance handlers maintConfig maintContext
-              revisedCabalContents <- revisionCabalFile (NonEmpty.head handlers.publishHackages) initialPackage 1
-              commitText <- runGitNativeHermetic root "test: get commit message" \ git ->
-                git.cmd ["show", "release/local1/0.2.0"]
-              pure (maintResults, revisedCabalContents, commitText)
-      targetResults === nMap fixTime maintResults
-      targetCabal === revisedCabalContents
-      targetCommit === filter ("    " /=) (drop 3 commitText)
+  withHixDir \ hixRoot -> do
+    (maintResults, revisedCabalContents, commitText) <- runMTest False do
+      withTempRoot "test-maint" \ root ->
+        withTempDir "hackage" \ tmp ->
+          withHackage tmp \ port -> do
+            handlers <- maintHandlers port
+            packageDir <- runGitNativeHermetic root "test: project setup" (setupProject (toText hixRoot))
+            let localHackage = remoteRepo (testRepo port)
+            appContextDebug "publishing test package" do
+              flags <- Cabal.solveFlags [localHackage] def
+              targz <- sourceDistribution packageDir initialPackage
+              verbosity <- cabalVerbosity
+              publishPackage UploadConfig {verbosity, user = "test", password = "test"} flags targz
+            maintResults <- releaseMaintenance handlers maintConfig maintContext
+            revisedCabalContents <- revisionCabalFile (NonEmpty.head handlers.publishHackages) initialPackage 1
+            commitText <- runGitNativeHermetic root "test: get commit message" \ git ->
+              git.cmd ["show", "release/local1/0.2.0"]
+            pure (maintResults, revisedCabalContents, commitText)
+    targetResults === nMap fixTime maintResults
+    targetCabal === revisedCabalContents
+    eqLines targetCommit (Text.unlines (filter ("    " /=) (drop 3 commitText)))

@@ -1,14 +1,16 @@
 module Hix.Data.PackageId where
 
+import Data.Aeson (FromJSON (..))
 import Distribution.Package (PackageIdentifier (PackageIdentifier))
+import Distribution.Parsec (Parsec (..))
 import Distribution.Pretty (Pretty (pretty))
 import Distribution.Version (Version)
 import Exon (exon)
 
+import Hix.Data.Json (jsonParsec)
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName (..))
 import Hix.Pretty (prettyText, showP)
-import Distribution.Parsec ( Parsec(..) )
 
 data PackageId =
   PackageId {
@@ -34,3 +36,6 @@ fromCabal (PackageIdentifier (PackageName.fromCabal -> name) version) =
 
 instance Parsec PackageId where
   parsec = fromCabal <$> parsec
+
+instance FromJSON PackageId where
+  parseJSON = fmap jsonParsec . parseJSON
