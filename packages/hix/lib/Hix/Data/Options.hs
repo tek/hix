@@ -9,7 +9,7 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions)
 import Hix.Data.Json (JsonConfig)
-import Hix.Data.NewProjectConfig (NewProjectConfig)
+import Hix.Data.NewProjectConfig (InitProjectConfig, NewProjectConfig)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
@@ -103,6 +103,12 @@ data GhcidOptions =
     extra :: Maybe ExtraGhcidOptions
   }
   deriving stock (Show, Generic)
+
+data InitOptions =
+  InitOptions {
+    config :: InitProjectConfig
+  }
+  deriving stock (Eq, Show, Generic)
 
 data NewOptions =
   NewOptions {
@@ -227,6 +233,8 @@ data Command =
   GhcidCmd GhcidOptions
   |
   GhciCmd GhciOptions
+  |
+  Init InitOptions
   |
   New NewOptions
   |

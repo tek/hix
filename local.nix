@@ -241,22 +241,39 @@ in {
 
       cli = util.app "${build.packages.min.hix.package}/bin/hix";
 
+      create-nocache = name: pre: let
+        prog = util.bootstrapWithDynamicCli "hix-${name}-nocache" pre ''
+        nix run .#gen-cabal-quiet
+        '';
+      in util.app prog;
+
+      create = name: let
+        prog = util.script "hix-${name}" ''${util.nixC} run ${inputs.self}#${name}-nocache -- "$@"'';
+      in util.app prog;
+
     in tests.apps // {
 
       inherit cli;
       default = cli;
 
-      new-nocache = let
-        prog = util.bootstrapWithDynamicCli "hix-new-nocache" ''
-        $exe new --hix-url '${config.internal.hixUrl}' "$@"
-        '' ''
-        nix run .#gen-cabal-quiet
-        '';
-      in util.app prog;
+      init-nocache = create-nocache "init" ''
+      $exe init --hix-url '${config.internal.hixUrl}' "$@"
+      '';
 
-      new = let
-        prog = util.script "hix-new" ''${util.nixC} run ${inputs.self}#new-nocache -- "$@"'';
-      in util.app prog;
+      init = create "init";
+
+      new-nocache = create-nocache "new" ''
+      dir=$($exe new --hix-url '${config.internal.hixUrl}' --print-dir "$@")
+      if [[ -d "$dir" ]]
+      then
+        cd "$dir"
+      else
+        echo "$dir"
+        exit 0
+      fi
+      '';
+
+      new = create "new";
 
       bootstrap-nocache = let
         prog = util.bootstrapWithDynamicCli "hix-bootstrap-nocache" ''

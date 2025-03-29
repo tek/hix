@@ -243,10 +243,16 @@ in {
 
   Rather than writing the boilerplate yourself, the Hix CLI application can generate it for you.
 
-  The CLI command `new` will create a project skeleton with an executable and test suite in the current directory:
+  The CLI command `init` will create a project skeleton with an executable and test suite in the current directory:
 
   ```
-  nix run '${hixUrl}#new' -- --name 'project-name' --author 'Your Name'
+  nix run '${hixUrl}#init' -- --name 'project-name' --author 'Your Name'
+  ```
+
+  There is also a `new` version to create a directory for your project:
+
+  ```
+  nix run '${hixUrl}#new' -- 'project-name' --author 'Your Name'
   ```
 
   If you have an existing project with Cabal files in it, the `bootstrap` command will create a flake that configures

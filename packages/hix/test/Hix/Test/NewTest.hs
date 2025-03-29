@@ -5,15 +5,26 @@ import Hedgehog (evalEither, (===))
 import Path (absdir, relfile)
 
 import qualified Hix.Data.NewProjectConfig
-import Hix.Data.NewProjectConfig (HixUrl, NewProjectConfig (NewProjectConfig))
+import Hix.Data.NewProjectConfig (
+  HixUrl,
+  InitProjectConfig (InitProjectConfig),
+  NewProjectConfigCommon (NewProjectConfigCommon)
+  )
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile))
 import Hix.Monad (runM)
 import Hix.New (license, newProjectFiles)
 import Hix.Test.Utils (UnitTest)
 
-conf :: NewProjectConfig
+conf :: InitProjectConfig
 conf =
-  NewProjectConfig {name = "spider", packages = False, hixUrl = def, author = "Me"}
+  InitProjectConfig {
+      name = "spider",
+      config = NewProjectConfigCommon {
+          packages = False,
+          hixUrl = def,
+          author = "Me"
+          }
+      }
 
 flake :: Text
 flake =

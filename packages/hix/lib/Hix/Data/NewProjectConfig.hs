@@ -1,5 +1,7 @@
 module Hix.Data.NewProjectConfig where
 
+import Path (Abs, Dir, Path)
+
 newtype ProjectName =
   ProjectName { unProjectName :: Text }
   deriving stock (Eq, Show, Generic)
@@ -18,11 +20,31 @@ newtype Author =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord)
 
-data NewProjectConfig =
-  NewProjectConfig {
-    name :: ProjectName,
+newtype ProjectDirectory =
+  ProjectDirectory { unProjectDirectory :: Text }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString, Ord)
+
+data NewProjectConfigCommon =
+  NewProjectConfigCommon {
     packages :: Bool,
     hixUrl :: HixUrl,
     author :: Author
+  }
+  deriving stock (Eq, Show, Generic)
+
+data InitProjectConfig =
+  InitProjectConfig {
+    name :: ProjectName,
+    config :: NewProjectConfigCommon
+  }
+  deriving stock (Eq, Show, Generic)
+
+data NewProjectConfig =
+  NewProjectConfig {
+    directory :: Path Abs Dir,
+    name :: Maybe ProjectName,
+    printDirectory :: Bool,
+    config :: NewProjectConfigCommon
   }
   deriving stock (Eq, Show, Generic)
