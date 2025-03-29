@@ -114,7 +114,9 @@ runGitApi ::
   (api -> M a) ->
   M a
 runGitApi (GitApi run) repo ctx use =
-  run repo \ api -> appContextDebug [exon|operating on a git repo (#{ctx}) at '#{pathText repo}'|] (use api)
+  run repo \ api ->
+    appContextDebug [exon|operating on a git repo (#{ctx}) at #{Color.path (pathText repo)}|] do
+      use api
 
 gitCmdResult :: GitEnv -> [Text] -> M GitResult
 gitCmdResult GitEnv {backend, repo} args =

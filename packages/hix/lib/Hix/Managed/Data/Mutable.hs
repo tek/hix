@@ -56,7 +56,7 @@ import Hix.Data.VersionBounds (VersionBounds)
 import Hix.Managed.Data.Packages (Deps, Packages)
 import Hix.Managed.Data.Targets (Targets)
 import qualified Hix.Managed.Targets as Targets
-import Hix.Managed.Targets (overTargets, onlyTargets)
+import Hix.Managed.Targets (onlyTargets, overTargets)
 import Hix.Maybe (justIf)
 
 newtype MutableDep =

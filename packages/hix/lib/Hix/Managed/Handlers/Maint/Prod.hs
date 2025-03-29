@@ -16,7 +16,6 @@ import Hix.Managed.Data.BuildOutput (BuildOutput, DepChanges)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.ProjectContext (ProjectContext (..))
-import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
 import Hix.Managed.Flake (flakeFailure, runFlake, runFlakeFor)
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
@@ -52,7 +51,7 @@ bumpHandlers contexts options envName = do
   proto <- queryContext contexts ContextManaged
   project <- ProjectContextProto.validate options.project proto
   handlersProject <- Project.handlersProd options.stateFile
-  handlers <- Build.handlersProd handlersProject proto.envs options.project.build project.cabal
+  handlers <- Build.handlersProd handlersProject options.project.build project.cabal
   bumpProject <- projectWithEnv envName project
   pure (handlers, bumpProject)
 

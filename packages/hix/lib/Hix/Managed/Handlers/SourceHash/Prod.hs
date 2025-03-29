@@ -10,7 +10,7 @@ import Hix.Managed.Handlers.SourceHash (SourceHashHandlers (SourceHashHandlers))
 
 handlersProdWith ::
   MonadIO m =>
-  Map Text (SourceHash, Maybe HackageName) ->
+  Map Text (SourceHash, HackageName) ->
   NonEmpty HackageRepo ->
   m SourceHashHandlers
 handlersProdWith initial repos = do

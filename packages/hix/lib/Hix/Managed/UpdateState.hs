@@ -1,6 +1,7 @@
 module Hix.Managed.UpdateState where
 
 import Hix.Class.Map (nAdjust, nAmend, nInsert, nMapKeys)
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.Overrides (Overrides)
 import Hix.Managed.Data.Diff (BoundsChange)
 import qualified Hix.Managed.Data.EnvContext
@@ -39,34 +40,54 @@ projectStateWithEnv context new old =
   ProjectState {
     -- TODO clean up
     -- bounds = mutUpdateTargets context.targets applyBoundsChange new.bounds old.bounds,
-    bounds = overTargets context.targets (nAmend applyBoundsChange (nMapKeys depName new.bounds :: Deps BoundsChange)) old.bounds,
+    bounds = overTargets context.targets (nAmend applyBoundsChange depsBounds) old.bounds,
     versions = nAdjust context.env old.versions (nAmend applyVersionChange new.versions),
-    overrides = nInsert context.env new.overrides old.overrides,
     initial = nAdjust context.env old.initial (nAmend applyVersionChange new.initial),
+    overrides = nInsert context.env new.overrides old.overrides,
+    solver = nInsert context.env new.solver old.solver,
     resolving = old.resolving
   }
+  where
+    depsBounds = nMapKeys depName new.bounds :: Deps BoundsChange
 
 envStateForBuild ::
-  EnvContext ->
+  EnvName ->
   Overrides ->
   ProjectState
-envStateForBuild context overrides =
+envStateForBuild env overrides =
   ProjectState {
     bounds = mempty,
     versions = mempty,
-    overrides = [(context.env, overrides)],
     initial = [],
+    overrides = [(env, overrides)],
+    solver = [],
     resolving = True
   }
 
+envStateForSolver ::
+  EnvName ->
+  Overrides ->
+  ProjectState
+envStateForSolver env overrides =
+  ProjectState {
+    bounds = mempty,
+    versions = mempty,
+    initial = [],
+    overrides = [],
+    solver = [(env, overrides)],
+    resolving = True
+  }
+
+-- TODO can MutationState contain changes for @initial@?
 envStateWithMutations ::
   MutationState ->
   EnvState ->
   EnvState
-envStateWithMutations new EnvState {bounds, versions, initial} =
+envStateWithMutations new EnvState {bounds, versions, initial, solver} =
   EnvState {
     bounds = updateBoundsChanges new.bounds bounds,
     versions = updateVersionChanges new.versions versions,
+    initial = updateVersionChanges new.initial initial,
     overrides = new.overrides,
-    initial = updateVersionChanges new.initial initial
+    solver
   }

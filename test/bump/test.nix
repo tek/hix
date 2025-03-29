@@ -1,5 +1,5 @@
 let
-  args = "--root $PWD --handlers test --index-state 2024-01-01T00:00:00Z aeson extra path";
+  args = "--root $PWD --handlers test --hackage hackage.haskell.org:indexState:2024-01-01T00:00:00Z aeson extra path";
 in {
   git = true;
 

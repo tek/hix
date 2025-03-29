@@ -72,11 +72,15 @@ library
       Hix.Log
       Hix.Managed.App
       Hix.Managed.Build
+      Hix.Managed.Build.Adapt
       Hix.Managed.Build.Mutation
       Hix.Managed.Build.NixOutput
       Hix.Managed.Build.NixOutput.Analysis
+      Hix.Managed.Build.NixProcess
       Hix.Managed.Build.Single
       Hix.Managed.Build.Solve
+      Hix.Managed.Build.SolverPackages
+      Hix.Managed.Build.Target
       Hix.Managed.BuildOutput
       Hix.Managed.BuildOutput.CommitMsg
       Hix.Managed.BuildOutput.GithubActionsPr
@@ -236,6 +240,7 @@ library
       Hix.Prelude
       Hix.Preproc
       Hix.Pretty
+      Hix.Test.Run
       Hix.These
       Hix.Trace
       Hix.Version
@@ -385,7 +390,6 @@ test-suite hix-test
       Hix.Test.Managed.BuildOutputTest
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
-      Hix.Test.Managed.BumpNativeTest
       Hix.Test.Managed.DiffTest
       Hix.Test.Managed.HackageTest
       Hix.Test.Managed.LowerAuto.MutationOptimizeTest

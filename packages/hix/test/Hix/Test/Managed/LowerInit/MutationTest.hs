@@ -14,8 +14,7 @@ import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Cabal.Mock.SourcePackage (allDep, allDeps)
 import Hix.Managed.Data.Constraints (EnvConstraints)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
@@ -27,7 +26,7 @@ import Hix.Test.Hedgehog (eqLines, listEqTail, listEqZip)
 import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, nosortOptions, testParams)
 import Hix.Test.Utils (UnitTest)
 
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   managedPackages [
     (("local1", "1.0"), [
@@ -111,11 +110,12 @@ state =
         ("direct6", [1, 0, 1])
       ])
     ],
+    initial = [("lower-main", [("direct3", [1, 0, 1])])],
     overrides = [
       ("latest", [("direct2", "direct2-5.0")]),
       ("lower-main", [("direct3", "direct3-1.0.1")])
     ],
-    initial = [("lower-main", [("direct3", [1, 0, 1])])],
+    solver = [],
     resolving = False
   }
 
@@ -403,6 +403,10 @@ stateFileTarget =
         hash = "transitive3-1.0.1";
       };
     };
+  };
+  solver = {
+    lower-main = {};
+    lower-special = {};
   };
   resolving = false;
 }

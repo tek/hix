@@ -26,7 +26,8 @@ import Hix.Managed.Lower.Data.LowerMode (lowerOptimizeMode)
 import Hix.Managed.Lower.Optimize (lowerOptimizeUpdate)
 import Hix.Managed.QueryDep (simpleQueryDep)
 import Hix.Monad (M, clientError)
-import Hix.Test.Utils (UnitTest, runMTest')
+import Hix.Test.Run (runMTestDir)
+import Hix.Test.Utils (UnitTest)
 
 fetchVersions :: PackageName -> M [Version]
 fetchVersions = \case
@@ -75,7 +76,7 @@ test_candidatesOptimize :: UnitTest
 test_candidatesOptimize = do
   buildRef <- liftIO (newIORef [])
   let
-  result <- liftIO $ runMTest' def do
+  result <- liftIO $ runMTestDir def do
     majors <- candidatesOptimize availableVersions mempty dep
     for majors \ mut ->
       processMutationLower def lowerOptimizeMode lowerOptimizeUpdate initialState mut (build buildRef)

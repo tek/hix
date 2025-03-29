@@ -15,12 +15,13 @@ import Hix.Managed.Data.EnvContext (EnvDeps (EnvDeps))
 import Hix.Managed.Data.Mutable (unsafeMutableDep)
 import Hix.Pretty (prettyL, showP, showPL)
 import Hix.Test.Managed.UnsafeIsString ()
-import Hix.Test.Utils (UnitTest, logConfigDebug, runMTest')
+import Hix.Test.Run (logConfigDebug, runMTestDir)
+import Hix.Test.Utils (UnitTest)
 
 test_solve :: UnitTest
 test_solve =
   evalEither =<< liftIO do
-    runMTest' logConfigDebug do
+    runMTestDir logConfigDebug do
       res <- SolveResources.acquire mempty def (GhcDbSystem Nothing)
       mb_sip <- solveWithCabal' res state
       sorted <- sortDeps res id (nKeys constraints)

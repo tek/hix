@@ -48,14 +48,20 @@
       containers = {
         version = "0.8";
         hash = "06mmyljfj41hg5rzr9d2fb61gd2a11waicpk7dcy3hxrqvfgs8yc";
+        repo = "hackage.haskell.org";
       };
     };
     lower-local2 = {
       containers = {
         version = "0.8";
         hash = "06mmyljfj41hg5rzr9d2fb61gd2a11waicpk7dcy3hxrqvfgs8yc";
+        repo = "hackage.haskell.org";
       };
     };
+  };
+  solver = {
+    lower-local1 = {};
+    lower-local2 = {};
   };
   resolving = false;
 }

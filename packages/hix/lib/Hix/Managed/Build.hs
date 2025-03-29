@@ -67,10 +67,10 @@ logBuildInputs env description overrides = do
 
 logBuildResult :: Text -> BuildResult -> M ()
 logBuildResult description result =
-  Log.info [exon|Build with ##{description} #{describeResult result}#{describePackages result}|]
+  Log.info [exon|Build with ##{Color.package description} #{describeResult result}#{describePackages result}|]
   where
     describeResult = \case
-      BuildSuccess -> "succeeded"
+      BuildSuccess _ -> "succeeded"
       BuildFailure (TimeoutFailure _) -> "timed out"
       BuildFailure _ -> "failed"
 
@@ -82,7 +82,7 @@ logBuildResult description result =
     packageFragment pkgs =
       [exon| in #{names}|]
       where
-        names = Text.intercalate ", " (color colors.blue . showP . (.name) <$> pkgs)
+        names = Text.intercalate ", " (Color.package . (.name) <$> pkgs)
 
 updateMutationState ::
   (Version -> VersionBounds -> VersionBounds) ->
@@ -109,7 +109,7 @@ buildVersions ::
   M (Overrides, Set PackageId, BuildStatus)
 buildVersions builder context description allowRevisions versions overrideVersions = do
   logBuildInputs context.env description reinstallable
-  (result, (overrides, revisions)) <- builder.buildWithState allowRevisions versions reinstallable
+  (result, (overrides, revisions)) <- builder.buildTargets allowRevisions versions reinstallable
   logBuildResult description result
   pure (overrides, revisions, buildStatus result)
   where
@@ -171,11 +171,11 @@ validateMutation envBuilder context handlers stageState mutation = do
   logMutationResult mutation.package result
   pure (updateStageState stageState mutation result)
   where
-    processReinstallable
-      | isNonReinstallableDep mutation.package
-      = pure MutationKeep
-      | otherwise
-      = handlers.process stageState.ext mutation build
+    processReinstallable =
+      if isNonReinstallableDep mutation.package
+      then pure MutationKeep
+      else handlers.process stageState.ext mutation build
+
     build = buildMutation envBuilder context stageState.state stageState.revisions
 
 convergeMutations ::

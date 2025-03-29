@@ -16,6 +16,7 @@ data ProjectState =
     versions :: Envs MutableVersions,
     initial :: Envs MutableVersions,
     overrides :: Envs Overrides,
+    solver :: Envs Overrides,
     resolving :: Bool
   }
   deriving stock (Eq, Show, Generic)
@@ -26,7 +27,16 @@ instance Pretty ProjectState where
     hang "bounds:" 2 (pretty bounds) $+$
     hang "versions:" 2 (pretty versions) $+$
     hang "initial:" 2 (pretty initial) $+$
-    hang "overrides:" 2 (pretty overrides)
+    hang "overrides:" 2 (pretty overrides) $+$
+    hang "solver:" 2 (pretty solver)
 
 instance Default ProjectState where
-  def = ProjectState {bounds = mempty, versions = mempty, overrides = mempty, initial = mempty, resolving = False}
+  def =
+    ProjectState {
+      bounds = mempty,
+      versions = mempty,
+      initial = mempty,
+      overrides = mempty,
+      solver = mempty,
+      resolving = False
+    }

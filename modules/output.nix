@@ -162,7 +162,10 @@ in {
           ${util.internalScope} =
             lib.mapAttrs util.ensureLegacyApp basicApps
             //
-            { cli-context = outputs.cli-context; };
+            { cli-context = outputs.cli-context; }
+            //
+            outputs.envs.internal
+            ;
         };
 
         devShells = outputs.envs.shells // { default = outputs.envs.shells.dev; };

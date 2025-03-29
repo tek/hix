@@ -1,14 +1,16 @@
 module Hix.Managed.Cabal.Data.Packages where
 
+import Distribution.Pretty (Pretty (..))
 import GHC.Exts (IsList)
 
 import Hix.Data.PackageId (PackageId)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
+import Hix.Pretty (HPretty (..), field, prettyMap)
 
 newtype InstalledPackages =
   InstalledPackages [(PackageId, [PackageId])]
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsList, Semigroup, Monoid)
+  deriving newtype (IsList, Semigroup, Monoid, HPretty)
 
 -- | Mock data for package indexes for the solver.
 --
@@ -21,3 +23,10 @@ data GhcPackages =
     available :: SourcePackages
   }
   deriving stock (Eq, Show, Generic)
+
+instance Pretty GhcPackages where
+  pretty GhcPackages {..} =
+    prettyMap "Mock packages" [
+      field "installed" (hpretty installed),
+      field "available" (hpretty available)
+    ]

@@ -13,15 +13,12 @@ import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages)
 import Hix.Managed.Data.BuildConfig (BuildConfig, SpecialBuildHandlers (..))
-import Hix.Managed.Data.EnvConfig (EnvConfig)
-import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Mutation (FailedMutation)
 import Hix.Managed.Data.StageState (BuildResult)
 import qualified Hix.Managed.Handlers.AvailableVersions as AvailableVersions
 import qualified Hix.Managed.Handlers.AvailableVersions.Test as AvailableVersions
 import Hix.Managed.Handlers.Build (BuildHandlers (..), versionsBuilder)
-import Hix.Managed.Handlers.Build.Prod (handlersProd)
-import qualified Hix.Managed.Handlers.Cabal.Prod as CabalHandlers
+import Hix.Managed.Handlers.Build.Prod (handlersProd, initCabalProd)
 import Hix.Managed.Handlers.Cabal.Prod (testPackagesBump, testPackagesMaint)
 import Hix.Managed.Handlers.Project (ProjectHandlers (..))
 import qualified Hix.Managed.Handlers.Report.Test as ReportHandlers
@@ -43,31 +40,27 @@ handlersUnitTest ghcPackages builder = do
           stateFile,
           report
         },
-        cabal,
+        cabal = initCabalProd def,
         withBuilder = versionsBuilder SourceHashHandlers.handlersNull builder,
         versions = AvailableVersions.handlersTest ghcPackages.available
       }
   pure (handlers, stateFileRef, mutationsRef)
-  where
-    cabal = CabalHandlers.handlersProd def False
 
 handlersTest ::
   Map PackageName PackageId ->
   ProjectHandlers ->
-  Envs EnvConfig ->
   BuildConfig ->
   CabalConfig ->
   M BuildHandlers
-handlersTest packages project envsConf buildConf cabalConf = do
-  handlers <- handlersProd project envsConf buildConf cabalConf
+handlersTest packages project buildConf cabalConf = do
+  handlers <- handlersProd project buildConf cabalConf
   pure handlers {
-    cabal = CabalHandlers.handlersTest cabalConf False,
+    cabal = initCabalProd cabalConf,
     versions = AvailableVersions.handlersActionOne \ name -> pure ((.version) <$> packages !? name)
   }
 
 handlersBumpTest ::
   ProjectHandlers ->
-  Envs EnvConfig ->
   BuildConfig ->
   CabalConfig ->
   M BuildHandlers
@@ -77,7 +70,6 @@ handlersBumpTest =
 chooseHandlers ::
   Maybe SpecialBuildHandlers ->
   ProjectHandlers ->
-  Envs EnvConfig ->
   BuildConfig ->
   CabalConfig ->
   M BuildHandlers

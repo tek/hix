@@ -12,7 +12,7 @@ import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
 import qualified Hix.Data.PackageName as PackageName
-import Hix.Data.PackageName (PackageName)
+import Hix.Data.PackageName (LocalPackage, PackageName)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, GhcDb)
 import qualified Hix.Managed.Cabal.Data.SolveResources as SolveResources
 import Hix.Managed.Cabal.Data.SolveResources (SolveResources (SolveResources, solverParams))
@@ -21,8 +21,7 @@ import qualified Hix.Managed.Cabal.Resources as SolveResources
 import Hix.Managed.Cabal.Solve (solveWithCabal)
 import Hix.Managed.Cabal.Sort (sortMutations)
 import Hix.Managed.Cabal.Source (sourcePackage)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import Hix.Managed.Handlers.Cabal (CabalHandlers (..))
 import Hix.Zip (zipApplyL)
 
@@ -30,17 +29,18 @@ handlersWith ::
   (SolveResources -> SolveResources) ->
   CabalConfig ->
   Bool ->
-  Packages ManagedPackage ->
+  ProjectPackages ->
   GhcDb ->
-  M CabalHandlers
+  M (CabalHandlers, Set LocalPackage)
 handlersWith trans cabalConf oldest packages ghc = do
-  solveResources <- trans <$> SolveResources.acquire packages cabalConf ghc
-  pure CabalHandlers {
+  (solveResources, localUnavailable) <- first trans <$> SolveResources.acquire packages cabalConf ghc
+  let handlers = CabalHandlers {
     solveForVersion = solveWithCabal solveResources {solverParams},
     installedVersion = installedVersion solveResources.installedPkgIndex,
     sourcePackage = sourcePackage solveResources.sourcePkgDb,
     sortMutations = sortMutations solveResources
   }
+  pure (handlers, localUnavailable)
   where
     solverParams | oldest = setPreferenceDefault PreferAllOldest
                  | otherwise = id
@@ -48,9 +48,9 @@ handlersWith trans cabalConf oldest packages ghc = do
 handlersProd ::
   CabalConfig ->
   Bool ->
-  Packages ManagedPackage ->
+  ProjectPackages ->
   GhcDb ->
-  M CabalHandlers
+  M (CabalHandlers, Set LocalPackage)
 handlersProd =
   handlersWith id
 
@@ -94,8 +94,8 @@ testResourcesFor packages SolveResources {..} =
 handlersTest ::
   CabalConfig ->
   Bool ->
-  Packages ManagedPackage ->
+  ProjectPackages ->
   GhcDb ->
-  M CabalHandlers
+  M (CabalHandlers, Set LocalPackage)
 handlersTest =
   handlersWith (testResourcesFor testPackagesBump)
