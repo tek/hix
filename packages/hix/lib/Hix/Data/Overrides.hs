@@ -21,16 +21,25 @@ data Override =
     hash :: SourceHash,
     repo :: Maybe HackageName
   }
+  |
+  Jailbreak
+  |
+  Local
   deriving stock (Eq, Show, Generic)
 
 instance EncodeNix Override where
-  encodeNix Override {..} =
-    ExprAttrs (static <> foldMap (pure . assoc "repo") repo)
-    where
-      static = [assoc "version" version, assoc "hash" hash]
+  encodeNix = \case
+    Override {..} ->
+      ExprAttrs (static <> foldMap (pure . assoc "repo") repo)
+      where
+        static = [assoc "version" version, assoc "hash" hash]
 
-      assoc :: EncodeNix a => ExprKey -> a -> ExprAttr
-      assoc name a = ExprAttr {name, value = encodeNix a}
+        assoc :: EncodeNix a => ExprKey -> a -> ExprAttr
+        assoc name a = ExprAttr {name, value = encodeNix a}
+    Jailbreak ->
+      ExprAttrs [ExprAttr {name = "jailbreak", value = encodeNix True}]
+    Local ->
+      ExprAttrs [ExprAttr {name = "local", value = encodeNix True}]
 
 override :: Version -> SourceHash -> Override
 override version hash =
@@ -38,15 +47,30 @@ override version hash =
 
 instance FromJSON Override where
   parseJSON =
-    withObject "Override" \ o -> do
-      JsonParsec version <- o .: "version"
-      hash <- o .: "hash"
-      repo <- o .:? "repo"
-      pure Override {..}
+    withObject "Override" \ o ->
+      regular o <|> jailbreak o <|> local o
+    where
+      regular o = do
+        JsonParsec version <- o .: "version"
+        hash <- o .: "hash"
+        repo <- o .:? "repo"
+        pure Override {..}
+
+      jailbreak o = do
+        flag <- o .: "jailbreak"
+        guard flag
+        pure Jailbreak
+
+      local o = do
+        flag <- o .: "local"
+        guard flag
+        pure Local
 
 instance Pretty Override where
-  pretty Override {..} =
-    pretty version <+> brackets (pretty hash <> foldMap renderRepo repo)
+  pretty = \case
+    Override {..} -> pretty version <+> brackets (pretty hash <> foldMap renderRepo repo)
+    Jailbreak -> "jailbreak"
+    Local -> "local"
     where
       renderRepo (HackageName name) =
         hcat [text ",", hpretty name]

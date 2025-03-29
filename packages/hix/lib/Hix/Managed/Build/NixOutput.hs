@@ -17,6 +17,7 @@ import Distribution.Compat.CharParsing (
   lower,
   )
 import Distribution.Parsec (Parsec, eitherParsec, parsec)
+import Distribution.Pretty (Pretty (..))
 import Exon (exon)
 
 import Hix.Data.Json (jsonEither)
@@ -41,6 +42,9 @@ data PackageDerivation =
   }
   deriving stock (Eq, Show, Generic)
 
+instance Pretty PackageDerivation where
+  pretty PackageDerivation {package} = pretty package
+
 data BuildsState =
   BuildsState {
     id :: Integer,
@@ -54,20 +58,25 @@ data OutputState =
   OutputState {
     builds :: Maybe BuildsState,
     running :: Map Integer Derivation,
-    finished :: [PackageDerivation]
+    finished :: [PackageDerivation],
+    messages :: [Text]
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (Default)
 
 data OutputResult =
   OutputResult {
-    failedPackages :: Maybe (NonEmpty PackageDerivation)
+    failedPackages :: Maybe (NonEmpty PackageDerivation),
+    unknownMessages :: [Text]
   }
   deriving stock (Eq, Show, Generic)
 
 outputResult :: OutputState -> OutputResult
-outputResult OutputState {finished} =
-  OutputResult {failedPackages = nonEmpty (filter (not . (.success)) finished)}
+outputResult OutputState {finished, messages} =
+  OutputResult {
+    failedPackages = nonEmpty (filter (not . (.success)) finished),
+    unknownMessages = reverse messages
+  }
 
 runOutputState ::
   Monad m =>
@@ -87,7 +96,7 @@ data NixAction =
   |
   NixStartOther Integer
   |
-  NixMessage
+  NixMessage (Maybe Text)
   deriving stock (Eq, Show, Generic)
 
 instance FromJSON NixAction where
@@ -112,7 +121,9 @@ instance FromJSON NixAction where
         "stop" -> do
           i <- o .: "id"
           pure (NixStop i)
-        "msg" -> pure NixMessage
+        "msg" -> do
+          msg <- o .:? "msg"
+          pure (NixMessage msg)
         (act :: Text) -> fail [exon|Unknown action: #{toString act}|]
 
 parseError :: String -> StateT s M ()
@@ -187,10 +198,12 @@ updateBuilds _ s = s
 
 processResult :: Integer -> Int -> [Either Text Int] -> OutputState -> OutputState
 processResult aid rtype fields s
+  -- result type @Progress@
   | rtype == 105
   , Just BuildsState {id = buildsId} <- s.builds
   , aid == buildsId
   = updateBuilds fields s
+  -- result type @BuildLogLine@
   | rtype == 101
   , Left message : _ <- fields
   = s {running = Map.adjust (addLogMessage message) aid s.running}
@@ -201,7 +214,7 @@ processMessage ::
   ByteString ->
   NixAction ->
   StateT OutputState M ()
-processMessage _ = \case
+processMessage _raw = \case
   NixResult {aid, rtype, fields} ->
     modify' (processResult aid rtype fields)
 
@@ -221,11 +234,13 @@ processMessage _ = \case
 
   NixStartOther _ -> unit
 
-  NixMessage -> unit
+  NixMessage msg -> modify' \ s -> s {messages = maybe id (:) msg s.messages}
 
 outputParse :: ByteString -> StateT OutputState M ()
 outputParse outputLine
   | Just payload <- ByteString.stripPrefix "@nix " outputLine
-  = either parseError (processMessage payload) (Aeson.eitherDecodeStrict' payload)
+  = do
+    -- dbg (decodeUtf8 payload)
+    either parseError (processMessage payload) (Aeson.eitherDecodeStrict' payload)
   | otherwise
   = lift (Log.debug (decodeUtf8 outputLine))

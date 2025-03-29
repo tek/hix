@@ -31,7 +31,7 @@ import Hix.Error (pathText)
 
 license :: Author -> Text
 license author =
-  [exon|Copyright (c) 2023 ##{author}
+  [exon|Copyright (c) 2025 ##{author}
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
 following conditions are met:

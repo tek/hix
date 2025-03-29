@@ -1,6 +1,6 @@
 module Hix.Hackage.Hash where
 
-import Control.Monad.Extra (firstJustM, fromMaybeM)
+import Control.Monad.Extra (firstJustM)
 import Data.IORef (IORef, modifyIORef', readIORef)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
@@ -15,7 +15,7 @@ import Hix.Data.Version (SourceHash (SourceHash))
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName, HackageRepo (..))
 import qualified Hix.Managed.Cabal.HackageLocation as HackageLocation
-import Hix.Monad (M, appContext, noteFatal, tryIOM)
+import Hix.Monad (M, appContext, tryIOM)
 import Hix.Pretty (showP)
 
 fetchHashHackageRepo ::
@@ -38,25 +38,25 @@ fetchHashHackageRepo package HackageRepo {name, location} =
 fetchHashHackage ::
   NonEmpty HackageRepo ->
   PackageId ->
-  M (SourceHash, HackageName)
+  M (Either Text (SourceHash, HackageName))
 fetchHashHackage repos package =
   appContext [exon|fetching hash for #{Color.package package} from Hackage repos|] do
-    noteFatal notFound =<< firstJustM (fetchHashHackageRepo package) (toList repos)
+    maybeToRight notFound <$> firstJustM (fetchHashHackageRepo package) (toList repos)
   where
     notFound = [exon|No Hackage repo knows the package ID #{Color.package package}|]
 
 fetchHashHackageCached ::
-  IORef (Map Text (SourceHash, Maybe HackageName)) ->
+  IORef (Map Text (SourceHash, HackageName)) ->
   NonEmpty HackageRepo ->
   PackageId ->
-  M (SourceHash, Maybe HackageName)
+  M (Either Text (SourceHash, Maybe HackageName))
 fetchHashHackageCached cacheRef repos package =
   liftIO (readIORef cacheRef) >>= \ cache ->
-    fromMaybeM fetch (pure (cache !? cacheKey))
+    fmap (second Just) <$> maybe fetch (pure . Right) (cache !? cacheKey)
   where
     fetch = do
-      hash <- second Just <$> fetchHashHackage repos package
-      hash <$ addToCache hash
+      result <- fetchHashHackage repos package
+      result <$ traverse addToCache result
 
     addToCache hash = liftIO (modifyIORef' cacheRef (Map.insert cacheKey hash))
 

@@ -127,6 +127,6 @@ validateProjectState opts ranges envDeps proto = do
   bounds <- validateProjectBounds opts.readUpperBounds ranges proto.bounds
   versions <- validateProjectVersions "bound versions" depSets proto.versions
   initial <- validateProjectVersions "initial versions" depSets proto.initial
-  pure ProjectState {overrides = proto.overrides, resolving = False, ..}
+  pure ProjectState {overrides = proto.overrides, solver = proto.solver, resolving = False, ..}
   where
     depSets = envDepsForMerge envDeps

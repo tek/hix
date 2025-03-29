@@ -15,8 +15,8 @@ data MutationState =
   MutationState {
     bounds :: MutableBounds,
     versions :: MutableVersions,
-    overrides :: Overrides,
-    initial :: MutableVersions
+    initial :: MutableVersions,
+    overrides :: Overrides
   }
   deriving stock (Eq, Show, Generic)
   deriving (Semigroup, Monoid) via (Generically MutationState)
@@ -25,8 +25,8 @@ instance Pretty MutationState where
   pretty MutationState {..} =
     hang "bounds:" 2 (pretty bounds) $+$
     hang "versions:" 2 (pretty versions) $+$
-    hang "overrides:" 2 (pretty overrides) $+$
-    hang "initial:" 2 (pretty initial)
+    hang "initial:" 2 (pretty initial) $+$
+    hang "overrides:" 2 (pretty overrides)
 
 updateBoundsWith :: (Version -> VersionBounds -> VersionBounds) -> MutationState -> MutationState
 updateBoundsWith update MutationState {bounds, versions, ..} =

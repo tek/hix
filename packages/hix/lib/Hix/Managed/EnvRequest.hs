@@ -28,9 +28,9 @@ import qualified Hix.Managed.Data.ProjectState
 import Hix.Managed.Data.ProjectState (ProjectState)
 import Hix.Managed.Diff (initChanges, reifyBoundsChange)
 import qualified Hix.Managed.Handlers.Build
-import Hix.Managed.Handlers.Build (BuildHandlers, Builder, runBuilder)
+import Hix.Managed.Handlers.Build (BuildHandlers, Builder, EnvBuilderContext (..), runBuilder)
 import Hix.Managed.ManagedPackage (updateRanges)
-import Hix.Managed.Targets (onlyTargets, overTargets)
+import Hix.Managed.Targets (overTargets)
 import Hix.Managed.UpdateState (projectStateWithEnv)
 
 initialEnvState ::
@@ -52,6 +52,8 @@ initialEnvState context projectState =
     versions = initChanges (projectState.versions !! context.env)
 
     overrides = projectState.overrides !! context.env
+
+    solver = projectState.solver !! context.env
 
     initial = initChanges (projectState.initial !! context.env)
 
@@ -79,13 +81,16 @@ withEnvRequest ::
   Builder ->
   (EnvRequest -> M EnvResult) ->
   M (ProcessState, EnvResult)
-withEnvRequest build state context builder use = do
-  cabal <- build.cabal (onlyTargets context.targets state.packages) context.ghc
-  envResult <- runBuilder builder cabal context initialState \ envBuilder ->
+withEnvRequest build state context@env builder use = do
+  envResult <- runBuilder builder envBuilderContext \ envBuilder ->
     use EnvRequest {context, builder = envBuilder, state = initialState}
   let newState = updateProcessState context initialState envResult state
   Log.debug [exon|Finished '##{context.env :: EnvName}' with final state:|]
   Log.debugP (pretty newState)
   pure (newState, envResult)
   where
+    envBuilderContext = EnvBuilderContext {..}
+
+    initCabal = build.cabal state.packages
+
     initialState = initialEnvState context state.state

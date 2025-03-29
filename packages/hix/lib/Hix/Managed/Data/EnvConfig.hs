@@ -9,7 +9,7 @@ import Hix.Pretty (HPretty (hpretty), field, prettyFieldsV)
 data EnvConfig =
   EnvConfig {
     targets :: [LocalPackage],
-    ghc :: GhcDb
+    ghc :: Maybe GhcDb
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -17,5 +17,6 @@ data EnvConfig =
 instance HPretty EnvConfig where
   hpretty EnvConfig {..} =
     prettyFieldsV [
-      field "targets" targets
+      field "targets" targets,
+      field "ghc" ghc
     ]

@@ -615,7 +615,7 @@ step()
 
 step_nix()
 {
-  step nix $@
+  step nix --show-trace $@
 }
 
 step_build()

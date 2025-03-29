@@ -1,7 +1,7 @@
 module Hix.Integration.HackageTest where
 
 import Data.Aeson (Value)
-import Distribution.Verbosity (Verbosity, verbose)
+import Distribution.Verbosity (Verbosity, silent)
 import Distribution.Version (mkVersion)
 import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel, reldir, relfile, (</>))
@@ -35,7 +35,7 @@ testUser =
   ]
 
 verbosity :: Verbosity
-verbosity = verbose
+verbosity = silent
 
 initialCabalContents :: Text
 initialCabalContents =
@@ -112,8 +112,6 @@ testServer tmp port = do
     client = HackageClient.handlersProd res
     userClient = HackageClient.handlersProd userRes
     repo = (hackageRepo "test" res.location) {secure = Nothing}
-  liftIO do
-    putStrLn [exon|Port: #{show port.value}|]
   _ <- hackagePostQuery Right client "users/" testUser HackageNoResponse
   _ <- hackagePut @Value Right client "packages/uploaders/user/test"
   let rrepo = remoteRepo repo

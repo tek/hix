@@ -19,5 +19,5 @@ managedApp ::
 managedApp opts proto use = do
   handlersProject <- Project.handlersProd opts.stateFile
   withProjectContext handlersProject opts.project proto \ context -> do
-    handlers <- chooseHandlers opts.handlers handlersProject proto.envs context.build context.cabal
+    handlers <- chooseHandlers opts.handlers handlersProject context.build context.cabal
     use handlers context

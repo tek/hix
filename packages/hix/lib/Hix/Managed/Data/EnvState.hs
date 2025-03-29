@@ -19,11 +19,14 @@ data EnvState =
     -- | The precise version determined to be working for the env's target bound.
     versions :: MutableDeps VersionChange,
 
+    -- | Copied from 'versions' at the end of an env flow whenever the final value for a dep is @DiffAdded@.
+    initial :: MutableDeps VersionChange,
+
     -- | Overrides from the persisted state may be empty initially.
     overrides :: Overrides,
 
-    -- | Copied from 'versions' at the end of an env flow whenever the final value for a dep is @DiffAdded@.
-    initial :: MutableDeps VersionChange
+    -- | Solver overrides from the persisted state may be empty initially.
+    solver :: Overrides
   }
   deriving stock (Eq, Show, Generic)
   deriving (Semigroup, Monoid) via (Generically EnvState)
@@ -32,5 +35,6 @@ instance Pretty EnvState where
   pretty EnvState {..} =
     hang "bounds:" 2 (pretty bounds) $+$
     hang "versions:" 2 (pretty versions) $+$
+    hang "initial:" 2 (pretty initial) $+$
     hang "overrides:" 2 (pretty overrides) $+$
-    hang "initial:" 2 (pretty initial)
+    hang "solver:" 2 (pretty solver)
