@@ -29,7 +29,8 @@ data NewProjectConfigCommon =
   NewProjectConfigCommon {
     packages :: Bool,
     hixUrl :: HixUrl,
-    author :: Author
+    author :: Author,
+    noInitGitAndFlake :: Bool
   }
   deriving stock (Eq, Show, Generic)
 

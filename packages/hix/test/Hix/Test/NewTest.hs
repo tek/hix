@@ -22,7 +22,8 @@ conf =
       config = NewProjectConfigCommon {
           packages = False,
           hixUrl = def,
-          author = "Me"
+          author = "Me",
+          noInitGitAndFlake = True
           }
       }
 

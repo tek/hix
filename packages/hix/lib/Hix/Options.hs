@@ -258,11 +258,15 @@ ghcidParser cwd = do
   extra <- extraGhcidParser
   pure GhcidOptions {..}
 
+noInitGitAndFlakeParser :: Parser Bool
+noInitGitAndFlakeParser = switch (long "no-init-git-and-flake" <> short 'x' <> help "Skip git repo initialisation and nix flake lock")
+
 initCommonParser :: Parser NewProjectConfigCommon
 initCommonParser = do
   packages <- switch (long "packages" <> short 'p' <> help "Store packages in the 'packages/' subdirectory")
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
+  noInitGitAndFlake <- noInitGitAndFlakeParser
   pure NewProjectConfigCommon {..}
 
 projectNameParser :: Parser ProjectName
@@ -285,6 +289,7 @@ newParser cwd = do
 bootstrapParser :: Parser BootstrapOptions
 bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
+  noInitGitAndFlake <- noInitGitAndFlakeParser
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
 stateFileConfigParser :: Parser StateFileConfig

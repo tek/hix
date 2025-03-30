@@ -40,6 +40,15 @@ import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Error (pathText, tryIO)
+import Hix.Managed.Flake (runFlakeGenCabal, runFlakeLock)
+import Hix.Managed.Git (
+  GitBackend(GitBackend),
+  GitCmd (..),
+  GitEnv (..),
+  gitCmd_,
+  gitExec,
+  isGitFailure,
+  )
 import Hix.Monad (AppResources (AppResources), noteBootstrap)
 import Hix.NixExpr (mkAttrs, multi, multiOrSingle, nonEmptyAttrs, renderRootExpr, single, singleOpt)
 import qualified Hix.Prelude
@@ -282,6 +291,20 @@ bootstrapFiles conf = do
   where
     paths = traverse (noteBootstrap "File path error" . parseRelFile)
 
+
+initGitAndFlake :: M ()
+initGitAndFlake = do
+  AppResources { cwd } <- M ask
+  let gitEnv = GitEnv { backend = GitBackend $ gitExec mempty, repo = cwd }
+  statusResult <- gitExec mempty $ GitCmd { repo = cwd, args = ["status"] }
+  when (isGitFailure statusResult) $ gitCmd_ gitEnv ["init"]
+  gitCmd_ gitEnv ["add", "."]
+  runFlakeLock cwd
+  gitCmd_ gitEnv ["add", "flake.lock"]
+  runFlakeGenCabal cwd
+  gitCmd_ gitEnv ["add", "*.cabal"]
+
 bootstrapProject :: BootstrapProjectConfig -> M ()
-bootstrapProject conf =
+bootstrapProject conf = do
   traverse_ createFile =<< bootstrapFiles conf
+  unless conf.noInitGitAndFlake initGitAndFlake

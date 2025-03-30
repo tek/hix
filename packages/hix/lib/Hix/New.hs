@@ -13,6 +13,7 @@ import Path (
 import qualified Data.Text as Text
 import Text.Casing (pascal)
 
+import Hix.Bootstrap (initGitAndFlake)
 import qualified Hix.Console as Console
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
@@ -187,7 +188,9 @@ newProjectFiles conf = do
     modNameS = pascal (toString conf.name.unProjectName)
 
 initProject :: InitProjectConfig -> M ()
-initProject conf = traverse_ createFile =<< newProjectFiles conf
+initProject conf = do
+  traverse_ createFile =<< newProjectFiles conf
+  unless conf.config.noInitGitAndFlake initGitAndFlake
 
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
