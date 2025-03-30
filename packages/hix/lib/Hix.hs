@@ -14,7 +14,7 @@ import Hix.Managed.Bump.App (bumpCli)
 import Hix.Managed.Lower.App (lowerAutoCli, lowerInitCli, lowerOptimizeCli, lowerStabilizeCli)
 import Hix.Managed.ReleaseMaintenance (releaseMaintenanceCli, revisionCli)
 import Hix.Monad (M, runMWith)
-import Hix.New (newProject)
+import Hix.New (initProject, newProject)
 import Hix.Options (parseCli)
 import Hix.Preproc (preprocess)
 
@@ -24,6 +24,7 @@ runCommand = \case
   EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts
   GhciCmd opts -> printGhciCmdline opts
+  Init opts -> initProject opts.config
   New opts -> newProject opts.config
   Bootstrap opts -> bootstrapProject opts.config
   Bump opts -> bumpCli opts

@@ -50,8 +50,10 @@ let
     testsNamed [
       "bootstrap"
       "new"
-      "new-static"
-      "new-static-github"
+      "new-with-name"
+      "init"
+      "init-static"
+      "init-static-github"
     ];
 
   tests-vm =

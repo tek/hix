@@ -6,7 +6,9 @@
     mkdir root
     cd ./root
 
-    step_nix run "path:$hix_dir#new" -- --name 'red-panda' --author='Red Panda'
+    step_nix run path:$hix_dir#cli -- init --hix-url="path:$hix_dir" --name 'red-panda' --author 'Panda'
+
+    step_nix --quiet flake update
 
     step_run gen-cabal-quiet
 

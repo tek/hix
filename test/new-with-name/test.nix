@@ -6,7 +6,7 @@
     mkdir root
     cd ./root
 
-    step_nix run path:$hix_dir#cli -- new --hix-url="path:$hix_dir" --author 'Panda' 'red-panda'
+    step_nix run path:$hix_dir#cli -- new --hix-url="path:$hix_dir" --author 'Panda' --name 'giant-panda' 'red-panda'
 
     cd ./red-panda
 
@@ -17,10 +17,10 @@
     describe 'Run tests in generated project'
     output_match 'passed 1 test'
     error_ignore
-    step_ghci ghci -p red-panda -t main
+    step_ghci ghci -p giant-panda -t main
 
     describe 'Run app in generated project'
-    output_match 'Hello red-panda'
+    output_match 'Hello giant-panda'
     step_run
   '';
 }
