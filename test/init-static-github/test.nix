@@ -8,7 +8,7 @@
     cd ./root
 
     error_ignore
-    step_nix run "github:tek/hix#new" -- --name 'red-panda'
+    step_nix run "github:tek/hix#init" -- --name 'red-panda'
 
     step_run gen-cabal-quiet
 
