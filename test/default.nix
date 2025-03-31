@@ -51,6 +51,7 @@ let
       "bootstrap"
       "new"
       "new-with-name"
+      "new-parent-dir"
       "init"
       "init-static"
       "init-static-github"

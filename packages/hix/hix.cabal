@@ -292,6 +292,7 @@ library
     , exceptions ==0.10.*
     , exon >=1.4 && <1.8
     , extra ==1.7.*
+    , filepath
     , filepattern ==0.1.*
     , generic-lens ==2.2.*
     , generics-sop ==0.5.*
@@ -406,6 +407,7 @@ test-suite hix-test
       Hix.Test.Managed.UnsafeIsString
       Hix.Test.ManagedTest
       Hix.Test.NewTest
+      Hix.Test.Optparse
       Hix.Test.PreprocTest
       Hix.Test.Utils
       Hix.Test.VersionTest

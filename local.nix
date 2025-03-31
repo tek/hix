@@ -26,6 +26,7 @@ in {
         "exceptions ^>= 0.10"
         "exon >= 1.4 && < 1.8"
         "extra ^>= 1.7"
+        "filepath"
         "filepattern ^>= 0.1"
         "generic-lens ^>= 2.2"
         "generics-sop ^>= 0.5"
