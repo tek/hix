@@ -67,11 +67,6 @@ data GitResult =
   GitFailure { code :: Int, stdout :: [Text], stderr :: [Text] }
   deriving stock (Eq, Show)
 
-isGitFailure :: GitResult -> Bool
-isGitFailure = \case
-  GitSuccess { } -> False
-  GitFailure { } -> True
-
 gitProcess :: EnvVars -> GitCmd -> M ProcessResult
 gitProcess env GitCmd {repo, args} = do
   appContextDebug [exon|running process #{Color.shellCommand cmdline}|] do
