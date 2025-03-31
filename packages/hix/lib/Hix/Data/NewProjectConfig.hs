@@ -25,8 +25,8 @@ newtype ProjectDirectory =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord)
 
-data NewProjectConfigCommon =
-  NewProjectConfigCommon {
+data CreateProjectConfig =
+  CreateProjectConfig {
     packages :: Bool,
     hixUrl :: HixUrl,
     author :: Author,
@@ -37,7 +37,7 @@ data NewProjectConfigCommon =
 data InitProjectConfig =
   InitProjectConfig {
     name :: ProjectName,
-    config :: NewProjectConfigCommon
+    config :: CreateProjectConfig
   }
   deriving stock (Eq, Show, Generic)
 
@@ -46,6 +46,6 @@ data NewProjectConfig =
     directory :: Path Abs Dir,
     name :: Maybe ProjectName,
     printDirectory :: Bool,
-    config :: NewProjectConfigCommon
+    config :: CreateProjectConfig
   }
   deriving stock (Eq, Show, Generic)

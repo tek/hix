@@ -18,9 +18,9 @@ import qualified Hix.Console as Console
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   Author,
+  CreateProjectConfig (CreateProjectConfig),
   HixUrl (HixUrl),
   InitProjectConfig (InitProjectConfig),
-  NewProjectConfigCommon (NewProjectConfigCommon),
   ProjectName (ProjectName), NewProjectConfig,
   )
 import qualified Hix.Data.ProjectFile
@@ -70,7 +70,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 flake :: InitProjectConfig -> Text
 flake InitProjectConfig {
   name = ProjectName name,
-  config = NewProjectConfigCommon { hixUrl = HixUrl url, ..}
+  config = CreateProjectConfig { hixUrl = HixUrl url, ..}
 } =
   [exon|{
   description = "A Haskell project";

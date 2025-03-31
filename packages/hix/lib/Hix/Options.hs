@@ -49,7 +49,7 @@ import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   InitProjectConfig (InitProjectConfig),
   NewProjectConfig (NewProjectConfig),
-  NewProjectConfigCommon (NewProjectConfigCommon),
+  CreateProjectConfig (CreateProjectConfig),
   ProjectName,
   )
 import qualified Hix.Data.Options
@@ -261,13 +261,13 @@ ghcidParser cwd = do
 noInitGitAndFlakeParser :: Parser Bool
 noInitGitAndFlakeParser = switch (long "no-init-git-and-flake" <> short 'x' <> help "Skip git repo initialisation and nix flake lock")
 
-initCommonParser :: Parser NewProjectConfigCommon
+initCommonParser :: Parser CreateProjectConfig
 initCommonParser = do
   packages <- switch (long "packages" <> short 'p' <> help "Store packages in the 'packages/' subdirectory")
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
   noInitGitAndFlake <- noInitGitAndFlakeParser
-  pure NewProjectConfigCommon {..}
+  pure CreateProjectConfig {..}
 
 projectNameParser :: Parser ProjectName
 projectNameParser = strOption (long "name" <> short 'n' <> help "The name of the new project and its main package")
