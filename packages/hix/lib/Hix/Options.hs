@@ -259,7 +259,7 @@ ghcidParser cwd = do
   pure GhcidOptions {..}
 
 noInitGitAndFlakeParser :: Parser Bool
-noInitGitAndFlakeParser = switch (long "no-init-git-and-flake" <> short 'x' <> help "Skip git repo initialisation and nix flake lock")
+noInitGitAndFlakeParser = switch (long "basic" <> short 'b' <> help "Skip git repo initialisation and nix flake lock")
 
 initCommonParser :: Parser CreateProjectConfig
 initCommonParser = do
