@@ -50,13 +50,13 @@ absPathOrCwd ::
 absPathOrCwd desc cwd parse raw = 
   first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw') <&> \case
     Abs p -> p
-    Rel p -> foldr ($) cwd (replicate nbPrefixParents parent) </> p
+    Rel p -> foldr (const parent) cwd parents </> p
   where
     raw' :: String
-    raw' = intercalate [pathSeparator] $ drop nbPrefixParents parts
+    raw' = intercalate [pathSeparator] rest
 
-    nbPrefixParents :: Int
-    nbPrefixParents = length $ takeWhile (== "..") parts
+    parents, rest :: [String]
+    (parents, rest) = span (== "..") parts
 
     parts :: [String]
     parts = split isPathSeparator raw
