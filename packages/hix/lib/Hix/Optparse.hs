@@ -2,7 +2,7 @@
 module Hix.Optparse where
 
 import Data.Aeson (eitherDecodeFileStrict', eitherDecodeStrict')
-import Data.List.Extra (stripInfix)
+import Data.List.Extra (split, stripInfix)
 import Distribution.Parsec (Parsec, eitherParsec)
 import Exon (exon)
 import Options.Applicative (ReadM, eitherReader)
@@ -13,6 +13,7 @@ import Path (
   Path,
   Rel,
   SomeBase (..),
+  parent,
   parseAbsDir,
   parseAbsFile,
   parseRelDir,
@@ -22,6 +23,7 @@ import Path (
   toFilePath,
   (</>),
   )
+import System.FilePath (isPathSeparator, pathSeparator)
 
 import Hix.Data.Json (JsonConfig (..))
 import Hix.Data.OutputFormat (OutputFormat (..))
@@ -40,16 +42,31 @@ pathOption desc parse =
   eitherReader \ raw ->
     first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw)
 
+absPathOrCwd ::
+  String ->
+  Path Abs Dir ->
+  (String -> Either e (SomeBase t)) ->
+  (String -> Either String (Path Abs t))
+absPathOrCwd desc cwd parse raw = 
+  first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw') <&> \case
+    Abs p -> p
+    Rel p -> foldr ($) cwd (replicate nbPrefixParents parent) </> p
+  where
+    raw' :: String
+    raw' = intercalate [pathSeparator] $ drop nbPrefixParents parts
+
+    nbPrefixParents :: Int
+    nbPrefixParents = length $ takeWhile (== "..") parts
+
+    parts :: [String]
+    parts = split isPathSeparator raw
+
 absPathOrCwdOption ::
   String ->
   (String -> Either e (SomeBase t)) ->
   Path Abs Dir ->
   ReadM (Path Abs t)
-absPathOrCwdOption desc parse cwd =
-  eitherReader \ raw ->
-    first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw) <&> \case
-      Abs p -> p
-      Rel p -> cwd </> p
+absPathOrCwdOption desc parse cwd = eitherReader $ absPathOrCwd desc cwd parse
 
 -- | An absolute file path option for @optparse-applicative@.
 absFileOption :: ReadM (Path Abs File)
