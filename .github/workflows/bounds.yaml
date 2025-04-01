@@ -36,7 +36,7 @@ jobs:
     - uses: DeterminateSystems/nix-installer-action@v16
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-    - uses: cachix/cachix-action@v15
+    - uses: cachix/cachix-action@v16
       with:
         name: ${{ inputs.cachix }}
         signingKey: ${{ secrets.cachix_key }}
