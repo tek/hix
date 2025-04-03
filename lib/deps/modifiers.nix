@@ -23,8 +23,10 @@ let
 
   fast = p: noprofiling (nodoc p);
 
-  force = p: nodoc (nobench (notest (unbreak (jailbreak p))));
+  force = p: nobench (notest (unbreak (jailbreak p)));
+
+  force' = p: nodoc (force p);
 
 in {
-  inherit unbreak jailbreak profiling noprofiling minimal fast force notest bench nobench nodoc;
+  inherit unbreak jailbreak profiling noprofiling minimal fast force force' notest bench nobench nodoc;
 }

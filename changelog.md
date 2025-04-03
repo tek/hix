@@ -12,6 +12,7 @@
 * Allow command scripts to be specified as paths as well as strings.
 * Add `commands.<command>.buildInputs` to configure packages in `$PATH` for commands.
 * Add `output.expose.static` to control whether packages outputs include `musl`-linked executables.
+* Remove `nodoc` from the override OC `force`, add `force'` as an alias of the old behavior.
 
 # 0.8.0
 
