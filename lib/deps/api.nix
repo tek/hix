@@ -22,6 +22,7 @@ let
 
   transformers = {
     transformDrv = transform_ "transform-drv";
+    modify = transform_ "modify";
     id = transform_ "id" lib.id;
     jailbreak = transform_ "jailbreak" modifiers.jailbreak;
     configure = flag: transform_ "configure" (hsLibC.appendConfigureFlag flag);
