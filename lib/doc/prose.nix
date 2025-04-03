@@ -702,7 +702,8 @@ in {
   - `nobench` – Disable benchmarks
   - `minimal` – Unbreak and disable profiling libraries, Haddock, benchmarks and tests
   - `fast` – Disable profiling and Haddock
-  - `force` – Unbreak, jailbreak and disable Haddock, benchmarks and tests
+  - `force` – Unbreak, jailbreak and disable benchmarks and tests
+  - `force'` – Unbreak, jailbreak and disable Haddock, benchmarks and tests
   - `noprofiling` – Disable profiling libraries for the package
   - `profiling` – Enable executable profiling for the package
   - `configure` – Add a Cabal configure CLI option
@@ -718,6 +719,7 @@ in {
     This allows overriding the arguments that the Haskell builder passes to the `stdenv` builder.
   - `buildInputs` – Add generic build inputs, like C libraries.
     Can be a function, in which case it is applied to `pkgs`.
+  - `modify` – The most generic combinator, simply taking a function that transforms the Cabal derivation builder.
 
   The third class consists of "options", which modify the behavior of other override combinators:
 
