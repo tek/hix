@@ -77,8 +77,9 @@ import Hix.Data.Options (
   PreprocOptions (PreprocOptions),
   ProjectOptions (ProjectOptions),
   ReleaseMaintOptions (..),
+  RevisionOptions (..),
   TargetSpec (..),
-  TestOptions (..), RevisionOptions (..),
+  TestOptions (..),
   )
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
@@ -87,12 +88,13 @@ import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig), BuildTimeout (..))
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.Query (RawQuery (RawQuery))
+import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import Hix.Optparse (
   absDirOption,
-  absFileOption,
   absDirOrCwdOption,
+  absFileOption,
   absFileOrCwdOption,
   buildHandlersOption,
   hackageRepoFieldOption,
@@ -103,7 +105,6 @@ import Hix.Optparse (
   relFileOption,
   someFileOption,
   )
-import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 
 fileParser ::
   ReadM a ->
@@ -441,8 +442,14 @@ commands cwd =
   where
     bootstrapDesc = "Bootstrap an existing Cabal project in the current directory"
 
-cliLogLevel :: Bool -> Bool -> Bool -> LogLevel
-cliLogLevel verbose debug quiet
+cliLogLevel ::
+  Bool ->
+  Bool ->
+  Bool ->
+  Bool ->
+  LogLevel
+cliLogLevel verbose debug trace quiet
+  | trace = LogTrace
   | debug = LogDebug
   | verbose = LogVerbose
   | quiet = LogError
@@ -454,13 +461,14 @@ globalParser ::
 globalParser realCwd = do
   verbose <- switch (long "verbose" <> short 'v' <> help "Verbose output")
   debug <- switch (long "debug" <> help "Debug output")
+  trace <- switch (long "trace" <> help "Trace debug output")
   quiet <- switch (long "quiet" <> help "Suppress info output")
   cabalVerbose <- switch (long "cabal-verbose" <> help "Verbose output from Cabal")
   cwd <- option absDirOption (long "cwd" <> help "Force a different working directory" <> value realCwd)
   rootOverride <- rootParser
   output <- option outputFormatOption (long "output" <> help formatHelp <> value OutputNone <> metavar "format")
   target <- option outputTargetOption (long "target" <> help targetHelp <> value OutputDefault <> metavar "target")
-  pure GlobalOptions {root = fromMaybe cwd rootOverride, logLevel = cliLogLevel verbose debug quiet, ..}
+  pure GlobalOptions {root = fromMaybe cwd rootOverride, logLevel = cliLogLevel verbose debug trace quiet, ..}
   where
     formatHelp = "Result output format, if commands support it"
     targetHelp = "Force output to a file or stdout"
