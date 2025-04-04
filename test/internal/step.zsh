@@ -20,6 +20,14 @@ _sub_test_dir()
   sed -r "s#${test_base}#$(cyan '$test')#g" $*
 }
 
+# Remove store path prefixes from paths entirely if the path has a relative component, otherwise remove it up to the
+# minus following the hash.
+# Same caveat as `_sub_store_bin`.
+_unclutter_store_path()
+{
+  sed -r -e "s#/nix/store/[^/ \"',;]+/##g" -e "s#/nix/store/[a-z0-9]+-##g" $*
+}
+
 _step_unclutter_cmd()
 {
   local general=$(
@@ -286,8 +294,10 @@ _step_check_combined()
 _step_diff()
 {
   local actual_file=$1 expected=$2 headline=$3
+  local expected_desc=''
   if [[ -f $expected ]]
   then
+    expected_desc=" [$(color_path $(_unclutter_store_path <<< $expected))]"
     diff $expected $actual_file &> $step_diff
   else
     diff <(print -- $expected) $actual_file &> $step_diff
@@ -299,7 +309,7 @@ _step_diff()
     hix_print ''
     hix_cat $step_diff
     hix_print "
-< $(green 'expected')
+< $(green 'expected')$expected_desc
 ---
 > $(red 'actual')"
     return 1
