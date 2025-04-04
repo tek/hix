@@ -15,12 +15,18 @@ _sub_store_bin()
   sed -r "s#/nix/store/[^/ \"',;]+/bin/##g" $*
 }
 
+_sub_test_dir()
+{
+  sed -r "s#${test_base}#$(cyan '$test')#g" $*
+}
+
 _step_unclutter_cmd()
 {
   local general=$(
     print -- $step_cmd \
       | _sub_store_bin \
-      | _sub_store_hash
+      | _sub_store_hash \
+      | _sub_test_dir
   )
   if [[ $step_cmd[1] == 'nix' ]]
   then
