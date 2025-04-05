@@ -57,6 +57,7 @@ library
       Hix.Data.Overrides
       Hix.Data.PackageId
       Hix.Data.PackageName
+      Hix.Data.PathUser
       Hix.Data.PreprocConfig
       Hix.Data.ProjectFile
       Hix.Data.Version
