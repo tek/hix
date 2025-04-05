@@ -84,7 +84,7 @@ test-suite red-panda-test
 
 conf :: BootstrapProjectConfig
 conf =
-  BootstrapProjectConfig {hixUrl = def}
+  BootstrapProjectConfig {hixUrl = def, noInitGitAndFlake = True}
 
 flakeTarget :: Text
 flakeTarget =

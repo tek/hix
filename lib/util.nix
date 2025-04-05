@@ -203,28 +203,16 @@ let
 
   nixC = "nix --option extra-substituters 'https://tek.cachix.org' --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk='";
 
-  bootstrapMain = pre: post: ''
-  ${pre}
-  if ! git status &>/dev/null
-  then
-    git init -q
-  fi
-  git add .
-  nix flake update --quiet --quiet
-  git add flake.lock
-  ${post}
-  '';
-
-  bootstrapWithStaticCli = name: pre: post: script name ''
+  bootstrapWithStaticCli = name: cmd: script name ''
   ${setupScript { path = [pkgs.git]; nix = true; }}
   ${downloadStaticCli}
-  ${bootstrapMain pre post}
+  ${cmd}
   '';
 
-  bootstrapWithDynamicCli = name: pre: post: script name ''
+  bootstrapWithDynamicCli = name: cmd: script name ''
   ${setupScript { path = [pkgs.git]; nix = true; }}
   exe="${util.build.packages.min.hix.package}/bin/hix"
-  ${bootstrapMain pre post}
+  ${cmd}
   '';
 
   envSystemAllowed = env:

@@ -6,9 +6,9 @@ import Path (absdir, relfile)
 
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
+  CreateProjectConfig (CreateProjectConfig),
   HixUrl,
-  InitProjectConfig (InitProjectConfig),
-  NewProjectConfigCommon (NewProjectConfigCommon)
+  InitProjectConfig (InitProjectConfig)
   )
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile))
 import Hix.Monad (runM)
@@ -19,10 +19,11 @@ conf :: InitProjectConfig
 conf =
   InitProjectConfig {
       name = "spider",
-      config = NewProjectConfigCommon {
+      config = CreateProjectConfig {
           packages = False,
           hixUrl = def,
-          author = "Me"
+          author = "Me",
+          noInitGitAndFlake = True
           }
       }
 
