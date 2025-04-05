@@ -6,7 +6,6 @@ import Options.Applicative (
   Mod,
   Parser,
   ReadM,
-  argument,
   auto,
   bashCompleter,
   command,
@@ -27,7 +26,6 @@ import Options.Applicative (
   showDefault,
   showHelpOnEmpty,
   showHelpOnError,
-  str,
   strArgument,
   strOption,
   subparserInline,
@@ -276,7 +274,7 @@ initParser = do
 
 newParser :: Parser NewOptions
 newParser = do
-  directory <- argument str (metavar "DIR" <> help "Directory to create for the project, last component used as project name default")
+  directory <- strArgument (metavar "DIR" <> help "Directory to create for the project, last component used as project name default")
   name <- optional projectNameParser
   printDirectory <- switch (long "print-dir" <> help "Print the created directory to stdout")
   config <- initCommonParser
