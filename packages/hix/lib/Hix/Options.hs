@@ -27,6 +27,7 @@ import Options.Applicative (
   showDefault,
   showHelpOnEmpty,
   showHelpOnError,
+  str,
   strArgument,
   strOption,
   subparserInline,
@@ -101,7 +102,6 @@ import Hix.Optparse (
   maintHandlersOption,
   outputFormatOption,
   outputTargetOption,
-  pathUserOption,
   relFileOption,
   someFileOption,
   )
@@ -276,7 +276,7 @@ initParser = do
 
 newParser :: Parser NewOptions
 newParser = do
-  directory <- argument pathUserOption (metavar "DIR" <> help "Directory to create for the project, last component used as project name default")
+  directory <- argument str (metavar "DIR" <> help "Directory to create for the project, last component used as project name default")
   name <- optional projectNameParser
   printDirectory <- switch (long "print-dir" <> help "Print the created directory to stdout")
   config <- initCommonParser

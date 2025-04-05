@@ -3,10 +3,9 @@ module Hix.Optparse where
 
 import Data.Aeson (eitherDecodeFileStrict', eitherDecodeStrict')
 import Data.List.Extra (split, stripInfix)
-import qualified Data.Text as Text
 import Distribution.Parsec (Parsec, eitherParsec)
 import Exon (exon)
-import Options.Applicative (ReadM, eitherReader, str)
+import Options.Applicative (ReadM, eitherReader)
 import Path (
   Abs,
   Dir,
@@ -27,7 +26,6 @@ import Path (
 import System.FilePath (isPathSeparator, pathSeparator)
 
 import Hix.Data.Json (JsonConfig (..))
-import Hix.Data.PathUser (PathUser (PathUser))
 import Hix.Data.OutputFormat (OutputFormat (..))
 import Hix.Data.OutputTarget (OutputTarget (..))
 import Hix.Managed.Cabal.ContextHackageRepo (fieldUpdater)
@@ -35,9 +33,6 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageIndexState, HackageName)
 import Hix.Managed.Data.BuildConfig (SpecialBuildHandlers (..))
 import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers (..))
-
-pathUserOption :: ReadM PathUser
-pathUserOption = PathUser . Text.pack <$> str
 
 pathOption ::
   String ->
