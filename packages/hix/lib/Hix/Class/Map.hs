@@ -62,9 +62,6 @@ instance Monoid v => NLookup LookupMonoid k v v where
 instance NLookup LookupMaybe k v (Maybe v) where
   nLookup _ = id
 
-instance Show k => NLookup LookupFatal k v (Text -> M v) where
-  nLookup k v thing = lookupError thing k v
-
 (!?) ::
   ∀ map k v sort .
   NMap map k v sort =>

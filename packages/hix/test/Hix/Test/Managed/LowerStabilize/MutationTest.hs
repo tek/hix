@@ -7,8 +7,7 @@ import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
@@ -38,7 +37,7 @@ available =
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed = [], available}
 
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   managedPackages [(("local1", "1.0"), ["direct1", "direct2"])]
 
@@ -57,18 +56,19 @@ state =
         ("direct2", [1, 8, 1])
       ])
     ],
-    overrides = [
-      ("lower", [
-        ("direct1", "direct1-1.8.1"),
-        ("direct2", "direct2-1.8.1")
-      ])
-    ],
     initial = [
       ("lower", [
         ("direct1", [2, 0, 1]),
         ("direct2", [2, 0, 1])
       ])
     ],
+    overrides = [
+      ("lower", [
+        ("direct1", "direct1-1.8.1"),
+        ("direct2", "direct2-1.8.1")
+      ])
+    ],
+    solver = [],
     resolving = False
   }
 
@@ -121,6 +121,9 @@ stateFileTarget =
         hash = "direct2-1.9.1";
       };
     };
+  };
+  solver = {
+    lower = {};
   };
   resolving = false;
 }

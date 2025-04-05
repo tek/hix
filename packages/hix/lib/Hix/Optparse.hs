@@ -47,7 +47,7 @@ absPathOrCwd ::
   Path Abs Dir ->
   (String -> Either e (SomeBase t)) ->
   (String -> Either String (Path Abs t))
-absPathOrCwd desc cwd parse raw = 
+absPathOrCwd desc cwd parse raw =
   first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw') <&> \case
     Abs p -> p
     Rel p -> foldr (const parent) cwd parents </> p
@@ -72,7 +72,7 @@ absPathOrCwdOption desc parse cwd = eitherReader $ absPathOrCwd desc cwd parse
 absFileOption :: ReadM (Path Abs File)
 absFileOption = pathOption "absolute file" parseAbsFile
 
--- | An absolute file path option for @optparse-applicative@.
+-- | An absolute or relative file path option for @optparse-applicative@.
 absFileOrCwdOption :: Path Abs Dir -> ReadM (Path Abs File)
 absFileOrCwdOption = absPathOrCwdOption "absolute or relative file" parseSomeFile
 

@@ -4,6 +4,7 @@
   inputs.hix.url = "path:HIX";
 
   outputs = {self, hix, ...}: hix.lib._hix_test ({config, lib, ...}: {
+
     managed = {
       enable = true;
       latest.compiler = "ghc94";
@@ -12,10 +13,12 @@
         multi-fail2 = source.root ./multi-fail-solve2;
       };
     };
+
     envs.latest.overrides = {source, ...}: {
       multi-fail1 = source.root ./multi-fail1;
       multi-fail2 = source.root ./multi-fail2;
     };
+
     packages = {
       local1 = {
         src = ./packages/local1;
@@ -28,5 +31,8 @@
         };
       };
     };
+
+    internal.hixCli.dev = true;
+
   });
 }

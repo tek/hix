@@ -5,18 +5,18 @@ import Exon (exon)
 import Path (Abs, Dir, Path)
 
 import Hix.Class.EncodeNix (encodeNix)
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr (..), ExprAttr (..), ExprKey (..))
 import Hix.Data.Overrides (Overrides)
 import qualified Hix.Log as Log
-import Hix.Managed.Data.EnvContext (EnvContext)
 import qualified Hix.Managed.Data.EnvState
 import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Initial (Initial (Initial))
 import Hix.Managed.Data.ProjectState (ProjectState)
 import qualified Hix.Managed.Handlers.StateFile
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
-import Hix.Managed.UpdateState (envStateForBuild)
+import Hix.Managed.UpdateState (envStateForBuild, envStateForSolver)
 import Hix.NixExpr (renderRootExpr)
 
 renderMap ::
@@ -54,17 +54,27 @@ writeBuildStateFor ::
   Text ->
   StateFileHandlers ->
   Path Abs Dir ->
-  EnvContext ->
+  EnvName ->
   Overrides ->
   M ()
-writeBuildStateFor purpose handlers tmpRoot context overrides =
-  writeStateFile purpose handlers (Just tmpRoot) (envStateForBuild context overrides)
+writeBuildStateFor purpose handlers tmpRoot env overrides =
+  writeStateFile purpose handlers (Just tmpRoot) (envStateForBuild env overrides)
+
+writeSolverStateFor ::
+  Text ->
+  StateFileHandlers ->
+  Path Abs Dir ->
+  EnvName ->
+  Overrides ->
+  M ()
+writeSolverStateFor purpose handlers tmpRoot env overrides =
+  writeStateFile purpose handlers (Just tmpRoot) (envStateForSolver env overrides)
 
 writeInitialEnvState ::
   StateFileHandlers ->
   Path Abs Dir ->
-  EnvContext ->
+  EnvName ->
   Initial EnvState ->
   M ()
-writeInitialEnvState handlers tmpRoot context (Initial state) =
-  writeBuildStateFor "env initialization" handlers tmpRoot context state.overrides
+writeInitialEnvState handlers tmpRoot env (Initial state) =
+  writeBuildStateFor "env initialization" handlers tmpRoot env state.overrides

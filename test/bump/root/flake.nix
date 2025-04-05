@@ -4,6 +4,7 @@
   inputs.hix.url = "path:HIX";
 
   outputs = {self, hix, ...}: hix.lib._hix_test ({config, lib, ...}: {
+
     managed = {
       enable = true;
       verbose = false;
@@ -16,7 +17,9 @@
       latest.compiler = "ghc98";
       forceBounds.base.upper = "5";
     };
+
     compat.enable = false;
+
     packages = {
       local1 = {
         src = ./packages/local1;
@@ -49,5 +52,8 @@
     overrides = {...}: {
       extra = throw "global overrides";
     };
+
+    internal.hixCli.dev = true;
+
   });
 }

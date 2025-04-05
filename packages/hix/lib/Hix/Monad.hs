@@ -6,7 +6,7 @@ module Hix.Monad (
 
 import Control.Lens ((%~))
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)
+import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE, catchE)
 import qualified Control.Monad.Trans.Reader as Reader
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.Trans.State.Strict (StateT, get, put, runStateT)
@@ -223,6 +223,11 @@ withLower f = do
   res <- ask
   liftE (ExceptT (f (runMUsing res)))
 
+withLowerE :: ((∀ b . M b -> ExceptT Error IO b) -> ExceptT Error IO a) -> M a
+withLowerE f = do
+  res <- ask
+  liftE (f \ (M ma) -> runReaderT ma res)
+
 withLowerTry' :: ((∀ b . M b -> IO (Either Error b)) -> IO a) -> M a
 withLowerTry' f = do
   res <- ask
@@ -243,6 +248,13 @@ local f (M ma) =
 
 ask :: M AppResources
 ask = M Reader.ask
+
+catchM :: M a -> (Error -> M a) -> M a
+catchM ma handle =
+  withLowerE \ lower -> catchE (lower ma) (lower . handle)
+
+catchingM :: (Error -> M a) -> M a -> M a
+catchingM = flip catchM
 
 appContextAt :: LogLevel -> Text -> M a -> M a
 appContextAt level description =

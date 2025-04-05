@@ -4,6 +4,7 @@
   inputs.hix.url = "path:HIX";
 
   outputs = {self, hix, ...}: hix.lib._hix_test ({config, lib, ...}: {
+
     managed = {
       enable = true;
       lower = {
@@ -15,8 +16,10 @@
       quiet = true;
       sets = "all";
     };
+
     ghcVersions = [];
     compat.enable = false;
+
     packages = {
       root = {
         src = ./.;
@@ -31,5 +34,8 @@
     };
 
     envs.lower.localPackage = api: api.minimal;
+
+    internal.hixCli.dev = true;
+
   });
 }

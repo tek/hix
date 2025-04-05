@@ -17,8 +17,7 @@ import Hix.Managed.Data.BuildConfig (BuildConfig)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext, EnvDeps)
 import Hix.Managed.Data.Envs (Envs)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (..))
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (..), ProjectPackages)
 import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext (ProjectContext))
 import qualified Hix.Managed.Data.ProjectContextProto
@@ -64,7 +63,7 @@ selectEnvs envs specified =
 projectContext ::
   BuildConfig ->
   ProjectState ->
-  Packages ManagedPackage ->
+  ProjectPackages ->
   NonEmpty (Either EnvName EnvContext) ->
   CabalConfig ->
   ProjectContext

@@ -33,6 +33,7 @@ with lib;
       '';
     };
 
+    # TODO make sure this is the type that recursively merges attrsets
     nixpkgsOptions = mkOption {
       type = attrsOf unspecified;
       description = "Additional options to pass to nixpkgs when importing.";

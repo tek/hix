@@ -4,19 +4,19 @@ import Data.Generics.Labels ()
 import Distribution.Pretty (Pretty (pretty))
 import Text.PrettyPrint (hang, ($+$))
 
-import Hix.Class.Map (nAmend, (!!), nMap)
+import Hix.Class.Map (nAmend, nMap, (!!))
 import Hix.Data.Bounds (Bounds)
 import Hix.Data.VersionBounds (majorRange)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (..))
+import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectState (ProjectState (..))
-import Hix.Managed.ManagedPackage (updateRanges, removeLowerBounds)
+import Hix.Managed.ManagedPackage (removeLowerBounds, updateRanges)
 
 data ProcessState =
   ProcessState {
-    packages :: Packages ManagedPackage,
+    packages :: ProjectPackages,
     state :: ProjectState
   }
   deriving stock (Eq, Show, Generic)
@@ -27,7 +27,7 @@ instance Pretty ProcessState where
     $+$
     hang "state:" 2 (pretty state)
 
-updateManagedPackages :: Packages Bounds -> Packages ManagedPackage -> Packages ManagedPackage
+updateManagedPackages :: Packages Bounds -> ProjectPackages -> ProjectPackages
 updateManagedPackages =
   nAmend \ bounds ->
     updateRanges \ package original ->

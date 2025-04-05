@@ -1,5 +1,5 @@
 let
-  args = "--root $PWD --handlers test --index-state 2024-01-01T00:00:00Z";
+  args = "--root $PWD --handlers test --hackage hackage.haskell.org:indexState:2024-01-01T00:00:00Z";
 in {
   source = ''
     mk_pkg()
@@ -27,10 +27,10 @@ in {
     mk_success 1 'multi-fail'
     mk_fail 2 'multi-fail'
 
-    target1="[35m[1m>>>[0m Building targets in [33mlatest[0m with multi-fail2-0.1.0...
-    [35m[1m>>>[0m Build with multi-fail2-0.1.0 failed in [34mmulti-fail1[0m, [34mmulti-fail2[0m
-    [35m[1m>>>[0m Building targets in [33mlatest[0m with multi-fail1-0.1.0...
-    [35m[1m>>>[0m Build with multi-fail1-0.1.0 failed in [34mmulti-fail1[0m, [34mmulti-fail2[0m
+    target1="[35m[1m>>>[0m Building targets in [33mlatest[0m with [36mmulti-fail2-0.1.0[0m...
+    [35m[1m>>>[0m Build with [36mmulti-fail2-0.1.0[0m failed in [36mmulti-fail1[0m, [36mmulti-fail2[0m
+    [35m[1m>>>[0m Building targets in [33mlatest[0m with [36mmulti-fail1-0.1.0[0m...
+    [35m[1m>>>[0m Build with [36mmulti-fail1-0.1.0[0m failed in [36mmulti-fail1[0m, [36mmulti-fail2[0m
 
     [35m[1m>>>[0m [33mlatest[0m
     [35m[1m>>>[0m Couldn't find working latest versions for some deps after 1 iteration.
@@ -43,10 +43,10 @@ in {
     mk_fail 1 'multi-fail'
     mk_success 2 'multi-fail'
 
-    target2="[35m[1m>>>[0m Building targets in [33mlatest[0m with multi-fail2-0.1.0...
-    [35m[1m>>>[0m Build with multi-fail2-0.1.0 failed in [34mmulti-fail2[0m, [34mmulti-fail1[0m
-    [35m[1m>>>[0m Building targets in [33mlatest[0m with multi-fail1-0.1.0...
-    [35m[1m>>>[0m Build with multi-fail1-0.1.0 failed in [34mmulti-fail2[0m, [34mmulti-fail1[0m
+    target2="[35m[1m>>>[0m Building targets in [33mlatest[0m with [36mmulti-fail2-0.1.0[0m...
+    [35m[1m>>>[0m Build with [36mmulti-fail2-0.1.0[0m failed in [36mmulti-fail2[0m, [36mmulti-fail1[0m
+    [35m[1m>>>[0m Building targets in [33mlatest[0m with [36mmulti-fail1-0.1.0[0m...
+    [35m[1m>>>[0m Build with [36mmulti-fail1-0.1.0[0m failed in [36mmulti-fail2[0m, [36mmulti-fail1[0m
 
     [35m[1m>>>[0m [33mlatest[0m
     [35m[1m>>>[0m Couldn't find working latest versions for some deps after 1 iteration.

@@ -1,6 +1,7 @@
 module Hix.Managed.Cabal.Mock.SourcePackage where
 
 import Distribution.Client.Types (PackageLocation (LocalTarballPackage), SourcePackageDb (..), UnresolvedSourcePackage)
+import Distribution.Client.Types.SourcePackageDb (lookupPackageName)
 import Distribution.PackageDescription (
   BuildInfo (targetBuildDepends),
   CondTree (..),
@@ -16,20 +17,19 @@ import Distribution.Solver.Types.PackageIndex (PackageIndex)
 import qualified Distribution.Solver.Types.SourcePackage as Cabal
 import Distribution.Types.GenericPackageDescription (GenericPackageDescription (..), emptyGenericPackageDescription)
 import Distribution.Types.Library (libVisibility)
-import Exon (exon)
 
-import Hix.Class.Map (nElems, nKeys, nMap, nTo1, nTransform, (!!))
+import Hix.Class.Map (nElems, nFilter, nKeys, nKeysSet, nMap, nTo1, nTransform, (!!))
 import qualified Hix.Data.Dep as Dep
 import Hix.Data.Dep (Dep)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
+import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (LocalPackage (LocalPackage), PackageName, localPackageName)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackage, SourcePackageId (..), SourcePackageVersions, SourcePackages)
 import qualified Hix.Managed.Data.ManagedPackage as ManagedPackage
-import Hix.Managed.Data.ManagedPackage (ManagedPackage)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (ManagedPackage))
 import Hix.Managed.Data.Packages (Packages)
-import Hix.Monad (noteClient)
 
 allDeps :: [Dep] -> SourcePackage -> SourcePackage
 allDeps deps =
@@ -43,7 +43,9 @@ sourcePackageVersions :: SourcePackages -> SourcePackageVersions
 sourcePackageVersions = nMap (sort . nKeys)
 
 queryVersions :: SourcePackageVersions -> PackageName -> M [Version]
-queryVersions packages query = noteClient [exon|No such package in the source db: ##{query}|] (packages !! query)
+queryVersions packages query =
+  -- noteClient [exon|No such package in the source db: ##{query}|]
+  pure (fold (packages !! query))
 
 queryPackages :: SourcePackages -> PackageName -> M [Version]
 queryPackages packages =
@@ -107,9 +109,16 @@ managedPackageIndex :: Packages ManagedPackage -> PackageIndex UnresolvedSourceP
 managedPackageIndex packages =
   PackageIndex.fromList (managedSourcePackage <$> nElems packages)
 
-dbWithManaged :: Packages ManagedPackage -> SourcePackageDb -> SourcePackageDb
-dbWithManaged packages SourcePackageDb {packageIndex, packagePreferences} =
-  SourcePackageDb {
-    packageIndex = PackageIndex.merge packageIndex (managedPackageIndex packages),
-    packagePreferences
-  }
+dbWithManaged :: Packages ManagedPackage -> SourcePackageDb -> (SourcePackageDb, Set LocalPackage)
+dbWithManaged packages db@SourcePackageDb {packageIndex, packagePreferences} =
+  (merged, nKeysSet unavailable)
+  where
+    merged =
+      SourcePackageDb {
+        packageIndex = PackageIndex.merge packageIndex (managedPackageIndex unavailable),
+        packagePreferences
+      }
+
+    unavailable =
+      flip nFilter packages \ ManagedPackage {name = LocalPackage package} ->
+        null (lookupPackageName db (PackageName.toCabal package))

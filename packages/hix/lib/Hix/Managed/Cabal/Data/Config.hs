@@ -15,12 +15,12 @@ import Hix.Managed.Cabal.Data.Packages (GhcPackages)
 import Hix.Managed.Cabal.HackageRepo (centralHackage)
 import Hix.Maybe (fromMaybeA)
 import Hix.Monad (fatalError)
-import Hix.Pretty (fieldOr, fieldWith, prettyMap, prettyV)
+import Hix.Pretty (HPretty (..), fieldOr, fieldWith, prettyMap, prettyV)
 
 newtype GhcPath =
   GhcPath (Path Abs Dir)
   deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON)
+  deriving newtype (FromJSON, HPretty)
 
 data GhcDb =
   GhcDbSystem (Maybe GhcPath)
@@ -30,6 +30,12 @@ data GhcDb =
 
 instance FromJSON GhcDb where
   parseJSON = fmap GhcDbSystem . parseJSON
+
+instance Pretty GhcDb where
+  pretty = \case
+    GhcDbSystem (Just path) -> hpretty path
+    GhcDbSystem Nothing -> "no GHC"
+    GhcDbSynthetic pkgs -> hpretty pkgs
 
 data HackagePurpose =
   ForVersions

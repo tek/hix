@@ -10,7 +10,6 @@ import Hix.Managed.Data.BuildConfig (SpecialBuildHandlers (BuildHandlersTestMain
 import Hix.Managed.Data.BuildOutput (DepChanges)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.ProjectContext (ProjectContext (..))
-import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
 import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Build.Test as Build
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
@@ -32,7 +31,7 @@ bumpHandlers ContextHandlers {query} options envName = do
   project <- ProjectContextProto.validate options.project proto
   handlersProject <- Project.handlersProd options.stateFile
   handlers <-
-    Build.chooseHandlers (Just BuildHandlersTestMaint) handlersProject proto.envs options.project.build project.cabal
+    Build.chooseHandlers (Just BuildHandlersTestMaint) handlersProject options.project.build project.cabal
   bumpProject <- projectWithEnv envName project
   pure (handlers, bumpProject)
 
