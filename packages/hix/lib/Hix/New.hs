@@ -197,9 +197,9 @@ newProject conf = do
         fromMaybe
           (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ directory)
           conf.name
-  when conf.printDirectory $ Console.out (pathText directory)
   local (\res -> res { cwd = directory }) $
     initProject $ InitProjectConfig {name = name, config = conf.config}
+  when conf.printDirectory $ Console.out (pathText directory)
 
 pathError :: Maybe a -> M a
 pathError = noteEnv "Can't convert project name to file path"
