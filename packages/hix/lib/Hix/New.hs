@@ -15,6 +15,7 @@ import Text.Casing (pascal)
 
 import qualified Hix.Console as Console
 import qualified Hix.Data.NewProjectConfig
+import Hix.Data.PathUser (resolvePathUserDir)
 import Hix.Data.NewProjectConfig (
   Author,
   HixUrl (HixUrl),
@@ -191,13 +192,14 @@ initProject conf = traverse_ createFile =<< newProjectFiles conf
 
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
+  directory <- resolvePathUserDir conf.directory
   let name =
         fromMaybe
-          (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ conf.directory)
+          (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ directory)
           conf.name
-  when conf.printDirectory $ Console.out (pathText conf.directory)
-  local (\res -> res { cwd = conf.directory }) $
+  local (\res -> res { cwd = directory }) $
     initProject $ InitProjectConfig {name = name, config = conf.config}
+  when conf.printDirectory $ Console.out (pathText directory)
 
 pathError :: Maybe a -> M a
 pathError = noteEnv "Can't convert project name to file path"
