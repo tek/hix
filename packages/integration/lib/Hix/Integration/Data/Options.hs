@@ -1,12 +1,13 @@
 module Hix.Integration.Data.Options where
 
-import Path (Abs, File, Path)
+import Path (File)
 
 import Hix.Data.GlobalOptions (GlobalOptions)
+import Hix.Data.PathSpec (PathSpec)
 
 data HackageServeOptions =
   HackageServeOptions {
-    portFile :: Maybe (Path Abs File)
+    portFile :: Maybe (PathSpec File)
   }
   deriving stock (Show, Generic)
 

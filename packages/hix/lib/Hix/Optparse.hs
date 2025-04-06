@@ -2,28 +2,11 @@
 module Hix.Optparse where
 
 import Data.Aeson (eitherDecodeFileStrict', eitherDecodeStrict')
-import Data.List.Extra (split, stripInfix)
+import Data.List.Extra (stripInfix)
 import Distribution.Parsec (Parsec, eitherParsec)
 import Exon (exon)
 import Options.Applicative (ReadM, eitherReader)
-import Path (
-  Abs,
-  Dir,
-  File,
-  Path,
-  Rel,
-  SomeBase (..),
-  parent,
-  parseAbsDir,
-  parseAbsFile,
-  parseRelDir,
-  parseRelFile,
-  parseSomeDir,
-  parseSomeFile,
-  toFilePath,
-  (</>),
-  )
-import System.FilePath (isPathSeparator, pathSeparator)
+import Path (File, Path, Rel, parseAbsFile, parseRelFile, toFilePath)
 
 import Hix.Data.Json (JsonConfig (..))
 import Hix.Data.OutputFormat (OutputFormat (..))
@@ -42,59 +25,9 @@ pathOption desc parse =
   eitherReader \ raw ->
     first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw)
 
-absPathOrCwd ::
-  String ->
-  Path Abs Dir ->
-  (String -> Either e (SomeBase t)) ->
-  (String -> Either String (Path Abs t))
-absPathOrCwd desc cwd parse raw =
-  first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw') <&> \case
-    Abs p -> p
-    Rel p -> foldr (const parent) cwd parents </> p
-  where
-    raw' :: String
-    raw' = intercalate [pathSeparator] rest
-
-    parents, rest :: [String]
-    (parents, rest) = span (== "..") parts
-
-    parts :: [String]
-    parts = split isPathSeparator raw
-
-absPathOrCwdOption ::
-  String ->
-  (String -> Either e (SomeBase t)) ->
-  Path Abs Dir ->
-  ReadM (Path Abs t)
-absPathOrCwdOption desc parse cwd = eitherReader $ absPathOrCwd desc cwd parse
-
--- | An absolute file path option for @optparse-applicative@.
-absFileOption :: ReadM (Path Abs File)
-absFileOption = pathOption "absolute file" parseAbsFile
-
--- | An absolute or relative file path option for @optparse-applicative@.
-absFileOrCwdOption :: Path Abs Dir -> ReadM (Path Abs File)
-absFileOrCwdOption = absPathOrCwdOption "absolute or relative file" parseSomeFile
-
--- | An absolute directory path option for @optparse-applicative@
-absDirOrCwdOption :: Path Abs Dir -> ReadM (Path Abs Dir)
-absDirOrCwdOption = absPathOrCwdOption "absolute or relative directory" parseSomeDir
-
 -- | A relative file path option for @optparse-applicative@.
 relFileOption :: ReadM (Path Rel File)
 relFileOption = pathOption "relative file" parseRelFile
-
--- | A file path option for @optparse-applicative@.
-someFileOption :: ReadM (SomeBase File)
-someFileOption = pathOption "some file" parseSomeFile
-
--- | A relative dir path option for @optparse-applicative@.
-absDirOption :: ReadM (Path Abs Dir)
-absDirOption = pathOption "absolute dir" parseAbsDir
-
--- | A relative dir path option for @optparse-applicative@.
-relDirOption :: ReadM (Path Rel Dir)
-relDirOption = pathOption "relative dir" parseRelDir
 
 jsonOption :: ReadM JsonConfig
 jsonOption =

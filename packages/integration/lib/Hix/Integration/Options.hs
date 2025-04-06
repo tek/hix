@@ -13,11 +13,11 @@ import Options.Applicative (
   hsubparser,
   info,
   long,
-  option,
   prefs,
   progDesc,
   showHelpOnEmpty,
   showHelpOnError,
+  strOption,
   subparserInline,
   )
 import Path (Abs, Dir, Path)
@@ -26,11 +26,10 @@ import Prelude hiding (Mod, mod)
 
 import Hix.Integration.Data.Options (Command (..), HackageServeOptions (..), Options (..))
 import Hix.Options (globalParser)
-import Hix.Optparse (absFileOption)
 
 hackageParser :: Parser HackageServeOptions
 hackageParser = do
-  portFile <- optional (option absFileOption (long "port-file" <> help "Write the port number to this file"))
+  portFile <- optional (strOption (long "port-file" <> help "Write the port number to this file"))
   pure HackageServeOptions {..}
 
 commands :: Mod CommandFields Command

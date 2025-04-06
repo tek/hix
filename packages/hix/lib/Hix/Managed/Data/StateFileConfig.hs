@@ -1,6 +1,7 @@
 module Hix.Managed.Data.StateFileConfig where
 
 import Path (File, Path, Rel, relfile)
+
 import Distribution.Pretty (Pretty (pretty))
 import Hix.Pretty (prettyMap, field)
 

@@ -21,7 +21,7 @@ import Hix.Data.Options (ComponentCoords, ComponentSpec (ComponentSpec), Package
 import Hix.Data.PackageName (PackageName (PackageName))
 import Hix.Error (pathText)
 import Hix.Monad (M, clientError, noteEnv)
-import Hix.Path (rootDir)
+import Hix.Path (rootDir, resolvePathSpecFile)
 
 data ResolvedPackage =
   ResolvedPackage Bool PackageConfig
@@ -171,7 +171,7 @@ targetComponentIn root mainPkg config = \case
   TargetForComponent spec ->
     targetForComponent root mainPkg config spec
   TargetForFile spec ->
-    ExplicitTarget <$> targetForFile root config spec
+    ExplicitTarget <$> (targetForFile root config =<< resolvePathSpecFile spec)
 
 targetComponent ::
   Maybe (Path Abs Dir) ->

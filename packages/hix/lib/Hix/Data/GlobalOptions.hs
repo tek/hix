@@ -1,17 +1,18 @@
 module Hix.Data.GlobalOptions where
 
-import Path (Abs, Dir, Path)
+import Path (Abs, Dir, Path, SomeBase (Abs))
 
 import Hix.Data.LogLevel (LogLevel (LogInfo))
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
+import Hix.Data.PathSpec (PathSpec (PathConcrete))
 
 data GlobalOptions =
   GlobalOptions {
     logLevel :: LogLevel,
     cabalVerbose :: Bool,
-    cwd :: Path Abs Dir,
-    root :: Path Abs Dir,
+    cwd :: PathSpec Dir,
+    root :: PathSpec Dir,
     output :: OutputFormat,
     target :: OutputTarget
   }
@@ -22,8 +23,11 @@ defaultGlobalOptions cwd =
   GlobalOptions {
     logLevel = LogInfo,
     cabalVerbose = False,
-    cwd,
-    root = cwd,
+    cwd = cwdSpec,
+    root = cwdSpec,
     output = OutputNone,
     target = OutputDefault
   }
+  where
+    cwdSpec :: PathSpec Dir
+    cwdSpec = PathConcrete (Abs cwd)

@@ -1,6 +1,6 @@
 module Hix.Data.Options where
 
-import Path (Abs, Dir, File, Path, SomeBase)
+import Path (Dir, File, SomeBase)
 import Text.Show (show)
 
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
@@ -11,6 +11,7 @@ import Hix.Data.GlobalOptions (GlobalOptions)
 import Hix.Data.Json (JsonConfig)
 import Hix.Data.NewProjectConfig (InitProjectConfig, NewProjectConfig)
 import Hix.Data.PackageName (PackageName)
+import Hix.Data.PathSpec (PathSpec)
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName)
@@ -26,10 +27,10 @@ import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 data PreprocOptions =
   PreprocOptions {
     config :: Maybe (Either PreprocConfig JsonConfig),
-    root :: Maybe (Path Abs Dir),
-    source :: Path Abs File,
-    inFile :: Path Abs File,
-    outFile :: Path Abs File
+    root :: Maybe (PathSpec Dir),
+    source :: PathSpec File,
+    inFile :: PathSpec File,
+    outFile :: PathSpec File
   }
   deriving stock (Show, Generic)
 
@@ -55,7 +56,7 @@ data ComponentCoords =
   deriving stock (Eq, Show, Generic)
 
 data TargetSpec =
-  TargetForFile (Path Abs File)
+  TargetForFile (PathSpec File)
   |
   TargetForComponent ComponentCoords
   deriving stock (Eq, Show, Generic)
@@ -72,7 +73,7 @@ data TestOptions =
 data EnvRunnerOptions =
   EnvRunnerOptions {
     config :: Either EnvConfig JsonConfig,
-    root :: Maybe (Path Abs Dir),
+    root :: Maybe (PathSpec Dir),
     component :: Maybe TargetSpec
   }
   deriving stock (Show, Generic)
@@ -90,7 +91,7 @@ newtype ExtraGhcidOptions =
 data GhciOptions =
   GhciOptions {
     config :: Either GhciConfig JsonConfig,
-    root :: Maybe (Path Abs Dir),
+    root :: Maybe (PathSpec Dir),
     component :: TargetSpec,
     test :: TestOptions,
     extra :: Maybe ExtraGhciOptions

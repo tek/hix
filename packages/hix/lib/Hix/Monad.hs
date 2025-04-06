@@ -14,9 +14,9 @@ import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import Exon (exon)
-import Path (Abs, Dir, File, Path)
+import Path (Abs, Dir, File, Path, SomeBase (Abs))
 import qualified Path.IO as Path
-import Path.IO (withSystemTempDir)
+import Path.IO (resolveDir', withSystemTempDir)
 import System.IO (hClose)
 import System.IO.Error (tryIOError)
 
@@ -27,6 +27,7 @@ import qualified Hix.Data.GlobalOptions as GlobalOptions
 import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions), defaultGlobalOptions)
 import Hix.Data.LogLevel (LogLevel (LogInfo))
 import Hix.Data.Monad (AppResources (..), LogLevel (LogDebug), M (M), appRes, liftE)
+import Hix.Data.PathSpec (PathSpec (PathConcrete), resolvePathSpec')
 import qualified Hix.Error as Error
 import Hix.Error (tryIOWith)
 import qualified Hix.Log as Log
@@ -128,8 +129,13 @@ runMUsing res (M ma) =
 
 runMLoggerWith :: (LogLevel -> Text -> IO ()) -> GlobalOptions -> M a -> IO (Either Error a)
 runMLoggerWith logger GlobalOptions {..} ma =
-  withSystemTempDir "hix-cli" \ tmp ->
-    runMUsing AppResources {logger = logWith logger, context = [], ..} ma
+  withSystemTempDir "hix-cli" \ tmp -> runExceptT $ do
+    resolvedCwd <- resolvePathSpec' resolveDir' cwd
+    resolvedRoot <- resolvePathSpec' resolveDir' root
+    ExceptT $ runMUsing AppResources {
+      logger = logWith logger, context = [], cwd = resolvedCwd, root = resolvedRoot, ..
+      }
+      ma
 
 runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
 runMLogWith opts ma =
@@ -240,7 +246,11 @@ withLowerTry f = do
 
 globalOptions :: M GlobalOptions
 globalOptions =
-  M $ asks \ AppResources {..} -> GlobalOptions {..}
+  M $ asks \ AppResources {..} -> GlobalOptions {
+    cwd = PathConcrete (Abs cwd),
+    root = PathConcrete (Abs root),
+    ..
+    }
 
 local :: (AppResources -> AppResources) -> M a -> M a
 local f (M ma) =

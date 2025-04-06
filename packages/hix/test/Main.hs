@@ -7,7 +7,6 @@ import Hix.Test.CabalTest (test_cabal)
 import Hix.Test.GhciTest (test_ghci)
 import Hix.Test.ManagedTest (test_managed)
 import Hix.Test.NewTest (test_new)
-import Hix.Test.Optparse (test_absPathOrCwd)
 import Hix.Test.PreprocTest (
   test_preprocInsertPrelude,
   test_preprocNoPrelude,
@@ -39,8 +38,7 @@ tests =
     ],
     test_version,
     test_bounds,
-    test_managed,
-    unitTest "path option parser" test_absPathOrCwd
+    test_managed
   ]
 
 main :: IO ()

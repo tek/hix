@@ -16,7 +16,6 @@ import Text.Casing (pascal)
 import Hix.Bootstrap (initGitAndFlake)
 import qualified Hix.Console as Console
 import qualified Hix.Data.NewProjectConfig
-import Hix.Data.PathUser (resolvePathUserDir)
 import Hix.Data.NewProjectConfig (
   Author,
   CreateProjectConfig (CreateProjectConfig),
@@ -24,11 +23,12 @@ import Hix.Data.NewProjectConfig (
   InitProjectConfig (InitProjectConfig),
   ProjectName (ProjectName), NewProjectConfig,
   )
+import Hix.Data.Monad (AppResources (cwd))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
-import Hix.Monad (M, noteEnv, local)
-import Hix.Data.Monad (AppResources (cwd))
 import Hix.Error (pathText)
+import Hix.Monad (M, noteEnv, local)
+import Hix.Path (resolvePathSpecDir)
 
 license :: Author -> Text
 license author =
@@ -195,7 +195,7 @@ initProject conf = do
 
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
-  directory <- resolvePathUserDir conf.directory
+  directory <- resolvePathSpecDir conf.directory
   let name =
         fromMaybe
           (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ directory)

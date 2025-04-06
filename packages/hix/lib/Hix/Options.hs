@@ -5,11 +5,8 @@ import Options.Applicative (
   CommandFields,
   Mod,
   Parser,
-  ReadM,
   auto,
-  bashCompleter,
   command,
-  completer,
   customExecParser,
   fullDesc,
   header,
@@ -32,7 +29,7 @@ import Options.Applicative (
   switch,
   value,
   )
-import Path (Abs, Dir, File, Path, SomeBase, parseRelDir, parseSomeDir, relfile)
+import Path (Abs, Dir, Path, SomeBase (Abs), parseRelDir, parseSomeDir, relfile)
 import Path.IO (getCurrentDir)
 import Prelude hiding (Mod, mod)
 
@@ -83,6 +80,7 @@ import Hix.Data.Options (
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
 import Hix.Data.PackageName (PackageName (PackageName))
+import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig), BuildTimeout (..))
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
@@ -91,9 +89,6 @@ import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import Hix.Optparse (
-  absDirOption,
-  absFileOption,
-  absFileOrCwdOption,
   buildHandlersOption,
   hackageRepoFieldOption,
   jsonOption,
@@ -101,49 +96,29 @@ import Hix.Optparse (
   outputFormatOption,
   outputTargetOption,
   relFileOption,
-  someFileOption,
   )
 
-fileParser ::
-  ReadM a ->
-  String ->
-  String ->
-  Parser a
-fileParser readOption longName helpText =
-  option readOption (long longName <> completer (bashCompleter "file") <> help helpText)
-
-absFileParser :: String -> String -> Parser (Path Abs File)
-absFileParser = fileParser absFileOption
-
-absFileOrCwdParser :: Path Abs Dir -> String -> String -> Parser (Path Abs File)
-absFileOrCwdParser cwd = fileParser (absFileOrCwdOption cwd)
-
-someFileParser :: String -> String -> Parser (SomeBase File)
-someFileParser = fileParser someFileOption
-
-rootParser :: Parser (Maybe (Path Abs Dir))
+rootParser :: Parser (Maybe (PathSpec Dir))
 rootParser =
-  optional (option absDirOption (long "root" <> help "The root directory of the project"))
+  optional (strOption (long "root" <> help "The root directory of the project"))
 
 jsonConfigParser :: Parser JsonConfig
 jsonConfigParser =
   option jsonOption (long "config" <> help "The Hix-generated config, file or text")
 
-preprocParser ::
-  Path Abs Dir ->
-  Parser PreprocOptions
-preprocParser cwd =
+preprocParser :: Parser PreprocOptions
+preprocParser =
   PreprocOptions
   <$>
   (fmap Right <$> optional jsonConfigParser)
   <*>
   rootParser
   <*>
-  absFileOrCwdParser cwd "source" "The original source file"
+  strOption (long "source" <> help "The original source file")
   <*>
-  absFileOrCwdParser cwd "in" "The prepared input file"
+  strOption (long "in" <> help "The prepared input file")
   <*>
-  absFileOrCwdParser cwd "out" "The path to the output file"
+  strOption (long "out" <> help "The path to the output file")
 
 packageSpecParser :: Parser (Maybe PackageSpec)
 packageSpecParser = do
@@ -165,19 +140,15 @@ componentCoordsParser =
   <*>
   componentSpecParser
 
-componentForFileParser ::
-  Path Abs Dir ->
-  Parser TargetSpec
-componentForFileParser cwd =
+componentForFileParser :: Parser TargetSpec
+componentForFileParser =
   TargetForFile
   <$>
-  option (absFileOrCwdOption cwd) (long "file" <> short 'f' <> help "The absolute file path of the test module")
+  strOption (long "file" <> short 'f' <> help "The absolute file path of the test module")
 
-targetSpecParser ::
-  Path Abs Dir ->
-  Parser TargetSpec
-targetSpecParser cwd =
-  componentForFileParser cwd
+targetSpecParser :: Parser TargetSpec
+targetSpecParser =
+  componentForFileParser
   <|>
   TargetForComponent <$> componentCoordsParser
 
@@ -223,36 +194,30 @@ extraGhcidParser :: Parser (Maybe ExtraGhcidOptions)
 extraGhcidParser =
   optional (strOption (long "ghcid-options" <> help "Additional command line options to pass to ghcid"))
 
-envParser ::
-  Path Abs Dir ->
-  Parser EnvRunnerCommandOptions
-envParser cwd = do
+envParser :: Parser EnvRunnerCommandOptions
+envParser = do
   options <- do
     config <- Right <$> jsonConfigParser
     root <- rootParser
-    component <- optional (targetSpecParser cwd)
+    component <- optional targetSpecParser
     pure EnvRunnerOptions {..}
   test <- testOptionsParser
   extraGhci <- extraGhciParser
   extraGhcid <- extraGhcidParser
   pure EnvRunnerCommandOptions {..}
 
-ghciParser ::
-  Path Abs Dir ->
-  Parser GhciOptions
-ghciParser cwd = do
+ghciParser :: Parser GhciOptions
+ghciParser = do
   config <- Right <$> jsonConfigParser
   root <- rootParser
-  component <- targetSpecParser cwd
+  component <- targetSpecParser
   test <- testOptionsParser
   extra <- extraGhciParser
   pure GhciOptions {..}
 
-ghcidParser ::
-  Path Abs Dir ->
-  Parser GhcidOptions
-ghcidParser cwd = do
-  ghci <- ghciParser cwd
+ghcidParser :: Parser GhcidOptions
+ghcidParser = do
+  ghci <- ghciParser
   extra <- extraGhcidParser
   pure GhcidOptions {..}
 
@@ -419,17 +384,15 @@ hackageCommands =
 hackageCommand :: Parser HackageCommand
 hackageCommand = hsubparser hackageCommands
 
-commands ::
-  Path Abs Dir ->
-  Mod CommandFields Command
-commands cwd =
-  command "preproc" (Preproc <$> info (preprocParser cwd) (progDesc "Preprocess a source file for use with ghcid"))
+commands :: Mod CommandFields Command
+commands =
+  command "preproc" (Preproc <$> info preprocParser (progDesc "Preprocess a source file for use with ghcid"))
   <>
-  command "env" (EnvRunner <$> info (envParser cwd) (progDesc "Print the env runner for a component or a named env"))
+  command "env" (EnvRunner <$> info envParser (progDesc "Print the env runner for a component or a named env"))
   <>
-  command "ghci-cmd" (GhciCmd <$> info (ghciParser cwd) (progDesc "Print a ghci cmdline to load a module in a Hix env"))
+  command "ghci-cmd" (GhciCmd <$> info ghciParser (progDesc "Print a ghci cmdline to load a module in a Hix env"))
   <>
-  command "ghcid-cmd" (GhcidCmd <$> info (ghcidParser cwd) (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
+  command "ghcid-cmd" (GhcidCmd <$> info ghcidParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
   <>
   command "init" (Init <$> info initParser (progDesc "Create a new Hix project in the current directory"))
   <>
@@ -467,7 +430,7 @@ globalParser realCwd = do
   trace <- switch (long "trace" <> help "Trace debug output")
   quiet <- switch (long "quiet" <> help "Suppress info output")
   cabalVerbose <- switch (long "cabal-verbose" <> help "Verbose output from Cabal")
-  cwd <- option absDirOption (long "cwd" <> help "Force a different working directory" <> value realCwd)
+  cwd <- strOption (long "cwd" <> help "Force a different working directory" <> value (PathConcrete (Abs realCwd)))
   rootOverride <- rootParser
   output <- option outputFormatOption (long "output" <> help formatHelp <> value OutputNone <> metavar "format")
   target <- option outputTargetOption (long "target" <> help targetHelp <> value OutputDefault <> metavar "target")
@@ -480,7 +443,7 @@ appParser ::
   Path Abs Dir ->
   Parser Options
 appParser cwd =
-  Options <$> globalParser cwd <*> hsubparser (commands cwd)
+  Options <$> globalParser cwd <*> hsubparser commands
 
 parseCli ::
   IO Options

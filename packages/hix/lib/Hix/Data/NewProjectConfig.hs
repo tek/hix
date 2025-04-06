@@ -1,6 +1,8 @@
 module Hix.Data.NewProjectConfig where
 
-import Hix.Data.PathUser (PathUser)
+import Path (Dir)
+
+import Hix.Data.PathSpec (PathSpec)
 
 newtype ProjectName =
   ProjectName { unProjectName :: Text }
@@ -43,7 +45,7 @@ data InitProjectConfig =
 
 data NewProjectConfig =
   NewProjectConfig {
-    directory :: PathUser,
+    directory :: PathSpec Dir,
     name :: Maybe ProjectName,
     printDirectory :: Bool,
     config :: CreateProjectConfig
