@@ -78,8 +78,7 @@ hackagesFor :: HackagePurpose -> CabalConfig -> M (NonEmpty HackageRepo)
 hackagesFor purpose config =
   fromMaybeA noMatches $
   nonEmpty $
-  NonEmpty.filter match $
-  repos
+  NonEmpty.filter match repos
   where
     match repo =
       repo.enable && case purpose of

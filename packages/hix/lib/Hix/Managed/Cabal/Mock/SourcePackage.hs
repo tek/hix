@@ -34,7 +34,6 @@ import Hix.Managed.Data.Packages (Packages)
 allDeps :: [Dep] -> SourcePackage -> SourcePackage
 allDeps deps =
   nMap \ p -> p {deps = deps ++ p.deps}
-  where
 
 allDep :: Dep -> SourcePackage -> SourcePackage
 allDep = allDeps . pure

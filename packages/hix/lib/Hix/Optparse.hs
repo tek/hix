@@ -70,7 +70,7 @@ outputTargetOption =
 
 parsecOption :: Parsec a => Text -> ReadM a
 parsecOption desc =
-  eitherReader \ raw -> bimap (err raw) id (eitherParsec raw)
+  eitherReader \ raw -> first (err raw) (eitherParsec raw)
   where
     err raw msg = [exon|'#{raw}' is not a valid ##{desc}: #{msg}|]
 

@@ -108,9 +108,9 @@ jsonConfigParser =
 
 preprocParser :: Parser PreprocOptions
 preprocParser =
-  PreprocOptions
+  PreprocOptions . fmap Right
   <$>
-  (fmap Right <$> optional jsonConfigParser)
+  optional jsonConfigParser
   <*>
   rootParser
   <*>

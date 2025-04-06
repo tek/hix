@@ -36,5 +36,5 @@ updateBoundsWith update MutationState {bounds, versions, ..} =
     ..
   }
   where
-    addBound = mapMaybeMissing \ _ -> fmap (flip update mempty)
+    addBound = mapMaybeMissing \ _ -> fmap (`update` mempty)
     updateBound = zipWithMatched \ _ -> maybe id update

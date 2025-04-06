@@ -76,4 +76,4 @@ instance ToJSON BuildOutput where
   toJSON BuildOutput {..} =
     case (toJSON changes, toJSON names) of
       (Object c, Object n) -> Object (c <> n)
-      _ -> (Object [("error", "ToJSON BuildOutput invariant")])
+      _ -> Object [("error", "ToJSON BuildOutput invariant")]

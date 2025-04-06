@@ -1,6 +1,6 @@
 module Hix.Preproc where
 
-import Control.Lens (IndexedTraversal', has, index, ix, preview, (%~), (.~), (^..))
+import Control.Lens (IndexedTraversal', has, index, ix, preview, (%~), (.~), (^..), (?~))
 import Control.Lens.Regex.ByteString (Match, group, groups, match, regex)
 import Control.Monad.Trans.Except (ExceptT, throwE)
 import qualified Data.ByteString as ByteString
@@ -308,7 +308,7 @@ scanHeader customPrelude =
     processLine ScanState {phase = PreModule, prelude = CustomPrelude p PreludeDefault, ..} l ls | containsNoImplicitPrelude l =
       pushModule ScanState {phase = PreModule, prelude = CustomPrelude p PreludeNoImplicit, ..} l ls
     processLine s@ScanState {phase = PreModule} l ls | Just name <- isModule l =
-      changePhase (s & #moduleName .~ Just name) ModuleStart l ls
+      changePhase (s & #moduleName ?~ name) ModuleStart l ls
     processLine s@ScanState {phase = ModuleStart} l ls | has parenRegex l =
       changePhase s ModuleExports (insertExport l) ls
     processLine s@ScanState {phase = ModuleExports, moduleName = Just name, exportsSelf = False} l ls
