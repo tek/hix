@@ -10,4 +10,4 @@ data ReportHandlers =
 
 handlersNull :: ReportHandlers
 handlersNull =
-  ReportHandlers {mutations = const unit}
+  ReportHandlers {mutations = \ _ -> unit}

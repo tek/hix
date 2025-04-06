@@ -161,7 +161,7 @@ mutReplace ::
   map ->
   map
 mutReplace =
-  nAmend const
+  nAmend \ new _ -> new
 
 mutReplaceTargets ::
   NMap map MutableDep v sort =>

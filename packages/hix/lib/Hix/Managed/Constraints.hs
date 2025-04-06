@@ -30,7 +30,7 @@ preferVersions = preferRanges . nMap thisVersion
 
 preferInstalled :: Set MutableDep -> EnvConstraints
 preferInstalled =
-  forDeps (const mempty {mutation = mempty, installed = Just True})
+  forDeps \ _ -> mempty {mutation = mempty, installed = Just True}
 
 explicitBounds :: Ranges -> EnvConstraints
 explicitBounds =
