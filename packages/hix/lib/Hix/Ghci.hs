@@ -40,7 +40,7 @@ import Hix.Error (Error, ErrorMessage (..), pathText, throwMessage, tryIO)
 import Hix.Json (jsonConfigE)
 import Hix.Maybe (fromMaybeA)
 import Hix.Monad (M, noteGhci)
-import Hix.Path (rootDir, resolvePathSpecDir, resolvePathSpecFile)
+import Hix.Path (rootDir, PathSpecResolver (resolvePathSpec))
 
 relativeToComponent ::
   Path Abs Dir ->
@@ -59,8 +59,8 @@ moduleName ::
   M ModuleName
 moduleName package component = \case
   GhciOptions {component = TargetForFile path, root = cliRoot} -> do
-    root <- rootDir =<< traverse resolvePathSpecDir cliRoot
-    rel <- relativeToComponent root package component =<< resolvePathSpecFile path
+    root <- rootDir =<< traverse resolvePathSpec cliRoot
+    rel <- relativeToComponent root package component =<< resolvePathSpec path
     pure (ModuleName (Text.replace "/" "." (withoutExt rel)))
   GhciOptions {test} -> pure test.mod
   where
@@ -110,7 +110,7 @@ testRun config = \case
 assemble :: GhciOptions -> M GhciTest
 assemble opt = do
   config <- jsonConfigE opt.config
-  mRoot <- traverse resolvePathSpecDir opt.root
+  mRoot <- traverse resolvePathSpec opt.root
   root <- rootDir mRoot
   Target {..} <- targetComponentOrError mRoot config.mainPackage config.packages opt.component
   script <- ghciScript config package sourceDir opt

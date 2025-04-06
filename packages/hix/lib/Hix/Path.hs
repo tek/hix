@@ -9,7 +9,8 @@ import System.IO.Error (tryIOError)
 
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (AppResources (AppResources), M (M), liftE)
-import Hix.Data.PathSpec (PathSpec, resolvePathSpec)
+import qualified Hix.Data.PathSpec as PathSpec
+import Hix.Data.PathSpec (PathSpec)
 import Hix.Monad (appContext)
 import Hix.Pretty (showHP)
 
@@ -36,10 +37,13 @@ resolvePathSpecWith ::
 resolvePathSpecWith resolver pathSpec =
   appContext [exon|resolving path spec #{showHP pathSpec}|] $ do
     AppResources {cwd} <- M ask
-    liftE $ resolvePathSpec resolver cwd pathSpec
+    liftE $ PathSpec.resolvePathSpec resolver cwd pathSpec
 
-resolvePathSpecDir :: PathSpec Dir -> M (Path Abs Dir)
-resolvePathSpecDir = resolvePathSpecWith resolveDir
+class PathSpecResolver t where
+  resolvePathSpec :: PathSpec t -> M (Path Abs t)
 
-resolvePathSpecFile :: PathSpec File -> M (Path Abs File)
-resolvePathSpecFile = resolvePathSpecWith resolveFile
+instance PathSpecResolver Dir where
+  resolvePathSpec = resolvePathSpecWith resolveDir
+
+instance PathSpecResolver File where
+  resolvePathSpec = resolvePathSpecWith resolveFile
