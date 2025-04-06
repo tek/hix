@@ -59,7 +59,7 @@ moduleName ::
   M ModuleName
 moduleName package component = \case
   GhciOptions {component = TargetForFile path, root = cliRoot} -> do
-    root <- rootDir =<< mapM resolvePathSpecDir cliRoot
+    root <- rootDir =<< traverse resolvePathSpecDir cliRoot
     rel <- relativeToComponent root package component =<< resolvePathSpecFile path
     pure (ModuleName (Text.replace "/" "." (withoutExt rel)))
   GhciOptions {test} -> pure test.mod
@@ -110,7 +110,7 @@ testRun config = \case
 assemble :: GhciOptions -> M GhciTest
 assemble opt = do
   config <- jsonConfigE opt.config
-  mRoot <- mapM resolvePathSpecDir opt.root
+  mRoot <- traverse resolvePathSpecDir opt.root
   root <- rootDir mRoot
   Target {..} <- targetComponentOrError mRoot config.mainPackage config.packages opt.component
   script <- ghciScript config package sourceDir opt

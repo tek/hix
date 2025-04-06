@@ -493,6 +493,6 @@ fromCabalFile source =
 preprocess :: PreprocOptions -> M ()
 preprocess opt = do
   source <- resolvePathSpecFile opt.source
-  root <- mapM resolvePathSpecDir opt.root
+  root <- traverse resolvePathSpecDir opt.root
   conf <- maybe (fromCabalFile source) (fromConfig root source) opt.config
   preprocessWith opt conf

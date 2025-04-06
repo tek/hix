@@ -32,7 +32,7 @@ componentRunner cliRoot defaultPkg config spec =
 envRunner :: EnvRunnerOptions -> M EnvRunner
 envRunner opts = do
   config <- jsonConfigE opts.config
-  root <- mapM resolvePathSpecDir opts.root
+  root <- traverse resolvePathSpecDir opts.root
   let runner = componentRunner root config.mainPackage config.packages
   fromMaybe config.defaultEnv . join <$> traverse runner opts.component
 
