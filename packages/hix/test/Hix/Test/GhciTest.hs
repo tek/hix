@@ -3,7 +3,7 @@ module Hix.Test.GhciTest where
 import Control.Monad.Trans.Class (lift)
 import Exon (exon)
 import Hedgehog (evalEither, (===))
-import Path (Abs, Dir, File, Path, Rel, SomeBase (Rel), absdir, absfile, reldir, relfile, (</>))
+import Path (Abs, Dir, File, Path, Rel, SomeBase (Abs, Rel), absdir, absfile, reldir, relfile, (</>))
 import Path.IO (withSystemTempDir)
 
 import Hix.Data.ComponentConfig (
@@ -29,6 +29,7 @@ import Hix.Data.Options (
   TargetSpec (TargetForComponent, TargetForFile),
   TestOptions (TestOptions),
   )
+import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import Hix.Env (envRunner)
 import Hix.Ghci (assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
 import Hix.Monad (runM)
@@ -175,7 +176,7 @@ test_mainPackage = do
 
 spec2 :: TargetSpec
 spec2 =
-  TargetForFile (root </> [relfile|packages/core/test/Main.hs|])
+  TargetForFile $ PathConcrete $ Abs (root </> [relfile|packages/core/test/Main.hs|])
 
 spec3 :: TargetSpec
 spec3 =
@@ -199,7 +200,7 @@ test_componentEnv = do
 
 spec4 :: TargetSpec
 spec4 =
-  TargetForFile (root </> [relfile|packages/core/test/Core/Test/Main.hs|])
+  TargetForFile $ PathConcrete $ Abs (root </> [relfile|packages/core/test/Core/Test/Main.hs|])
 
 target_moduleName :: Text
 target_moduleName =

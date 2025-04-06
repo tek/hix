@@ -1,12 +1,14 @@
 module Hix.Managed.Data.StateFileConfig where
 
-import Path (File, Path, Rel, relfile)
+import Path (File, SomeBase (Rel), relfile)
+
 import Distribution.Pretty (Pretty (pretty))
+import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import Hix.Pretty (prettyMap, field)
 
 data StateFileConfig =
   StateFileConfig {
-    file :: Path Rel File
+    file :: PathSpec File
   }
   deriving stock (Eq, Show, Generic)
 
@@ -19,5 +21,5 @@ instance Pretty StateFileConfig where
 instance Default StateFileConfig where
   def =
     StateFileConfig {
-      file = [relfile|ops/managed.nix|]
+      file = PathConcrete $ Rel [relfile|ops/managed.nix|]
     }

@@ -4,12 +4,13 @@ import Control.Monad.Trans.Reader (ask)
 import qualified Data.Text.IO as Text
 import Exon (exon)
 import Hedgehog (evalEither)
-import Path (Abs, Dir, Path, parent, reldir, relfile, toFilePath, (</>))
+import Path (Abs, Dir, Path, SomeBase (Rel), parent, reldir, relfile, toFilePath, (</>))
 import Path.IO (createDirIfMissing, getCurrentDir)
 
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (AppResources (AppResources), M (M))
 import Hix.Data.Options (projectOptions)
+import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import Hix.Error (pathText)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import qualified Hix.Managed.Data.EnvConfig
@@ -224,7 +225,7 @@ lowerNativeTest = do
   root <- setupProject
   let
     stateFileConf = StateFileConfig {
-      file = [relfile|ops/managed.nix|]
+      file = PathConcrete $ Rel [relfile|ops/managed.nix|]
     }
     envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = Just (GhcDbSystem Nothing)})]
     buildConfig = def

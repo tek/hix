@@ -17,7 +17,7 @@ import Language.Haskell.Extension (
   Extension (DisableExtension, EnableExtension, UnknownExtension),
   Language (UnknownLanguage),
   )
-import Path (Abs, Dir, File, Path, toFilePath)
+import Path (Abs, Dir, File, Path, SomeBase (Abs), toFilePath)
 import Prelude hiding (group)
 import System.Random (randomRIO)
 
@@ -29,11 +29,12 @@ import Hix.Data.Json (JsonConfig)
 import Hix.Data.Monad (LogLevel (LogVerbose), M, liftE)
 import Hix.Data.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Data.PackageName (PackageName (PackageName))
+import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Error (Error (..), ErrorMessage (Client), sourceError)
 import Hix.Json (jsonConfigE)
-import Hix.Monad (tryIOM)
+import Hix.Monad (tryIOM, resolvePathSpecDir, resolvePathSpecFile)
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
 
@@ -449,11 +450,13 @@ preprocessModule source conf dummyExportName inLines =
 
 preprocessWith :: PreprocOptions -> CabalConfig -> M ()
 preprocessWith opt conf = do
-  inLines <- tryIOM (ByteString.readFile (toFilePath opt.inFile))
+  inLines <- tryIOM . ByteString.readFile . toFilePath =<< resolvePathSpecFile opt.inFile
   dummyNumber :: Int <- randomRIO (10000, 10000000)
   let dummyExportName = DummyExportName [exon|Hix_Dummy_#{show dummyNumber}|]
-  let result = preprocessModule opt.source conf dummyExportName inLines
-  tryIOM (ByteStringBuilder.writeFile (toFilePath opt.outFile) result)
+  source <- resolvePathSpecFile opt.source
+  let result = preprocessModule source conf dummyExportName inLines
+  outFile <- resolvePathSpecFile opt.outFile
+  tryIOM (ByteStringBuilder.writeFile (toFilePath outFile) result)
 
 fromConfig ::
   Maybe (Path Abs Dir) ->
@@ -462,7 +465,7 @@ fromConfig ::
   M CabalConfig
 fromConfig cliRoot source pconf = do
   conf <- jsonConfigE pconf
-  target <- targetComponentOrError cliRoot Nothing conf.packages (TargetForFile source)
+  target <- targetComponentOrError cliRoot Nothing conf.packages (TargetForFile $ PathConcrete (Abs source))
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,
     ghcOptions = stringUtf8 <$> target.component.ghcOptions,
@@ -489,5 +492,7 @@ fromCabalFile source =
 -- TODO add common stanzas
 preprocess :: PreprocOptions -> M ()
 preprocess opt = do
-  conf <- maybe (fromCabalFile opt.source) (fromConfig opt.root opt.source) opt.config
+  source <- resolvePathSpecFile opt.source
+  root <- mapM resolvePathSpecDir opt.root
+  conf <- maybe (fromCabalFile source) (fromConfig root source) opt.config
   preprocessWith opt conf

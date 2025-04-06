@@ -1,6 +1,6 @@
 module Hix.Test.Run where
 
-import Path (Abs, Dir, Path, absdir, reldir, (</>))
+import Path (Abs, Dir, Path, SomeBase (Abs), absdir, reldir, (</>))
 import Path.IO (createDirIfMissing, withSystemTempDir)
 
 import qualified Hix.Console as Console
@@ -8,6 +8,7 @@ import Hix.Data.Error (Error)
 import qualified Hix.Data.GlobalOptions as GlobalOptions
 import Hix.Data.GlobalOptions (GlobalOptions, defaultGlobalOptions)
 import Hix.Data.LogLevel (LogLevel (..))
+import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import Hix.Monad (M, runMLoggerWith, runMWith, withLogIORef)
 
 data LogConfig =
@@ -35,7 +36,7 @@ withTestDir prog =
   withSystemTempDir "hix-test" \ cwd -> do
     let root = cwd </> [reldir|project|]
     createDirIfMissing False root
-    prog (defaultGlobalOptions cwd) {GlobalOptions.root}
+    prog (defaultGlobalOptions cwd) {GlobalOptions.root = PathConcrete $ Abs root}
 
 runMTestDir :: LogConfig -> M a -> IO (Either Error a)
 runMTestDir LogConfig {logLevel} prog =

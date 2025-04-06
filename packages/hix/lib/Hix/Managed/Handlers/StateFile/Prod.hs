@@ -1,13 +1,14 @@
 module Hix.Managed.Handlers.StateFile.Prod where
 
 import qualified Data.Text.IO as Text
-import Path (Abs, Dir, File, Path, parent, toFilePath, (</>))
-import Path.IO (createDirIfMissing, doesDirExist, doesFileExist)
+import Path (Abs, Dir, File, Path, parent, toFilePath)
+import Path.IO (createDirIfMissing, doesDirExist, doesFileExist, resolveFile)
 import System.Posix (fileMode, getFileStatus, ownerWriteMode, setFileMode, unionFileModes)
 
 import qualified Hix.Data.Monad
-import Hix.Data.Monad (appRes)
+import Hix.Data.Monad (appRes, liftE)
 import Hix.Data.NixExpr (Expr)
+import Hix.Data.PathSpec (resolvePathSpec)
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 import Hix.Managed.Handlers.StateFile (StateFileHandlers (..))
@@ -35,7 +36,7 @@ initFile ::
   M (Path Abs File)
 initFile conf tmpRoot = do
   root <- fromMaybeA appRes.root tmpRoot
-  let depsFile = root </> conf.file
+  depsFile <- liftE $ resolvePathSpec resolveFile root conf.file
   createDirIfMissing False (parent depsFile)
   setDepsFileWritable depsFile
   pure depsFile

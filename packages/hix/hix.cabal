@@ -57,7 +57,7 @@ library
       Hix.Data.Overrides
       Hix.Data.PackageId
       Hix.Data.PackageName
-      Hix.Data.PathUser
+      Hix.Data.PathSpec
       Hix.Data.PreprocConfig
       Hix.Data.ProjectFile
       Hix.Data.Version
@@ -411,7 +411,6 @@ test-suite hix-test
       Hix.Test.Managed.UnsafeIsString
       Hix.Test.ManagedTest
       Hix.Test.NewTest
-      Hix.Test.Optparse
       Hix.Test.PreprocTest
       Hix.Test.Utils
       Hix.Test.VersionTest
