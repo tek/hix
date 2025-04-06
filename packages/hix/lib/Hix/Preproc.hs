@@ -308,12 +308,12 @@ scanHeader customPrelude =
     processLine ScanState {phase = PreModule, prelude = CustomPrelude p PreludeDefault, ..} l ls | containsNoImplicitPrelude l =
       pushModule ScanState {phase = PreModule, prelude = CustomPrelude p PreludeNoImplicit, ..} l ls
     processLine s@ScanState {phase = PreModule} l ls | Just name <- isModule l =
-      changePhase (s & #moduleName .~ Just name) ModuleStart l ls
+      changePhase (s & #moduleName ?~ Just name) ModuleStart l ls
     processLine s@ScanState {phase = ModuleStart} l ls | has parenRegex l =
       changePhase s ModuleExports (insertExport l) ls
     processLine s@ScanState {phase = ModuleExports, moduleName = Just name, exportsSelf = False} l ls
       | exs <- moduleExports l
-      , elem name exs =
+      , name `elem` exs =
         processLine (s & #exportsSelf .~ True) l ls
     processLine ScanState {phase = InModule, ..} l ls | isModuleEnd l =
       pushModule ScanState {phase = Imports, ..} l ls

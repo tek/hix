@@ -29,7 +29,7 @@ withHackageOnPort ::
 withHackageOnPort root port ma = do
   confStaticDir <- noteFatal "$hackage_data_dir unset" =<< liftIO (lookupEnv "hackage_data_dir")
   createDirIfMissing True tmpDir
-  defaults <- liftIO $ Server.defaultServerConfig
+  defaults <- liftIO Server.defaultServerConfig
   confVerbosity <- cabalVerbosity
   let
     config =

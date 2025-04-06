@@ -125,9 +125,9 @@ targetInPackage (ResolvedPackage _ package) (Just comp) = do
   where
     match cand = matchComponent cand comp
 targetInPackage (ResolvedPackage True package) Nothing =
-  either clientError pure (ExplicitTarget <$> defaultComponent package)
+  either clientError (pure . ExplicitTarget) (defaultComponent package)
 targetInPackage (ResolvedPackage False package) Nothing = do
-  either (pure . NoDefaultTarget) pure (DefaultTarget <$> defaultComponent package)
+  either (pure . NoDefaultTarget) (pure . DefaultTarget) (defaultComponent package)
 targetInPackage (NoPackage err) _ = pure (NoDefaultTarget err)
 
 targetForComponent ::
