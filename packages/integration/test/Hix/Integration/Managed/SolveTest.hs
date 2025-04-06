@@ -32,10 +32,10 @@ test_solve =
           let plan = solverPlan sip
           putStrLn ""
           putStrLn "Changes:"
-          putStrLn (show (prettyL plan.changes))
+          print (prettyL plan.changes)
           putStrLn ""
           putStrLn "Matching DB:"
-          putStrLn (show (prettyL plan.matching))
+          print (prettyL plan.matching)
           putStrLn ""
         putStrLn "Sorted:"
         putStrLn (showPL sorted)

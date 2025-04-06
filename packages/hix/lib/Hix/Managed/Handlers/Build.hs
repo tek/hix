@@ -88,7 +88,7 @@ handlersNull =
 
 wrapCabal :: (CabalHandlers -> CabalHandlers) -> BuildHandlers -> BuildHandlers
 wrapCabal f BuildHandlers {..} =
-  BuildHandlers {cabal = \ p -> InitCabal (\ d -> first f <$> (cabal p).run d), ..}
+  BuildHandlers {cabal = \ p -> InitCabal (fmap (first f) . (cabal p).run), ..}
 
 logCabal ::
   MonadIO m =>

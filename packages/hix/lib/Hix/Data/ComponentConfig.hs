@@ -54,7 +54,7 @@ instance FromJSON PreludePackage where
   parseJSON v =
     hpackStruct v <|> plainName
     where
-      hpackStruct = withObject "PreludePackageSpec" \ o -> o .: "name"
+      hpackStruct = withObject "PreludePackageSpec" (.: "name")
       plainName = PreludePackageName <$> parseJSON v
 
 data PreludeConfig =

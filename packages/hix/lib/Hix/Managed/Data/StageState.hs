@@ -41,9 +41,9 @@ instance Pretty BuildFailure where
   pretty = \case
     AppFailure err -> "App failure:" <+> pretty err
     UnknownFailure -> "Unknown failure"
-    UnexpectedFailure msgs -> hang ("Unexpected failure:") 2 (vcat (prettyText <$> toList msgs))
-    PackageFailure drvs -> "Package failures in" <+> (prettyL drvs)
-    TimeoutFailure pkgs -> "Timeout failure, active builds:" <+> (prettyL pkgs)
+    UnexpectedFailure msgs -> hang "Unexpected failure:" 2 (vcat (prettyText <$> toList msgs))
+    PackageFailure drvs -> "Package failures in" <+> prettyL drvs
+    TimeoutFailure pkgs -> "Timeout failure, active builds:" <+> prettyL pkgs
 
 data BuildResult =
   BuildSuccess [Text]
