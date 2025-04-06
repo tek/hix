@@ -6,7 +6,7 @@ import Data.List.Extra (stripInfix)
 import Distribution.Parsec (Parsec, eitherParsec)
 import Exon (exon)
 import Options.Applicative (ReadM, eitherReader)
-import Path (parseAbsFile, toFilePath)
+import Path (File, Path, Rel, parseAbsFile, parseRelFile, toFilePath)
 
 import Hix.Data.Json (JsonConfig (..))
 import Hix.Data.OutputFormat (OutputFormat (..))
@@ -16,6 +16,18 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageIndexState, HackageName)
 import Hix.Managed.Data.BuildConfig (SpecialBuildHandlers (..))
 import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers (..))
+
+pathOption ::
+  String ->
+  (String -> Either e a) ->
+  ReadM a
+pathOption desc parse =
+  eitherReader \ raw ->
+    first (const [exon|not a valid #{desc} path: #{raw}|]) (parse raw)
+
+-- | A relative file path option for @optparse-applicative@.
+relFileOption :: ReadM (Path Rel File)
+relFileOption = pathOption "relative file" parseRelFile
 
 jsonOption :: ReadM JsonConfig
 jsonOption =

@@ -29,7 +29,7 @@ import Options.Applicative (
   switch,
   value,
   )
-import Path (Abs, Dir, Path, SomeBase (Abs), parseRelDir, parseSomeDir)
+import Path (Abs, Dir, Path, SomeBase (Abs), parseRelDir, parseSomeDir, relfile)
 import Path.IO (getCurrentDir)
 import Prelude hiding (Mod, mod)
 
@@ -95,6 +95,7 @@ import Hix.Optparse (
   maintHandlersOption,
   outputFormatOption,
   outputTargetOption,
+  relFileOption,
   )
 
 rootParser :: Parser (Maybe (PathSpec Dir))
@@ -257,7 +258,7 @@ bootstrapParser = do
 stateFileConfigParser :: Parser StateFileConfig
 stateFileConfigParser = do
   -- TODO this needs to be moved to ProjectContextProto
-  file <- strOption (long "file" <> short 'f' <> help fileHelp <> value "ops/managed.nix")
+  file <- option relFileOption (long "file" <> short 'f' <> help fileHelp <> value [relfile|ops/managed.nix|])
   pure StateFileConfig {..}
   where
     fileHelp = "The relative path to the managed deps file"
