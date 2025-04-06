@@ -13,6 +13,10 @@
         lower = null;
         upper = "1.8";
       };
+      local1 = {
+        lower = null;
+        upper = null;
+      };
     };
     local2 = {
       base = {
@@ -28,6 +32,10 @@
       base = {
         lower = null;
         upper = "4.20";
+      };
+      local2 = {
+        lower = null;
+        upper = null;
       };
       path = {
         lower = null;
@@ -55,8 +63,13 @@
       extra = {
         version = "1.7.14";
         hash = "0dvp4h3grnfkly6aj7j9ic62qgy4gzvn8c8s8d4ncx6kjglgwn3v";
+        repo = "hackage.haskell.org";
       };
     };
+    latest-other = {};
+  };
+  solver = {
+    latest-main = {};
     latest-other = {};
   };
   resolving = false;

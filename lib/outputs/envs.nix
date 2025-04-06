@@ -17,6 +17,10 @@
 
   appsEnv = env: outputs: { dep-versions = depVersions env.name;  inherit (env) shell; };
 
+  managedEnv = env: {
+    solver = util.ghc.packageDbSolver (!config.managed.internal.localsInPackageDb) env;
+  };
+
   prefixed.env =
     util.mergeAll [
       (internal.envs.mapMaybe legacyEnv validBuildEnvs)
@@ -33,4 +37,6 @@ in {
 
   shells = util.mapValues (e: e.shell) (internal.envs.filterExposed "shell" validEnvs);
 
+  internal.env =
+    util.mapValues managedEnv util.managed.env.envs;
 }

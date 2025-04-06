@@ -3,7 +3,8 @@
 
   inputs.hix.url = "path:HIX";
 
-  outputs = {self, hix, ...}: hix.lib._hix_test ({config, lib, ...}: {
+  outputs = {hix, ...}: hix.lib._hix_test {
+
     managed = {
       enable = true;
       verbose = false;
@@ -15,8 +16,10 @@
         compiler = "ghc90";
       };
     };
+
     ghcVersions = [];
     compat.enable = false;
+
     packages = {
       local1 = {
         src = ./packages/local1;
@@ -41,5 +44,8 @@
 
     envs.lower-local1.localPackage = api: api.minimal;
     envs.lower-local2.localPackage = api: api.minimal;
-  });
+
+    internal.hixCli.dev = true;
+
+  };
 }

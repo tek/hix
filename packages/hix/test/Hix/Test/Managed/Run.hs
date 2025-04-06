@@ -2,7 +2,7 @@ module Hix.Test.Managed.Run where
 
 import Data.IORef (readIORef)
 import qualified Data.Text.IO as Text
-import Hedgehog (TestT, evalEither, evalMaybe)
+import Hedgehog (TestT, evalMaybe)
 import Path (Abs, Dir, File, Path, Rel, parent, toFilePath, (</>))
 import Path.IO (createDirIfMissing)
 
@@ -22,8 +22,7 @@ import Hix.Managed.Data.BuildConfig (BuildConfig (toposortMutations))
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
-import Hix.Managed.Data.ManagedPackage (ManagedPackage)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import qualified Hix.Managed.Data.ProjectContextProto as ProjectContextProto
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
@@ -36,7 +35,8 @@ import qualified Hix.Managed.Handlers.Build.Test as BuildHandlers
 import Hix.Managed.Handlers.Project (ProjectHandlers (..))
 import qualified Hix.Managed.Handlers.Report.Prod as ReportHandlers
 import Hix.Managed.ProjectContext (processProjectResult, withProjectContext)
-import Hix.Test.Utils (LogConfig (..), runMLogTest, runMTest')
+import Hix.Test.Run (LogConfig (..))
+import Hix.Test.Utils (runMLogTest, runMTestLog)
 
 data TestParams =
   TestParams {
@@ -44,7 +44,7 @@ data TestParams =
     cabalLog :: Bool,
     log :: Bool,
     logConfig :: LogConfig,
-    packages :: Packages ManagedPackage,
+    packages :: ProjectPackages,
     ghcPackages :: GhcPackages,
     state :: ProjectStateProto,
     projectOptions :: ProjectOptions,
@@ -56,7 +56,7 @@ nosortOptions = def {ProjectOptions.build = def {toposortMutations = False}}
 
 testParams ::
   Bool ->
-  Packages ManagedPackage ->
+  ProjectPackages ->
   TestParams
 testParams debug packages =
   TestParams {
@@ -91,7 +91,7 @@ testProjectContext defaultEnvName params =
     hackage = []
   }
   where
-    mkEnv targets = EnvConfig {targets, ghc = GhcDbSynthetic params.ghcPackages}
+    mkEnv targets = EnvConfig {targets, ghc = Just (GhcDbSynthetic params.ghcPackages)}
 
     defaultEnv = [(defaultEnvName, nKeys params.packages)]
 
@@ -113,13 +113,13 @@ managedTest' defaultEnvName params main =
         if params.log
         then handlers1 {project = handlers1.project {report = ReportHandlers.handlersProd}}
         else handlers1
-    (log, result) <- traverse evalEither =<< liftIO (runner (main handlers params.projectOptions context))
+    (log, result) <- runner (main handlers params.projectOptions context)
     stateFile <- evalMaybe . head =<< liftIO (readIORef stateFileRef)
     cabalLog <- fold <$> for cabalRef \ ref -> reverse <$> liftIO (readIORef ref)
     pure Result {..}
   where
     runner | params.log = runMLogTest params.logConfig
-           | otherwise = fmap ([],) . runMTest' params.logConfig
+           | otherwise = fmap ([],) . runMTestLog params.logConfig
 
     context = testProjectContext defaultEnvName params
 

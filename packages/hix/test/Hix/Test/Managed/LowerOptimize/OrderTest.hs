@@ -7,8 +7,7 @@ import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Data.Constraints (EnvConstraints)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import Hix.Managed.Data.StageState (BuildStatus (Success))
@@ -17,7 +16,7 @@ import Hix.Test.Hedgehog (listEqZip)
 import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
 import Hix.Test.Utils (UnitTest)
 
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   managedPackages [(("local1", "1.0"), ["dep1", "dep2", "dep3"])]
 
@@ -62,7 +61,6 @@ state =
         ("dep3", [2, 1])
       ])
     ],
-    overrides = [("lower", [])],
     initial = [
       ("lower", [
         ("dep1", [2, 1]),
@@ -70,6 +68,8 @@ state =
         ("dep3", [2, 1])
       ])
     ],
+    overrides = [("lower", [])],
+    solver = [],
     resolving = False
   }
 

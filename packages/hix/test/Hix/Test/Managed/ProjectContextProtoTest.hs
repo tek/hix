@@ -3,7 +3,7 @@ module Hix.Test.Managed.ProjectContextProtoTest where
 import Data.Aeson (eitherDecodeStrict')
 import Distribution.Version (earlierVersion, intersectVersionRanges, majorBoundVersion, orLaterVersion, thisVersion)
 import Exon (exon)
-import Hedgehog (evalEither, (===))
+import Hedgehog ((===))
 import Path (absdir)
 
 import qualified Hix.Data.Dep
@@ -22,8 +22,7 @@ import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext (EnvContext), EnvDeps (EnvDeps))
 import qualified Hix.Managed.Data.ManagedPackage
-import Hix.Managed.Data.ManagedPackage (ManagedPackage (ManagedPackage))
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ManagedPackage (ManagedPackage), ProjectPackages)
 import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext (ProjectContext))
 import qualified Hix.Managed.Data.ProjectContextProto
@@ -35,7 +34,8 @@ import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto)
 import Hix.Managed.Data.Targets (unsafeTargets)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Test.Hedgehog (assertRight)
-import Hix.Test.Utils (UnitTest, runMTest')
+import Hix.Test.Run (runMTestDir)
+import Hix.Test.Utils (UnitTest, toTestT)
 
 json :: ByteString
 json =
@@ -119,7 +119,7 @@ json =
     }
   }|]
 
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   [
     ("local1", ManagedPackage {
@@ -158,9 +158,9 @@ packages =
     })
   ]
 
-ghc :: GhcDb
+ghc :: Maybe GhcDb
 ghc =
-  GhcDbSystem (Just (GhcPath [absdir|/ghc|]))
+  Just (GhcDbSystem (Just (GhcPath [absdir|/ghc|])))
 
 targetContextRepo :: ContextHackageRepo
 targetContextRepo =
@@ -177,8 +177,9 @@ targetProto =
     state = ProjectStateProto {
       bounds = [("local1", [("direct1", "<2.3"), ("direct2", "<1.5")])],
       versions = [],
-      overrides = mempty,
       initial = mempty,
+      overrides = mempty,
+      solver = mempty,
       resolving = False
     },
     envs = [
@@ -274,7 +275,6 @@ targetProject =
           ("local2", Nothing)
         ])
       ],
-      overrides = [],
       initial = [
         ("lower-main", [
           ("direct1", Nothing),
@@ -289,6 +289,8 @@ targetProject =
           ("local2", Nothing)
         ])
       ],
+      overrides = [],
+      solver = [],
       resolving = False
     },
     envs = targetEnvs,
@@ -298,6 +300,6 @@ targetProject =
 test_parseProjectContextProto :: UnitTest
 test_parseProjectContextProto = do
   assertRight targetProto (eitherDecodeStrict' json)
-  project <- evalEither =<< liftIO do
-    runMTest' def (ProjectContextProto.validate def targetProto)
+  project <- toTestT do
+    runMTestDir def (ProjectContextProto.validate def targetProto)
   targetProject === project

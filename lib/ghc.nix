@@ -1,5 +1,7 @@
 {config, lib, util}: let
 
+  inherit (util) internal;
+
   deps = import ./deps/default.nix { inherit config; };
 
   extraHs = env: ghc:
@@ -19,22 +21,24 @@
     targetDeps = lib.filter isWanted (lib.filter (a: a != null) (lib.concatMap bInputs (map (p: ghc.${p}) targets)));
   in lib.optionals env.localDeps targetDeps ++ extraHs env ghc;
 
-  # TODO This used to use the global `pkgs` for `deps`, although we're reifying overrides for the solver.
-  # Managed envs can in principle configure custom nixpkgs, so this is a potential issue.
-  # Better to use the one from the env, but think about it some more.
   solverGhc = env: let
     overrides =
       util.concatOverrides [
         (util.overridesFromDeps ["local"])
         env.internal.overridesLocal
         env.internal.overridesSolver
+        (internal.env.managedSolverOverrides env.name)
       ];
   in env.ghc.vanillaGhc.override { overrides = (deps { inherit (env.ghc) pkgs; }).reify overrides; };
 
   packageDbSolver = noLocalsInDeps: env: (solverGhc env).ghcWithPackages (packageDb noLocalsInDeps env);
 
+  packageDbSolverShallow = noLocalsInDeps: env: map (p: p.drvPath) (packageDb noLocalsInDeps env (solverGhc env));
+
+  packageDbSolverNames = noLocalsInDeps: env: map (p: p.name) (packageDb noLocalsInDeps env (solverGhc env));
+
   packageDbFull = env: args: env.ghc.ghc.ghcWithPackages.override args (packageDb false env);
 
 in {
-  inherit packageDb packageDbSolver packageDbFull;
+  inherit packageDb packageDbSolver packageDbSolverShallow packageDbSolverNames packageDbFull;
 }

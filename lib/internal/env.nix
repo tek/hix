@@ -61,12 +61,32 @@
   If you recently removed the option definition ${colors.option "hackage.repos.${name}"}, please re-run ${colors.shell_cmd "bump"} and/or ${colors.shell_cmd "lower"}, possibly deleting ${colors.path config.managed.file} beforehand.
   '';
 
-  managedOverride = api: package: {version, hash, repo ? null}: let
+  invalidOverride = package: missing: throw ''
+  Internal error: A managed override for '${package}' is missing the attribute '${missing}'.
+  '';
+
+  managedOverride = api: package: {version ? null, hash ? null, repo ? null, jailbreak ? null, local ? null}: let
     hackage = if repo == null then api.hackage else api.hackageConfGen (unknownHackage package) repo;
-  in api.jailbreak (api.notest (api.nodoc (hackage version hash)));
+  in
+  if version != null && hash != null
+  then api.jailbreak (api.notest (api.nodoc (hackage version hash)))
+  else if version != null
+  then invalidOverride package "hash"
+  else if hash != null
+  then invalidOverride package "version"
+  else if jailbreak == true
+  then api.jailbreak
+  else if local == true
+  then api.source.root config.packages.${package}.src
+  else throw "Internal error: Managed override for '${package}' has no attributes."
+  ;
 
   managedOverrides = envName: api: let
     os = util.managed.state.current.overrides.${envName} or {};
+  in lib.mapAttrs (managedOverride api) os;
+
+  managedSolverOverrides = envName: api: let
+    os = util.managed.state.current.solver.${envName} or {};
   in lib.mapAttrs (managedOverride api) os;
 
   mkBuildInputs = env: spec:
@@ -100,6 +120,7 @@ in {
   targets
   isTarget
   managedOverrides
+  managedSolverOverrides
   mkBuildInputs
   buildInputs
   ;

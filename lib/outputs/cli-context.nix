@@ -2,9 +2,6 @@
 
   inherit (util) config lib internal project;
 
-  managedEnvGhc =
-    util.ghc.packageDbSolver (!config.managed.internal.localsInPackageDb);
-
   packageDeps = comps: let
     handleMainLib = name: comp:
     if name == "library"
@@ -22,8 +19,8 @@
   };
 
   managedEnv = env: {
-    ghc = managedEnvGhc env;
     targets = internal.env.targets env;
+    ghc = null;
   };
 
   maintEnv = internal.env.targets;

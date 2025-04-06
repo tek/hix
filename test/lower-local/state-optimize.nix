@@ -15,6 +15,10 @@
         lower = "4.15.1.0";
         upper = null;
       };
+      local1 = {
+        lower = "0.1.0.0";
+        upper = null;
+      };
       semigroups = {
         lower = "0.18.1";
         upper = null;
@@ -30,6 +34,7 @@
     };
     lower-local2 = {
       base = "4.15.1.0";
+      local1 = "0.1.0.0";
       semigroups = "0.18.1";
     };
   };
@@ -48,14 +53,23 @@
       containers = {
         version = "0.5.7.0";
         hash = "0hwknfbrv1yimsf79n309gnj093cac877s0w2rnp039z61lln4j4";
+        repo = "hackage.haskell.org";
       };
     };
     lower-local2 = {
+      local1 = {
+        local = true;
+      };
       semigroups = {
         version = "0.18.1";
         hash = "1z714pdlx2klcsp0h9qrsm5if54fd07zy9rwgqr62gp0akvr4w78";
+        repo = "hackage.haskell.org";
       };
     };
+  };
+  solver = {
+    lower-local1 = {};
+    lower-local2 = {};
   };
   resolving = false;
 }

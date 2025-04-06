@@ -13,8 +13,7 @@ import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackageId (description), SourcePackages)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
@@ -26,7 +25,7 @@ import qualified Hix.Test.Managed.Run
 import Hix.Test.Managed.Run (Result (Result), TestParams (..), bumpTest, nosortOptions, testParams)
 import Hix.Test.Utils (UnitTest, unitTest)
 
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   managedPackages [
     (("local1", "1.0"), [
@@ -38,13 +37,16 @@ packages =
       "direct5",
       "direct6",
       "direct7",
+      "local1",
       "local2 <0.9",
       "local3 <0.9",
-      "local4 <0.9"
+      "local4 <0.9",
+      "local5"
     ]),
     (("local2", "1.0"), []),
     (("local3", "1.0"), []),
-    (("local4", "1.0"), [])
+    (("local4", "1.0"), []),
+    (("local5", "1.0"), [])
   ]
 
 installed :: InstalledPackages
@@ -144,6 +146,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Success
 
@@ -159,6 +162,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Failure
 
@@ -174,6 +178,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Success
 
@@ -189,6 +194,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Success
 
@@ -204,6 +210,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Success
 
@@ -219,6 +226,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Success
 
@@ -234,6 +242,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 10, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Success
 
@@ -250,6 +259,7 @@ build = \case
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 10, 0]),
+    ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
     ] -> pure Failure
 
@@ -270,6 +280,7 @@ state =
     overrides = [
       ("fancy", [("direct5", "direct5-1.1.1")])
     ],
+    solver = [],
     initial = [],
     resolving = False
   }
@@ -311,6 +322,10 @@ stateFileTarget =
         lower = null;
         upper = "1.1";
       };
+      local1 = {
+        lower = null;
+        upper = null;
+      };
       local2 = {
         lower = null;
         upper = "0.9";
@@ -323,10 +338,15 @@ stateFileTarget =
         lower = null;
         upper = "0.11";
       };
+      local5 = {
+        lower = null;
+        upper = "1.1";
+      };
     };
     local2 = {};
     local3 = {};
     local4 = {};
+    local5 = {};
   };
   versions = {
     fancy = {
@@ -341,6 +361,7 @@ stateFileTarget =
       local2 = "0.8.0";
       local3 = "0.8.0";
       local4 = "0.10.0";
+      local5 = "1.0";
     };
     other = {};
   };
@@ -386,11 +407,18 @@ stateFileTarget =
         version = "0.10.0";
         hash = "local4-0.10.0";
       };
+      local5 = {
+        version = "1.0";
+        hash = "local5-1.0";
+      };
       transitive1 = {
         version = "1.0.1";
         hash = "transitive1-1.0.1";
       };
     };
+  };
+  solver = {
+    fancy = {};
   };
   resolving = false;
 }
@@ -415,6 +443,7 @@ logTarget =
     📦 [34mlocal2[0m    0.8.0      ↕ <0.9
     📦 [34mlocal3[0m    0.8.0      ↕ <0.9
     📦 [34mlocal4[0m    0.10.0     ↕ <[31m0.9[0m -> <[32m0.11[0m
+    📦 [34mlocal5[0m    1.0        ↕ [no bounds] -> <[32m1.1[0m
 [35m[1m>>>[0m Updated versions:
     📦 [34mdirect4[0m   [31m1.0.1[0m -> [32m1.2.1[0m   ↕ [1.0, [31m1.1[0m] -> [1.0, [32m1.3[0m]
 |]
@@ -451,17 +480,22 @@ logTarget =
 --   It has a dependency on @direct4@ with an upper bound of <1.2, which would prevent it from being selected by the
 --   solver if we didn't use @AllowNewer@.
 --
---   @local2@ is in a different env, so it will be treated as a mutable dependency despite being a local package.
---   It also has no installed version, since it isn't available on Hackage (yet) and therefore isn't present in nix;
+-- - @local2@ is in a different env, so it will be treated as a mutable dependency despite being a local package.
+--   It also has no installed version, since it wasn't available on Hackage (yet) at the time of the nixpkgs snapshot
+--   and therefore isn't present in nix;
 --   and because packages from other envs aren't added as local derivations to the solver GHC.
 --   It also has the bound @<0.9@ in the config (but not the existing state) that prevents other mutations from building
 --   with @0.9.0@, which would break the build.
 --
---   @local3@ is like @local2@ and exists primarily to ensure that none of the two deps can be mutated without the
+-- - @local3@ is like @local2@ and exists primarily to ensure that none of the two deps can be mutated without the
 --   constraint that keeps the other below 0.9.
 --
---   @local4@ is like @local2@ and @local3@, with the slight variation that it has a buildable version 0.10.0, which
+-- - @local4@ is like @local2@ and @local3@, with the slight variation that it has a buildable version 0.10.0, which
 --   is not used for prior mutations (rather, like the other two, it uses 0.8.0), but its own mutation succeeds.
+--
+-- - @local5@ is like @local2@, with the variation that it also has no available versions.
+--   This has the effect that when initializing the Cabal resources, a synthetic entry for this dep is inserted into the
+--   source package DB that contains the available packages (in production, those would be from Hackage snapshots).
 test_bumpMutationBasic :: UnitTest
 test_bumpMutationBasic = do
   Result {stateFile, log} <- bumpTest params bumpOptimizeMain
@@ -470,14 +504,14 @@ test_bumpMutationBasic = do
   where
     params = (testParams False packages) {
       log = True,
-      envs = [("fancy", ["local1"]), ("other", ["local2", "local3", "local4"])],
+      envs = [("fancy", ["local1"]), ("other", ["local2", "local3", "local4", "local5"])],
       ghcPackages,
       state,
       projectOptions = nosortOptions {envs = ["fancy"], readUpperBounds = True, localDeps = True},
       build
     }
 
-packages_upToDate :: Packages ManagedPackage
+packages_upToDate :: ProjectPackages
 packages_upToDate =
   managedPackages [(("local1", "1.0"), ["direct1"])]
 
@@ -497,8 +531,9 @@ state_upToDate =
   ProjectStateProto {
     bounds = [("local1", [("direct1", ">=0.1 && <1.1")])],
     versions = [],
-    overrides = [("latest", [("direct1", "direct1-1.0.1")])],
     initial = [],
+    overrides = [("latest", [("direct1", "direct1-1.0.1")])],
+    solver = [],
     resolving = False
   }
 
@@ -533,6 +568,9 @@ stateFileTarget_upToDate =
         hash = "direct1-1.0.1";
       };
     };
+  };
+  solver = {
+    latest = {};
   };
   resolving = false;
 }

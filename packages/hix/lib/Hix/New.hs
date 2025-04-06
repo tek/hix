@@ -16,6 +16,7 @@ import Text.Casing (pascal)
 import Hix.Bootstrap (initGitAndFlake)
 import qualified Hix.Console as Console
 import qualified Hix.Data.NewProjectConfig
+import Hix.Data.PathUser (resolvePathUserDir)
 import Hix.Data.NewProjectConfig (
   Author,
   CreateProjectConfig (CreateProjectConfig),
@@ -31,7 +32,7 @@ import Hix.Error (pathText)
 
 license :: Author -> Text
 license author =
-  [exon|Copyright (c) 2023 ##{author}
+  [exon|Copyright (c) 2025 ##{author}
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
 following conditions are met:
@@ -194,13 +195,14 @@ initProject conf = do
 
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
+  directory <- resolvePathUserDir conf.directory
   let name =
         fromMaybe
-          (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ conf.directory)
+          (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ directory)
           conf.name
-  when conf.printDirectory $ Console.out (pathText conf.directory)
-  local (\res -> res { cwd = conf.directory }) $
+  local (\res -> res { cwd = directory }) $
     initProject $ InitProjectConfig {name = name, config = conf.config}
+  when conf.printDirectory $ Console.out (pathText directory)
 
 pathError :: Maybe a -> M a
 pathError = noteEnv "Can't convert project name to file path"

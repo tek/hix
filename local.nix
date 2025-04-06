@@ -99,6 +99,7 @@ in {
         "aeson >= 2.0 && < 2.3"
         "Cabal"
         "exon >= 1.4 && < 1.7"
+        "extra ^>= 1.7"
         "hedgehog >= 1.1 && < 1.5"
         "lens >= 5.1 && < 5.4"
         "path ^>= 0.9"
@@ -106,6 +107,7 @@ in {
         "tasty ^>= 1.4"
         "tasty-hedgehog >= 1.3 && < 1.5"
         "time"
+        "transformers"
         config.packages.hix.dep.exact
       ];
       env = "integration";

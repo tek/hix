@@ -4,15 +4,14 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Managed.Cabal.Data.Config (CabalConfig)
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.EnvContext (EnvContext)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import Hix.Managed.Data.ProjectState (ProjectState)
 
 data ProjectContext =
   ProjectContext {
     build :: BuildConfig,
     state :: ProjectState,
-    packages :: Packages ManagedPackage,
+    packages :: ProjectPackages,
     envs :: NonEmpty (Either EnvName EnvContext),
     cabal :: CabalConfig
   }

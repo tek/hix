@@ -9,8 +9,7 @@ import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Data.LowerConfig (LowerConfig (stabilize))
-import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
@@ -22,7 +21,7 @@ import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
 import Hix.Test.Utils (UnitTest)
 
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   managedPackages [
     (("local1", "1.0"), [
@@ -77,9 +76,6 @@ state =
         ("direct3", [1, 0])
       ])
     ],
-    overrides = [
-      ("lower", nGen @[] [1 .. 3] override)
-    ],
     initial = [
       ("lower", [
         ("direct1", [1, 5]),
@@ -87,6 +83,10 @@ state =
         ("direct3", [1, 5])
       ])
     ],
+    overrides = [
+      ("lower", nGen @[] [1 .. 3] override)
+    ],
+    solver = [],
     resolving = False
   }
   where
@@ -169,6 +169,9 @@ stateFileTarget =
         hash = "direct3-1.5";
       };
     };
+  };
+  solver = {
+    lower = {};
   };
   resolving = false;
 }

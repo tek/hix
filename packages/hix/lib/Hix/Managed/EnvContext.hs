@@ -13,10 +13,9 @@ import Hix.Managed.Data.EnvConfig (EnvConfig)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext (EnvContext), EnvDeps (EnvDeps))
 import Hix.Managed.Data.Envs (Envs)
-import Hix.Managed.Data.ManagedPackage (ManagedPackage)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import qualified Hix.Managed.Data.Mutable as Mutable
 import Hix.Managed.Data.Mutable (mutRelax)
-import Hix.Managed.Data.Packages (Packages)
 import qualified Hix.Managed.ManagedPackage as ManagedPackage
 import Hix.Monad (clientError)
 import Hix.Pretty (showPL)
@@ -37,7 +36,7 @@ unknownTargets env missing =
 -- consist solely of dependencies of other managed sets.
 envContext ::
   ProjectOptions ->
-  Packages ManagedPackage ->
+  ProjectPackages ->
   Maybe (NonEmpty PackageName) ->
   EnvName ->
   EnvConfig ->
@@ -63,7 +62,7 @@ envContext opts packages querySpec env envConfig =
 -- TODO at some point we might wanna check that the target sets are disjoint
 envContexts ::
   ProjectOptions ->
-  Packages ManagedPackage ->
+  ProjectPackages ->
   Envs EnvConfig ->
   Maybe (NonEmpty PackageName) ->
   Envs (Either EnvDeps EnvContext)

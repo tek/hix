@@ -16,8 +16,9 @@ data ProjectStateProto =
   ProjectStateProto {
     bounds :: Packages Bounds,
     versions :: Envs Versions,
-    overrides :: Envs Overrides,
     initial :: Envs Versions,
+    overrides :: Envs Overrides,
+    solver :: Envs Overrides,
     resolving :: Bool
   }
   deriving stock (Eq, Show, Generic)
@@ -27,15 +28,17 @@ instance Pretty ProjectStateProto where
   pretty ProjectStateProto {..} =
     hang "bounds:" 2 (pretty bounds) $+$
     hang "versions:" 2 (pretty versions) $+$
+    hang "initial:" 2 (pretty initial) $+$
     hang "overrides:" 2 (pretty overrides) $+$
-    hang "initial:" 2 (pretty initial)
+    hang "solver:" 2 (pretty solver)
 
 instance FromJSON ProjectStateProto where
   parseJSON = withObject "ProjectStateProto" \ o -> do
     bounds <- foldMissing o "bounds"
     versions <- foldMissing o "versions"
-    overrides <- foldMissing o "overrides"
     initial <- foldMissing o "initial"
+    overrides <- foldMissing o "overrides"
+    solver <- foldMissing o "solver"
     resolving <- fromMaybe False <$> o .:? "resolving"
     pure ProjectStateProto {..}
 
@@ -44,7 +47,8 @@ instance Default ProjectStateProto where
     ProjectStateProto {
       bounds = mempty,
       versions = mempty,
-      overrides = mempty,
       initial = mempty,
+      overrides = mempty,
+      solver = mempty,
       resolving = False
     }

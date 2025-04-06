@@ -14,8 +14,7 @@ import Hix.Error (pathText)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
-import Hix.Managed.Data.ManagedPackage (ManagedPackage, managedPackages)
-import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectContext
 import qualified Hix.Managed.Data.ProjectContextProto
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (ProjectContextProto))
@@ -31,13 +30,14 @@ import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Managed.ProjectContextProto (projectContext)
 import Hix.Test.Hedgehog (eqLines)
 import Hix.Test.Managed.Run (addFile)
-import Hix.Test.Utils (UnitTest, logConfigDebug, runMTest')
+import Hix.Test.Run (logConfigDebug, runMTestDir)
+import Hix.Test.Utils (UnitTest)
 
 -- TODO when aeson's lower bound is set to 2.2 here, the build of 2.1.0.0 fails with an infinite recursion in nix when
 -- reaching optimize.
 -- But when it is set to 2.1, the build succeeds during init.
 -- in the former case, there are a few more overrides added from the solver plan.
-packages :: Packages ManagedPackage
+packages :: ProjectPackages
 packages =
   managedPackages [
     (("root", "1.0"), ["aeson >=2.2 && <2.3", "extra >=1.6 && <1.8"])
@@ -226,10 +226,10 @@ lowerNativeTest = do
     stateFileConf = StateFileConfig {
       file = [relfile|ops/managed.nix|]
     }
-    envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = GhcDbSystem Nothing})]
+    envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = Just (GhcDbSystem Nothing)})]
     buildConfig = def
   handlersProject <- Project.handlersProd stateFileConf
-  handlers <- Build.handlersProd handlersProject envsConfig buildConfig def
+  handlers <- Build.handlersProd handlersProject buildConfig def
   let
     opts = projectOptions ["lower"]
 
@@ -259,6 +259,6 @@ lowerNativeTest = do
 test_lowerNative :: UnitTest
 test_lowerNative = do
   (stateFileContentInit, stateFileContentOptimize) <- evalEither =<< liftIO do
-    runMTest' logConfigDebug lowerNativeTest
+    runMTestDir logConfigDebug lowerNativeTest
   eqLines targetStateFileInit stateFileContentInit
   eqLines targetStateFileOptimize stateFileContentOptimize

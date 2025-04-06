@@ -17,12 +17,13 @@ data EnvContext =
     -- | The name of the Hix environment used to build this job.
     env :: EnvName,
 
-    -- | The package database containing installed packages, corresponding to the set returned by @ghcWithPackages@ in
-    -- Nix, with all nonlocal project dependencies.
-    -- In production, this points to the dir containing the GHC executables in the Nix store, which Cabal executes to
-    -- interact with the database.
-    -- In tests, this is a pure set of manually constructed packages.
-    ghc :: GhcDb,
+    -- | Override for the package database, which is usually obtained by context query.
+    -- In tests, this can be used to supply an in-memory set of packages.
+    --
+    -- The Nix package DB consists of a GHC directory in the store created by @ghcWithPackages@.
+    -- Cabal interacts with this DB by executing the wrapper scripts for @ghc-pkg@ and @ghc@, which are hardwired to use
+    -- the directory @package.conf.d@ in the same store path.
+    ghc :: Maybe GhcDb,
 
     -- | The set of local packages associated with this environment.
     -- Sorted topologically by smart constructor.
