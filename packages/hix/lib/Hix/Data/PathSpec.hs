@@ -1,7 +1,8 @@
 module Hix.Data.PathSpec where
 
 import Control.Monad.Trans.Except (ExceptT)
-import Path (Abs, Dir, Path, SomeBase (Abs, Rel), (</>), toFilePath)
+import Path (Abs, Dir, Path, Rel, SomeBase (Abs, Rel), (</>))
+import Path.IO (AnyPath (AbsPath, makeAbsolute))
 
 import Hix.Data.Error (Error)
 import Hix.Error (tryIO)
@@ -24,11 +25,13 @@ resolvePathSpec resolver cwd = \case
   PathUser path -> tryIO $ resolver cwd (toString path)
 
 resolvePathSpec' ::
+  (Path Abs t ~ AbsPath (Path Rel t)) =>
+  (AnyPath (Path Rel t)) =>
   (FilePath -> IO (Path Abs t)) ->
   PathSpec t ->
   ExceptT Error IO (Path Abs t)
 resolvePathSpec' resolver = \case
   PathConcrete path -> case path of
     Abs a -> pure a
-    Rel r -> tryIO . resolver . toFilePath $ r
+    Rel r -> tryIO $ makeAbsolute r
   PathUser path -> tryIO $ resolver (toString path)
