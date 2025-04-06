@@ -19,7 +19,7 @@ import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Resources (cabalVerbosity)
 import Hix.Monad (catchIOM, noteFatal, withTempDir)
 import Hix.Network (Port (..), freePort)
-import Hix.Path (resolvePathSpecFile)
+import Hix.Path (PathSpecResolver (resolvePathSpec))
 
 withHackageOnPort ::
   Path Abs Dir ->
@@ -78,7 +78,7 @@ writePortFile port path = do
 hackageServe :: HackageServeOptions -> M ()
 hackageServe HackageServeOptions {portFile = portFileSpec} = do
   withTempDir "hackage-serve" \ tmp -> do
-    portFile <- traverse resolvePathSpecFile portFileSpec
+    portFile <- traverse resolvePathSpec portFileSpec
     withHackage tmp \ port -> do
       traverse_ (writePortFile port) portFile
       forever (liftIO (threadDelay 1_000_000))

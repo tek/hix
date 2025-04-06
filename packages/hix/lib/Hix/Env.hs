@@ -13,7 +13,7 @@ import Hix.Data.Options (EnvRunnerOptions, TargetSpec)
 import Hix.Data.PackageName (PackageName)
 import Hix.Error (pathText)
 import Hix.Json (jsonConfigE)
-import Hix.Path (resolvePathSpecDir)
+import Hix.Path (PathSpecResolver (resolvePathSpec))
 
 -- TODO when there is a solution for default command env fallback configuration, the DefaultTarget case must return
 -- Nothing when the config requests it
@@ -32,7 +32,7 @@ componentRunner cliRoot defaultPkg config spec =
 envRunner :: EnvRunnerOptions -> M EnvRunner
 envRunner opts = do
   config <- jsonConfigE opts.config
-  root <- traverse resolvePathSpecDir opts.root
+  root <- traverse resolvePathSpec opts.root
   let runner = componentRunner root config.mainPackage config.packages
   fromMaybe config.defaultEnv . join <$> traverse runner opts.component
 

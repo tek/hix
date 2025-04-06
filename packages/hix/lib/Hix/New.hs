@@ -28,7 +28,7 @@ import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Error (pathText)
 import Hix.Monad (M, noteEnv, local)
-import Hix.Path (resolvePathSpecDir)
+import Hix.Path (PathSpecResolver (resolvePathSpec))
 
 license :: Author -> Text
 license author =
@@ -195,7 +195,7 @@ initProject conf = do
 
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
-  directory <- resolvePathSpecDir conf.directory
+  directory <- resolvePathSpec conf.directory
   let name =
         fromMaybe
           (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ directory)

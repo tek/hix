@@ -35,7 +35,7 @@ import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Error (Error (..), ErrorMessage (Client), sourceError)
 import Hix.Json (jsonConfigE)
 import Hix.Monad (tryIOM)
-import Hix.Path (resolvePathSpecDir, resolvePathSpecFile)
+import Hix.Path (PathSpecResolver (resolvePathSpec))
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
 
@@ -451,12 +451,12 @@ preprocessModule source conf dummyExportName inLines =
 
 preprocessWith :: PreprocOptions -> CabalConfig -> M ()
 preprocessWith opt conf = do
-  inLines <- tryIOM . ByteString.readFile . toFilePath =<< resolvePathSpecFile opt.inFile
+  inLines <- tryIOM . ByteString.readFile . toFilePath =<< resolvePathSpec opt.inFile
   dummyNumber :: Int <- randomRIO (10000, 10000000)
   let dummyExportName = DummyExportName [exon|Hix_Dummy_#{show dummyNumber}|]
-  source <- resolvePathSpecFile opt.source
+  source <- resolvePathSpec opt.source
   let result = preprocessModule source conf dummyExportName inLines
-  outFile <- resolvePathSpecFile opt.outFile
+  outFile <- resolvePathSpec opt.outFile
   tryIOM (ByteStringBuilder.writeFile (toFilePath outFile) result)
 
 fromConfig ::
@@ -493,7 +493,7 @@ fromCabalFile source =
 -- TODO add common stanzas
 preprocess :: PreprocOptions -> M ()
 preprocess opt = do
-  source <- resolvePathSpecFile opt.source
-  root <- traverse resolvePathSpecDir opt.root
+  source <- resolvePathSpec opt.source
+  root <- traverse resolvePathSpec opt.root
   conf <- maybe (fromCabalFile source) (fromConfig root source) opt.config
   preprocessWith opt conf
