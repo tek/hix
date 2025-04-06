@@ -34,7 +34,8 @@ import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Error (Error (..), ErrorMessage (Client), sourceError)
 import Hix.Json (jsonConfigE)
-import Hix.Monad (tryIOM, resolvePathSpecDir, resolvePathSpecFile)
+import Hix.Monad (tryIOM)
+import Hix.Path (resolvePathSpecDir, resolvePathSpecFile)
 import qualified Hix.Prelude as Prelude
 import Hix.Prelude (Prelude (Prelude), findPrelude)
 

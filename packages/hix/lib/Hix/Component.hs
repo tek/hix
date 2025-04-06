@@ -20,8 +20,8 @@ import qualified Hix.Data.Options as Options
 import Hix.Data.Options (ComponentCoords, ComponentSpec (ComponentSpec), PackageSpec (PackageSpec), TargetSpec (..))
 import Hix.Data.PackageName (PackageName (PackageName))
 import Hix.Error (pathText)
-import Hix.Monad (M, clientError, noteEnv, resolvePathSpecFile)
-import Hix.Path (rootDir)
+import Hix.Monad (M, clientError, noteEnv)
+import Hix.Path (rootDir, resolvePathSpecFile)
 
 data ResolvedPackage =
   ResolvedPackage Bool PackageConfig

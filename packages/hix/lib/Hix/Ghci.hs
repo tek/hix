@@ -39,8 +39,8 @@ import Hix.Data.PackageName (PackageName)
 import Hix.Error (Error, ErrorMessage (..), pathText, throwMessage, tryIO)
 import Hix.Json (jsonConfigE)
 import Hix.Maybe (fromMaybeA)
-import Hix.Monad (M, noteGhci, resolvePathSpecDir, resolvePathSpecFile)
-import Hix.Path (rootDir)
+import Hix.Monad (M, noteGhci)
+import Hix.Path (rootDir, resolvePathSpecDir, resolvePathSpecFile)
 
 relativeToComponent ::
   Path Abs Dir ->

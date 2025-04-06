@@ -13,7 +13,7 @@ import Hix.Data.Options (EnvRunnerOptions, TargetSpec)
 import Hix.Data.PackageName (PackageName)
 import Hix.Error (pathText)
 import Hix.Json (jsonConfigE)
-import Hix.Monad (resolvePathSpecDir)
+import Hix.Path (resolvePathSpecDir)
 
 -- TODO when there is a solution for default command env fallback configuration, the DefaultTarget case must return
 -- Nothing when the config requests it

@@ -16,7 +16,7 @@ import qualified Data.Text.IO as Text
 import Exon (exon)
 import Path (Abs, Dir, File, Path, SomeBase (Abs))
 import qualified Path.IO as Path
-import Path.IO (resolveDir, resolveDir', resolveFile, withSystemTempDir)
+import Path.IO (resolveDir', withSystemTempDir)
 import System.IO (hClose)
 import System.IO.Error (tryIOError)
 
@@ -27,7 +27,7 @@ import qualified Hix.Data.GlobalOptions as GlobalOptions
 import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions), defaultGlobalOptions)
 import Hix.Data.LogLevel (LogLevel (LogInfo))
 import Hix.Data.Monad (AppResources (..), LogLevel (LogDebug), M (M), appRes, liftE)
-import Hix.Data.PathSpec (PathSpec (PathConcrete), resolvePathSpec, resolvePathSpec')
+import Hix.Data.PathSpec (PathSpec (PathConcrete), resolvePathSpec')
 import qualified Hix.Error as Error
 import Hix.Error (tryIOWith)
 import qualified Hix.Log as Log
@@ -281,13 +281,3 @@ appContextDebug desc ma = do
     logMsg = case Text.uncons desc of
       Just (h, t) -> Text.cons (toUpper h) t
       Nothing -> desc
-
-resolvePathSpecDir :: PathSpec Dir -> M (Path Abs Dir)
-resolvePathSpecDir pathSpec = do
-  AppResources {cwd} <- ask
-  liftE $ resolvePathSpec resolveDir cwd pathSpec
-
-resolvePathSpecFile :: PathSpec File -> M (Path Abs File)
-resolvePathSpecFile pathSpec = do
-  AppResources {cwd} <- ask
-  liftE $ resolvePathSpec resolveFile cwd pathSpec
