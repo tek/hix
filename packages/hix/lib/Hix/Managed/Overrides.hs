@@ -10,6 +10,9 @@ import qualified Hix.Managed.Handlers.SourceHash
 import Hix.Managed.Handlers.SourceHash (SourceHashHandlers)
 import Hix.Monad (fatalError)
 
+-- | Fetch an override's hash from the given sources, which is the set of configured Hackages in production.
+-- If the package wasn't found anywhere, and it is part of the local build, assume that it hasn't been published yet and
+-- force it to be built from local sources by returning 'Local'.
 packageOverride ::
   SourceHashHandlers ->
   Set LocalPackage ->

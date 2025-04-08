@@ -1,17 +1,17 @@
 module Hix.Managed.Data.StageState where
 
 import Distribution.Pretty (Pretty (pretty))
-import Text.PrettyPrint (hang, vcat, (<+>), brackets)
+import Text.PrettyPrint (brackets, hang, vcat, (<+>))
 
 import Hix.Data.Error (Error)
 import Hix.Data.PackageId (PackageId)
-import Hix.Managed.Build.NixOutput (PackageDerivation)
 import Hix.Managed.Data.Initial (Initial (Initial))
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))
 import Hix.Managed.Data.Mutation (DepMutation)
 import Hix.Managed.Data.MutationState (MutationState)
+import Hix.Managed.Data.NixOutput (PackageDerivation)
 import Hix.Pretty (prettyL, prettyText)
 
 data BuildStatus =
@@ -95,7 +95,7 @@ data StageState a s =
     failed :: [DepMutation a],
     state :: MutationState,
     revisions :: Set PackageId,
-    iterations :: Natural,
+    iterations :: Word,
     ext :: s
   }
   deriving stock (Eq, Show)

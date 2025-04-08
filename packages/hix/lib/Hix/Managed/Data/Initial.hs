@@ -6,7 +6,7 @@ import Distribution.Pretty (Pretty (pretty))
 import Hix.Class.EncodeNix (EncodeNix)
 
 newtype Initial a =
-  Initial a
+  Initial { value :: a }
   deriving stock (Eq, Show, Generic, Functor)
   deriving newtype (Semigroup, Monoid, FromJSON, ToJSON, EncodeNix)
 

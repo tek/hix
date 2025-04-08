@@ -16,6 +16,7 @@ import Hix.Data.Monad (M)
 import Hix.Error (pathText)
 import Hix.Managed.Git (GitNative (..))
 import Hix.Test.Run (LogConfig (logLevel), runMLogTestDir, runMTestDir, runMTestDirWith)
+import Hix.Data.GlobalOptions (GlobalOptions)
 
 type UnitTest = TestT IO ()
 
@@ -31,6 +32,10 @@ unitTest desc t =
 toTestT :: Show e => IO (Either e a) -> TestT IO a
 toTestT = evalEither <=< liftIO
 
+runMTestWith :: (GlobalOptions -> GlobalOptions) -> M a -> TestT IO a
+runMTestWith f ma =
+  toTestT (runMTestDirWith f ma)
+
 runMTestLog :: LogConfig -> M a -> TestT IO a
 runMTestLog logConfig ma =
   toTestT (runMTestDir logConfig ma)
@@ -44,8 +49,8 @@ runMLogTest logConf prog =
   toTestT (sequence <$> runMLogTestDir logConf prog)
 
 runMTestVerboseCabal :: M a -> TestT IO a
-runMTestVerboseCabal ma =
-  toTestT (runMTestDirWith (\ o -> o {GlobalOptions.logLevel = LogDebug, GlobalOptions.cabalVerbose = True}) ma)
+runMTestVerboseCabal =
+  runMTestWith \ o -> o {GlobalOptions.logLevel = LogDebug, GlobalOptions.cabalVerbose = True}
 
 addFile :: Path Abs Dir -> Path Rel File -> Text -> M ()
 addFile root path content = do

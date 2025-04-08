@@ -7,10 +7,11 @@ import Distribution.Pretty (Pretty (pretty))
 import Exon (exon)
 import Text.PrettyPrint (brackets, text, (<+>))
 
-import Hix.Class.EncodeNix (EncodeNix)
+import Hix.Class.EncodeNix (EncodeNix (encodeNix))
 import Hix.Data.Json (jsonParsec)
+import Hix.Data.NixExpr (Expr (ExprString))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation)
-import Hix.Pretty (prettyL1, prettyText)
+import Hix.Pretty (prettyL1, prettyText, showP)
 
 newtype HackageName =
   HackageName Text
@@ -43,6 +44,9 @@ instance FromJSON HackageIndexState where
 
 instance Pretty HackageIndexState where
   pretty (HackageIndexState ts) = pretty ts
+
+instance EncodeNix HackageIndexState where
+  encodeNix (HackageIndexState ts) = ExprString (showP ts)
 
 data HackageRepo =
   HackageRepo {

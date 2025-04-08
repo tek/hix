@@ -6,7 +6,7 @@ import Hix.Test.Managed.BuildOutputTest (test_buildOutput)
 import Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump)
 import Hix.Test.Managed.Bump.MutationTest (test_bumpMutation)
 import Hix.Test.Managed.DiffTest (test_diff)
-import Hix.Test.Managed.HackageTest (test_hackageRepo)
+import Hix.Test.Managed.HackageTest (test_hackageData)
 import Hix.Test.Managed.LowerAuto.MutationOptimizeTest (test_lowerAutoMutationOptimize)
 import Hix.Test.Managed.LowerAuto.MutationStabilizeTest (test_lowerAutoMutationStabilize)
 import Hix.Test.Managed.LowerInit.MutationTest (test_lowerInitMutation)
@@ -41,5 +41,5 @@ test_managed =
       test_diff,
       test_maint,
       test_tag,
-      unitTest "parse HackageRepo" test_hackageRepo
+      test_hackageData
     ]

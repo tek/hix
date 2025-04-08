@@ -35,7 +35,7 @@ import Hix.Managed.Cabal.Data.HackageRepo (HackageName, HackageRepo (..), centra
 import Hix.Managed.Cabal.HackageLocation (parseLocation)
 import Hix.Managed.Cabal.HackageRepo (hackageDescription)
 import Hix.Managed.Data.Mutable (MutableDep, depName)
-import Hix.Monad (appContext, clientError, eitherClient, noteClient, tryIOM)
+import Hix.Monad (appContextVerbose, clientError, eitherClient, noteClient, tryIOM)
 
 nonReinstallableNames :: Set PackageName
 nonReinstallableNames =
@@ -106,7 +106,8 @@ resolvePasswordExec spec =
 
 resolvePassword :: ContextHackagePassword -> M HackagePassword
 resolvePassword =
-  appContext ctx . \case
+  appContextVerbose ctx . \case
+    PasswordUnobscured pw -> pure pw
     PasswordPlain pw -> pure pw
     PasswordEnvVar name -> resolvePasswordEnvVar name
     PasswordExec path -> resolvePasswordExec path
@@ -133,7 +134,7 @@ withAuth location = \cases
 
 validateContextRepo :: ContextHackageRepo -> M HackageRepo
 validateContextRepo ContextHackageRepo {location = location0, ..} = do
-  appContext [exon|validating the Hackage config #{Color.yellow name}|] do
+  appContextVerbose [exon|validating the Hackage config #{Color.yellow name}|] do
     location1 <- for location0 \ (ContextHackageLocation spec) ->
       eitherClient (first toText (parseLocation (toString spec)))
     location <- withAuth (fromMaybe HackageLocation.central location1) user password

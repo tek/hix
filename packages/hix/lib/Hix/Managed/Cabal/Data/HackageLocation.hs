@@ -4,6 +4,7 @@ import Data.Aeson (FromJSON)
 import Distribution.Pretty (Pretty (pretty))
 import Exon (exon)
 
+import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Pretty (hpretty, prettyNt)
 
 newtype HackageHost =
@@ -54,7 +55,7 @@ parseHackagePort = fmap HackagePort . readMaybe
 newtype HackageUser =
   HackageUser Text
   deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON)
+  deriving newtype (IsString, Ord, FromJSON, EncodeNix)
 
 instance Pretty HackageUser where
   pretty = prettyNt

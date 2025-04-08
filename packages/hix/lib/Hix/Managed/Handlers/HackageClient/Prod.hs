@@ -133,7 +133,8 @@ makeNativeRequest HackageResources {manager, location} request = do
     requestFailed = Left . HackageFatal
 
     checkResult = \case
-      Left (HackageFatal msg) -> Log.error [exon|Hackage request for '#{request.path}' failed: #{msg}|]
+      Left (HackageFatal msg) ->
+        Log.error [exon|Hackage request for #{Color.path request.path} at #{Color.green location.host} failed: #{msg}|]
       _ -> unit
 
 handlersProd :: HackageResources -> HackageClient

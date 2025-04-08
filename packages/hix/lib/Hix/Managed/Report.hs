@@ -19,6 +19,9 @@ plural ::
   Text
 plural = pluralWith "s"
 
-describeIterations :: Natural -> Text
+pluralLength :: Foldable t => t a -> Text
+pluralLength ta = pluralWith "s" (length ta)
+
+describeIterations :: Word -> Text
 describeIterations iterations =
   [exon|#{show iterations} iteration#{plural iterations}|]

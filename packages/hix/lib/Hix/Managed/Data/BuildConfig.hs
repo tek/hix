@@ -15,9 +15,9 @@ data SpecialBuildHandlers =
 
 data BuildConfig =
   BuildConfig {
-    maxIterations :: Natural,
-    maxFailedPre :: Natural,
-    maxFailedPost :: Natural,
+    maxIterations :: Word,
+    maxFailedPre :: Word,
+    maxFailedPost :: Word,
     lookup :: Bool,
     validate :: Bool,
     buildOutput :: Bool,

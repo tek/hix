@@ -9,7 +9,7 @@ import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Version)
 import Hix.Hackage (HackageVersions (HackageVersions), hackageGet)
 import Hix.Managed.Handlers.HackageClient (HackageClient, HackageError (..), HackageResponse (HackageResponseJson))
-import Hix.Monad (appContext, fatalError)
+import Hix.Monad (fatalError, appContextVerbose)
 
 parseVersion :: String -> Either (String, String) Version
 parseVersion s = first (s,) (eitherParsec s)
@@ -29,7 +29,7 @@ parseVersions (HackageVersions versions)
 allClientVersions :: NonEmpty HackageClient -> PackageName -> M (Set Version)
 allClientVersions clients pkg = do
   results <- for clients \ client -> hackageGet parseVersions client path HackageResponseJson
-  appContext [exon|fetching versions for ##{pkg}|] do
+  appContextVerbose [exon|fetching versions for ##{pkg}|] do
     sconcat <$> traverse (leftA check) results
   where
     path = [exon|/package/##{pkg}/preferred|]

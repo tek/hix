@@ -6,10 +6,13 @@ module Hix.Monad (
 
 import Control.Lens ((%~))
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE, catchE)
+import Control.Monad.Trans.Control (MonadTransControl, controlT)
+import Control.Monad.Trans.Except (ExceptT (ExceptT), catchE, runExceptT, throwE)
+import Control.Monad.Trans.Identity (IdentityT (..))
 import qualified Control.Monad.Trans.Reader as Reader
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.Trans.State.Strict (StateT, get, put, runStateT)
+import Data.Char (toUpper)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -25,15 +28,14 @@ import Hix.Data.AppContext (AppContext (..))
 import Hix.Data.Error (Error (..), ErrorContext (..), ErrorMessage (..))
 import qualified Hix.Data.GlobalOptions as GlobalOptions
 import Hix.Data.GlobalOptions (GlobalOptions (GlobalOptions), defaultGlobalOptions)
-import Hix.Data.LogLevel (LogLevel (LogInfo))
-import Hix.Data.Monad (AppResources (..), LogLevel (LogDebug), M (M), appRes, liftE)
+import Hix.Data.LogLevel (LogLevel (..))
+import Hix.Data.Monad (AppResources (..), M (M), appRes, liftE)
 import Hix.Data.PathSpec (PathSpec (PathConcrete), resolvePathSpec')
 import qualified Hix.Error as Error
 import Hix.Error (tryIOWith)
 import qualified Hix.Log as Log
 import Hix.Log (logWith)
 import Hix.Maybe (fromMaybeA)
-import Data.Char (toUpper)
 
 errorContext :: M ErrorContext
 errorContext = ErrorContext <$> appRes.context
@@ -266,18 +268,42 @@ catchM ma handle =
 catchingM :: (Error -> M a) -> M a -> M a
 catchingM = flip catchM
 
-appContextAt :: LogLevel -> Text -> M a -> M a
-appContextAt level description =
-  local (#context %~ (AppContext {description, level} :))
+appContextAtT ::
+  MonadTransControl t =>
+  LogLevel ->
+  LogLevel ->
+  Text ->
+  t M a ->
+  t M a
+appContextAtT logLevel level description ma = do
+  controlT \ lower -> do
+    Log.logDecorated logLevel logMsg
+    local (#context %~ (AppContext {description, level} :)) (lower ma)
+  where
+    logMsg = case Text.uncons description of
+      Just (h, t) -> Text.cons (toUpper h) t
+      Nothing -> description
+
+appContextT ::
+  MonadTransControl t =>
+  Text ->
+  t M a ->
+  t M a
+appContextT =
+  appContextAtT LogVerbose LogInfo
+
+appContextAt :: LogLevel -> LogLevel -> Text -> M a -> M a
+appContextAt logLevel level description ma =
+  runIdentityT do
+    appContextAtT logLevel level description (IdentityT ma)
 
 appContext :: Text -> M a -> M a
-appContext = appContextAt LogInfo
+appContext = appContextAt LogVerbose LogInfo
+
+appContextVerbose :: Text -> M a -> M a
+appContextVerbose desc ma = do
+  appContextAt LogDebug LogVerbose desc ma
 
 appContextDebug :: Text -> M a -> M a
 appContextDebug desc ma = do
-  Log.debug logMsg
-  appContextAt LogDebug desc ma
-  where
-    logMsg = case Text.uncons desc of
-      Just (h, t) -> Text.cons (toUpper h) t
-      Nothing -> desc
+  appContextAt LogTrace LogDebug desc ma

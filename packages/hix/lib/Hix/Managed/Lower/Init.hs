@@ -19,7 +19,6 @@ import qualified Hix.Managed.Data.LowerConfig
 import Hix.Managed.Data.LowerConfig (LowerConfig)
 import Hix.Managed.Data.Mutable (MutableDep, MutableDeps)
 import Hix.Managed.Data.MutableId (MutableId)
-import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import qualified Hix.Managed.Data.StageContext
@@ -32,7 +31,7 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Lower.Candidates (candidatesInit)
 import Hix.Managed.Lower.Data.LowerMode (lowerInitMode)
-import Hix.Managed.Process (processProject)
+import Hix.Managed.Process (processProjectSimple)
 import Hix.Managed.Report (describeIterations)
 import Hix.Managed.StageResult (stageResultInit)
 
@@ -40,13 +39,13 @@ lowerInitUpdate :: Bool -> MutableId -> PackageId -> MutationConstraints -> Muta
 lowerInitUpdate _ _ PackageId {version} MutationConstraints {..} =
   MutationConstraints {mutation = fromUpper version, ..}
 
-success :: Map MutableDep BuildSuccess -> Natural -> Text
+success :: Map MutableDep BuildSuccess -> Word -> Text
 success _ iterations =
   [exon|Found initial lower bounds for all deps after #{iter}.|]
   where
     iter = describeIterations iterations
 
-failure :: Natural -> Text
+failure :: Word -> Text
 failure iterations =
   [exon|Couldn't find working initial lower bounds for some deps after #{describeIterations iterations}.|]
 
@@ -78,11 +77,11 @@ lowerInit handlers conf buildConf context = do
          | otherwise = context.initialVersions
 
 lowerInitStage ::
-  BuildHandlers ->
   LowerConfig ->
+  BuildHandlers ->
   BuildConfig ->
   Flow BuildStatus
-lowerInitStage handlers conf buildConf =
+lowerInitStage conf handlers buildConf =
   execStage "lower-init" (lowerInit handlers conf buildConf)
 
 lowerInitMain ::
@@ -90,5 +89,4 @@ lowerInitMain ::
   BuildHandlers ->
   ProjectContext ->
   M ProjectResult
-lowerInitMain conf handlers project =
-  processProject handlers project (void (lowerInitStage handlers conf project.build))
+lowerInitMain conf = processProjectSimple (lowerInitStage conf)

@@ -1,7 +1,5 @@
 module Hix.Managed.Build.Target where
 
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.Trans.State.Strict (StateT (runStateT))
 import qualified Data.Map.Strict as Map
 import Exon (exon)
@@ -11,10 +9,15 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Override (..), Overrides)
 import Hix.Data.PackageId (PackageId (..))
-import Hix.Data.PackageName (LocalPackage)
+import Hix.Data.PackageName (LocalPackage, PackageName)
 import Hix.Data.Version (Versions)
-import Hix.Managed.Build.Adapt (FailureCounts (..), RetryPackage (..), buildAdaptive)
-import Hix.Managed.Build.NixOutput (PackageDerivation (..))
+import Hix.Managed.Build.Adapt (
+  FailedPackage (..),
+  FailureCounts (..),
+  RetryPackage (..),
+  buildAdaptive,
+  failedPackageId,
+  )
 import Hix.Managed.Build.NixOutput.Analysis (FailureReason (..))
 import Hix.Managed.Build.NixProcess (nixBuild)
 import Hix.Managed.Data.BuildConfig (BuildConfig)
@@ -65,44 +68,50 @@ buildSolverPackages builder env overrides = do
 suggestRevision ::
   BuilderResources ->
   FailureCounts ->
-  PackageDerivation ->
+  FailedPackage ->
   Maybe Override ->
   FailureReason ->
   M (Maybe RetryPackage)
-suggestRevision resources _ PackageDerivation {package} = \cases
-  Nothing (BoundsError _) -> do
-    override <- packageOverride resources.hackage [] package
-    pure (Just RetryPackage {package, ..})
+suggestRevision resources _ pkg = \cases
+  Nothing (BoundsError _)
+    | Just package <- failedPackageId pkg
+    -> do
+      override <- packageOverride resources.hackage [] package
+      pure (Just RetryPackage {package, ..})
   _ _ -> pure Nothing
 
 suggestNothing ::
   FailureCounts ->
-  PackageDerivation ->
+  FailedPackage ->
   Maybe Override ->
   FailureReason ->
   M (Maybe a)
 suggestNothing _ _ _ _ =
   pure Nothing
 
+latestVersionFor :: BuilderResources -> PackageName -> M (Maybe RetryPackage)
+latestVersionFor resources target =
+  resources.versions.latest target >>= traverse \ latest -> do
+    override <- packageOverride resources.hackage [] PackageId {name = target, version = latest}
+    pure RetryPackage {package = PackageId {name = target, version = override.version}, ..}
+
 suggestJailbreakAndLatestVersion ::
   BuilderResources ->
   FailureCounts ->
-  PackageDerivation ->
+  FailedPackage ->
   Maybe Override ->
   FailureReason ->
   M (Maybe RetryPackage)
-suggestJailbreakAndLatestVersion resources counts PackageDerivation {package} = \cases
-  Nothing (BoundsError _) ->
-    pure (Just RetryPackage {package, override = Jailbreak})
+suggestJailbreakAndLatestVersion resources counts pkg = \cases
+  Nothing (BoundsError _)
+    | Just package <- failedPackageId pkg
+    -> pure (Just RetryPackage {package, override = Jailbreak})
+  Nothing UnknownDep -> latestVersionFor resources pkg.package
   _ (BuildError _) -> latestVersion
   _ Unclear | counts.clear == 0 -> latestVersion
   _ _ -> pure Nothing
   where
-    latestVersion =
-      runMaybeT do
-        latest <- MaybeT $ resources.versions.latest package.name
-        override <- lift $ packageOverride resources.hackage [] PackageId {name = package.name, version = latest}
-        pure RetryPackage {package, ..}
+    latestVersion = latestVersionFor resources pkg.package
 
 -- | Build an env's target packages using the given package IDs for its dependencies.
 -- Return a resolved set of overrides with hashes for these versions, as well as the set of packages that have been

@@ -22,7 +22,6 @@ import Exon (exon)
 
 import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Monad (M)
-import qualified Hix.Log as Log
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext (EnvContext))
 import qualified Hix.Managed.Data.EnvRequest
@@ -36,7 +35,7 @@ import Hix.Managed.Data.StageResult (StageFailure (FailedPrecondition), StageRes
 import Hix.Managed.Data.StageState (BuildStatus (Failure, Success))
 import Hix.Managed.StageContext (stageContext)
 import Hix.Managed.UpdateState (envStateWithMutations)
-import Hix.Monad (throwM)
+import Hix.Monad (appContext, throwM)
 
 data FlowState =
   FlowState {
@@ -79,11 +78,13 @@ runStage ::
   (StageContext -> M (StageResult, o)) ->
   Flow (BuildStatus, o)
 runStage description stage = do
-  unless (Text.null description) do
-    EnvRequest {context = EnvContext {env}} <- Flow (gets (.env))
-    liftM (Log.debug [exon|Executing stage '#{description}' for '##{env}'|])
+  EnvRequest {context = EnvContext {env}} <- Flow (gets (.env))
+  let
+    desc = if Text.null description then "unnamed stage" else [exon|stage '#{description}'|]
+    contextMessage = [exon|executing #{desc} for '##{env}'|]
   context <- newContext
-  (result, o) <- liftM (stage context)
+  (result, o) <- liftM $ appContext contextMessage do
+    stage context
   status <- addResult result
   pure (status, o)
 

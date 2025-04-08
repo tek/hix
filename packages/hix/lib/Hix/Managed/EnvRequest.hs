@@ -81,16 +81,16 @@ withEnvRequest ::
   Builder ->
   (EnvRequest -> M EnvResult) ->
   M (ProcessState, EnvResult)
-withEnvRequest build state context@env builder use = do
-  envResult <- runBuilder builder envBuilderContext \ envBuilder ->
-    use EnvRequest {context, builder = envBuilder, state = initialState}
-  let newState = updateProcessState context initialState envResult state
+withEnvRequest build processState context@env builder use = do
+  envResult <- runBuilder builder envBuilderContext \ envBuilder state ->
+    use EnvRequest {context, builder = envBuilder, state}
+  let newState = updateProcessState context initialState envResult processState
   Log.debug [exon|Finished '##{context.env :: EnvName}' with final state:|]
   Log.debugP (pretty newState)
   pure (newState, envResult)
   where
     envBuilderContext = EnvBuilderContext {..}
 
-    initCabal = build.cabal state.packages
+    initCabal = build.cabal processState.packages
 
-    initialState = initialEnvState context state.state
+    initialState = initialEnvState context processState.state

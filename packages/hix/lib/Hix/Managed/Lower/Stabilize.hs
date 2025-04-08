@@ -22,7 +22,6 @@ import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId)
 import qualified Hix.Managed.Data.MutationState
 import Hix.Managed.Data.MutationState (MutationState (MutationState))
-import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import qualified Hix.Managed.Data.QueryDep
@@ -40,7 +39,7 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Lower.Candidates (candidatesStabilize)
 import Hix.Managed.Lower.Data.LowerMode (lowerStabilizeMode)
-import Hix.Managed.Process (processProject)
+import Hix.Managed.Process (processProjectSimple)
 import Hix.Managed.Report (describeIterations)
 import Hix.Managed.StageResult (stageResult)
 
@@ -67,13 +66,13 @@ lowerStabilizeUpdate retract candidate PackageId {name, version} MutationConstra
   | otherwise
   = MutationConstraints {mutation = fromUpper version, ..}
 
-success :: Map MutableDep BuildSuccess -> Natural -> Text
+success :: Map MutableDep BuildSuccess -> Word -> Text
 success _ iterations =
   [exon|Found stable lower bounds for all deps after #{iter}.|]
   where
     iter = describeIterations iterations
 
-failure :: Natural -> Text
+failure :: Word -> Text
 failure iterations =
   [exon|Couldn't find working lower bounds for some deps after #{describeIterations iterations}.|]
 
@@ -126,9 +125,5 @@ lowerStabilizeStages handlers conf =
     Success -> unit
     _ -> stabilizeIfPossible handlers conf
 
-lowerStabilizeMain ::
-  BuildHandlers ->
-  ProjectContext ->
-  M ProjectResult
-lowerStabilizeMain handlers project =
-  processProject handlers project (lowerStabilizeStages handlers project.build)
+lowerStabilizeMain :: BuildHandlers -> ProjectContext -> M ProjectResult
+lowerStabilizeMain = processProjectSimple lowerStabilizeStages

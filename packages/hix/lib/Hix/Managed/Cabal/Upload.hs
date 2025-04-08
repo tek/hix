@@ -7,7 +7,7 @@ import Control.Lens.Regex.Text (Match, groups, regex)
 import Data.List.Extra (unescapeHTML)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
-import Distribution.Client.Setup (IsCandidate (IsPublished))
+import Distribution.Client.Setup (IsCandidate (IsPublished), RepoContext)
 import qualified Distribution.Client.Types.Credentials as Cabal
 import qualified Distribution.Client.Upload as Upload
 import Distribution.PackageDescription (GenericPackageDescription)
@@ -17,8 +17,8 @@ import Distribution.Verbosity (Verbosity)
 import Exon (exon)
 import Path (Abs, File, Path, filename, toFilePath)
 
+import Hix.Cabal (catchExitCodeM)
 import qualified Hix.Color as Color
-import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Monad (M)
 import Hix.Data.PackageId (PackageId (..))
 import Hix.Error (pathText)
@@ -29,7 +29,7 @@ import Hix.Managed.Cabal.Init (SolveFlags (..))
 import Hix.Managed.Cabal.PackageDescription (parseCabalFile)
 import Hix.Managed.Cabal.Repo (withRepoContextM)
 import Hix.Managed.Handlers.HackageClient (HackageClient (..), HackageError (..), HackageResponse (..))
-import Hix.Monad (appContext, fatalError, noteFatal, tryIOMWith)
+import Hix.Monad (appContext, fatalError, noteFatal)
 import Hix.Pretty (showP)
 
 type Regex = IndexedTraversal' Int Text Match
@@ -52,6 +52,21 @@ data UploadConfig =
   }
   deriving stock (Eq, Show, Generic)
 
+upload ::
+  UploadConfig ->
+  RepoContext ->
+  Maybe Cabal.Username ->
+  Maybe Cabal.Password ->
+  IsCandidate ->
+  [FilePath] ->
+  IO ()
+upload conf ctx =
+#if MIN_VERSION_cabal_install(3,12,0)
+    Upload.upload conf.verbosity ctx Nothing
+#else
+    Upload.upload conf.verbosity ctx
+#endif
+
 -- TODO When candidates are uploaded, versions don't have to be written to the repo.
 -- Since we're gonna add automatic semver incrementing, we can do that in memory and manipulate the cabal files in a
 -- temp dir somewhere, even without asking the user for a version, since there's no danger in publishing candidates.
@@ -64,15 +79,13 @@ publishPackage ::
   M ()
 publishPackage conf flags sourceTar =
   withRepoContextM conf.verbosity flags.global \ ctx ->
-#if MIN_VERSION_cabal_install(3,12,0)
-    tryIOMWith err $ Upload.upload conf.verbosity ctx Nothing (Just user) (Just password) candidate [toFilePath sourceTar]
-#else
-    tryIOMWith err $ Upload.upload conf.verbosity ctx (Just user) (Just password) candidate [toFilePath sourceTar]
-#endif
+    catchExitCodeM "Upload failed" do
+      upload conf ctx (Just user) (Just password) candidate [toFilePath sourceTar]
   where
-    err msg = Fatal [exon|Publishing package failed: #{msg}|]
     user = Cabal.Username (toString conf.user.value)
+
     password = Cabal.Password (toString conf.password.value)
+
     candidate = IsPublished
 
 revisions ::

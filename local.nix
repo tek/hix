@@ -26,7 +26,6 @@ in {
         "exceptions ^>= 0.10"
         "exon >= 1.4 && < 1.8"
         "extra ^>= 1.7"
-        "filepath"
         "filepattern ^>= 0.1"
         "generic-lens ^>= 2.2"
         "generics-sop ^>= 0.5"
@@ -37,6 +36,7 @@ in {
         "generics-sop ^>= 0.5"
         "lens >= 5.1 && < 5.4"
         "lens-regex-pcre ^>= 1.1"
+        "monad-control ^>= 1.0"
         "network"
         "network-uri"
         "optparse-applicative >= 0.17 && <0.19"
@@ -44,6 +44,7 @@ in {
         "path-io >= 1.7 && < 1.9"
         "pretty"
         "random ^>= 1.2"
+        "template-haskell"
         "these ^>=1.2"
         "time"
         "transformers"
@@ -81,7 +82,9 @@ in {
     library = {
       enable = true;
       dependencies = [
+        "aeson >= 2.0 && < 2.3"
         "async"
+        "casing"
         "exon >= 1.4 && < 1.7"
         "exceptions"
         "hackage-server"

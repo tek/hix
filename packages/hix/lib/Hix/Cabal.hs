@@ -2,7 +2,8 @@
 
 module Hix.Cabal where
 
-import Control.Monad.Trans.Except (ExceptT, throwE)
+import Control.Exception (try)
+import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import Distribution.PackageDescription (BuildInfo (..), GenericPackageDescription (..))
 import Distribution.Types.Benchmark (benchmarkBuildInfo)
 import Distribution.Types.CondTree (CondTree (..))
@@ -27,12 +28,15 @@ import Path (
   toFilePath,
   (</>),
   )
+import System.Exit (ExitCode)
 import System.FilePattern.Directory (getDirectoryFiles)
 
+import qualified Hix.Color as Color
 import Hix.Compat (readGenericPackageDescription)
 import Hix.Data.Error (Error (..), ErrorMessage (Client, Fatal))
 import Hix.Data.LogLevel (LogLevel (LogVerbose))
 import Hix.Error (pathText, sourceError, throwMessage, tryIO)
+import Hix.Monad (M, fromEither, tryIOMWith)
 
 #if MIN_VERSION_Cabal(3,14,0)
 import Distribution.Utils.Path (makeSymbolicPath)
@@ -111,3 +115,18 @@ buildInfoForFile source = do
   (cabalPath, sourceRel) <- findCabal source
   pkg <- parseCabal cabalPath
   matchComponent pkg sourceRel
+
+catchExitCode :: Text -> IO a -> IO (Either ErrorMessage a)
+catchExitCode preface ma =
+  first errorExit <$> liftIO (try ma)
+  where
+    errorExit (_ :: ExitCode) =
+      Fatal [exon|#{preface}: Cabal attempted to terminate the process 🙄 Please re-run with #{option}|]
+
+    option = Color.shellCommand @Text "--cabal-verbose"
+
+catchExitCodeM :: Text -> IO a -> M a
+catchExitCodeM preface ma =
+  fromEither =<< tryIOMWith general (catchExitCode preface ma)
+  where
+    general err = Fatal [exon|#{preface}#{err}|]
