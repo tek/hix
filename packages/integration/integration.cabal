@@ -69,8 +69,10 @@ library
       NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      async
+      aeson >=2.0 && <2.3
+    , async
     , base ==4.*
+    , casing
     , exceptions
     , exon >=1.4 && <1.7
     , hackage-server

@@ -15,7 +15,7 @@ import Hix.Data.Version (SourceHash (SourceHash))
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName, HackageRepo (..))
 import qualified Hix.Managed.Cabal.HackageLocation as HackageLocation
-import Hix.Monad (M, appContext, tryIOM)
+import Hix.Monad (M, appContextVerbose, tryIOM)
 import Hix.Pretty (showP)
 
 fetchHashHackageRepo ::
@@ -23,7 +23,7 @@ fetchHashHackageRepo ::
   HackageRepo ->
   M (Maybe (SourceHash, HackageName))
 fetchHashHackageRepo package HackageRepo {name, location} =
-  appContext [exon|trying ##{url}|] do
+  appContextVerbose [exon|trying ##{url}|] do
     tryIOM (readProcess conf) >>= \case
       (ExitFailure _, _, err) -> do
         Log.debug [exon|Error for ##{url}: #{decodeUtf8 err}|]
@@ -40,7 +40,7 @@ fetchHashHackage ::
   PackageId ->
   M (Either Text (SourceHash, HackageName))
 fetchHashHackage repos package =
-  appContext [exon|fetching hash for #{Color.package package} from Hackage repos|] do
+  appContextVerbose [exon|fetching hash for #{Color.package package} from Hackage repos|] do
     maybeToRight notFound <$> firstJustM (fetchHashHackageRepo package) (toList repos)
   where
     notFound = [exon|No Hackage repo knows the package ID #{Color.package package}|]

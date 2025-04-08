@@ -7,6 +7,7 @@ import Exon (exon)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import qualified Hix.Log as Log
+import Hix.Managed.Data.BuildConfig (BuildConfig)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext)
 import qualified Hix.Managed.Data.EnvRequest
@@ -64,7 +65,13 @@ processProject ::
   ProjectContext ->
   Flow () ->
   M ProjectResult
-processProject build project process =
-  withBuilder \ builder -> foldEnvs project (processEnv build process builder)
-  where
-    BuildHandlers {withBuilder} = build
+processProject build@BuildHandlers {withBuilder} project flow =
+  withBuilder \ builder -> foldEnvs project (processEnv build flow builder)
+
+processProjectSimple ::
+  (BuildHandlers -> BuildConfig -> Flow a) ->
+  BuildHandlers ->
+  ProjectContext ->
+  M ProjectResult
+processProjectSimple flow handlers project =
+  processProject handlers project (void (flow handlers project.build))

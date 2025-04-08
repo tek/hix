@@ -95,6 +95,7 @@ library
       Hix.Managed.Cabal.Data.ContextHackageRepo
       Hix.Managed.Cabal.Data.HackageLocation
       Hix.Managed.Cabal.Data.HackageRepo
+      Hix.Managed.Cabal.Data.InstalledOverrides
       Hix.Managed.Cabal.Data.Packages
       Hix.Managed.Cabal.Data.Revision
       Hix.Managed.Cabal.Data.SolveResources
@@ -142,6 +143,7 @@ library
       Hix.Managed.Data.Mutation
       Hix.Managed.Data.MutationMode
       Hix.Managed.Data.MutationState
+      Hix.Managed.Data.NixOutput
       Hix.Managed.Data.Packages
       Hix.Managed.Data.ProcessState
       Hix.Managed.Data.ProjectContext
@@ -232,6 +234,7 @@ library
       Hix.Monad
       Hix.Network
       Hix.New
+      Hix.NixCode
       Hix.NixExpr
       Hix.Options
       Hix.Optparse
@@ -298,7 +301,6 @@ library
     , exceptions ==0.10.*
     , exon >=1.4 && <1.8
     , extra ==1.7.*
-    , filepath
     , filepattern ==0.1.*
     , generic-lens ==2.2.*
     , generics-sop ==0.5.*
@@ -308,6 +310,7 @@ library
     , incipit-base >=0.5 && <0.7
     , lens >=5.1 && <5.4
     , lens-regex-pcre ==1.1.*
+    , monad-control ==1.0.*
     , network
     , network-uri
     , optparse-applicative >=0.17 && <0.19
@@ -315,6 +318,7 @@ library
     , path-io >=1.7 && <1.9
     , pretty
     , random ==1.2.*
+    , template-haskell
     , these ==1.2.*
     , time
     , transformers

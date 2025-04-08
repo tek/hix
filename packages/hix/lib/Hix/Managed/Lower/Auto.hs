@@ -10,7 +10,6 @@ import Hix.Managed.Data.EnvState (EnvState (EnvState))
 import qualified Hix.Managed.Data.LowerConfig
 import Hix.Managed.Data.LowerConfig (LowerConfig)
 import Hix.Managed.Data.Mutable (MutableVersions)
-import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import Hix.Managed.Data.Query (Query (Query))
@@ -23,7 +22,7 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import Hix.Managed.Lower.Init (lowerInitStage)
 import Hix.Managed.Lower.Optimize (lowerOptimize)
 import Hix.Managed.Lower.Stabilize (stabilizeIfPossible, stabilizeStage, validateCurrent)
-import Hix.Managed.Process (processProject)
+import Hix.Managed.Process (processProjectSimple)
 
 suggestStabilize :: Flow ()
 suggestStabilize = stageError "Re-run with --stabilize to attempt to fix the bounds."
@@ -91,12 +90,12 @@ postInit handlers conf buildConf =
             | otherwise -> suggestStabilize
 
 lowerAutoStages ::
-  BuildHandlers ->
   LowerConfig ->
+  BuildHandlers ->
   BuildConfig ->
   Flow ()
-lowerAutoStages handlers conf buildConf =
-  lowerInitStage handlers conf buildConf >>= \case
+lowerAutoStages conf handlers buildConf =
+  lowerInitStage conf handlers buildConf >>= \case
     Success | conf.initOnly -> unit
             | otherwise -> postInit handlers conf buildConf
     Failure -> stabilizeInitFailure handlers conf buildConf
@@ -106,5 +105,5 @@ lowerAutoMain ::
   BuildHandlers ->
   ProjectContext ->
   M ProjectResult
-lowerAutoMain conf handlers project =
-  processProject handlers project (lowerAutoStages handlers conf project.build)
+lowerAutoMain conf =
+  processProjectSimple (lowerAutoStages conf)

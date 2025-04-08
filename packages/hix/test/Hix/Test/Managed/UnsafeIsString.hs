@@ -8,8 +8,7 @@ import GHC.Exts (IsList (Item, fromList, toList))
 
 import Hix.CabalParsec (unsafeParsec)
 import qualified Hix.Data.Dep
-import qualified Hix.Data.Dep as Dep
-import Hix.Data.Dep (Dep (Dep))
+import Hix.Data.Dep (Dep (Dep), unsafeDep)
 import Hix.Data.Overrides (Override, override)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
@@ -58,7 +57,7 @@ instance IsString MutableId where
       PackageId {name, version} = fromString s
 
 instance IsString Dep where
-  fromString = Dep.fromCabal . unsafeParsec
+  fromString = unsafeDep
 
 instance IsString Override where
   fromString s =

@@ -25,7 +25,6 @@ import Hix.Managed.Data.MutableId (MutableId (MutableId))
 import Hix.Managed.Data.Mutation (DepMutation (..))
 import qualified Hix.Managed.Data.MutationState
 import Hix.Managed.Data.MutationState (MutationState)
-import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import Hix.Managed.Data.Query (Query (Query))
@@ -38,7 +37,7 @@ import qualified Hix.Managed.Handlers.Build
 import Hix.Managed.Handlers.Build (BuildHandlers)
 import Hix.Managed.Handlers.Cabal (CabalHandlers, installedVersions)
 import Hix.Managed.Handlers.Mutation.Bump (handlersBump)
-import Hix.Managed.Process (processProject)
+import Hix.Managed.Process (processProjectSimple)
 import Hix.Managed.Report (describeIterations)
 import Hix.Managed.StageResult (stageResult)
 
@@ -90,13 +89,13 @@ bumpSolverParams deps cabal (Initial state) initialBounds =
   where
     installed = installedVersions cabal deps.mutable
 
-success :: Map MutableDep BuildSuccess -> Natural -> Text
+success :: Map MutableDep BuildSuccess -> Word -> Text
 success _ iterations =
   [exon|Found working latest versions for all deps after #{iter}.|]
   where
     iter = describeIterations iterations
 
-failure :: Natural -> Text
+failure :: Word -> Text
 failure iterations =
   [exon|Couldn't find working latest versions for some deps after #{describeIterations iterations}.|]
 
@@ -145,9 +144,5 @@ bumpStages handlers conf
   | otherwise
   = bumpBuildStage handlers conf
 
-bumpOptimizeMain ::
-  BuildHandlers ->
-  ProjectContext ->
-  M ProjectResult
-bumpOptimizeMain handlers project =
-  processProject handlers project (void (bumpStages handlers project.build))
+bumpOptimizeMain :: BuildHandlers -> ProjectContext -> M ProjectResult
+bumpOptimizeMain = processProjectSimple bumpStages

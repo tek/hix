@@ -51,7 +51,7 @@ import Hix.Managed.Handlers.Maint.Prod (runBumpProd)
 import Hix.Managed.Maint.Data.MaintResult (MaintChanged (..), MaintResult (..))
 import Hix.Managed.Maint.Git (gitApiMaintHermetic)
 import Hix.Managed.ReleaseMaintenance (releaseMaintenance)
-import Hix.Monad (M, appContextDebug, fatalError, withTempDir, withTempRoot)
+import Hix.Monad (M, appContextDebug, fatalError, withTempRoot)
 import Hix.Network (Port (..))
 
 initialPackage :: PackageId
@@ -418,21 +418,20 @@ test_releaseMaintenance =
   withHixDir \ hixRoot -> do
     (maintResults, revisedCabalContents, commitText) <- runMTest False do
       withTempRoot "test-maint" \ root ->
-        withTempDir "hackage" \ tmp ->
-          withHackage tmp \ port -> do
-            handlers <- maintHandlers port
-            packageDir <- runGitNativeHermetic root "test: project setup" (setupProject (toText hixRoot))
-            let localHackage = remoteRepo (testRepo port)
-            appContextDebug "publishing test package" do
-              flags <- Cabal.solveFlags [localHackage] def
-              targz <- sourceDistribution packageDir initialPackage
-              verbosity <- cabalVerbosity
-              publishPackage UploadConfig {verbosity, user = "test", password = "test"} flags targz
-            maintResults <- releaseMaintenance handlers maintConfig maintContext
-            revisedCabalContents <- revisionCabalFile (NonEmpty.head handlers.publishHackages) initialPackage 1
-            commitText <- runGitNativeHermetic root "test: get commit message" \ git ->
-              git.cmd ["show", "release/local1/0.2.0"]
-            pure (maintResults, revisedCabalContents, commitText)
+        withHackage \ port -> do
+          handlers <- maintHandlers port
+          packageDir <- runGitNativeHermetic root "test: project setup" (setupProject (toText hixRoot))
+          let localHackage = remoteRepo (testRepo port)
+          appContextDebug "publishing test package" do
+            flags <- Cabal.solveFlags [localHackage] def
+            targz <- sourceDistribution packageDir initialPackage
+            verbosity <- cabalVerbosity
+            publishPackage UploadConfig {verbosity, user = "test", password = "test"} flags targz
+          maintResults <- releaseMaintenance handlers maintConfig maintContext
+          revisedCabalContents <- revisionCabalFile (NonEmpty.head handlers.publishHackages) initialPackage 1
+          commitText <- runGitNativeHermetic root "test: get commit message" \ git ->
+            git.cmd ["show", "release/local1/0.2.0"]
+          pure (maintResults, revisedCabalContents, commitText)
     targetResults === nMap fixTime maintResults
     targetCabal === revisedCabalContents
     eqLines targetCommit (Text.unlines (filter ("    " /=) (drop 3 commitText)))

@@ -4,18 +4,20 @@ import qualified Data.Map.Strict as Map
 import Distribution.Client.Dependency (PackagesPreferenceDefault (PreferAllOldest), setPreferenceDefault)
 import qualified Distribution.Client.Types
 import Distribution.Client.Types (SourcePackageDb (SourcePackageDb), UnresolvedSourcePackage)
+import Distribution.Simple.PackageIndex (deleteSourcePackageId)
 import qualified Distribution.Solver.Types.PackageIndex as PackageIndex
 import Distribution.Solver.Types.PackageIndex (PackageIndex)
 import Distribution.Version (laterVersion)
 
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId
+import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (LocalPackage, PackageName)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, GhcDb)
-import qualified Hix.Managed.Cabal.Data.SolveResources as SolveResources
-import Hix.Managed.Cabal.Data.SolveResources (SolveResources (SolveResources, solverParams))
+import Hix.Managed.Cabal.Data.InstalledOverrides (InstalledOverrides (..))
+import Hix.Managed.Cabal.Data.SolveResources (SolveResources (..))
 import Hix.Managed.Cabal.Installed (installedVersion)
 import qualified Hix.Managed.Cabal.Resources as SolveResources
 import Hix.Managed.Cabal.Solve (solveWithCabal)
@@ -45,14 +47,36 @@ handlersWith trans cabalConf oldest packages ghc = do
     solverParams | oldest = setPreferenceDefault PreferAllOldest
                  | otherwise = id
 
+-- | Remove the given overrides from the @InstalledPackageIndex@.
+--
+-- The solver overrides are a necessity that allows us to resolve dependencies and start builds with multiple broken
+-- packages in the nixpkgs GHC set, but they obscure what is actually installed, so that the same overrides have to be
+-- determined again when running mutation builds (which isn't possible except for revisions).
+--
+-- Therefore, we remove the solver overrides from the installed package DB here, causing Cabal to see only their
+-- counterparts from Hackage.
+--
+-- Note that we do absolutely need the remaining installed packages to be recognized, since we can instruct Cabal to
+-- prefer those versions in order to avoid having to use overrides for every dependency (and build all of those
+-- packages despite them being available in the cache).
+removeInstalledOverrides ::
+  InstalledOverrides ->
+  SolveResources ->
+  SolveResources
+removeInstalledOverrides (InstalledOverrides ids) resources =
+  resources {
+    installedPkgIndex = foldr (deleteSourcePackageId . PackageId.toCabal) resources.installedPkgIndex ids
+  }
+
 handlersProd ::
+  InstalledOverrides ->
   CabalConfig ->
   Bool ->
   ProjectPackages ->
   GhcDb ->
   M (CabalHandlers, Set LocalPackage)
-handlersProd =
-  handlersWith id
+handlersProd overrides =
+  handlersWith (removeInstalledOverrides overrides)
 
 testPackagesBump :: Map PackageName PackageId
 testPackagesBump =

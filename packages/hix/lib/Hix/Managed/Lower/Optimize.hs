@@ -18,7 +18,6 @@ import Hix.Managed.Data.Mutable (MutableDep)
 import Hix.Managed.Data.MutableId (MutableId)
 import qualified Hix.Managed.Data.MutationState
 import Hix.Managed.Data.MutationState (MutationState (MutationState))
-import qualified Hix.Managed.Data.ProjectContext
 import Hix.Managed.Data.ProjectContext (ProjectContext)
 import Hix.Managed.Data.ProjectResult (ProjectResult)
 import qualified Hix.Managed.Data.StageContext
@@ -31,7 +30,7 @@ import Hix.Managed.Handlers.Build (BuildHandlers)
 import qualified Hix.Managed.Handlers.Mutation.Lower as Mutation
 import Hix.Managed.Lower.Candidates (candidatesOptimize)
 import Hix.Managed.Lower.Data.LowerMode (lowerOptimizeMode)
-import Hix.Managed.Process (processProject)
+import Hix.Managed.Process (processProjectSimple)
 import Hix.Managed.Report (describeIterations)
 import Hix.Managed.StageResult (stageResult)
 
@@ -39,11 +38,11 @@ lowerOptimizeUpdate :: Bool -> MutableId -> PackageId -> MutationConstraints -> 
 lowerOptimizeUpdate _ _ PackageId {version} MutationConstraints {..} =
   MutationConstraints {mutation = fromUpper version, ..}
 
-success :: Map MutableDep BuildSuccess -> Natural -> Text
+success :: Map MutableDep BuildSuccess -> Word -> Text
 success _ iterations =
   [exon|Found optimal lower bounds for all deps after #{describeIterations iterations}.|]
 
-failure :: Natural -> Text
+failure :: Word -> Text
 failure iterations =
   [exon|Couldn't find working lower bounds for some deps after #{describeIterations iterations}.|]
 
@@ -68,9 +67,5 @@ lowerOptimizeStage ::
 lowerOptimizeStage handlers conf =
   runStage_ "optimize" (lowerOptimize handlers conf)
 
-lowerOptimizeMain ::
-  BuildHandlers ->
-  ProjectContext ->
-  M ProjectResult
-lowerOptimizeMain handlers project =
-  processProject handlers project (lowerOptimizeStage handlers project.build)
+lowerOptimizeMain :: BuildHandlers -> ProjectContext -> M ProjectResult
+lowerOptimizeMain = processProjectSimple lowerOptimizeStage

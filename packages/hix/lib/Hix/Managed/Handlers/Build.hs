@@ -9,10 +9,11 @@ import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Cabal.Changes (SolverPlan)
 import Hix.Managed.Cabal.Data.Config (GhcDb (..))
+import Hix.Managed.Cabal.Data.InstalledOverrides (InstalledOverrides)
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import Hix.Managed.Data.EnvContext (EnvContext (..))
 import Hix.Managed.Data.EnvState (EnvState)
-import Hix.Managed.Data.Initial (Initial)
+import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import Hix.Managed.Data.StageState (BuildFailure (UnknownFailure), BuildResult (BuildFailure))
 import qualified Hix.Managed.Handlers.AvailableVersions as AvailableVersions
@@ -27,7 +28,7 @@ import Hix.Managed.Overrides (packageOverrides)
 import Hix.Monad (noteClient)
 
 newtype InitCabal =
-  InitCabal { run :: GhcDb -> M (CabalHandlers, Set LocalPackage) }
+  InitCabal { run :: InstalledOverrides -> GhcDb -> M (CabalHandlers, Set LocalPackage) }
 
 data EnvBuilderContext =
   EnvBuilderContext {
@@ -38,16 +39,17 @@ data EnvBuilderContext =
 
 data EnvBuilder =
   EnvBuilder {
+    state :: EnvState,
     cabal :: CabalHandlers,
     buildTargets :: Bool -> Versions -> [PackageId] -> M (BuildResult, (Overrides, Set PackageId))
   }
 
 data Builder =
   Builder {
-    withEnvBuilder :: ∀ a . EnvBuilderContext -> (EnvBuilder -> M a) -> M a
+    withEnvBuilder :: ∀ a . EnvBuilderContext -> (EnvBuilder -> Initial EnvState -> M a) -> M a
   }
 
-runBuilder :: Builder -> EnvBuilderContext -> (EnvBuilder -> M a) -> M a
+runBuilder :: Builder -> EnvBuilderContext -> (EnvBuilder -> Initial EnvState -> M a) -> M a
 runBuilder Builder {withEnvBuilder} = withEnvBuilder
 
 data BuildHandlers =
@@ -64,10 +66,10 @@ testBuilder ::
   M a
 testBuilder buildTargets use =
   use Builder {
-    withEnvBuilder = \ EnvBuilderContext {initCabal, env = EnvContext {ghc}} useE -> do
+    withEnvBuilder = \ EnvBuilderContext {initCabal, env = EnvContext {ghc}, initialState = Initial state} useE -> do
       ghcDb <- noteClient "Test builder needs an explicit GHC DB" ghc
-      (cabal, _) <- initCabal.run ghcDb
-      useE EnvBuilder {..}
+      (cabal, _) <- initCabal.run mempty ghcDb
+      useE EnvBuilder {..} (Initial state)
   }
 
 versionsBuilder :: SourceHashHandlers -> (Versions -> M BuildResult) -> (Builder -> M a) -> M a
@@ -81,14 +83,14 @@ handlersNull :: BuildHandlers
 handlersNull =
   BuildHandlers {
     project = Project.handlersNull,
-    cabal = \ _ -> InitCabal \ _ -> pure (Solve.handlersNull, mempty),
+    cabal = \ _ -> InitCabal \ _ _ -> pure (Solve.handlersNull, mempty),
     withBuilder = testBuilder \ _ _ _ -> pure (BuildFailure UnknownFailure, mempty),
     versions = AvailableVersions.handlersNull
   }
 
 wrapCabal :: (CabalHandlers -> CabalHandlers) -> BuildHandlers -> BuildHandlers
 wrapCabal f BuildHandlers {..} =
-  BuildHandlers {cabal = \ p -> InitCabal (fmap (first f) . (cabal p).run), ..}
+  BuildHandlers {cabal = \ p -> InitCabal (\ d o -> first f <$> (cabal p).run d o), ..}
 
 logCabal ::
   MonadIO m =>

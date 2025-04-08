@@ -15,8 +15,7 @@ import Hix.Data.PackageName (LocalPackage, PackageName (..))
 import Hix.Data.Version (Version)
 import Hix.Data.VersionBounds (unsafeVersionBoundsFromRange)
 import Hix.Error (pathText)
-import Hix.Http (httpManager)
-import Hix.Integration.Hackage (withHackage)
+import Hix.Integration.Hackage (TestHackage (..), withHackageClient)
 import Hix.Integration.Utils (UnitTest, add, addP, libHs, local1, runMTest, withHixDir)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
@@ -39,12 +38,12 @@ import Hix.Managed.Flake (runFlakeGen, runFlakeLock)
 import qualified Hix.Managed.Git as Git
 import Hix.Managed.Git (GitNative, runGitNativeHermetic)
 import Hix.Managed.Handlers.Context (ContextKey (..), ContextQuery (ContextQuery))
-import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
+import Hix.Managed.Handlers.HackageClient (HackageClient)
 import Hix.Managed.Handlers.Revision (RevisionHandlers (..))
 import Hix.Managed.Maint.Data.MaintResult (MaintChanged (..), MaintResult (..))
 import Hix.Managed.Maint.Git (gitApiRevisionHermetic)
 import Hix.Managed.ReleaseMaintenance (publishRevisions)
-import Hix.Monad (M, appContextDebug, fatalError, withTempDir, withTempRoot)
+import Hix.Monad (M, appContextDebug, fatalError, withTempRoot)
 import Hix.Network (Port (..))
 
 initialPackage :: PackageId
@@ -260,10 +259,8 @@ revisionConfig :: RevisionConfig
 revisionConfig =
   def
 
-revisionHandlers :: Port -> M RevisionHandlers
-revisionHandlers port = do
-  manager <- httpManager
-  hackageUpload <- HackageClient.handlersMock manager port
+revisionHandlers :: HackageClient -> M RevisionHandlers
+revisionHandlers hackageUpload = do
   pure RevisionHandlers {
     git = gitApiRevisionHermetic revisionConfig,
     publishHackages = [hackageUpload]
@@ -338,17 +335,15 @@ test_revision =
   withHixDir \ hixRoot -> do
     revisedCabalContents <- runMTest False do
       withTempRoot "test-maint" \ root ->
-        withTempDir "hackage" \ tmp ->
-          withHackage tmp \ port -> do
-            handlers <- revisionHandlers port
-            packageDir <- runGitNativeHermetic root "test: project setup" (setupProject hixRoot)
-            let localHackage = remoteRepo (testRepo port)
-            appContextDebug "publishing test package" do
-              flags <- Cabal.solveFlags [localHackage] def
-              targz <- sourceDistribution packageDir initialPackage
-              verbosity <- cabalVerbosity
-              publishPackage UploadConfig {verbosity, user = "test", password = "test"} flags targz
-            runGitNativeHermetic root "test: bump deps" bumpDeps
-            publishRevisions handlers revisionConfig maintContext
-            revisionCabalFile (NonEmpty.head handlers.publishHackages) initialPackage 1
+        withHackageClient \ hackage -> do
+          packageDir <- runGitNativeHermetic root "test: project setup" (setupProject hixRoot)
+          appContextDebug "publishing test package" do
+            flags <- Cabal.solveFlags [remoteRepo hackage.repo] def
+            targz <- sourceDistribution packageDir initialPackage
+            verbosity <- cabalVerbosity
+            publishPackage UploadConfig {verbosity, user = "test", password = "test"} flags targz
+          runGitNativeHermetic root "test: bump deps" bumpDeps
+          handlers <- revisionHandlers hackage.client
+          publishRevisions handlers revisionConfig maintContext
+          revisionCabalFile (NonEmpty.head handlers.publishHackages) initialPackage 1
     targetCabal === revisedCabalContents

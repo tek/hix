@@ -14,10 +14,26 @@ import qualified Hix.Color as Color
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Override (..), Overrides)
 import Hix.Data.PackageId (PackageId (..))
+import Hix.Data.PackageName (PackageName)
+import Hix.Data.Version (Version)
 import qualified Hix.Log as Log
-import Hix.Managed.Build.NixOutput (PackageDerivation (..))
-import Hix.Managed.Build.NixOutput.Analysis (FailureReason (..), analyzeLog)
+import Hix.Managed.Build.NixOutput.Analysis (FailureReason (..), analyzeEarlyFailure, analyzeLog)
+import Hix.Managed.Data.NixOutput (PackageDerivation (..))
 import Hix.Managed.Data.StageState (BuildFailure (..), BuildResult (..))
+import Hix.Maybe (justIf)
+import Hix.Monad (appContextT)
+import Hix.Pretty (showP)
+
+data FailedPackage =
+  FailedPackage {
+    package :: PackageName,
+    version :: Maybe Version
+  }
+  deriving stock (Eq, Show)
+
+failedPackageId :: FailedPackage -> Maybe PackageId
+failedPackageId FailedPackage {..} =
+  version <&> \ v -> PackageId {name = package, version = v}
 
 data RetryPackage =
   RetryPackage {
@@ -53,9 +69,6 @@ recordRetry retry (overrides, counts) =
     Map.alter incrementOrInit retry.package counts
   )
 
-catMaybesNonEmpty :: NonEmpty (Maybe a) -> Maybe (NonEmpty a)
-catMaybesNonEmpty = nonEmpty . catMaybes . toList
-
 failureCounts :: NonEmpty FailureReason -> FailureCounts
 failureCounts pkgs =
   FailureCounts {clear}
@@ -64,25 +77,40 @@ failureCounts pkgs =
       Unclear -> False
       _ -> True
 
+manageableFailures :: BuildResult -> Maybe (NonEmpty (FailedPackage, FailureReason))
+manageableFailures = \case
+  BuildFailure (PackageFailure pkgs) ->
+    Just [
+      (FailedPackage {package = name, version = Just version, ..}, analyzeLog log)
+      |
+      PackageDerivation {package = PackageId {..}, ..} <- pkgs
+    ]
+  BuildFailure (UnexpectedFailure log) ->
+    analyzeEarlyFailure log <&> \ (package, reason) -> pure (FailedPackage {version = Nothing, ..}, reason)
+  _ -> Nothing
+
 buildAdaptive ::
   (Overrides -> M BuildResult) ->
-  (FailureCounts -> PackageDerivation -> Maybe Override -> FailureReason -> M (Maybe RetryPackage)) ->
+  (FailureCounts -> FailedPackage -> Maybe Override -> FailureReason -> M (Maybe RetryPackage)) ->
   StateT (Overrides, Map PackageId Word) M BuildResult
 buildAdaptive runBuild suggestOverride = do
   build
   where
     build = do
       result <- lift . runBuild =<< gets fst
-      maybe (pure result) retryFailures =<< collectRetries result
+      collectRetries result >>= \case
+        Just (Just retries) -> retryFailures retries
+        Just Nothing -> result <$ lift (Log.verbose "Could not fix any failures heuristically")
+        Nothing -> pure result
 
-    collectRetries = \case
-      BuildFailure (PackageFailure pkgs) -> do
-        let reasons = [(pkg, analyzeLog pkg.log) | pkg <- pkgs]
-            counts = failureCounts (snd <$> reasons)
-        results <- traverse (limitOverrides (findOverride counts)) reasons
-        pure (catMaybesNonEmpty results)
-      _ -> pure Nothing
+    collectRetries failure =
+      for (manageableFailures failure) \ reasons -> do
+        let counts = failureCounts (snd <$> reasons)
+        potentialOverrides <- catMaybes <$> traverse (findOverride counts) (toList reasons)
+        overrides <- catMaybes <$> traverse limitOverrides potentialOverrides
+        pure (nonEmpty overrides)
 
+    retryFailures :: NonEmpty RetryPackage -> StateT (Overrides, Map PackageId Word) M BuildResult
     retryFailures retries = do
       lift $ Log.verbose [exon|Some packages failed, retrying with overrides: #{ids}|]
       traverse_ (modify' . recordRetry) retries
@@ -90,12 +118,10 @@ buildAdaptive runBuild suggestOverride = do
       where
         ids = Text.intercalate ", " (Color.package <$> toList retries)
 
-    limitOverrides cont (pkg, reason) = do
-      count <- gets (\ (_, counts) -> fromMaybe 0 (counts !? pkg.package))
-      if count >= 4
-      then pure Nothing
-      else cont pkg reason
+    limitOverrides pkg =
+      gets (\ (_, counts) -> justIf (fromMaybe 0 (counts !? pkg.package) < 4) pkg)
 
-    findOverride counts pkg reason = do
-      old <- gets \ (ovs, _) -> ovs !! pkg.package.name
-      lift (suggestOverride counts pkg old reason)
+    findOverride counts (pkg, reason) =
+      appContextT [exon|finding an override for #{Color.package pkg.package} (#{showP reason})|] do
+        old <- gets \ (ovs, _) -> ovs !! pkg.package
+        lift (suggestOverride counts pkg old reason)

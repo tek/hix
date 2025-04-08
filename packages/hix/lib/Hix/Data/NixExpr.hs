@@ -28,6 +28,9 @@ data Expr =
   ExprPrefix Text Expr
   deriving stock (Eq, Show, Generic)
 
+exprAttrs :: [(ExprKey, Expr)] -> Expr
+exprAttrs = ExprAttrs . fmap (uncurry ExprAttr)
+
 exprShow :: Show a => a -> Expr
 exprShow =
   ExprLit . show

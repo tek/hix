@@ -1,6 +1,8 @@
 module Hix.Managed.Build.NixProcess where
 
+import Control.Concurrent.STM (STM, atomically)
 import qualified Data.ByteString.Char8 as ByteString
+import qualified Data.Text as Text
 import Exon (exon)
 import Path (Abs, Dir, Path, toFilePath)
 import System.IO (BufferMode (LineBuffering), Handle, hSetBuffering)
@@ -8,8 +10,10 @@ import System.IO.Error (tryIOError)
 import System.Process.Typed (
   ExitCode (ExitFailure, ExitSuccess),
   ProcessConfig,
+  byteStringOutput,
   createPipe,
   getStderr,
+  getStdout,
   inherit,
   nullStream,
   proc,
@@ -17,7 +21,7 @@ import System.Process.Typed (
   setStdout,
   setWorkingDir,
   waitExitCode,
-  withProcessTerm, getStdout, byteStringOutput,
+  withProcessTerm,
   )
 import System.Timeout (timeout)
 
@@ -25,13 +29,12 @@ import Hix.Data.Error (Error)
 import Hix.Data.Monad (LogLevel (LogDebug), M)
 import Hix.Error (pathText)
 import qualified Hix.Log as Log
-import Hix.Managed.Build.NixOutput (OutputResult (..), outputParse, runOutputState)
+import Hix.Managed.Build.NixOutput (outputParse, runOutputState)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
+import Hix.Managed.Data.NixOutput (OutputResult (..))
 import Hix.Managed.Data.StageState (BuildFailure (..), BuildResult (..))
 import Hix.Monad (shouldLog, withLowerTry')
-import Control.Concurrent.STM (atomically, STM)
-import qualified Data.Text as Text
 
 data OutputConfig =
   OutputDebug
@@ -157,12 +160,12 @@ nixBuild buildConf root attr = do
     args = ["build", "--no-link", "--show-trace", "--print-out-paths"]
 
     runOutput handle =
-      runOutputState (outputLines outputParse handle)
+      runOutputState (outputLines (outputParse buildConf) handle)
 
     outputHandler debug
-      | buildConf.buildOutput || (buildConf.disableNixMonitor && debug)
-      = OutputDebug
-      | buildConf.disableNixMonitor
-      = OutputIgnore
-      | otherwise
-      = OutputParse
+      | buildConf.disableNixMonitor =
+        if debug || buildConf.buildOutput
+        then OutputDebug
+        else OutputIgnore
+      | otherwise =
+        OutputParse

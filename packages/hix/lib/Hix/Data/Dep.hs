@@ -8,6 +8,7 @@ import Distribution.Types.Dependency (Dependency (Dependency))
 import Distribution.Version (VersionRange, thisVersion)
 import Exon (exon)
 
+import Hix.CabalParsec (unsafeParsec)
 import Hix.Data.Json (aesonParsec, jsonParsec)
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
@@ -57,3 +58,6 @@ instance FromJSON Dep where
 
 withVersion :: VersionRange -> Dep -> Dep
 withVersion version dep = dep {version}
+
+unsafeDep :: String -> Dep
+unsafeDep = fromCabal . unsafeParsec

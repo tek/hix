@@ -17,59 +17,21 @@ import Distribution.Compat.CharParsing (
   lower,
   )
 import Distribution.Parsec (Parsec, eitherParsec, parsec)
-import Distribution.Pretty (Pretty (..))
 import Exon (exon)
 
 import Hix.Data.Json (jsonEither)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId as PackageId
-import Hix.Data.PackageId (PackageId (..))
 import qualified Hix.Log as Log
+import Hix.Managed.Data.BuildConfig (BuildConfig (..))
+import Hix.Managed.Data.NixOutput (
+  BuildsState (..),
+  Derivation (..),
+  OutputResult (..),
+  OutputState (..),
+  PackageDerivation (..),
+  )
 import Hix.Pretty (showP)
-
-data Derivation =
-  Derivation {
-    path :: Text,
-    log :: (Seq Text, Seq Text)
-  }
-  deriving stock (Eq, Show, Generic)
-
-data PackageDerivation =
-  PackageDerivation {
-    package :: PackageId,
-    success :: Bool,
-    log :: [Text]
-  }
-  deriving stock (Eq, Show, Generic)
-
-instance Pretty PackageDerivation where
-  pretty PackageDerivation {package} = pretty package
-
-data BuildsState =
-  BuildsState {
-    id :: Integer,
-    done :: Int,
-    failed :: Int,
-    unassigned :: [Bool]
-  }
-  deriving stock (Eq, Show, Generic)
-
-data OutputState =
-  OutputState {
-    builds :: Maybe BuildsState,
-    running :: Map Integer Derivation,
-    finished :: [PackageDerivation],
-    messages :: [Text]
-  }
-  deriving stock (Eq, Show, Generic)
-  deriving anyclass (Default)
-
-data OutputResult =
-  OutputResult {
-    failedPackages :: Maybe (NonEmpty PackageDerivation),
-    unknownMessages :: [Text]
-  }
-  deriving stock (Eq, Show, Generic)
 
 outputResult :: OutputState -> OutputResult
 outputResult OutputState {finished, messages} =
@@ -211,10 +173,11 @@ processResult aid rtype fields s
   = s
 
 processMessage ::
+  BuildConfig ->
   ByteString ->
   NixAction ->
   StateT OutputState M ()
-processMessage _raw = \case
+processMessage config _raw = \case
   NixResult {aid, rtype, fields} ->
     modify' (processResult aid rtype fields)
 
@@ -234,13 +197,18 @@ processMessage _raw = \case
 
   NixStartOther _ -> unit
 
-  NixMessage msg -> modify' \ s -> s {messages = maybe id (:) msg s.messages}
+  NixMessage mb_msg ->
+    for_ mb_msg \ msg -> do
+      when config.buildOutput do
+        lift $ Log.infoPlain msg
+      modify' \ s -> s {messages = msg : s.messages}
 
-outputParse :: ByteString -> StateT OutputState M ()
-outputParse outputLine
+outputParse ::
+  BuildConfig ->
+  ByteString ->
+  StateT OutputState M ()
+outputParse config outputLine
   | Just payload <- ByteString.stripPrefix "@nix " outputLine
-  = do
-    -- dbg (decodeUtf8 payload)
-    either parseError (processMessage payload) (Aeson.eitherDecodeStrict' payload)
+  = either parseError (processMessage config payload) (Aeson.eitherDecodeStrict' payload)
   | otherwise
   = lift (Log.debug (decodeUtf8 outputLine))

@@ -7,7 +7,7 @@ import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel, reldir, relfile, (</>))
 import Path.IO (createDirIfMissing)
 
-import Hix.Data.Monad (M)
+import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Data.PackageId (PackageId (..))
 import Hix.Hackage (hackagePostQuery, hackagePut)
 import Hix.Http (httpManager)
@@ -23,7 +23,6 @@ import Hix.Managed.Cabal.Upload (UploadConfig (..), publishPackage, publishRevis
 import Hix.Managed.Handlers.HackageClient (HackageResponse (HackageNoResponse))
 import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
 import Hix.Managed.Handlers.HackageClient.Prod (HackageResources (..))
-import Hix.Monad (withTempDir)
 import Hix.Network (Port (..))
 
 testUser :: NonEmpty (Text, Text)
@@ -91,10 +90,9 @@ createProject tmp = do
   pure projectRoot
 
 testServer ::
-  Path Abs Dir ->
   Port ->
   M ()
-testServer tmp port = do
+testServer port = do
   manager <- httpManager
   let
     auth = ("admin", "admin")
@@ -116,7 +114,8 @@ testServer tmp port = do
   _ <- hackagePut @Value Right client "packages/uploaders/user/test"
   let rrepo = remoteRepo repo
   flags <- Cabal.solveFlags [rrepo] def
-  projectDir <- createProject tmp
+  root <- appRes.root
+  projectDir <- createProject root
   targz <- sourceDistribution projectDir package
   publishPackage uploadConfig flags targz
   addFile projectDir cabalName revisedCabalContents
@@ -128,5 +127,4 @@ testServer tmp port = do
 test_hackage :: UnitTest
 test_hackage =
   runMTest False do
-    withTempDir "hackage" \ tmp -> do
-      withHackage tmp (testServer tmp)
+      withHackage testServer

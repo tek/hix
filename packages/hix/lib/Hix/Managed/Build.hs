@@ -18,7 +18,7 @@ import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Version, Versions)
 import Hix.Data.VersionBounds (VersionBounds)
 import qualified Hix.Log as Log
-import Hix.Managed.Build.NixOutput (PackageDerivation (..))
+import Hix.Managed.Data.NixOutput (PackageDerivation (..))
 import Hix.Managed.Build.Solve (solveMutation)
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Config (isNonReinstallableDep, isReinstallableId)
@@ -54,6 +54,7 @@ import Hix.Managed.Handlers.Cabal (CabalHandlers (CabalHandlers))
 import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
 import Hix.Managed.StageState (updateStageState)
+import Hix.Monad (appContext, appContextDebug)
 import Hix.Pretty (prettyL, showP, showPL)
 
 logBuildInputs ::
@@ -200,15 +201,16 @@ convergeMutations handlers conf builder context state0 =
 
       | otherwise
       = do
-        Log.debug [exon|Iteration #{show (state.iterations + 1)} for '##{context.env :: EnvName}'|]
-        newState <- build state mutations
+        let iteration = state.iterations + 1
+        newState <- appContextDebug [exon|converging #{Color.env context.env} (iteration #{Color.number iteration})|] do
+          build state iteration mutations
         if Map.size newState.success == Map.size state.success
         then pure newState
         -- reversing so the build order is consistent
         else spin newState (reverse newState.failed)
 
-    build statePre mutations = do
-      let state = statePre {failed = [], iterations = statePre.iterations + 1}
+    build statePre iterations mutations = do
+      let state = statePre {failed = [], iterations}
       Log.debug [exon|Building targets with mutations: #{showPL mutations}|]
       foldM (validateMutation builder context handlers) state mutations
 
@@ -217,7 +219,8 @@ reinstallableCandidates ::
   Query ->
   M [DepMutation a]
 reinstallableCandidates candidates (Query query) =
-  catMaybes <$> traverse reinstallableOnly (toList query)
+  appContext "collecting mutation candidates" do
+    catMaybes <$> traverse reinstallableOnly (toList query)
   where
     reinstallableOnly dep
       | isNonReinstallableDep dep.package

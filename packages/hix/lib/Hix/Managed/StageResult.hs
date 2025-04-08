@@ -21,8 +21,8 @@ import Hix.Managed.Data.StageState (BuildSuccess, StageState (StageState))
 stageResultWith ::
   Pretty a =>
   (Map MutableDep BuildSuccess -> MutationState -> MutationState) ->
-  (Map MutableDep BuildSuccess -> Natural -> Text) ->
-  (Natural -> Text) ->
+  (Map MutableDep BuildSuccess -> Word -> Text) ->
+  (Word -> Text) ->
   StageState a s ->
   StageResult
 stageResultWith finalize successMessage failureMessage StageState {success, failed, state, iterations} =
@@ -36,8 +36,8 @@ stageResultWith finalize successMessage failureMessage StageState {success, fail
 
 stageResult ::
   Pretty a =>
-  (Map MutableDep BuildSuccess -> Natural -> Text) ->
-  (Natural -> Text) ->
+  (Map MutableDep BuildSuccess -> Word -> Text) ->
+  (Word -> Text) ->
   StageState a s ->
   StageResult
 stageResult =
@@ -45,8 +45,8 @@ stageResult =
 
 stageResultInit ::
   Pretty a =>
-  (Map MutableDep BuildSuccess -> Natural -> Text) ->
-  (Natural -> Text) ->
+  (Map MutableDep BuildSuccess -> Word -> Text) ->
+  (Word -> Text) ->
   StageState a s ->
   StageResult
 stageResultInit =
