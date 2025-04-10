@@ -20,7 +20,7 @@ import Hix.Data.VersionBounds (unsafeVersionBoundsFromRange)
 import Hix.Error (pathText)
 import Hix.Http (httpManager)
 import Hix.Integration.Hackage (withHackage)
-import Hix.Integration.Utils (UnitTest, add, addP, eqLines, libHs, local1, runMTest, withHixDir)
+import Hix.Integration.Utils (UnitTest, add, addP, libHs, local1, runMTest, withHixDir)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
@@ -53,6 +53,7 @@ import Hix.Managed.Maint.Git (gitApiMaintHermetic)
 import Hix.Managed.ReleaseMaintenance (releaseMaintenance)
 import Hix.Monad (M, appContextDebug, fatalError, withTempRoot)
 import Hix.Network (Port (..))
+import Hix.Test.Hedgehog (eqLines)
 
 initialPackage :: PackageId
 initialPackage = PackageId {name = PackageName "local1", version = mkVersion [0, 2, 0]}

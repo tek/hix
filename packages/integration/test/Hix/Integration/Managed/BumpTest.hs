@@ -14,7 +14,7 @@ import Hix.Data.Options (projectOptions)
 import Hix.Data.PackageId (PackageId (..))
 import Hix.Data.PackageName (PackageName)
 import Hix.Integration.Hackage (HackageId (..), TestHackage (..), withHackageIds)
-import Hix.Integration.Utils (UnitTest, addFile, eqLines, runMTest, withHixDir)
+import Hix.Integration.Utils (UnitTest, addFile, runMTest, withHixDir)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import Hix.Managed.Cabal.Data.Config (CabalConfig (..))
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo (..), contextHackageRepo)
@@ -32,6 +32,7 @@ import qualified Hix.Managed.Handlers.Project.Prod as Project
 import Hix.Managed.ProjectContext (updateProject, withProjectContext)
 import Hix.Monad (withProjectRoot)
 import Hix.NixCode (NixCode (..), nixCode)
+import Hix.Test.Hedgehog (eqLines)
 
 packages :: ProjectPackages
 packages =
