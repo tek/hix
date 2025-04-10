@@ -1,10 +1,19 @@
-module Hix.Data.ComponentConfig where
+module Hix.Data.ComponentConfig (
+  module Hix.Data.ComponentConfig,
+  ComponentName (..),
+) where
 
 import Data.Aeson (FromJSON (parseJSON), FromJSONKey, withObject, (.:))
-import Distribution.Pretty (Pretty (pretty))
+import Distribution.Parsec (Parsec (parsec))
+import Distribution.Pretty (Pretty (..))
+import Distribution.Simple (Dependency (..))
 import Path (Abs, Dir, File, Path, Rel)
+import Text.PrettyPrint (brackets, (<+>))
 
+import Hix.Data.ComponentName (ComponentName (..))
+import Hix.Data.Json (jsonParsec)
 import Hix.Data.PackageName (PackageName)
+import Hix.Pretty (prettyL)
 
 newtype PackagePath =
   PackagePath { unPackagePath :: Path Rel Dir }
@@ -30,14 +39,6 @@ newtype ModuleName =
   ModuleName { unModuleName :: Text }
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
-
-newtype ComponentName =
-  ComponentName { unComponentName :: Text }
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord, FromJSON, FromJSONKey)
-
-instance Pretty ComponentName where
-  pretty (ComponentName n) = fromString (toString n)
 
 newtype EnvRunner =
   EnvRunner (Path Abs File)
@@ -71,6 +72,22 @@ instance FromJSON PreludeConfig where
       module_ <- o .: "module"
       pure PreludeConfig {..}
 
+newtype ComponentDep =
+  ComponentDep Dependency
+  deriving stock (Eq, Show)
+  deriving newtype (Ord, Pretty)
+
+instance Parsec ComponentDep where
+  parsec = ComponentDep <$> parsec
+
+instance FromJSON ComponentDep where
+  parseJSON v =
+    cabal <|> structured v
+    where
+      structured = withObject "ComponentDep" \ o -> jsonParsec <$> o .: "name"
+
+      cabal = jsonParsec <$> parseJSON v
+
 data ComponentConfig =
   ComponentConfig {
     name :: ComponentName,
@@ -79,10 +96,15 @@ data ComponentConfig =
     extensions :: [String],
     language :: String,
     ghcOptions :: [String],
-    prelude :: Maybe PreludeConfig
+    prelude :: Maybe PreludeConfig,
+    deps :: Set ComponentDep
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
+
+instance Pretty ComponentConfig where
+  pretty ComponentConfig {..} =
+    pretty name <+> brackets (prettyL deps)
 
 data PackageConfig =
   PackageConfig {

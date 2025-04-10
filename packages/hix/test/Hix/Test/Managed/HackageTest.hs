@@ -58,8 +58,7 @@ contextRepo =
   }
 
 test_encodeNix_ContextHackageRepo :: UnitTest
-test_encodeNix_ContextHackageRepo = do
-  dbg (renderRootExpr (encodeNix contextRepo))
+test_encodeNix_ContextHackageRepo =
   target_encodeNix_ContextHackageRepo === renderRootExpr (encodeNix contextRepo)
 
 test_hackageData :: TestTree

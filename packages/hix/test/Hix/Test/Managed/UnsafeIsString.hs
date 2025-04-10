@@ -2,6 +2,7 @@
 
 module Hix.Test.Managed.UnsafeIsString where
 
+import Distribution.Simple (Dependency)
 import Distribution.Version (VersionRange)
 import Exon (exon)
 import GHC.Exts (IsList (Item, fromList, toList))
@@ -58,6 +59,9 @@ instance IsString MutableId where
 
 instance IsString Dep where
   fromString = unsafeDep
+
+instance IsString Dependency where
+  fromString = unsafeParsec
 
 instance IsString Override where
   fromString s =

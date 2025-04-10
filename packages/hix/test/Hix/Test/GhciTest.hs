@@ -1,13 +1,18 @@
 module Hix.Test.GhciTest where
 
 import Control.Monad.Trans.Class (lift)
+import qualified Data.Set as Set
+import qualified Data.Text as Text
+import Distribution.Simple (Dependency)
 import Exon (exon)
 import Hedgehog (evalEither, (===))
 import Path (Abs, Dir, File, Path, Rel, SomeBase (Abs, Rel), absdir, absfile, reldir, relfile, (</>))
 import Path.IO (withSystemTempDir)
+import Test.Tasty (TestTree, testGroup)
 
 import Hix.Data.ComponentConfig (
   ComponentConfig (..),
+  ComponentDep (..),
   ComponentName,
   EnvRunner (EnvRunner),
   PackageConfig (..),
@@ -15,7 +20,6 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   SourceDirs (SourceDirs),
   )
-import Hix.Error (pathText)
 import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig (EnvConfig), GhciConfig (..))
 import qualified Hix.Data.GhciTest as GhciTest
 import qualified Hix.Data.Options as Options
@@ -31,10 +35,10 @@ import Hix.Data.Options (
   )
 import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import Hix.Env (envRunner)
+import Hix.Error (pathText)
 import Hix.Ghci (assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
 import Hix.Monad (runM)
 import Hix.Test.Utils (UnitTest, unitTest)
-import Test.Tasty (TestTree, testGroup)
 
 root :: Path Abs Dir
 root =
@@ -52,8 +56,8 @@ defaultRunner :: EnvRunner
 defaultRunner =
   EnvRunner [absfile|/default|]
 
-component :: ComponentName -> Path Rel Dir -> EnvRunner -> ComponentConfig
-component name dir runner =
+component :: ComponentName -> Path Rel Dir -> Set Dependency -> EnvRunner -> ComponentConfig
+component name dir deps runner =
   ComponentConfig {
     name,
     sourceDirs = SourceDirs [SourceDir dir],
@@ -61,7 +65,8 @@ component name dir runner =
     extensions = [],
     language = "GHC2021",
     ghcOptions = [],
-    prelude = Nothing
+    prelude = Nothing,
+    deps = Set.map ComponentDep deps
   }
 
 packages :: PackagesConfig
@@ -71,17 +76,19 @@ packages =
       name = "api",
       src = [reldir|packages/api|],
       components = [
-        ("library", component "api" [reldir|lib|] runner1),
-        ("server", component "server" [reldir|app|] runner1),
-        ("api-test", component "api-test" [reldir|test|] runner1)
+        ("library", component "api" [reldir|lib|] ["core:tools"] runner1),
+        ("testing", component "testing" [reldir|testing|] ["api:testing"] runner1),
+        ("server", component "server" [reldir|app|] ["api"] runner1),
+        ("api-test", component "api-test" [reldir|test|] ["api:testing", "api"] runner1)
       ]
     }),
     ("core", PackageConfig {
       name = "core",
       src = [reldir|packages/core|],
       components = [
-        ("library", component "core" [reldir|lib|] runner1),
-        ("core-test", component "core-test" [reldir|test|] runner2)
+        ("library", component "core" [reldir|lib|] ["core"] runner1),
+        ("tools", component "tools" [reldir|tools|] ["core"] runner2),
+        ("core-test", component "core-test" [reldir|test|] ["core"] runner2)
       ]
     })
   ]
@@ -101,7 +108,8 @@ ghciOptions =
       mainPackage = Nothing,
       setup = [("generic", "import Test.Tasty")],
       run = [("generic", "check . property . test")],
-      args = ["-Werror"]
+      args = ["-Werror"],
+      manualCabal = False
     },
     root = Nothing,
     component = spec1,
@@ -118,6 +126,10 @@ options :: GhcidOptions
 options =
   GhcidOptions {ghci = ghciOptions, extra = Nothing}
 
+searchPath :: Text -> [Text] -> Text
+searchPath dir subs =
+  Text.intercalate ":" [[exon|#{dir}packages/#{sub}/|] | sub <- subs]
+
 ghcidTarget ::
   Path Abs Dir ->
   Path Abs File ->
@@ -126,7 +138,7 @@ ghcidTarget cwd scriptFile =
   [exon|ghcid --command="ghci -Werror -i#{path} -ghci-script=#{pathText scriptFile}" --test='#{test}'|]
   where
     test = "(check . property . test) test_server"
-    path = [exon|#{dir}packages/api/test/:#{dir}packages/api/lib/:#{dir}packages/core/lib/|]
+    path = searchPath dir ["api/test", "api/lib", "api/testing", "core/lib", "core/tools"]
     dir = pathText cwd
 
 test_ghcid :: UnitTest
@@ -144,7 +156,8 @@ mainOptions =
       mainPackage = Just "core",
       setup = [("generic", "import Test.Tasty")],
       run = [("generic", "")],
-      args = []
+      args = [],
+      manualCabal = False
     },
     root = Nothing,
     component = TargetForComponent (ComponentCoords Nothing Nothing),
@@ -164,7 +177,7 @@ mainPackageTarget ::
 mainPackageTarget cwd scriptFile =
   [exon|ghci -i#{path} -ghci-script=#{pathText scriptFile}|]
   where
-    path = [exon|#{dir}packages/core/test/:#{dir}packages/api/lib/:#{dir}packages/core/lib/|]
+    path = searchPath dir ["core/test", "core/lib"]
     dir = pathText cwd
 
 test_mainPackage :: UnitTest

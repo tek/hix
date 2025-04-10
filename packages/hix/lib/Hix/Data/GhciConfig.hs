@@ -45,7 +45,8 @@ data GhciConfig =
     mainPackage :: Maybe PackageName,
     setup :: Map RunnerName GhciSetupCode,
     run :: Map RunnerName GhciRunExpr,
-    args :: GhciArgs
+    args :: GhciArgs,
+    manualCabal :: Bool
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

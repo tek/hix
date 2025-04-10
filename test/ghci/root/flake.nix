@@ -15,8 +15,20 @@
         src = ./pkg;
         library.enable = true;
         executable.enable = true;
-        test.enable = true;
         library.dependencies = ["path" "path-io" "core" "ghc"];
+
+        libraries.testing = {
+          dependencies = [
+            config.packages.api.dep.exact
+          ];
+        };
+
+        test = {
+          enable = true;
+          dependencies = [
+            config.packages.api.libraries.testing.dep.exact
+          ];
+        };
       };
 
       root = {
@@ -54,7 +66,7 @@
       expose = true;
     };
 
-    internal.hixCli.dev = false;
+    internal.hixCli.dev = true;
 
   });
 }

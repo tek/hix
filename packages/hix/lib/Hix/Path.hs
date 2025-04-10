@@ -30,7 +30,7 @@ rootDir :: Maybe (Path Abs Dir) -> M (Path Abs Dir)
 rootDir =
   maybe inferRoot pure
 
-resolvePathSpecWith :: 
+resolvePathSpecWith ::
   (Path Abs Dir -> FilePath -> IO (Path Abs t)) ->
   PathSpec t ->
   M (Path Abs t)

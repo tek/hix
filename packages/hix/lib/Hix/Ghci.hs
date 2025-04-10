@@ -6,6 +6,7 @@ import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
+import Distribution.Simple (Dependency (..))
 import Exon (exon)
 import Path (Abs, Dir, File, Path, Rel, parseRelDir, reldir, splitExtension, stripProperPrefix, toFilePath, (</>))
 import Path.IO (createDirIfMissing, getTempDir, openTempFile)
@@ -16,11 +17,13 @@ import Hix.Component (targetComponentOrError)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (
   ComponentConfig,
+  ComponentDep (..),
   ModuleName (ModuleName),
-  PackageConfig,
+  PackageConfig (..),
   SourceDir (SourceDir),
   Target (Target),
   )
+import qualified Hix.Data.ComponentName as ComponentName
 import qualified Hix.Data.GhciConfig
 import Hix.Data.GhciConfig (GhciConfig, GhciRunExpr (GhciRunExpr), GhciSetupCode (GhciSetupCode))
 import qualified Hix.Data.GhciTest as GhciTest
@@ -35,12 +38,13 @@ import Hix.Data.Options (
   TargetSpec (TargetForFile),
   TestOptions (TestOptions),
   )
+import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
 import Hix.Error (Error, ErrorMessage (..), pathText, throwMessage, tryIO)
 import Hix.Json (jsonConfigE)
 import Hix.Maybe (fromMaybeA)
 import Hix.Monad (M, noteGhci)
-import Hix.Path (rootDir, PathSpecResolver (resolvePathSpec))
+import Hix.Path (PathSpecResolver (resolvePathSpec), rootDir)
 
 relativeToComponent ::
   Path Abs Dir ->
@@ -83,20 +87,50 @@ import #{module_}|]
            | otherwise = ""
     GhciSetupCode setup = fold (flip Map.lookup config.setup =<< opt.test.runner)
 
-componentSearchPaths :: PackageConfig -> ComponentConfig -> [Path Rel Dir]
-componentSearchPaths pkg comp = do
+componentSearchPaths :: Path Rel Dir -> ComponentConfig -> [Path Rel Dir]
+componentSearchPaths src comp = do
   SourceDir dir <- coerce comp.sourceDirs
-  pure (pkg.src </> dir)
+  pure (src </> dir)
+
+depClosure ::
+  Map PackageName PackageConfig ->
+  ComponentConfig ->
+  [(Path Rel Dir, ComponentConfig)]
+depClosure pkgs =
+  Map.elems . spin []
+  where
+    spin z comp =
+      foldl' dep z comp.deps
+
+    dep z (ComponentDep (Dependency pkgName _ comps)) =
+      case pkgs !? PackageName.fromCabal pkgName of
+        Just pkg -> foldl' (depComp pkg) z comps
+        Nothing -> z
+
+    depComp PackageConfig {name = pkgName, src, components} z (ComponentName.fromCabal -> compName)
+      | let key = (pkgName, compName)
+      , not (Map.member key z)
+      , Just comp <- components !? compName
+      = spin (Map.insert key (src, comp) z) comp
+
+      | otherwise
+      = z
+
+depSearchPath :: Map PackageName PackageConfig -> PackageConfig -> ComponentConfig -> [Path Rel Dir]
+depSearchPath pkgs pkg comp =
+  nubOrd (concatMap (uncurry componentSearchPaths) components)
+  where
+    components = (pkg.src, comp) : depClosure pkgs comp
 
 librarySearchPaths :: Map PackageName PackageConfig -> [Path Rel Dir]
 librarySearchPaths pkgs = do
   pkg <- Map.elems pkgs
   comp <- maybeToList (pkg.components !? "library")
-  componentSearchPaths pkg comp
+  componentSearchPaths pkg.src comp
 
-searchPath :: Map PackageName PackageConfig -> PackageConfig -> ComponentConfig -> [Path Rel Dir]
-searchPath pkgs pkg comp =
-  nubOrd (componentSearchPaths pkg comp <> librarySearchPaths pkgs)
+legacySearchPath :: Map PackageName PackageConfig -> PackageConfig -> ComponentConfig -> [Path Rel Dir]
+legacySearchPath pkgs pkg comp =
+  nubOrd (componentSearchPaths pkg.src comp <> librarySearchPaths pkgs)
 
 testRun :: GhciConfig -> TestOptions -> Maybe Text
 testRun config = \case
@@ -114,12 +148,13 @@ assemble opt = do
   root <- rootDir mRoot
   Target {..} <- targetComponentOrError mRoot config.mainPackage config.packages opt.component
   script <- ghciScript config package sourceDir opt
+  let searchPath = if config.manualCabal then legacySearchPath else depSearchPath
   pure GhciTest {
     script,
     test = testRun config opt.test,
     args = config.args,
     searchPath = (root </>) <$> searchPath config.packages package component
-    }
+  }
 
 hixTempDir :: ExceptT Error IO (Path Abs Dir)
 hixTempDir = do
