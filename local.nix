@@ -8,7 +8,7 @@ in {
   ghcVersions = ["ghc96" "ghc98" "ghc910"];
   main = "hix";
 
-  packages.hix = {
+  packages.hix = ({config, ...}: {
     src = ./packages/hix;
 
     buildInputs = p: [p.git];
@@ -53,6 +53,48 @@ in {
       ];
     };
 
+    libraries.testing = {
+      public = true;
+      dependencies = [
+        "Cabal"
+        "aeson >= 2.0 && < 2.3"
+        "bytestring"
+        "cabal-install"
+        "cabal-install-solver"
+        "casing ^>= 0.1.4"
+        "containers"
+        "exceptions ^>= 0.10"
+        "exon >= 1.4 && < 1.8"
+        "extra ^>= 1.7"
+        "filepattern ^>= 0.1"
+        "generic-lens ^>= 2.2"
+        "generics-sop ^>= 0.5"
+        "hedgehog >= 1.1 && < 1.5"
+        "http-client ^>= 0.7"
+        "http-client-tls ^>= 0.3"
+        "http-types ^>= 0.12"
+        "lens >= 5.1 && < 5.4"
+        "lens-regex-pcre ^>= 1.1"
+        "monad-control ^>= 1.0"
+        "network"
+        "network-uri"
+        "optparse-applicative >= 0.17 && <0.19"
+        "path ^>= 0.9"
+        "path-io >= 1.7 && < 1.9"
+        "pretty"
+        "random ^>= 1.2"
+        "tasty ^>= 1.4"
+        "tasty-hedgehog >= 1.3 && < 1.5"
+        "template-haskell"
+        "these ^>=1.2"
+        "time"
+        "transformers"
+        "typed-process ^>= 0.2"
+        "unix"
+        config.library.dep.exact
+      ];
+    };
+
     executable.enable = true;
 
     test = {
@@ -68,13 +110,14 @@ in {
         "pretty"
         "tasty ^>= 1.4"
         "tasty-hedgehog >= 1.3 && < 1.5"
+        config.libraries.testing.dep.exact
         "these ^>=1.2"
         "time"
         "transformers"
       ];
     };
 
-  };
+  });
 
   packages.integration = {
     src = ./packages/integration;
@@ -112,6 +155,7 @@ in {
         "time"
         "transformers"
         config.packages.hix.dep.exact
+        config.packages.hix.libraries.testing.dep.exact
       ];
       env = "integration";
     };
@@ -223,6 +267,8 @@ in {
   };
 
   internal.cabal-extra.default-extensions = ["StrictData"];
+
+  internal.hixCli.dev = true;
 
   outputs = let
 

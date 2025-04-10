@@ -29,9 +29,8 @@ import Hix.Managed.ProjectContext (updateProject)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Managed.ProjectContextProto (projectContext)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Run (addFile)
 import Hix.Test.Run (logConfigDebug, runMTestDir)
-import Hix.Test.Utils (UnitTest)
+import Hix.Test.Utils (UnitTest, addFile)
 
 -- TODO when aeson's lower bound is set to 2.2 here, the build of 2.1.0.0 fails with an infinite recursion in nix when
 -- reaching optimize.

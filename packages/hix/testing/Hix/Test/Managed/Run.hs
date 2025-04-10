@@ -1,10 +1,7 @@
 module Hix.Test.Managed.Run where
 
 import Data.IORef (readIORef)
-import qualified Data.Text.IO as Text
 import Hedgehog (TestT, evalMaybe)
-import Path (Abs, Dir, File, Path, Rel, parent, toFilePath, (</>))
-import Path.IO (createDirIfMissing)
 
 import Hix.Class.Map (nFromList, nKeys)
 import Hix.Data.EnvName (EnvName)
@@ -148,10 +145,3 @@ bumpTest ::
 bumpTest params main =
   withFrozenCallStack do
     managedTest "latest" params main
-
-addFile :: Path Abs Dir -> Path Rel File -> Text -> M ()
-addFile root path content = do
-  createDirIfMissing True (parent file)
-  liftIO (Text.writeFile (toFilePath file) content)
-  where
-    file = root </> path

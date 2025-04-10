@@ -52,7 +52,7 @@ import Hix.Test.Managed.ReleaseMaintenance.Case (
   testDepName,
   )
 import Hix.Test.Managed.ReleaseMaintenance.Gen (oldDepBounds, oldDepRange)
-import Hix.Test.Managed.Run (addFile)
+import Hix.Test.Utils (addFile)
 
 dummyTime :: UTCTime
 dummyTime = UTCTime (fromGregorian 2024 1 16) (timeOfDayToTime (TimeOfDay 0 0 0))
