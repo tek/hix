@@ -93,7 +93,8 @@ in {
     # TODO cli must be able to resolve components from metadata by reading cabal.project and *.cabal
     manualCabal = mkOption {
       description = ''
-      Don't use the options in [](#opt-general-packages) as Cabal configuration for the ghci preprocessor.
+      Don't use the options in [](#opt-general-packages) as Cabal configuration for the ghci preprocessor and search
+      path assembler.
       '';
       type = bool;
       default = false;

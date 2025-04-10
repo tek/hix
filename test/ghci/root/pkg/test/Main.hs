@@ -1,6 +1,9 @@
 module Main where
 
 import Root.Lib (test)
+import Testing (testing)
 
 main :: IO ()
-main = test
+main = do
+  test
+  print testing

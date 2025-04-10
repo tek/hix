@@ -43,6 +43,7 @@ let
       prelude = if c.prelude.enable then c.prelude else null;
       runner = if c.env == null then null else config.envs.${c.env}.runner;
       sourceDirs = c.source-dirs;
+      deps = c.dependencies;
     };
 
     packageConf = pkg: {
@@ -69,6 +70,7 @@ let
       setup = config.ghci.setup;
       run = config.ghci.run;
       args = config.ghci.args;
+      inherit (config) manualCabal;
     };
 
     preproc = {

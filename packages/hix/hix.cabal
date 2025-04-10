@@ -39,6 +39,7 @@ library
       Hix.Data.BootstrapProjectConfig
       Hix.Data.Bounds
       Hix.Data.ComponentConfig
+      Hix.Data.ComponentName
       Hix.Data.Dep
       Hix.Data.EnvName
       Hix.Data.Error

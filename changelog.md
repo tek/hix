@@ -15,6 +15,7 @@
 * Remove `nodoc` from the OC `force`, add `force'` as an alias of the old behavior.
 * Add OC `modify` as a less unwieldy alias of `transformDrv`.
 * Automatically compute overrides for the solver package set when managing deps.
+* Use dependency information to assemble the GHCi search path.
 
 # 0.8.0
 
