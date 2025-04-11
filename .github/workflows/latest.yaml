@@ -24,8 +24,8 @@ jobs:
           name: tek
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       - run: rm -rf /opt/hostedtoolcache
-      - name: build static
-        run: nix build .#hix.appimage
+      - name: Build the AppImage binary
+        run: nix build .#min.appimage
       - uses: softprops/action-gh-release@v2
         name: Create release
         with:
