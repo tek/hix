@@ -86,6 +86,7 @@ in {
         localPackage = api: api.minimal;
         expose = {
           envKeyed = mkDefault true;
+          scoped = mkDefault true;
         };
       };
 
@@ -94,6 +95,7 @@ in {
         profiling = true;
         expose = {
           envKeyed = mkDefault true;
+          scoped = mkDefault true;
         };
       };
 
