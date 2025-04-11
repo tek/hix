@@ -393,6 +393,7 @@ test-suite hix-test
       Hix.Test.CabalTest
       Hix.Test.GhciTest
       Hix.Test.Hedgehog
+      Hix.Test.Managed.AnalyzeTest
       Hix.Test.Managed.BuildOutputTest
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest

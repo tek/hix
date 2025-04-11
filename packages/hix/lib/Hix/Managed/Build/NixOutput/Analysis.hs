@@ -94,7 +94,7 @@ newtype CommaSeparatedDeps =
 
 instance Parsec CommaSeparatedDeps where
   parsec =
-    CommaSeparatedDeps <$> sepEndByNonEmpty parsec (char ',' *> many (char ' '))
+    CommaSeparatedDeps <$> sepEndByNonEmpty parsec (char ',' *> many (char ' ')) <* skipMany anyChar
 
 analyzeLog :: [Text] -> FailureReason
 analyzeLog log =
