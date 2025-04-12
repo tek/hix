@@ -149,7 +149,10 @@ in {
           outputs.hpack.deprecatedApps
         ];
 
-        apps = util.mapValues util.app basicApps;
+        apps = util.mergeAll [
+          (util.mapValues util.app basicApps)
+          outputs.managed.apps
+        ];
 
       };
 

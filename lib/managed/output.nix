@@ -4,8 +4,8 @@
   # TODO refactor this into the new outputs protocol
   appsWith = cons: {
     bump = cons { cmd = util.managed.cmd.bump; env = "latest"; sub = null; };
-    lower = cons { cmd = util.managed.cmd.lower ""; env = "lower"; sub = null; } // {
-      auto = cons { cmd = util.managed.cmd.lower "auto"; env = "lower"; sub = "auto"; };
+    lower = {
+      auto = cons { cmd = util.managed.cmd.lower ""; env = "lower"; sub = "auto"; };
       init = cons { cmd = util.managed.cmd.lower "init"; env = "lower"; sub = "init"; };
       optimize = cons { cmd = util.managed.cmd.lower "optimize"; env = "lower"; sub = "optimize"; };
       stabilize = cons { cmd = util.managed.cmd.lower "stabilize"; env = "lower"; sub = "stabilize"; };
@@ -28,7 +28,7 @@
 
   # We're not guarding this with a `optionalAttrs` so that we can print an error when the user executes an app.
   # TODO Add an override option that opts into removing these apps from the flake.
-  apps = let
+  mixedApps = let
     sets = config.managed.sets;
   in
     if sets == "all"
@@ -39,6 +39,21 @@
     then managedMulti (lib.attrNames sets)
     else throw "Unexpected value for 'managed.sets': ${lib.generators.toPretty sets}"
     ;
+
+  legacyApps.lower = mixedApps.lower;
+
+  apps = util.mapValues util.app {
+    inherit (mixedApps) bump maint revision;
+    lower = mixedApps.lower.auto;
+  };
+
+  scopedAppsForEnvs = envs: let
+
+    base = appsForEnvs envs;
+
+  in base // {
+    lower = base.lower.auto // base.lower;
+  };
 
     # TODO use this instead of the action. Optimally, change it to use json output like the maint flow
     # - id: pr
@@ -191,5 +206,5 @@
   envGhcs = lib.mapAttrs (_: env: { ghc-local = util.managed.managedEnvGhc env; }) util.managed.env.envs;
 
 in {
-  inherit appsForEnvs apps gen envGhcs;
+  inherit scopedAppsForEnvs legacyApps apps gen envGhcs;
 }
