@@ -33,7 +33,10 @@
     output_exact '[ "dep-versions" "exe1" "exe2" "exe3" "executables" "musl" "pkg1" "pkg1_exe1" "pkg1_main" "pkg2" "pkg2_exe2" "release" "shell" "static" ]'
     step_output_names legacyPackages.x86_64-linux.dev
 
-    output_exact '[ "__hix-internal__" "build" "bump" "cmd" "dev" "env" "ghc910" "ghc94" "ghc96" "ghc98" "hackage" "hpack" "hpack-quiet" "lower" "maint" "managed" "min" "overrides" "p2" "pkg1" "pkg2" "profiled" "project" "revision" ]'
+    output_exact '[ "__hix-internal__" "build" "cmd" "dev" "env" "ghc910" "ghc94" "ghc96" "ghc98" "hackage" "hpack" "hpack-quiet" "lower" "managed" "min" "overrides" "p2" "pkg1" "pkg2" "profiled" "project" ]'
     step_output_names legacyPackages.x86_64-linux
+
+    output_exact '[ "bump" "candidates" "cli" "dep-versions" "docs" "exe1" "exe2" "exe3" "gen" "gen-cabal" "gen-cabal-quiet" "gen-overrides" "gen-quiet" "ghci" "ghcid" "hls" "lower" "maint" "pkg1" "pkg1_exe1" "pkg1_main" "pkg2" "pkg2_exe2" "release" "release-source" "revision" "show-config" "show-overrides" "tags" ]'
+    step_output_names apps.x86_64-linux
   '';
 }

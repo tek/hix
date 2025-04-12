@@ -36,8 +36,6 @@ newtype UnknownDepMessage =
 
 -- TODO maybe we can add a module option that toggles errors in json or something, with which we can reliably extract
 -- this information
---
--- TODO Does this work for transitive deps? Add that to the test!
 instance Parsec UnknownDepMessage where
   parsec = do
     _ <- manyTill anyChar (try (string "The Cabal config for '"))
