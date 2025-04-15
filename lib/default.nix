@@ -10,11 +10,11 @@ let
     sha256 = "0hynd4rbkbplxzl2a8wb3r8z0h17z2alhhdsam78g3vgzpzg0d43";
   });
 
-  utilWithConfig = config:
-  import ./util.nix { inherit config lib; };
+  utilWithConfig = {config, extra ? {}}:
+  import ./util.nix { inherit config lib extra; };
 
   utilModule = extra: {config, ...}: let
-    util = utilWithConfig config // extra;
+    util = utilWithConfig { inherit config extra; };
   in {
     _module.args = {
       inherit util;

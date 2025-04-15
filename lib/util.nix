@@ -1,4 +1,4 @@
-{config, lib, ...}:
+{config, lib, extra ? {}, ...}:
 with lib;
 let
 
@@ -87,10 +87,6 @@ let
     preprocFile = jsonFile "preproc-config" preproc;
 
   };
-
-  visibleEnvs = filterAttrs (_: e: !e.hide) config.envs;
-
-  visibleAppEnvs = filterAttrs (_: e: !e.hideApps) config.envs;
 
   minGhcs = version:
   all (basic.minGhc version) (attrValues config.envs);
@@ -248,7 +244,7 @@ let
 
   expose = exposeDefault // util.config.output.expose;
 
-  util = basic // {
+  util = basic // extra // {
     inherit
     config
     pkgs
@@ -265,11 +261,8 @@ let
     attrsetMainName
     jsonFile
     json
-    visibleEnvs
-    visibleAppEnvs
     minGhcs
     minGhcDev
-    conf
     unlessDev
     scriptErr
     script
