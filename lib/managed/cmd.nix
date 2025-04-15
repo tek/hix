@@ -29,7 +29,7 @@
     die "Set $(blue '${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
     '';
 
-  cliJson = util.jsonFile "managed-config" outputs.cli-context.managed;
+  cliJson = outputs.cli-context.json.managed;
 
   managedScript = cmd: envs: let
     general = [
