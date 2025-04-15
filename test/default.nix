@@ -33,6 +33,7 @@ let
       "multi-exe"
       "package-default"
       "packages"
+      "show-config"
       "subdir"
       "update-cli-version"
       "warning"

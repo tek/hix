@@ -258,6 +258,8 @@ let
     git = false;
     # Run `.#gen-cabal-quiet` before starting the test, but after initializing the git repo.
     genCabal = false;
+    # Create a minimal project in `./root`.
+    project = false;
   };
 
   updateLock = ''
@@ -272,6 +274,33 @@ let
     done
   }
   update_lock
+  '';
+
+  projectFlake = pkgs.writeText "flake.nix" ''
+  {
+    description = "hix test project";
+
+    inputs.hix.url = "path:HIX";
+
+    outputs = {self, hix}:
+    hix.lib._hix_test {
+      packages.root.src = ./.;
+    };
+  }
+  '';
+
+  projectMain = pkgs.writeText "Main.hs" ''
+  module Main where
+
+  main :: IO ()
+  main = putStrLn "success"
+  '';
+
+  createProject = ''
+  mkdir -p ./root/app
+  cp ${projectFlake} ./root/flake.nix
+  sed -i "s#HIX#$hix_dir#" ./root/flake.nix
+  cp ${projectMain} ./root/app/Main.hs
   '';
 
   cdRoot = ''
@@ -293,6 +322,8 @@ let
   '';
 
   casePreamble = conf:
+  lib.optional conf.project createProject
+  ++
   lib.optional conf.updateLock updateLock
   ++
   lib.optional conf.root cdRoot

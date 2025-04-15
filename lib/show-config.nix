@@ -188,8 +188,11 @@ let
 
   palette = "Colors: ${concatStringsSep " | " (mapAttrsToList (flip color) colors)}";
 
-in util.zscript "show-config" ''
-  print "${palette}"
-  print ""
-  while IFS='\n' read -r line; do echo -e $line; done < ${stringifyRoot}
+in util.hixScript "show-config" {} ''
+  hix_print "${palette}"
+  hix_print ""
+  while IFS='\n' read -r line
+  do
+    hix_print $line
+  done < ${stringifyRoot}
 ''
