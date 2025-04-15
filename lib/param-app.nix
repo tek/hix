@@ -51,7 +51,7 @@ let
       }"
       fi
       ${pre}
-      nix develop --impure --expr "(builtins.getFlake path:$PWD).legacyPackages.${config.system}.${shellName} $funargs" -c hix-param-app
+      nix --show-trace develop --impure --expr "(builtins.getFlake path:$PWD).legacyPackages.${config.system}.__hix-internal__.project.${shellName} $funargs" -c hix-param-app
   '';
 
   app = {

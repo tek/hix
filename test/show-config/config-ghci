@@ -1,0 +1,22 @@
+Colors: [33mattrset[0m | [34moption[0m | [32msubmodule[0m
+
+[33mghci[0m: 
+  [34margs[0m: 
+    [35m* [0m"-j${NIX_BUILD_CORES-}"
+    [35m* [0m"+RTS -A64M -RTS"
+    [35m* [0m"-F"
+    [35m* [0m"-pgmF"
+    [35m* [0m"/nix/store/rrr0rwkjclra06kkf6cn3gv8s6npc1y2-ghci-preprocessor"
+  [34mcores[0m: "${NIX_BUILD_CORES-}"
+  [34mghcOptions[0m: 
+    [35m* [0m"-j${NIX_BUILD_CORES-}"
+    [35m* [0m"+RTS -A64M -RTS"
+  [34mpreprocessor[0m: /nix/store/rrr0rwkjclra06kkf6cn3gv8s6npc1y2-ghci-preprocessor
+  [34mrun[0m: 
+    [34mhedgehog-property[0m: "Hedgehog.check"
+    [34mhedgehog-unit[0m: "Hedgehog.check . Hedgehog.withTests 1 . Hedgehog.property . Hedgehog.test"
+    [34mtasty-tree[0m: "Test.Tasty.defaultMain"
+  [34msetup[0m: 
+    [34mhedgehog-property[0m: "import qualified Hedgehog"
+    [34mhedgehog-unit[0m: "import qualified Hedgehog"
+    [34mtasty-tree[0m: "import qualified Test.Tasty"
