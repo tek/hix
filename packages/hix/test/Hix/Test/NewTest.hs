@@ -8,7 +8,7 @@ import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   CreateProjectConfig (CreateProjectConfig),
   HixUrl,
-  InitProjectConfig (InitProjectConfig)
+  InitProjectConfig (InitProjectConfig),
   )
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile))
 import Hix.Monad (runM)
@@ -18,14 +18,15 @@ import Hix.Test.Utils (UnitTest)
 conf :: InitProjectConfig
 conf =
   InitProjectConfig {
-      name = "spider",
-      config = CreateProjectConfig {
-          packages = False,
-          hixUrl = def,
-          author = "Me",
-          noInitGitAndFlake = True
-          }
-      }
+    name = "spider",
+    config = CreateProjectConfig {
+      packages = False,
+      hixUrl = def,
+      author = "Me",
+      noInitGitAndFlake = True,
+      devCli = False
+    }
+  }
 
 flake :: Text
 flake =

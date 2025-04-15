@@ -12,7 +12,7 @@
 
   describe 'GHCi does not change directory with --no-cd'
   output_match "$PWD/"
-  step_ghci ghci -- -c lib -m Root.Lib -r cwd --no-cd
+  step_ghci ghci -c lib -m Root.Lib -r cwd --no-cd
 
   describe "GHCi 'print' runner"
   output_match 'print success'

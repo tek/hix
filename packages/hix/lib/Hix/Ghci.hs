@@ -2,6 +2,7 @@ module Hix.Ghci where
 
 import Control.Monad.Trans.Except (ExceptT, catchE)
 import Data.List.Extra (nubOrd)
+import Data.List.NonEmpty (appendList, prependList)
 import qualified Data.Map.Strict as Map
 import Data.Map.Strict ((!?))
 import qualified Data.Text as Text
@@ -18,10 +19,10 @@ import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (
   ComponentConfig,
   ComponentDep (..),
-  ModuleName (ModuleName),
+  ModuleName (..),
   PackageConfig (..),
-  SourceDir (SourceDir),
-  Target (Target),
+  SourceDir (..),
+  Target (..),
   )
 import qualified Hix.Data.ComponentName as ComponentName
 import qualified Hix.Data.GhciConfig
@@ -31,19 +32,21 @@ import Hix.Data.GhciTest (GhciRun (GhciRun), GhciTest (GhciTest), GhcidRun (Ghci
 import Hix.Data.Monad (liftE)
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (
-  ExtraGhciOptions (ExtraGhciOptions),
-  ExtraGhcidOptions (ExtraGhcidOptions),
-  GhciOptions (GhciOptions),
+  EnvRunnerOptions (..),
+  ExtraGhciOptions (..),
+  ExtraGhcidOptions (..),
+  GhciOptions (..),
   GhcidOptions,
-  TargetSpec (TargetForFile),
-  TestOptions (TestOptions),
+  TargetSpec (..),
+  TestOptions (..),
   )
 import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
+import Hix.Env (runEnvProcess)
 import Hix.Error (Error, ErrorMessage (..), pathText, throwMessage, tryIO)
 import Hix.Json (jsonConfigE)
 import Hix.Maybe (fromMaybeA)
-import Hix.Monad (M, noteGhci)
+import Hix.Monad (M, noteGhci, withTempDir)
 import Hix.Path (PathSpecResolver (resolvePathSpec), rootDir)
 
 relativeToComponent ::
@@ -76,16 +79,16 @@ ghciScript ::
   Maybe SourceDir ->
   GhciOptions ->
   M Text
-ghciScript config package component opt = do
-  ModuleName module_ <- moduleName package component opt
+ghciScript config package component options = do
+  ModuleName module_ <- moduleName package component options
   pure [exon|#{cdCode}#{setup}
 :load #{module_}
 import #{module_}|]
   where
-    cdCode | opt.test.cd.unChangeDir = [exon|:cd #{pathText package.src}
+    cdCode | options.test.cd.unChangeDir = [exon|:cd #{pathText package.src}
 |]
            | otherwise = ""
-    GhciSetupCode setup = fold (flip Map.lookup config.setup =<< opt.test.runner)
+    GhciSetupCode setup = fold (flip Map.lookup config.setup =<< options.test.runner)
 
 componentSearchPaths :: Path Rel Dir -> ComponentConfig -> [Path Rel Dir]
 componentSearchPaths src comp = do
@@ -142,18 +145,18 @@ testRun config = \case
     Nothing
 
 assemble :: GhciOptions -> M GhciTest
-assemble opt = do
-  config <- jsonConfigE opt.config
-  mRoot <- traverse resolvePathSpec opt.root
+assemble options = do
+  config <- jsonConfigE options.config
+  mRoot <- traverse resolvePathSpec options.root
   root <- rootDir mRoot
-  Target {..} <- targetComponentOrError mRoot config.mainPackage config.packages opt.component
-  script <- ghciScript config package sourceDir opt
+  Target {..} <- targetComponentOrError mRoot config.env.mainPackage config.env.packages options.component
+  script <- ghciScript config package sourceDir options
   let searchPath = if config.manualCabal then legacySearchPath else depSearchPath
   pure GhciTest {
     script,
-    test = testRun config opt.test,
+    test = testRun config options.test,
     args = config.args,
-    searchPath = (root </>) <$> searchPath config.packages package component
+    searchPath = (root </>) <$> searchPath config.env.packages package component
   }
 
 hixTempDir :: ExceptT Error IO (Path Abs Dir)
@@ -193,54 +196,95 @@ searchPathArg paths =
 ghciCmdline ::
   GhciTest ->
   Maybe ExtraGhciOptions ->
+  [Text] ->
   Path Abs File ->
   Maybe (Path Abs File) ->
   GhciRun
-ghciCmdline test extra scriptFile runScriptFile =
+ghciCmdline test extra args scriptFile runScriptFile =
   GhciRun {..}
   where
-    cmdline = [exon|ghci#{shell}#{optArg run}|]
-    shell = [exon|#{argFrag args}#{argFrag sp} -ghci-script=##{toFilePath scriptFile}#{argFrag extraOpts}|]
-    args = Text.unwords (coerce test.args)
+    shell = appendList (prependList (coerce test.args ++ searchPath) [scriptArg]) extraOpts
+
+    scriptArg = [exon|-ghci-script=##{toFilePath scriptFile}|]
+
     run = runScriptFile <&> \ f -> [exon|-ghci-script=##{toFilePath f}|]
-    sp = foldMap searchPathArg (nonEmpty test.searchPath)
-    extraOpts | Just (ExtraGhciOptions o) <- extra = o
-              | otherwise = ""
+
+    searchPath = foldMap (pure . searchPathArg) (nonEmpty test.searchPath)
+
+    extraOpts = maybe [] (Text.words . coerce) extra ++ args
 
 ghciCmdlineFromOptions ::
   Path Abs Dir ->
   GhciOptions ->
   M GhciRun
-ghciCmdlineFromOptions tmp opt = do
-  conf <- assemble opt
+ghciCmdlineFromOptions tmp options = do
+  conf <- assemble options
   shellScriptFile <- liftE (ghciScriptFile tmp conf.script)
   runScriptFile <- liftE (traverse (ghciScriptFile tmp) conf.test)
-  pure (ghciCmdline conf opt.extra shellScriptFile runScriptFile)
+  pure (ghciCmdline conf options.extra options.args shellScriptFile runScriptFile)
 
 ghcidCmdlineFromOptions ::
   Path Abs Dir ->
   GhcidOptions ->
   M GhcidRun
-ghcidCmdlineFromOptions tmp opt = do
-  ghci <- ghciCmdlineFromOptions tmp opt.ghci
-  let
-    test = fromMaybe "main" ghci.test.test
-  pure (GhcidRun [exon|ghcid --command="ghci#{ghci.shell}" --test='##{test}'#{foldMap extra opt.extra}|] ghci)
-  where
-    extra (ExtraGhcidOptions o) = [exon| ##{o}|]
+ghcidCmdlineFromOptions tmp options = do
+  ghci <- ghciCmdlineFromOptions tmp options.ghci
+  let test = fromMaybe "main" ghci.test.test
+  pure GhcidRun {
+    args = appendList [
+      [exon|--command=ghci #{Text.unwords (toList ghci.shell)}|],
+      [exon|--test=##{test}|]
+    ] (coerce (maybeToList options.extra)),
+    ghci
+  }
+
+quoteArgs ::
+  Functor t =>
+  t Text ->
+  t Text
+quoteArgs =
+  fmap \ a -> [exon|"#{Text.replace "\"" "\\\"" a}"|]
 
 printGhciCmdline ::
   GhciOptions ->
   M ()
-printGhciCmdline opt = do
+printGhciCmdline options = do
   tmp <- liftE hixTempDir
-  cmd <- ghciCmdlineFromOptions tmp opt
-  liftIO (Text.putStrLn [exon|ghci #{cmd.shell} #{fold cmd.run}|])
+  cmd <- ghciCmdlineFromOptions tmp options
+  let cmdline = "ghci" : quoteArgs (toList cmd.shell ++ maybeToList cmd.run)
+  liftIO (Text.putStrLn (Text.unwords cmdline))
 
 printGhcidCmdline ::
   GhcidOptions ->
   M ()
-printGhcidCmdline opt = do
+printGhcidCmdline options = do
   tmp <- liftE hixTempDir
-  cmd <- ghcidCmdlineFromOptions tmp opt
-  liftIO (Text.putStrLn cmd.cmdline)
+  cmd <- ghcidCmdlineFromOptions tmp options
+  let cmdline = "ghcid" : toList (quoteArgs cmd.args)
+  liftIO (Text.putStrLn (Text.unwords cmdline))
+
+processWithRunner ::
+  GhciOptions ->
+  Text ->
+  [Text] ->
+  M ()
+processWithRunner GhciOptions {config = configRaw, component, root} exe args = do
+  config <- jsonConfigE configRaw
+  let envOptions = EnvRunnerOptions {config = Left config.env, component = Just component, root}
+  runEnvProcess envOptions exe args
+
+argsGhciRun :: GhciRun -> [Text]
+argsGhciRun cmd =
+  toList cmd.shell ++ maybeToList cmd.run
+
+runGhci :: GhciOptions -> M ()
+runGhci options =
+  withTempDir "ghci-cmd" \ tmp -> do
+    cmd <- ghciCmdlineFromOptions tmp options
+    processWithRunner options "ghci" (argsGhciRun cmd)
+
+runGhcid :: GhcidOptions -> M ()
+runGhcid options =
+  withTempDir "ghcid-cmd" \ tmp -> do
+    cmd <- ghcidCmdlineFromOptions tmp options
+    processWithRunner options.ghci "ghcid" (toList cmd.args)

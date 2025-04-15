@@ -3,8 +3,6 @@
 
   optionalField = name: conf: lib.optionalAttrs (lib.hasAttr name conf) { ${name} = conf.${name}; };
 
-  mapComponents = f: lib.mapAttrs (name: comp: if name == "library" then f name comp else lib.mapAttrs f comp);
-
   normalizeDeps = c: c // { dependencies = map util.version.normalize c.dependencies or []; };
 
   mkPrelude = prelude: base: let
@@ -88,6 +86,8 @@
   in
   { dependencies = map (replaceManagedBounds bounds state.resolving) hconf.dependencies or []; };
 
+  # --------------------------------------------------------------------------------------------------------------------
+
   componentWithManaged = name: hconf:
   hconf // managedBounds name hconf;
 
@@ -124,16 +124,6 @@
 
   extraExecutable = conf: { inherit (conf) main; };
 
-  plural = isLib: sort:
-  if isLib
-  then "internal-libraries"
-  else "${sort}s";
-
-  wrap = isLib: mainLib: conf: hconf:
-  if mainLib
-  then hconf
-  else { ${plural isLib conf.internal.sort} = hconf; };
-
   componentFull = pkg: name: conf: let
     isLib = conf.internal.sort == "library";
     mainLib = isLib && conf.internal.single;
@@ -142,12 +132,14 @@
       then extraLibrary mainLib
       else extraExecutable
       ;
-    comp = { ${name} = extra conf // componentGeneral pkg name conf; };
+    comp = extra conf // componentGeneral pkg name conf // { __conf = conf; };
   in
-  lib.optionalAttrs conf.enable (wrap isLib mainLib conf comp);
+  lib.optionalAttrs conf.enable comp;
+
+  # --------------------------------------------------------------------------------------------------------------------
 
   packageComponents = pkg:
-  util.mergeAllAttrs (lib.mapAttrsToList (componentFull pkg) (internal.packages.normalized pkg));
+  lib.mapAttrs (componentFull pkg) (internal.packages.normalized pkg);
 
   packageMeta = conf: let
     cabal = conf.cabal-config;
@@ -172,17 +164,46 @@
     desc
   ];
 
-  meta = lib.mapAttrs (_: packageMeta) config.packages;
+  # --------------------------------------------------------------------------------------------------------------------
+
+  plural = isLib: sort:
+  if isLib
+  then "internal-libraries"
+  else "${sort}s";
+
+  wrap = isLib: mainLib: conf: comp:
+  if mainLib
+  then comp
+  else { ${plural isLib conf.internal.sort} = comp; };
+
+  hpackComponent = name: comp: let
+    conf = comp.__conf;
+    isLib = conf.internal.sort == "library";
+    mainLib = isLib && conf.internal.single;
+  in wrap isLib mainLib conf { ${name} = comp; };
+
+  hpackProto = pkg: util.mergeAllAttrs (lib.mapAttrsToList hpackComponent pkg);
+
+  # --------------------------------------------------------------------------------------------------------------------
+
+  meta = util.mapValues packageMeta config.packages;
 
   assemblePackages = comps:
   lib.zipAttrsWith (_: util.mergeAllAttrs) [meta comps];
 
-  componentsRaw = lib.mapAttrs (_: packageComponents) config.packages;
+  componentsRaw = util.mapValues packageComponents config.packages;
 
-  components = util.mapValues (mapComponents (_: normalizeDeps)) componentsRaw;
+  normalized = {
 
-  # TODO This needs some intermediate representation that is easier to traverse
-  componentsWithManaged = lib.mapAttrs (pkg: mapComponents (_: componentWithManaged pkg)) componentsRaw;
+    components = util.mapValues (util.mapValues normalizeDeps) componentsRaw;
+
+    componentsWithManaged = lib.mapAttrs (name: util.mapValues (componentWithManaged name)) componentsRaw;
+
+  };
+
+  components = util.mapValues hpackProto normalized.components;
+
+  componentsWithManaged = util.mapValues hpackProto normalized.componentsWithManaged;
 
   packages = assemblePackages components;
 
@@ -190,5 +211,7 @@
   packagesWithManaged = assemblePackages componentsWithManaged;
 
 in {
-  inherit meta components packages packagesWithManaged;
+
+  inherit meta normalized components componentsWithManaged packages packagesWithManaged;
+
 }

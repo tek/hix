@@ -2,7 +2,6 @@
 
 module Hix.Bootstrap where
 
-import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Reader (ask)
 import qualified Data.Text as Text
 import Distribution.Compiler (PerCompilerFlavor (PerCompilerFlavor))
@@ -29,7 +28,7 @@ import Hix.Compat (readGenericPackageDescription)
 import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import qualified Hix.Data.Monad (AppResources (cwd))
-import Hix.Data.Monad (M (M))
+import Hix.Data.Monad (M (M), appRes)
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NixExpr (
   Expr (ExprAttrs, ExprLit, ExprPrefix, ExprString),
@@ -39,10 +38,10 @@ import Hix.Data.NixExpr (
 import Hix.Data.PackageName (PackageName (PackageName))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
-import Hix.Error (pathText, tryIO)
+import Hix.Error (pathText)
 import Hix.Managed.Flake (runFlakeGenCabal, runFlakeLock)
 import Hix.Managed.Git (GitNative (cmd', cmd_), runGitNative)
-import Hix.Monad (AppResources (AppResources), noteBootstrap)
+import Hix.Monad (AppResources (AppResources), noteBootstrap, tryIOM)
 import Hix.NixExpr (mkAttrs, multi, multiOrSingle, nonEmptyAttrs, renderRootExpr, single, singleOpt)
 import qualified Hix.Prelude
 import Hix.Prelude (Prelude, findPrelude)
@@ -269,14 +268,17 @@ flake conf pkgs =
     ExprAttr "inputs.hix.url" (ExprString conf.hixUrl.unHixUrl),
     ExprAttr "outputs" (ExprPrefix "{hix, ...}: hix.lib.flake" (ExprAttrs [
       ExprAttr "packages" (ExprAttrs (flakePackage <$> pkgs)),
-      mainPackage pkgs
+      mainPackage pkgs,
+      devCli
     ]))
   ]
+  where
+    devCli = if conf.devCli then ExprAttr "internal.hixCli.dev" (ExprLit "true") else ExprAttrNil
 
 bootstrapFiles :: BootstrapProjectConfig -> M [ProjectFile]
 bootstrapFiles conf = do
-  AppResources {cwd} <- M ask
-  cabals <- paths =<< M (lift (tryIO (getDirectoryFilesIgnore (toFilePath cwd) ["**/*.cabal"] ["dist-newstyle/**"])))
+  cwd <- appRes.cwd
+  cabals <- paths =<< tryIOM (getDirectoryFilesIgnore (toFilePath cwd) ["**/*.cabal"] ["dist-newstyle/**"])
   pkgs <- fmap convert <$> traverse (readCabal cwd) cabals
   pure [
     ProjectFile {path = [relfile|flake.nix|], content = renderRootExpr (flake conf pkgs)}

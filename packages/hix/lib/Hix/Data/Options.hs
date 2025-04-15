@@ -94,7 +94,8 @@ data GhciOptions =
     root :: Maybe (PathSpec Dir),
     component :: TargetSpec,
     test :: TestOptions,
-    extra :: Maybe ExtraGhciOptions
+    extra :: Maybe ExtraGhciOptions,
+    args :: [Text]
   }
   deriving stock (Show, Generic)
 
@@ -104,6 +105,14 @@ data GhcidOptions =
     extra :: Maybe ExtraGhcidOptions
   }
   deriving stock (Show, Generic)
+
+data CommandOptions =
+  CommandOptions {
+    env :: EnvRunnerOptions,
+    exe :: Text,
+    args :: [Text]
+  }
+  deriving stock (Show)
 
 data InitOptions =
   InitOptions {
@@ -231,9 +240,15 @@ data Command =
   |
   EnvRunner EnvRunnerCommandOptions
   |
+  GhciCmd GhciOptions
+  |
   GhcidCmd GhcidOptions
   |
-  GhciCmd GhciOptions
+  RunGhci GhciOptions
+  |
+  RunGhcid GhcidOptions
+  |
+  RunCommand CommandOptions
   |
   Init InitOptions
   |
