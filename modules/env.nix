@@ -18,7 +18,7 @@ let
 
   runner = util.scriptErr "env-${config.name}-runner.bash" ''
    ${config.code}
-   $@
+   "$@"
   '';
 
   effectiveHostPort = { host, absolute ? false, ... }:

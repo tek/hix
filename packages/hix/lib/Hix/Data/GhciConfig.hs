@@ -41,8 +41,7 @@ data EnvConfig =
 
 data GhciConfig =
   GhciConfig {
-    packages :: PackagesConfig,
-    mainPackage :: Maybe PackageName,
+    env :: EnvConfig,
     setup :: Map RunnerName GhciSetupCode,
     run :: Map RunnerName GhciRunExpr,
     args :: GhciArgs,

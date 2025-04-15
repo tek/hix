@@ -33,17 +33,25 @@
 
   setWithExe = withExe {};
 
-  normalized = pkg: let
+  normalizedMulti = pkg: let
     withNames = util.mapKeys (_: comp: comp.name);
+
+    enabled = lib.filterAttrs (_: comp: comp.enable);
+
+    multi = sort: withNames (enabled pkg.${sort});
   in
+    multi "libraries" //
+    multi "executables" //
+    multi "tests" //
+    multi "benchmarks"
+    ;
+
+  normalized = pkg:
     lib.optionalAttrs pkg.library.enable { library = pkg.library; } //
-    withNames pkg.libraries //
     lib.optionalAttrs pkg.executable.enable { ${pkg.executable.name} = pkg.executable; } //
-    withNames pkg.executables //
     lib.optionalAttrs pkg.test.enable { ${pkg.test.name} = pkg.test; } //
-    withNames pkg.tests //
     lib.optionalAttrs pkg.benchmark.enable { ${pkg.benchmark.name} = pkg.benchmark; } //
-    withNames pkg.benchmarks
+    normalizedMulti pkg
     ;
 
   pkgDeps = pkg:

@@ -3,7 +3,7 @@
 
   inputs.hix.url = "path:HIX";
 
-  outputs = {hix, ...}: hix.lib._hix_test ({config, ...}: {
+  outputs = {hix, ...}: hix.lib._hix_test {
 
     envs = {
       one.env = { number = 1; };
@@ -20,7 +20,7 @@
     commands.number = {
       env = "one";
       command = ''
-      echo $number
+      echo $(( $number + ''${1-0} ))
       '';
       component = true;
     };
@@ -32,5 +32,7 @@
       '';
     };
 
-  });
+    internal.hixCli.dev = true;
+
+  };
 }

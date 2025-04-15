@@ -6,7 +6,7 @@
     mkdir root
     cd ./root
 
-    step_nix run path:$hix_dir#cli -- new --hix-url="path:$hix_dir" --author 'Panda' --name 'giant-panda' 'red-panda'
+    step_nix run path:$hix_dir#cli -- new --hix-url="path:$hix_dir" --author 'Panda' --name 'giant-panda' 'red-panda' --dev-cli
 
     cd ./red-panda
 

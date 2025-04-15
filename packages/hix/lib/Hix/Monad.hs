@@ -131,13 +131,18 @@ runMUsing res (M ma) =
 
 runMLoggerWith :: (LogLevel -> Text -> IO ()) -> GlobalOptions -> M a -> IO (Either Error a)
 runMLoggerWith logger GlobalOptions {..} ma =
-  withSystemTempDir "hix-cli" \ tmp -> runExceptT $ do
+  withSystemTempDir "hix-cli" \ tmp -> runExceptT do
     resolvedCwd <- resolvePathSpec' resolveDir' cwd
     resolvedRoot <- resolvePathSpec' resolveDir' root
-    ExceptT $ runMUsing AppResources {
-      logger = logWith logger, context = [], cwd = resolvedCwd, root = resolvedRoot, ..
+    let
+      resources = AppResources {
+        logger = logWith logger,
+        context = [],
+        cwd = resolvedCwd,
+        root = resolvedRoot,
+        ..
       }
-      ma
+    ExceptT (runMUsing resources ma)
 
 runMLogWith :: GlobalOptions -> M a -> IO ([Text], Either Error a)
 runMLogWith opts ma =

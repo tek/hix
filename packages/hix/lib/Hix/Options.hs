@@ -8,6 +8,7 @@ import Options.Applicative (
   auto,
   command,
   customExecParser,
+  forwardOptions,
   fullDesc,
   header,
   help,
@@ -43,9 +44,9 @@ import Hix.Data.Json (JsonConfig)
 import Hix.Data.LogLevel (LogLevel (..))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
+  CreateProjectConfig (CreateProjectConfig),
   InitProjectConfig (InitProjectConfig),
   NewProjectConfig (NewProjectConfig),
-  CreateProjectConfig (CreateProjectConfig),
   ProjectName,
   )
 import qualified Hix.Data.Options
@@ -54,6 +55,7 @@ import Hix.Data.Options (
   BumpOptions (..),
   CabalOptions (..),
   Command (..),
+  CommandOptions (..),
   ComponentCoords (ComponentCoords),
   ComponentSpec (..),
   EnvRunnerCommandOptions (..),
@@ -194,13 +196,16 @@ extraGhcidParser :: Parser (Maybe ExtraGhcidOptions)
 extraGhcidParser =
   optional (strOption (long "ghcid-options" <> help "Additional command line options to pass to ghcid"))
 
-envParser :: Parser EnvRunnerCommandOptions
-envParser = do
-  options <- do
-    config <- Right <$> jsonConfigParser
-    root <- rootParser
-    component <- optional targetSpecParser
-    pure EnvRunnerOptions {..}
+envRunnerParser :: Parser EnvRunnerOptions
+envRunnerParser = do
+  config <- Right <$> jsonConfigParser
+  root <- rootParser
+  component <- optional targetSpecParser
+  pure EnvRunnerOptions {..}
+
+envLegacyParser :: Parser EnvRunnerCommandOptions
+envLegacyParser = do
+  options <- envRunnerParser
   test <- testOptionsParser
   extraGhci <- extraGhciParser
   extraGhcid <- extraGhcidParser
@@ -213,6 +218,7 @@ ghciParser = do
   component <- targetSpecParser
   test <- testOptionsParser
   extra <- extraGhciParser
+  args <- many (strArgument (metavar "ARG"))
   pure GhciOptions {..}
 
 ghcidParser :: Parser GhcidOptions
@@ -220,6 +226,13 @@ ghcidParser = do
   ghci <- ghciParser
   extra <- extraGhcidParser
   pure GhcidOptions {..}
+
+commandParser :: Parser CommandOptions
+commandParser = do
+  env <- envRunnerParser
+  exe <- strOption (long "exe" <> help "The command executable")
+  args <- many (strArgument (metavar "ARG"))
+  pure CommandOptions {..}
 
 noInitGitAndFlakeParser :: Parser Bool
 noInitGitAndFlakeParser = switch (long "basic" <> short 'b' <> help "Skip git repo initialisation and nix flake lock")
@@ -230,6 +243,7 @@ initCommonParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
   noInitGitAndFlake <- noInitGitAndFlakeParser
+  devCli <- switch (long "dev-cli" <> help "Build the CLI tool from the flake input commit, for testing")
   pure CreateProjectConfig {..}
 
 projectNameParser :: Parser ProjectName
@@ -253,6 +267,7 @@ bootstrapParser :: Parser BootstrapOptions
 bootstrapParser = do
   hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
   noInitGitAndFlake <- noInitGitAndFlakeParser
+  devCli <- switch (long "dev-cli" <> help "Build the CLI tool from the flake input commit, for testing")
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
 stateFileConfigParser :: Parser StateFileConfig
@@ -388,11 +403,17 @@ commands :: Mod CommandFields Command
 commands =
   command "preproc" (Preproc <$> info preprocParser (progDesc "Preprocess a source file for use with ghcid"))
   <>
-  command "env" (EnvRunner <$> info envParser (progDesc "Print the env runner for a component or a named env"))
+  command "env" (EnvRunner <$> info envLegacyParser (progDesc "Print the env runner for a component or a named env"))
   <>
   command "ghci-cmd" (GhciCmd <$> info ghciParser (progDesc "Print a ghci cmdline to load a module in a Hix env"))
   <>
   command "ghcid-cmd" (GhcidCmd <$> info ghcidParser (progDesc "Print a ghcid cmdline to run a function in a Hix env"))
+  <>
+  command "ghci" (RunGhci <$> info ghciParser (progDesc "Run ghci in a Hix env"))
+  <>
+  command "ghcid" (RunGhcid <$> info ghcidParser (progDesc "Run ghcid in a Hix env"))
+  <>
+  command "command" (RunCommand <$> info commandParser (progDesc "Run a command in a Hix env"))
   <>
   command "init" (Init <$> info initParser (progDesc "Create a new Hix project in the current directory"))
   <>
@@ -449,7 +470,7 @@ parseCli ::
   IO Options
 parseCli = do
   realCwd <- getCurrentDir
-  customExecParser parserPrefs (info (appParser realCwd <**> helper) desc)
+  customExecParser parserPrefs (info (appParser realCwd <**> helper) (desc <> forwardOptions))
   where
     parserPrefs =
       prefs (showHelpOnEmpty <> showHelpOnError <> subparserInline)

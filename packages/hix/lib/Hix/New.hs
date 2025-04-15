@@ -71,7 +71,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 flake :: InitProjectConfig -> Text
 flake InitProjectConfig {
   name = ProjectName name,
-  config = CreateProjectConfig { hixUrl = HixUrl url, ..}
+  config = CreateProjectConfig {hixUrl = HixUrl url, ..}
 } =
   [exon|{
   description = "A Haskell project";
@@ -110,13 +110,17 @@ flake InitProjectConfig {
         ];
       };
 
-    };
+    };#{if devCli then devCliOption else ""}
   };
 }
 |]
   where
     src | packages = [exon|packages/#{name}|]
         | otherwise = "."
+
+    devCliOption = [exon|
+    internal.hixCli.dev = true;
+|]
 
 libModule :: InitProjectConfig -> Text -> Text
 libModule conf modName =

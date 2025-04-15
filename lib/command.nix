@@ -1,45 +1,23 @@
 {util}:
 let
 
-  inherit (util) lib internal;
-
-  splitArgs = ''
-  declare -a env_args=() cmd_args=()
-  found=false
-  for a in $@
-  do
-    if [[ $found == true ]]
-    then
-      cmd_args+=($a)
-    elif [[ $a == '--' ]]
-    then
-      found=true
-    else
-      env_args+=($a)
-    fi
-  done
-  '';
+  inherit (util) lib internal outputs;
 
   cli = util.config.internal.hixCli.exe;
 
-  ghciJson = util.json.ghciFile;
+  ghciCommand = env: config: let
 
-  ghciCommand = lib.makeExtensible (self: {
-
-    config = {};
-
-    cliCmd = if self.config.ghcid or false then "ghcid-cmd" else "ghci-cmd";
+    cliCmd = if config.ghcid or false then "ghcid" else "ghci";
 
     options = let
-      opt = switch: o: lib.optionalString (self.config.${o} != null) " ${switch} ${self.config.${o}}";
+      opt = switch: o: lib.optionalString (config.${o} != null) " ${switch} ${config.${o}}";
     in "${opt "-r" "runner"}${opt "-p" "package"}${opt "-m" "module"}${opt "-c" "component"}";
 
-    script = ''
-    ghci_cmd=$(${cli} ${self.cliCmd} --config ${ghciJson} ${self.options} ''${env_args[@]} "''$@")
-    eval $ghci_cmd
-    '';
+    json = outputs.cli-context.json.ghci env;
 
-  });
+  in ''
+  ${cli} ${cliCmd} --config ${json} ${options} "$@"
+  '';
 
   inEnv = {command, env}:
   lib.makeExtensible (self: {
@@ -54,11 +32,13 @@ let
     json = util.json.envFile env;
 
     script =
+      if command.ghci.enable
+      then
+      ghciCommand env command.ghci
+      else
       if command.component
       then ''
-      ${splitArgs}
-      env_runner=$(${self.cli} env --config ${self.json} "''${env_args[@]}")
-      env_args="''${env_args[*]}" $env_runner "${self.exe} "''${cmd_args[@]}""
+      ${self.cli} command --config ${self.json} --exe "${self.exe}" "$@"
       ''
       else ''
       ${env.code}

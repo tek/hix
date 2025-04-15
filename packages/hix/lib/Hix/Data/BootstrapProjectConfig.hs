@@ -5,6 +5,7 @@ import Hix.Data.NewProjectConfig (HixUrl)
 data BootstrapProjectConfig =
   BootstrapProjectConfig {
     hixUrl :: HixUrl,
-    noInitGitAndFlake :: Bool
+    noInitGitAndFlake :: Bool,
+    devCli :: Bool
   }
   deriving stock (Eq, Show, Generic)

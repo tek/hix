@@ -20,7 +20,7 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   SourceDirs (SourceDirs),
   )
-import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig (EnvConfig), GhciConfig (..))
+import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig (..), GhciConfig (..))
 import qualified Hix.Data.GhciTest as GhciTest
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (
@@ -36,7 +36,7 @@ import Hix.Data.Options (
 import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import Hix.Env (envRunner)
 import Hix.Error (pathText)
-import Hix.Ghci (assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
+import Hix.Ghci (argsGhciRun, assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
 import Hix.Monad (runM)
 import Hix.Test.Utils (UnitTest, unitTest)
 
@@ -104,8 +104,11 @@ ghciOptions :: GhciOptions
 ghciOptions =
   GhciOptions {
     config = Left GhciConfig {
-      packages,
-      mainPackage = Nothing,
+      env = EnvConfig {
+        packages,
+        defaultEnv = EnvRunner [absfile|/invalid|],
+        mainPackage = Nothing
+      },
       setup = [("generic", "import Test.Tasty")],
       run = [("generic", "check . property . test")],
       args = ["-Werror"],
@@ -119,7 +122,8 @@ ghciOptions =
       runner = Just "generic",
       cd = ChangeDir True
     },
-    extra = Nothing
+    extra = Nothing,
+    args = []
   }
 
 options :: GhcidOptions
@@ -133,9 +137,12 @@ searchPath dir subs =
 ghcidTarget ::
   Path Abs Dir ->
   Path Abs File ->
-  Text
+  [Text]
 ghcidTarget cwd scriptFile =
-  [exon|ghcid --command="ghci -Werror -i#{path} -ghci-script=#{pathText scriptFile}" --test='#{test}'|]
+  [
+    [exon|--command=ghci -Werror -i#{path} -ghci-script=#{pathText scriptFile}|],
+    [exon|--test=#{test}|]
+  ]
   where
     test = "(check . property . test) test_server"
     path = searchPath dir ["api/test", "api/lib", "api/testing", "core/lib", "core/tools"]
@@ -146,14 +153,17 @@ test_ghcid = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
     runM root (ghcidCmdlineFromOptions tmp options)
   cmdline <- evalEither res
-  ghcidTarget root cmdline.ghci.scriptFile === cmdline.cmdline
+  ghcidTarget root cmdline.ghci.scriptFile === toList cmdline.args
 
 mainOptions :: GhciOptions
 mainOptions =
   GhciOptions {
     config = Left GhciConfig {
-      packages,
-      mainPackage = Just "core",
+      env = EnvConfig {
+        packages,
+        defaultEnv = EnvRunner [absfile|/invalid|],
+        mainPackage = Just "core"
+      },
       setup = [("generic", "import Test.Tasty")],
       run = [("generic", "")],
       args = [],
@@ -167,15 +177,19 @@ mainOptions =
       runner = Nothing,
       cd = ChangeDir True
     },
-    extra = Nothing
+    extra = Nothing,
+    args = []
   }
 
 mainPackageTarget ::
   Path Abs Dir ->
   Path Abs File ->
-  Text
+  [Text]
 mainPackageTarget cwd scriptFile =
-  [exon|ghci -i#{path} -ghci-script=#{pathText scriptFile}|]
+  [
+    [exon|-i#{path}|],
+    [exon|-ghci-script=#{pathText scriptFile}|]
+  ]
   where
     path = searchPath dir ["core/test", "core/lib"]
     dir = pathText cwd
@@ -185,7 +199,7 @@ test_mainPackage = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
     runM root (ghciCmdlineFromOptions tmp mainOptions)
   cmdline <- evalEither res
-  mainPackageTarget root cmdline.scriptFile === cmdline.cmdline
+  mainPackageTarget root cmdline.scriptFile === argsGhciRun cmdline
 
 spec2 :: TargetSpec
 spec2 =

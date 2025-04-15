@@ -107,12 +107,4 @@ in {
     };
 
   };
-
-  config = {
-
-    command =
-      lib.mkIf config.ghci.enable
-      (util.command.ghciCommand.extend (_: super: { config = super.config // config.ghci; })).script;
-
-  };
 }

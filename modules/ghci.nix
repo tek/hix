@@ -60,7 +60,7 @@ in {
     cores = mkOption {
       description = "The value for the GHC option `-j`, specifying the number of system threads to use.";
       type = either int str;
-      default = ''''${NIX_BUILD_CORES-}'';
+      default = "";
     };
 
   };
@@ -79,7 +79,7 @@ in {
       tasty-tree = "Test.Tasty.defaultMain";
     };
 
-    ghcOptions = ["-j${toString config.ghci.cores}" "+RTS -A64M -RTS"];
+    ghcOptions = ["-j${toString config.ghci.cores}" "+RTS" "-A64M" "-RTS"];
 
     preprocessor = mkDefault (
       util.script "ghci-preprocessor" ''

@@ -60,29 +60,14 @@ let
       defaultEnv = default.runner;
     };
 
-    # TODO add to this set:
-    # - component-dependent ghci args
-    # - restarts
-    # - cwd
-    ghci = {
-      mainPackage = config.main;
-      inherit packages;
-      setup = config.ghci.setup;
-      run = config.ghci.run;
-      args = config.ghci.args;
-      inherit (config) manualCabal;
-    };
-
     preproc = {
       packages = if config.manualCabal then null else packages;
     };
 
   in {
-    inherit packages ghci preproc;
+    inherit packages preproc;
 
     envFile = default: jsonFile "env-config" (env default);
-
-    ghciFile = jsonFile "ghci-config" ghci;
 
     preprocFile = jsonFile "preproc-config" preproc;
 

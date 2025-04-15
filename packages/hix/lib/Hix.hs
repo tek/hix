@@ -7,9 +7,9 @@ import qualified Hix.Data.GlobalOptions
 import Hix.Data.LogLevel (LogLevel)
 import qualified Hix.Data.Options as Options
 import Hix.Data.Options (Command (..), HackageCommand (..), LowerCommand (..), Options (Options))
-import Hix.Env (printEnvRunner)
+import Hix.Env (printEnvRunner, runEnvCommand)
 import Hix.Error (Error, printError)
-import Hix.Ghci (printGhciCmdline, printGhcidCmdline)
+import Hix.Ghci (printGhciCmdline, printGhcidCmdline, runGhci, runGhcid)
 import Hix.Managed.Bump.App (bumpCli)
 import Hix.Managed.Lower.App (lowerAutoCli, lowerInitCli, lowerOptimizeCli, lowerStabilizeCli)
 import Hix.Managed.ReleaseMaintenance (releaseMaintenanceCli, revisionCli)
@@ -24,6 +24,9 @@ runCommand = \case
   EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts
   GhciCmd opts -> printGhciCmdline opts
+  RunGhci opts -> runGhci opts
+  RunGhcid opts -> runGhcid opts
+  RunCommand opts -> runEnvCommand opts
   Init opts -> initProject opts.config
   New opts -> newProject opts.config
   Bootstrap opts -> bootstrapProject opts.config

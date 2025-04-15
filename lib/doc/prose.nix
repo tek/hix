@@ -842,9 +842,12 @@ in {
 
   ### Component-dependent environments {#commands-component-env}
 
-  When the command option `component` is set to `true`, the command will take two argument lists, separated by a `--`.
-  The first batch of arguments is passed to the Hix CLI to select the environment, the second one is assigned to the
-  environment variable `$cmd_args` to be used by the command script.
+  When the command option `component` is set to `true`, the command will recognize a few special CLI options, which will
+  be consumed by the Hix CLI to select the environment.
+  All unknown or trailing arguments will be forwarded to the actual command.
+  This means that mistakes in the syntax of known options will not be detected directly.
+  For a bit more control, you can insert a `--` argument to separate the two sets (in addition to the other `--`
+  required to indicate the end of options for `nix`).
 
   This allows the user to select an environment dynamically from the command line, without having to statically
   associate it in the Nix config or use complex expressions with nested invocations of Nix, realized by encoding all
@@ -876,7 +879,7 @@ in {
   The third method is to specify a Haskell source file and let Hix figure out which component it belongs to:
 
   ```
-  $ nix run .#cmd.number -- -f /path/to/packages/api/test/NumberTest.hs
+  $ nix run .#cmd.number -- -f packages/api/test/NumberTest.hs
   2
   ```
 
@@ -892,6 +895,8 @@ in {
   ```
 
   ### Built-in commands {#commands-builtin}
+
+  #### GHCi {#commands-ghci}
 
   Hix provides two special commands for executing a function in GHCi or GHCid.
 
@@ -913,7 +918,7 @@ in {
   - The name of a Haskell test function (`-t`) that will be called after the module was loaded successfully.
     See next bullet for defaults.
 
-  - The name of an attribute in the Hix option `ghci.run` (`-r`).
+  - The name of an attribute in the Hix option [](#opt-ghci-ghci.run) (`-r`).
     This option contains a Haskell expression for each key which will be executed after the module was loaded
     successfully.
     If a test function was specified, this expression will be applied to it.
@@ -928,8 +933,27 @@ in {
   ghci> (check . withTests 1 . property . test) test_server
   ```
 
-  You can specify arbitrary additional command line arguments for GHCi and GHCid with `--ghci-options` and
+  To find out what the defaults for these settings are, you can run:
+
+  ```
+  nix run .#show-config -- ghci
+  ```
+
+  Lastly, you can specify arbitrary additional command line arguments for GHCi and GHCid with `--ghci-options` and
   `--ghcid-options`.
+  Like basic commands, GHCi options can also be given as plain arguments:
+
+  ```
+  nix run .#ghcid -- -p root -Werror
+  ```
+
+  The CLI parser will pick out known options and pass the rest to GHCi.
+
+  ::: {.note}
+  Even for `.#ghcid`, these extra arguments will end up with GHCi.
+  :::
+
+  #### Run {#commands-run}
 
   Another built-in command is `run`, which executes an arbitrary shell command in an environment:
 

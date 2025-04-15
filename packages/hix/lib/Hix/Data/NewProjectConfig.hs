@@ -32,7 +32,8 @@ data CreateProjectConfig =
     packages :: Bool,
     hixUrl :: HixUrl,
     author :: Author,
-    noInitGitAndFlake :: Bool
+    noInitGitAndFlake :: Bool,
+    devCli :: Bool
   }
   deriving stock (Eq, Show, Generic)
 

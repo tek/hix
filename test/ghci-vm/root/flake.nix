@@ -3,7 +3,9 @@
 
   inputs.hix.url = "path:HIX";
 
-  outputs = { hix, ... }: hix.lib._hix_test ({config, ...}: {
+  outputs = {hix, ...}:
+  hix.lib._hix_test {
+
     packages.root = {
       src = ./pkg;
       library.enable = true;
@@ -13,7 +15,9 @@
       test.enable = true;
       test.env = "hix-ghci-test";
     };
+
     envs.hix-ghci-test.services.test.enable = true;
+
     services.test = {
       nixos.services.nginx = {
         enable = true;
@@ -21,5 +25,8 @@
       };
       ports.nginx = { host = 2; guest = 80; };
     };
-  });
+
+    internal.hixCli.dev = true;
+
+  };
 }

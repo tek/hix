@@ -9,13 +9,13 @@
   output_exact 1
   step_run cmd.number-nocomp
 
-  describe 'Command with component selection'
-  output_exact 2
-  step_run cmd.number -p root -c app
+  describe 'Command with component selection, forwarded real and garbage arguments'
+  output_exact 4
+  step_run cmd.number -p root -c app 2 --floop
 
   describe 'Command with file selection'
-  output_exact 2
-  step_run cmd.number -f $PWD/app/Main.hs
+  output_exact 4
+  step_run cmd.number 2 -f $PWD/app/Main.hs
 
   describe 'Command with env selection via flake app attr'
   output_exact 3
