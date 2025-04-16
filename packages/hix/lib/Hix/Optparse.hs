@@ -86,3 +86,9 @@ hackageRepoFieldOption =
     pure (fromString name, update)
   where
     takeField = maybeToRight "Invalid Hackage repo field specification" . stripInfix ":"
+
+nonOption :: IsString a => ReadM a
+nonOption =
+  eitherReader \case
+    option@('-' : _) -> Left [exon|Invalid option: #{option}|]
+    a -> Right (fromString a)

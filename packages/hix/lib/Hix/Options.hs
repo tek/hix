@@ -2,9 +2,11 @@ module Hix.Options where
 
 import Exon (exon)
 import Options.Applicative (
+  ArgumentFields,
   CommandFields,
   Mod,
   Parser,
+  argument,
   auto,
   command,
   customExecParser,
@@ -95,10 +97,14 @@ import Hix.Optparse (
   hackageRepoFieldOption,
   jsonOption,
   maintHandlersOption,
+  nonOption,
   outputFormatOption,
   outputTargetOption,
   relFileOption,
   )
+
+nonOptionArgument :: IsString a => Mod ArgumentFields a -> Parser a
+nonOptionArgument = argument nonOption
 
 rootParser :: Parser (Maybe (PathSpec Dir))
 rootParser =
@@ -257,7 +263,7 @@ initParser = do
 
 newParser :: Parser NewOptions
 newParser = do
-  directory <- strArgument (metavar "DIR" <> help "Directory to create for the project, last component used as project name default")
+  directory <- nonOptionArgument (metavar "DIR" <> help "Directory to create for the project, last component used as project name default")
   name <- optional projectNameParser
   printDirectory <- switch (long "print-dir" <> help "Print the created directory to stdout")
   config <- initCommonParser
@@ -309,7 +315,7 @@ projectOptionsParser :: Parser ProjectOptions
 projectOptionsParser = do
   build <- buildConfigParser
   cabal <- cabalOptionsParser
-  query <- RawQuery <$> many (strArgument (help "Positional arguments select individual deps for processing"))
+  query <- RawQuery <$> many (nonOptionArgument (help "Positional arguments select individual deps for processing"))
   envs <- many (strOption (long "env" <> short 'e' <> help "Environments whose packages should be updated"))
   readUpperBounds <- switch (long "read-upper-bounds" <> help "Use the upper bounds from the flake for the first run")
   mergeBounds <- switch (long "merge-bounds" <> help "Always add the flake bounds to the managed bounds")
