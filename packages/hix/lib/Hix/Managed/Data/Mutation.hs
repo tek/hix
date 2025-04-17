@@ -4,7 +4,6 @@ import Distribution.Pretty (Pretty (pretty))
 import qualified Text.PrettyPrint as PrettyPrint
 import Text.PrettyPrint (parens, (<+>))
 
-import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Version)
 import Hix.Data.VersionBounds (VersionBounds)
 import Hix.Managed.Cabal.Data.SolverState (SolverState)
@@ -41,7 +40,6 @@ data MutationResult s =
     candidate :: MutableId,
     changed :: Bool,
     state :: MutationState,
-    revisions :: Set PackageId,
     ext :: s
   }
   |

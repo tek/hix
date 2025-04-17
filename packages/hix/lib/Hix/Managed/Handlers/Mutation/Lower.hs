@@ -38,12 +38,12 @@ processMutationLower ::
   (Bool -> MutableId -> PackageId -> MutationConstraints -> MutationConstraints) ->
   SolverState ->
   DepMutation Lower ->
-  (BuildMutation -> M (Maybe (MutationState, Set PackageId))) ->
+  (BuildMutation -> M (Maybe MutationState)) ->
   M (MutationResult SolverState)
 processMutationLower conf mode update solver DepMutation {package, retract, mutation = Lower {majors}} build = do
   foldM buildMajor (Right 0, Nothing) majors <&> \case
-    (_, Just (candidate, ext, state, revisions)) ->
-      MutationSuccess {candidate, changed = True, state, revisions, ext}
+    (_, Just (candidate, ext, state)) ->
+      MutationSuccess {candidate, changed = True, state, ext}
     (_, Nothing) ->
       mode.noSuccess
   where

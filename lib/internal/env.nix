@@ -65,7 +65,7 @@
   Internal error: A managed override for '${package}' is missing the attribute '${missing}'.
   '';
 
-  managedOverride = api: package: {version ? null, hash ? null, repo ? null, jailbreak ? null, local ? null}: let
+  managedOverride = api: package: {version ? null, hash ? null, repo ? null, jailbreak ? null, local ? null, ...}: let
     hackage = if repo == null then api.hackage else api.hackageConfGen (unknownHackage package) repo;
   in
   if version != null && hash != null

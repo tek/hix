@@ -41,7 +41,7 @@ data EnvBuilder =
   EnvBuilder {
     state :: EnvState,
     cabal :: CabalHandlers,
-    buildTargets :: Bool -> Versions -> [PackageId] -> M (BuildResult, (Overrides, Set PackageId))
+    buildTargets :: Bool -> Versions -> [PackageId] -> M (BuildResult, Overrides)
   }
 
 data Builder =
@@ -61,7 +61,7 @@ data BuildHandlers =
   }
 
 testBuilder ::
-  (Bool -> Versions -> [PackageId] -> M (BuildResult, (Overrides, Set PackageId))) ->
+  (Bool -> Versions -> [PackageId] -> M (BuildResult, Overrides)) ->
   (Builder -> M a) ->
   M a
 testBuilder buildTargets use =
@@ -77,7 +77,7 @@ versionsBuilder hackage build =
   testBuilder \ _ versions overrideVersions -> do
     overrides <- packageOverrides hackage mempty overrideVersions
     status <- build versions
-    pure (status, (overrides, mempty))
+    pure (status, overrides)
 
 handlersNull :: BuildHandlers
 handlersNull =

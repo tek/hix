@@ -1,6 +1,7 @@
 module Hix.Managed.Build.Single where
 
 import Hix.Data.Monad (M)
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.VersionBounds (exactVersion)
 import Hix.Managed.Build (buildConstraints)
 import Hix.Managed.Cabal.Data.SolverState (solverState)
@@ -18,10 +19,11 @@ buildVersions ::
   EnvContext ->
   Text ->
   MutableVersions ->
+  Maybe Overrides ->
   M BuildStatus
-buildVersions builder context description versions =
-  buildConstraints builder context description False [] solver <&> \case
-    Just (_, _, _, status) -> status
+buildVersions builder context description versions prevOverrides =
+  buildConstraints builder context description False (fold prevOverrides) solver <&> \case
+    Just (_, _, status) -> status
     Nothing -> Failure
   where
     solver = solverState context.solverBounds context.deps (fromVersions exactVersion versions) def

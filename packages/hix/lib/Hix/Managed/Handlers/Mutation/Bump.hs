@@ -35,12 +35,12 @@ updateBound = VersionBounds.withUpper . nextMajor
 processMutationBump ::
   SolverState ->
   DepMutation Bump ->
-  (BuildMutation -> M (Maybe (MutationState, Set PackageId))) ->
+  (BuildMutation -> M (Maybe MutationState)) ->
   M (MutationResult SolverState)
 processMutationBump solver DepMutation {package, mutation = Bump {version, changed}} build =
   builder version <&> \case
-    Just (candidate, ext, state, revisions) ->
-      MutationSuccess {candidate, changed, state, revisions, ext}
+    Just (candidate, ext, state) ->
+      MutationSuccess {candidate, changed, state, ext}
     Nothing ->
       MutationFailed
   where

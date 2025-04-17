@@ -94,7 +94,6 @@ data StageState a s =
     success :: Map MutableDep BuildSuccess,
     failed :: [DepMutation a],
     state :: MutationState,
-    revisions :: Set PackageId,
     iterations :: Word,
     ext :: s
   }
@@ -102,4 +101,4 @@ data StageState a s =
 
 initStageState :: Initial MutationState -> s -> StageState a s
 initStageState (Initial state) ext =
-  StageState {success = [], failed = [], revisions = [], iterations = 0, ..}
+  StageState {success = [], failed = [], iterations = 0, ..}
