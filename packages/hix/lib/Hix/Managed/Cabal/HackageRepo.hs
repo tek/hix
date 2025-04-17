@@ -2,6 +2,7 @@ module Hix.Managed.Cabal.HackageRepo where
 
 import Exon (exon)
 
+import Hix.CabalParsec (unsafeParsec)
 import qualified Hix.Managed.Cabal.Data.HackageLocation as HackageLocation
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (HackageLocation, host), central)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageDescription (..), HackageName, HackageRepo (..), centralName)
@@ -32,3 +33,7 @@ centralHackage =
     description = "central Hackage",
     publish = True
   }
+
+unsafeCentralHackageFixed :: HackageRepo
+unsafeCentralHackageFixed =
+  centralHackage {indexState = Just (unsafeParsec ("2025-01-01T00:00:00Z" :: String))}

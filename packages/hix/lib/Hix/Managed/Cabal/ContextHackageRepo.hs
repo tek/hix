@@ -8,13 +8,16 @@ import Distribution.Parsec (simpleParsec)
 import Exon (exon)
 import Prelude hiding (bool)
 
+import Hix.CabalParsec (unsafeParsec)
 import qualified Hix.Color as Color
 import Hix.Managed.Cabal.Data.ContextHackageRepo (
   ContextHackageLocation (..),
   ContextHackagePassword (..),
-  ContextHackageRepo,
+  ContextHackageRepo (..),
+  contextHackageRepo,
   )
 import Hix.Managed.Cabal.Data.HackageLocation (HackagePassword (..), HackageUser (..))
+import Hix.Managed.Cabal.Data.HackageRepo (HackageName, centralName)
 
 update' ::
   Bool ->
@@ -66,3 +69,7 @@ fieldUpdater :: String -> String -> Either String (ContextHackageRepo -> Context
 fieldUpdater field value = do
   f <- maybeToRight [exon|Invalid Hackage repo field: #{field}|] (fields !? field)
   f field value
+
+unsafeCentralHackageContextFixed :: (HackageName, ContextHackageRepo)
+unsafeCentralHackageContextFixed =
+  (centralName, (contextHackageRepo centralName) {indexState = Just (unsafeParsec ("2025-01-01T00:00:00Z" :: String))})

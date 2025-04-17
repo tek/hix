@@ -21,6 +21,7 @@ import Hix.Error (pathText)
 import Hix.Http (httpManager)
 import Hix.Integration.Hackage (withHackage)
 import Hix.Integration.Utils (UnitTest, add, addP, libHs, local1, runMTest, withHixDir)
+import Hix.Managed.Cabal.ContextHackageRepo (unsafeCentralHackageContextFixed)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
@@ -191,7 +192,7 @@ bumpContext =
     packages,
     state = def {bounds = [("local1", nGen initialDeps \ dep -> (dep.package, unsafeVersionBoundsFromRange dep.version))]},
     envs = envConfigs,
-    hackage = []
+    hackage = [unsafeCentralHackageContextFixed]
   }
 
 queryTestContext :: ContextQuery a -> Maybe a

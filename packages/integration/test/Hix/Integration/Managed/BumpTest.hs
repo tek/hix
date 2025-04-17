@@ -144,7 +144,7 @@ bumpNativeTest hackage hixRoot = do
   root <- setupProject hackage.context hixRoot
   withProjectRoot root do
     handlersProject <- Project.handlersProd def
-    handlers <- Build.handlersProd handlersProject def def {hackageExtra = [hackage.repo]}
+    handlers <- Build.handlersFixed handlersProject def def {hackageExtra = [hackage.repo]}
     result <- withProjectContext handlersProject opts proto \ context -> do
       bumpOptimizeMain handlers context
     updateProject handlers.project False result

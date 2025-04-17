@@ -15,7 +15,8 @@ import Hix.Data.PackageId (PackageId (..))
 import Hix.Http (httpManager)
 import Hix.Managed.Build.SolverPackages (solverGhc)
 import Hix.Managed.Build.Target (BuilderResources (..), EnvBuilderResources (..), buildTargets)
-import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForVersions), allHackages)
+import qualified Hix.Managed.Cabal.Data.Config as CabalConfig
+import Hix.Managed.Cabal.Data.Config (CabalConfig (..), HackagePurpose (ForVersions), allHackages)
 import Hix.Managed.Cabal.Data.InstalledOverrides (InstalledOverrides (..))
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.EnvContext (EnvContext (..))
@@ -135,3 +136,17 @@ handlersProd project buildConfig cabalConfig = do
     withBuilder = withBuilder sourceHash project.stateFile versions buildConfig,
     versions
   }
+
+handlersFixedResources ::
+  CabalConfig ->
+  M (SourceHashHandlers, AvailableVersionsHandlers)
+handlersFixedResources config =
+  handlersProdResources (CabalConfig.withHackageFixed config)
+
+handlersFixed ::
+  ProjectHandlers ->
+  BuildConfig ->
+  CabalConfig ->
+  M BuildHandlers
+handlersFixed project build cabal =
+  handlersProd project build (CabalConfig.withHackageFixed cabal)

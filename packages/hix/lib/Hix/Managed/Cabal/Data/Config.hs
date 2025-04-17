@@ -12,7 +12,7 @@ import Hix.Data.Monad (M)
 import Hix.Managed.Cabal.Data.HackageLocation ()
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
 import Hix.Managed.Cabal.Data.Packages (GhcPackages)
-import Hix.Managed.Cabal.HackageRepo (centralHackage)
+import Hix.Managed.Cabal.HackageRepo (centralHackage, unsafeCentralHackageFixed)
 import Hix.Maybe (fromMaybeA)
 import Hix.Monad (fatalError)
 import Hix.Pretty (HPretty (..), fieldOr, fieldWith, prettyMap, prettyV)
@@ -66,7 +66,7 @@ instance Pretty CabalConfig where
     ]
 
 instance Default CabalConfig where
-  def = CabalConfig {hackageMain = Just centralHackage, hackageExtra = []}
+  def = CabalConfig {hackageMain = Nothing, hackageExtra = []}
 
 -- | This forces at least the default repo to be available.
 -- If this is not desired, the repo should be included with the 'enable' flag unset.
@@ -94,6 +94,10 @@ hackagesFor purpose config =
     repos = allHackages config
 
     desc = describePurpose purpose
+
+withHackageFixed :: CabalConfig -> CabalConfig
+withHackageFixed config =
+  config {hackageMain = config.hackageMain <|> Just unsafeCentralHackageFixed}
 
 data SolveConfig =
   SolveConfig {

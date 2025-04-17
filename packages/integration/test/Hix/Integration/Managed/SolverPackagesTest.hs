@@ -84,7 +84,7 @@ test_solverPackages =
     (result, overrides) <- runMTest False $ withTempRoot "test-maint" \ root -> do
       setupProject hixRoot
       handlersProject <- Project.handlersProd def
-      (hackage, versions) <- Build.handlersProdResources def
+      (hackage, versions) <- Build.handlersFixedResources def
       let resources = BuilderResources {hackage, stateFile = handlersProject.stateFile, root, buildConfig = def, ..}
           build = buildAdaptive (buildSolverPackages resources "latest") (suggestJailbreakAndLatestVersion resources)
       (result, (overrides, _)) <- runStateT build (mempty, mempty)
