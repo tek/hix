@@ -1,7 +1,6 @@
 module Hix.Managed.Build.Target where
 
 import Control.Monad.Trans.State.Strict (StateT (runStateT))
-import qualified Data.Map.Strict as Map
 import Exon (exon)
 import Path (Abs, Dir, Path)
 
@@ -26,7 +25,7 @@ import Hix.Managed.Data.Targets (Targets, firstMTargets)
 import Hix.Managed.Handlers.AvailableVersions (AvailableVersionsHandlers (..))
 import Hix.Managed.Handlers.SourceHash (SourceHashHandlers)
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
-import Hix.Managed.Overrides (packageOverride, packageOverrides)
+import Hix.Managed.Overrides (packageOverrideRegular, packageOverrides, packageRevision)
 import Hix.Managed.StateFile (writeBuildStateFor, writeSolverStateFor)
 
 data BuilderResources =
@@ -76,7 +75,7 @@ suggestRevision resources _ pkg = \cases
   Nothing (BoundsError _)
     | Just package <- failedPackageId pkg
     -> do
-      override <- packageOverride resources.hackage [] package
+      override <- packageRevision resources.hackage [] package
       pure (Just RetryPackage {package, ..})
   _ _ -> pure Nothing
 
@@ -92,9 +91,13 @@ suggestNothing _ _ _ _ =
 latestVersionFor :: BuilderResources -> PackageName -> M (Maybe RetryPackage)
 latestVersionFor resources target =
   resources.versions.latest target >>= traverse \ latest -> do
-    override <- packageOverride resources.hackage [] PackageId {name = target, version = latest}
+    override <- packageOverrideRegular resources.hackage [] PackageId {name = target, version = latest}
     pure RetryPackage {package = PackageId {name = target, version = override.version}, ..}
 
+-- | This might seem wrong at first glance – it immediately jailbreaks the entire package even though a newer revision
+-- might relax just the right bounds and leave the rest intact.
+-- However, at this point bounds are entirely useless, since a) we already incorporated proper bounds in our plan by
+-- running the solver, and b) nix cannot select between different versions anyway.
 suggestJailbreakAndLatestVersion ::
   BuilderResources ->
   FailureCounts ->
@@ -130,11 +133,11 @@ buildTargets ::
   Bool ->
   Versions ->
   [PackageId] ->
-  M (BuildResult, (Overrides, Set PackageId))
+  M (BuildResult, Overrides)
 buildTargets builder allowRevisions _ overrideVersions = do
   overrides <- packageOverrides builder.global.hackage builder.localUnavailable overrideVersions
   let build target = buildAdaptive (buildWithOverrides builder.global builder.env target) suggest
       s0 = (overrides, [])
-  second (second Map.keysSet) <$> runStateT (firstMTargets (BuildSuccess []) buildUnsuccessful build builder.targets) s0
+  second fst <$> runStateT (firstMTargets (BuildSuccess []) buildUnsuccessful build builder.targets) s0
   where
     suggest = if allowRevisions then suggestRevision builder.global else suggestNothing

@@ -15,11 +15,35 @@ import Hix.Data.Version (SourceHash)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName (..))
 import Hix.Pretty (hpretty)
 
+data IsRevision =
+  IsRevision
+  |
+  IsNotRevision
+  deriving stock (Eq, Show)
+
+isRevision :: IsRevision -> Bool
+isRevision = \case
+  IsRevision -> True
+  IsNotRevision -> False
+
+toIsRevision :: Bool -> IsRevision
+toIsRevision = \case
+  True -> IsRevision
+  False -> IsNotRevision
+
+instance FromJSON IsRevision where
+  parseJSON v =
+    toIsRevision <$> parseJSON v
+
+instance EncodeNix IsRevision where
+  encodeNix = encodeNix . isRevision
+
 data Override =
   Override {
     version :: Version,
     hash :: SourceHash,
-    repo :: Maybe HackageName
+    repo :: Maybe HackageName,
+    revision :: Maybe IsRevision
   }
   |
   Jailbreak
@@ -30,7 +54,7 @@ data Override =
 instance EncodeNix Override where
   encodeNix = \case
     Override {..} ->
-      ExprAttrs (static <> foldMap (pure . assoc "repo") repo)
+      ExprAttrs (static <> foldMap (pure . assoc "repo") repo <> foldMap (pure . assoc "revision") revision)
       where
         static = [assoc "version" version, assoc "hash" hash]
 
@@ -43,7 +67,7 @@ instance EncodeNix Override where
 
 override :: Version -> SourceHash -> Override
 override version hash =
-  Override {repo = Nothing, ..}
+  Override {repo = Nothing, revision = Nothing, ..}
 
 instance FromJSON Override where
   parseJSON =
@@ -54,6 +78,7 @@ instance FromJSON Override where
         JsonParsec version <- o .: "version"
         hash <- o .: "hash"
         repo <- o .:? "repo"
+        revision <- o .:? "revision"
         pure Override {..}
 
       jailbreak o = do
@@ -68,12 +93,17 @@ instance FromJSON Override where
 
 instance Pretty Override where
   pretty = \case
-    Override {..} -> pretty version <+> brackets (pretty hash <> foldMap renderRepo repo)
+    Override {..} ->
+      pretty version <+> brackets (pretty hash <> foldMap renderRepo repo <> foldMap renderRevision revision)
     Jailbreak -> "jailbreak"
     Local -> "local"
     where
       renderRepo (HackageName name) =
         hcat [text ",", hpretty name]
+
+      renderRevision = \case
+        IsRevision -> ",rev"
+        IsNotRevision -> mempty
 
 -- | Overrides can be either for mutable (direct, nonlocal) deps, or for transitive deps, so they must use
 -- 'PackageName'.

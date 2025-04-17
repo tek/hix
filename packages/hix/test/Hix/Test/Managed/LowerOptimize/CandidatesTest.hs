@@ -4,7 +4,6 @@ import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Distribution.Version (Version)
 import Hedgehog (evalEither, (===))
 
-import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (PackageName)
 import qualified Hix.Data.VersionBounds
 import Hix.Data.VersionBounds (fromLower, fromUpper)
@@ -53,12 +52,11 @@ targets =
 candidateVersion :: Version
 candidateVersion = [1, 9, 2]
 
-build :: IORef [Maybe Version] -> BuildMutation -> M (Maybe (MutationState, Set PackageId))
+build :: IORef [Maybe Version] -> BuildMutation -> M (Maybe MutationState)
 build buildRef BuildMutation {solverState = SolverState {constraints = [("dep", MutationConstraints {mutation})]}} = do
   liftIO (modifyIORef' buildRef (mutation.lower :))
   pure do
-    s <- result =<< mutation.lower
-    pure (s, [])
+    result =<< mutation.lower
   where
     result version
       | candidateVersion == version
@@ -81,7 +79,7 @@ test_candidatesOptimize = do
     for majors \ mut ->
       processMutationLower def lowerOptimizeMode lowerOptimizeUpdate initialState mut (build buildRef)
   mutationResults <- evalEither result
-  Just (MutationSuccess candidate True mstate [] (updateSolverState (const newConstraints) initialState)) === mutationResults
+  Just (MutationSuccess candidate True mstate (updateSolverState (const newConstraints) initialState)) === mutationResults
   triedVersions <- liftIO (readIORef buildRef)
   (Just <$> targets) === triedVersions
   where

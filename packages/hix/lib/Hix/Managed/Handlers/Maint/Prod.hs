@@ -2,7 +2,6 @@ module Hix.Managed.Handlers.Maint.Prod where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import Exon (exon)
-import Path (Abs, Dir, Path)
 
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.Monad
@@ -12,11 +11,11 @@ import Hix.Http (httpManager)
 import Hix.Managed.BuildOutput (depChanges)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForPublish))
-import Hix.Managed.Data.BuildOutput (BuildOutput, DepChanges)
+import Hix.Managed.Data.BuildOutput (DepChanges)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.ProjectContext (ProjectContext (..))
-import Hix.Managed.Flake (flakeFailure, runFlake, runFlakeFor)
+import Hix.Managed.Flake (flakeFailure, runFlakeFor)
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
@@ -28,10 +27,6 @@ import Hix.Managed.Maint.Git (gitApiMaintHermetic, gitApiMaintProd)
 import Hix.Managed.ProjectContext (updateProject)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Monad (noteFatal)
-
--- TODO remove
-runBumpFlake :: Path Abs Dir -> M BuildOutput
-runBumpFlake root = runFlake "Managed bounds" root ["run", ".#bump", "--", "--output=json", "--handlers=test-maint", "--build-output"] id
 
 projectWithEnv :: EnvName -> ProjectContext -> M ProjectContext
 projectWithEnv target ProjectContext {..} = do

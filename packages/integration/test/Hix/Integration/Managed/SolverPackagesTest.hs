@@ -68,7 +68,8 @@ targetOverrides =
     ("exon", Override {
       version = [1, 7, 2, 0],
       hash = SourceHash "0hg271cvjqm4ps75qpnirq9nvjwpwb03mcbn1a364jrysrj6bg3b",
-      repo = Just "hackage.haskell.org"
+      repo = Just "hackage.haskell.org",
+      revision = Nothing
     }),
     ("incipit-base", Jailbreak),
     ("incipit-core", Jailbreak),

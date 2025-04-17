@@ -46,7 +46,7 @@ import Hix.Managed.StageResult (stageResult)
 buildLowerInit :: Flow BuildStatus
 buildLowerInit = do
   execStatelessStage "stabilize-initial" \ StageContext {env, initialVersions, builder} ->
-    buildVersions builder env "initial lower bounds" initialVersions <&> \case
+    buildVersions builder env "initial lower bounds" initialVersions Nothing <&> \case
       Success -> StageNoAction (Just "Env builds successfully with the initial bounds.")
       Failure -> StageFailure (FailedPrecondition msg)
   where
@@ -111,10 +111,11 @@ stabilizeIfPossible handlers conf =
 
 validateCurrent :: Flow BuildStatus
 validateCurrent =
-  execStatelessStage "stabilize-current" \ StageContext {env, state = Initial MutationState {versions}, builder} ->
-    buildVersions builder env "current lower bounds" versions <&> \case
-      Success -> StageNoAction (Just "Env builds successfully with the current bounds.")
-      Failure -> StageFailure (FailedPrecondition ["Env does not build successfully with the current bounds."])
+  execStatelessStage "stabilize-current" \
+    StageContext {env, state = Initial MutationState {versions, overrides}, builder} ->
+      buildVersions builder env "current lower bounds" versions (Just overrides) <&> \case
+        Success -> StageNoAction (Just "Env builds successfully with the current bounds.")
+        Failure -> StageFailure (FailedPrecondition ["Env does not build successfully with the current bounds."])
 
 lowerStabilizeStages ::
   BuildHandlers ->
@@ -123,7 +124,7 @@ lowerStabilizeStages ::
 lowerStabilizeStages handlers conf =
   validateCurrent >>= \case
     Success -> unit
-    _ -> stabilizeIfPossible handlers conf
+    Failure -> stabilizeIfPossible handlers conf
 
 lowerStabilizeMain :: BuildHandlers -> ProjectContext -> M ProjectResult
 lowerStabilizeMain = processProjectSimple lowerStabilizeStages

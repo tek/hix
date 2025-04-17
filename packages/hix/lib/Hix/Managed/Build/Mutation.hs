@@ -56,18 +56,18 @@ updateConstraints impl candidate state =
 -- TODO If we'd use the @retract@ field from @DepMutation@ and the target bound here, we could probably use a universal
 -- bounds updater without leaking implementation...investigate.
 buildCandidate ::
-  (BuildMutation -> M (Maybe (MutationState, Set PackageId))) ->
+  (BuildMutation -> M (Maybe MutationState)) ->
   (Version -> VersionBounds -> VersionBounds) ->
   (MutableId -> PackageId -> MutationConstraints -> MutationConstraints) ->
   SolverState ->
   MutableDep ->
   Version ->
-  M (Maybe (MutableId, SolverState, MutationState, Set PackageId))
+  M (Maybe (MutableId, SolverState, MutationState))
 buildCandidate build updateStateBound updateConstraintBound solverState package version = do
   Log.debug [exon|Mutation constraints for #{showP candidate}: #{showP mutationSolverState.constraints}|]
   fmap result <$> build (candidateMutation mutationSolverState candidate updateStateBound)
   where
-    result (newState, revisions) = (candidate, newSolverState newState, newState, revisions)
+    result newState = (candidate, newSolverState newState, newState)
 
     candidate = MutableId {name = package, version}
 

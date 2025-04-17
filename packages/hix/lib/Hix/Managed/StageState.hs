@@ -1,7 +1,6 @@
 module Hix.Managed.StageState where
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Set as Set
 
 import qualified Hix.Managed.Data.MutableId
 import qualified Hix.Managed.Data.Mutation
@@ -18,7 +17,6 @@ updateStageState old mutation = \case
     old {
       success = Map.insert candidate.name buildSuccess old.success,
       state,
-      revisions = Set.union revisions old.revisions,
       ext
     }
     where
