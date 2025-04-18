@@ -2,12 +2,10 @@
   root = false;
   updateLock = false;
 
-  # TODO this error_ignore can probably be removed after the next release
   source = ''
     mkdir root
     cd ./root
 
-    error_ignore
     step_nix run "github:tek/hix#init" -- --name 'red-panda'
 
     step_run gen-cabal-quiet
