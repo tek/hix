@@ -16,6 +16,7 @@
 * Add OC `modify` as a less unwieldy alias of `transformDrv`.
 * Automatically compute overrides for the solver package set when managing deps.
 * Use dependency information to assemble the GHCi search path.
+* Allow mixed CLI options when running commands (including `ghci[d]`) with env selection enabled.
 
 # 0.8.0
 
