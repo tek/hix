@@ -97,7 +97,10 @@
   else
     if ! ${git} diff --quiet
     then
-      abort 'Worktree is dirty.'
+      ask_abort 'Worktree is dirty. Stage changes and continue?'
+      ${git} add .
+      ${git} stash push --quiet --keep-index
+      stashed=1
     fi
   fi
   need_reset=1
@@ -237,7 +240,7 @@
     sha256 = "$hash";
   }
   EOF
-    git add ${cliDep}
+    ${git} add ${cliDep}
   }
   '';
 
