@@ -193,8 +193,8 @@ in {
 
   hackage = {
     versionFile = "ops/version.nix";
+    packages = ["hix"];
     tag = false;
-    formatTag = {name, version}: if name == null then version else "${name}-${version}";
     setChangelogVersion = lib.mkForce false;
     commit = false;
     add = true;

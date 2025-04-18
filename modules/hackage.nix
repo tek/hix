@@ -15,7 +15,7 @@ in {
         If it is `null`, all packages are published.
         The items in the list should be Cabal package names as defined in `options.packages`.
       '';
-      type = types.nullOr (types.listOf types.str);
+      type = types.nullOr (types.listOf util.types.localPackage);
       default = null;
     };
 
