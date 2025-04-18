@@ -16,7 +16,7 @@ To learn more, please visit the [documentation page](https://tryp.io/hix/index.h
 
 # tldr
 
-You can convert an existing project with Cabal files by executing this command in the project root, using
+You can convert an existing Cabal project by executing this command in the project root, using
 [FlakeHub](https://flakehub.com/docs) or GitHub:
 
 ```
@@ -24,10 +24,11 @@ nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#bootstrap'
 nix run 'github:tek/hix?ref=0.8.0#bootstrap'
 ```
 
-You can create a new project in the current directory:
+You can create a new project in the current or an arbitrary directory:
 
 ```
-nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#new' -- --name 'project-name' --author 'Your Name'
+nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#init' -- --author 'Your Name' --name project-name
+nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#new' -- --author 'Your Name' path/to/project-name
 ```
 
 The manual process consists of first adding Hix to your Haskell project flake by specifying the input:

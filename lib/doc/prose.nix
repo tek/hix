@@ -246,13 +246,14 @@ in {
   The CLI command `init` will create a project skeleton with an executable and test suite in the current directory:
 
   ```
-  nix run '${hixUrl}#init' -- --name 'project-name' --author 'Your Name'
+  nix run '${hixUrl}#init' -- --name project-name --author 'Your Name'
   ```
 
-  There is also a `new` version to create a directory for your project:
+  Alternatively, the command `new` creates the specified directory and uses the last component as the project name
+  (unless overridden explicitly):
 
   ```
-  nix run '${hixUrl}#new' -- 'project-name' --author 'Your Name'
+  nix run '${hixUrl}#new' -- --author 'Your Name' path/to/project-name
   ```
 
   If you have an existing project with Cabal files in it, the `bootstrap` command will create a flake that configures
