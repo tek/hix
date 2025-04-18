@@ -324,6 +324,8 @@ in {
 
       release-all = util.app release.all;
 
+      update-cli-version = util.app release.updateCliVersionScript;
+
     };
 
     legacyPackages = tests.legacyPackages;

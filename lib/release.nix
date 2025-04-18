@@ -244,4 +244,9 @@
   }
   '';
 
-in { inherit nix all updateCliVersion; }
+  updateCliVersionScript = util.zscript "update-cli-version" ''
+  version='${import ../ops/version.nix}'
+  ${updateCliVersion}
+  '';
+
+in { inherit nix all updateCliVersion updateCliVersionScript; }
