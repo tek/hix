@@ -21,7 +21,7 @@ import Hix.Managed.Data.EnvContext (EnvDeps)
 import Hix.Managed.Data.Mutable (depName)
 import qualified Hix.Managed.Handlers.Cabal
 import Hix.Managed.Handlers.Cabal (CabalHandlers)
-import Hix.Monad (appContext)
+import Hix.Monad (appContextVerbose)
 import Hix.Pretty (prettyL, showPL)
 
 logNonReinstallable :: NonEmpty PackageId -> M ()
@@ -91,5 +91,5 @@ solveMutation ::
   SolverState ->
   M (Maybe SolverChanges)
 solveMutation cabal deps prevRevisions state =
-  appContext "resolving a mutation build plan" do
+  appContextVerbose "resolving a mutation build plan" do
     traverse (processSolverPlan state.flags.forceRevisions cabal deps prevRevisions) =<< cabal.solveForVersion state
