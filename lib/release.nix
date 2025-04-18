@@ -106,10 +106,6 @@
   updateVersions = ''
   if ask 'Run tests?'
   then
-    if ! nix build .#docs
-    then
-      abort 'Docs failed.'
-    fi
     if ! nix --quiet --quiet --quiet flake show --all-systems >/dev/null
     then
       abort 'Evaluation of outputs failed.'
@@ -118,11 +114,12 @@
     then
       abort 'Tests failed.'
     fi
-  elif ask 'Run VM tests?'
+  fi
+  if ask 'Build docs?'
   then
-    if ! nix run .#test-vm
+    if ! nix build .#docs
     then
-      abort 'Tests failed.'
+      abort 'Docs failed.'
     fi
   fi
   sed -i 's/ref=[^"#]\+/ref='"$version/" readme.md examples/*/flake.nix
@@ -144,8 +141,23 @@
   ${git} tag -m "Release $version" "$version"
   '';
 
+  grepDevCli = "${grep} --files-with-matches 'hixCli\.dev = true'";
+
+  updateDevCli = "sed -i 's#hixCli\.dev = true#hixCli\.dev = false#'";
+
   checkDevCliTests = ''
-  dev_cli_test_flakes=($(${grep} --files-with-matches 'hixCli\.dev = true' test/**/flake.nix))
+  if ${grepDevCli} local.nix &> /dev/null
+  then
+    message 'The local flake still uses the development version of the CLI.'
+    if ask 'Update?'
+    then
+      ${updateDevCli} local.nix
+      ${git} add local.nix
+    else
+      ask_abort 'Release anyway?'
+    fi
+  fi
+  dev_cli_test_flakes=($(${grepDevCli} test/**/flake.nix))
   if [[ -n ''${dev_cli_test_flakes-} ]]
   then
     dev_cli_test_names=(''${''${dev_cli_test_flakes#test/}%%/*})
@@ -154,19 +166,22 @@
     do
       echo " $(yellow '*') $dc_test"
     done
-    if ask 'Update and rerun tests?'
+    if ask 'Update?'
     then
-      sed -i 's#hixCli\.dev = true#hixCli\.dev = false#' $=dev_cli_test_flakes
+      ${updateDevCli} $=dev_cli_test_flakes
+    else
+      ask_abort 'Release anyway?'
+    fi
+    if ask 'Rerun tests?'
+    then
       if nix run .#test -- $=dev_cli_test_names
       then
         message 'Tests succeeded, adding updated test flakes.'
       else
         abort 'Tests failed.'
       fi
-      ${git} add $dev_cli_test_flakes
-    else
-      ask_abort 'Release anyway?'
     fi
+    ${git} add $dev_cli_test_flakes
   fi
   '';
 
