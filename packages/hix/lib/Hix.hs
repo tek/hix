@@ -3,10 +3,11 @@ module Hix where
 import System.Exit (exitFailure)
 
 import Hix.Bootstrap (bootstrapProject)
+import qualified Hix.Console as Console
 import qualified Hix.Data.GlobalOptions
 import Hix.Data.LogLevel (LogLevel)
 import qualified Hix.Data.Options as Options
-import Hix.Data.Options (Command (..), HackageCommand (..), LowerCommand (..), Options (Options))
+import Hix.Data.Options (Command (..), HackageCommand (..), InfoCommand (..), LowerCommand (..), Options (Options))
 import Hix.Env (printEnvRunner, runEnvCommand)
 import Hix.Error (Error, printError)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline, runGhci, runGhcid)
@@ -18,8 +19,12 @@ import Hix.New (initProject, newProject)
 import Hix.Options (parseCli)
 import Hix.Preproc (preprocess)
 
+hixVersion :: Text
+hixVersion = "0.8.0"
+
 runCommand :: Command -> M ()
 runCommand = \case
+  Info InfoVersion -> Console.out hixVersion
   Preproc opts -> preprocess opts
   EnvRunner opts -> printEnvRunner opts.options
   GhcidCmd opts -> printGhcidCmdline opts

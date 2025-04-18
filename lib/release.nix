@@ -126,8 +126,8 @@
     fi
   fi
   sed -i 's/ref=[^"#]\+/ref='"$version/" readme.md examples/*/flake.nix
-  sed -Ei 's/~[[:digit:]]+\.[[:digit:]]+\.tar/~'"''${version%.*}.tar/" readme.md
-  sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix
+  sed -ri 's/~[[:digit:]]+\.[[:digit:]]+\.tar/~'"''${version%.*}.tar/" readme.md
+  sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix packages/hix/lib/Hix.hs
   sed -i "s/Unreleased/$version/" changelog.md
   ${git} --no-pager diff
   ask_abort 'Versions updated. Continue?'

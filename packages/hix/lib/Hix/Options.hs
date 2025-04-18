@@ -10,6 +10,7 @@ import Options.Applicative (
   auto,
   command,
   customExecParser,
+  flag',
   forwardOptions,
   fullDesc,
   header,
@@ -67,6 +68,7 @@ import Hix.Data.Options (
   GhciOptions (..),
   GhcidOptions (..),
   HackageCommand (..),
+  InfoCommand (..),
   InitOptions (..),
   LowerCommand (..),
   LowerOptions (LowerOptions),
@@ -102,6 +104,11 @@ import Hix.Optparse (
   outputTargetOption,
   relFileOption,
   )
+
+infoParser :: Parser Command
+infoParser = do
+  cmd <- flag' InfoVersion (long "version" <> short 'V' <> help "Print the app's version")
+  pure (Info cmd)
 
 nonOptionArgument :: IsString a => Mod ArgumentFields a -> Parser a
 nonOptionArgument = argument nonOption
@@ -470,7 +477,7 @@ appParser ::
   Path Abs Dir ->
   Parser Options
 appParser cwd =
-  Options <$> globalParser cwd <*> hsubparser commands
+  Options <$> globalParser cwd <*> (hsubparser commands <|> infoParser)
 
 parseCli ::
   IO Options

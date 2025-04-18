@@ -24,6 +24,10 @@ import Hix.Managed.Data.RevisionConfig (RevisionConfig)
 import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers)
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
 
+data InfoCommand =
+  InfoVersion
+  deriving stock (Eq, Show)
+
 data PreprocOptions =
   PreprocOptions {
     config :: Maybe (Either PreprocConfig JsonConfig),
@@ -236,6 +240,8 @@ data HackageCommand =
   deriving stock (Show)
 
 data Command =
+  Info InfoCommand
+  |
   Preproc PreprocOptions
   |
   EnvRunner EnvRunnerCommandOptions
