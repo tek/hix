@@ -20,7 +20,7 @@ import Hix.Options (parseCli)
 import Hix.Preproc (preprocess)
 
 hixVersion :: Text
-hixVersion = "0.8.0"
+hixVersion = "0.9.0"
 
 runCommand :: Command -> M ()
 runCommand = \case

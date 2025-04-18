@@ -36,7 +36,7 @@
 
     envs.lower-main.localPackage = api: api.minimal;
 
-    internal.hixCli.dev = true;
+    internal.hixCli.dev = false;
 
   });
 }

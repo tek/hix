@@ -268,7 +268,7 @@ in {
 
   internal.cabal-extra.default-extensions = ["StrictData"];
 
-  internal.hixCli.dev = true;
+  internal.hixCli.dev = false;
 
   outputs = let
 

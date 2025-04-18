@@ -66,7 +66,7 @@
     };
 
     # TODO remove
-    internal.hixCli.dev = true;
+    internal.hixCli.dev = false;
 
   };
 }

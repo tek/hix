@@ -20,22 +20,22 @@ You can convert an existing Cabal project by executing this command in the proje
 [FlakeHub](https://flakehub.com/docs) or GitHub:
 
 ```
-nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#bootstrap'
-nix run 'github:tek/hix?ref=0.8.0#bootstrap'
+nix run 'https://flakehub.com/f/tek/hix/~0.9.tar.gz#bootstrap'
+nix run 'github:tek/hix?ref=0.9.0#bootstrap'
 ```
 
 You can create a new project in the current or an arbitrary directory:
 
 ```
-nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#init' -- --author 'Your Name' --name project-name
-nix run 'https://flakehub.com/f/tek/hix/~0.8.tar.gz#new' -- --author 'Your Name' path/to/project-name
+nix run 'https://flakehub.com/f/tek/hix/~0.9.tar.gz#init' -- --author 'Your Name' --name project-name
+nix run 'https://flakehub.com/f/tek/hix/~0.9.tar.gz#new' -- --author 'Your Name' path/to/project-name
 ```
 
 The manual process consists of first adding Hix to your Haskell project flake by specifying the input:
 
 ```nix
 {
-  inputs.hix.url = "https://flakehub.com/f/tek/hix/~0.8.tar.gz";
+  inputs.hix.url = "https://flakehub.com/f/tek/hix/~0.9.tar.gz";
 }
 ```
 
@@ -44,7 +44,7 @@ Then configure your project with NixOS module options:
 ```nix
 {
   description = "Example";
-  inputs.hix.url = "https://flakehub.com/f/tek/hix/~0.8.tar.gz";
+  inputs.hix.url = "https://flakehub.com/f/tek/hix/~0.9.tar.gz";
   outputs = {hix, ...}: hix {
     packages.parser = {
       src = ./.;
