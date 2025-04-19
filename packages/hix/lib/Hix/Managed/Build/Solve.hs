@@ -1,6 +1,5 @@
 module Hix.Managed.Build.Solve where
 
-import Data.List (partition)
 import qualified Data.Set as Set
 import Distribution.PackageDescription (customFieldsPD)
 import Distribution.Pretty (pretty)
@@ -8,12 +7,14 @@ import Exon (exon)
 import Text.PrettyPrint (hang, ($$), (<+>))
 
 import Hix.Class.Map (nRestrictKeys)
+import Hix.Console (bold)
 import Hix.Data.Monad (M)
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (packageIdVersions)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Changes (SolverChanges (SolverChanges), SolverPlan (SolverPlan))
+import Hix.Managed.Cabal.Data.SolvedId (SolvedId (..), revisedId, unrevisedId)
 import qualified Hix.Managed.Cabal.Data.SolverState
 import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import qualified Hix.Managed.Data.EnvContext
@@ -26,7 +27,7 @@ import Hix.Pretty (prettyL, showPL)
 
 logNonReinstallable :: NonEmpty PackageId -> M ()
 logNonReinstallable ids =
-  Log.verbose [exon|NOTE: Cabal solver suggested new versions for non-reinstallable packages: #{showPL ids}|]
+  Log.verbose [exon|#{bold "Note"}: Cabal solver suggested new versions for non-reinstallable packages: #{showPL ids}|]
 
 -- | Forcing revisions means that any package that has a revision in the Hackage snapshot will be treated as an
 -- override, i.e. it will be built from Hackage despite having the same version as the one installed in nixpkgs.
@@ -43,16 +44,21 @@ logNonReinstallable ids =
 checkRevision ::
   Bool ->
   CabalHandlers ->
+  Set PackageId ->
   PackageId ->
-  Either PackageId PackageId
-checkRevision forceRevisions cabal package
+  Either SolvedId SolvedId
+checkRevision forceRevisions cabal prevRevisions package
+  | Set.member package prevRevisions
+  = Right revision
   | forceRevisions
   , Just packageDesc <- cabal.sourcePackage package
   , any isRevision packageDesc.customFieldsPD
-  = Right package
+  = Right revision
   | otherwise
-  = Left package
+  = Left (unrevisedId package)
   where
+    revision = revisedId package
+
     isRevision = \case
       ("x-revision", rev) | rev /= "0" -> True
       _ -> False
@@ -67,20 +73,22 @@ processSolverPlan ::
 processSolverPlan forceRevisions cabal deps prevRevisions SolverPlan {..} = do
   Log.debugP $
     hang "New project deps from solver:" 2 (pretty projectDeps) $$
-    "Forced revisions:" <+> prettyL forcedRevisions $$
-    "Reused revisions:" <+> prettyL reusedRevisions
+    "Revisions:" <+> prettyL revisions
   traverse_ logNonReinstallable nonReinstallable
   pure SolverChanges {versions, overrides}
   where
     projectDeps = nRestrictKeys mutablePIds versions
-    versions = packageIdVersions (overrides ++ installed)
-    overrides = changes ++ forcedRevisions ++ reusedRevisions
+
+    versions = packageIdVersions ((.package) <$> (overrides ++ installed))
+
+    overrides = (unrevisedId <$> changes) ++ revisions
+
     -- If a package has been selected for revision during a prior build, add it to the overrides despite its matching
     -- version.
     -- This simply ensures that the revision procedure can be skipped in this build, since the same version will likely
     -- cause the same dependency bounds error that triggered the revision.
-    (reusedRevisions, installed) = partition (flip Set.member prevRevisions) noForcedRevisions
-    (noForcedRevisions, forcedRevisions) = partitionEithers (checkRevision forceRevisions cabal <$> matching)
+    (installed, revisions) = partitionEithers (checkRevision forceRevisions cabal prevRevisions <$> matching)
+
     mutablePIds = Set.fromList (depName <$> Set.toList deps.mutable)
 
 -- TODO probably best to store the revisions in the SolverState

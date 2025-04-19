@@ -1,18 +1,18 @@
 module Hix.Test.Managed.Bump.MutationTest where
 
 import qualified Data.Text as Text
-import Distribution.Types.PackageDescription (customFieldsPD, emptyPackageDescription)
 import Exon (exon)
 import Test.Tasty (TestTree, testGroup)
 
 import Hix.Class.Map ((!!))
 import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Options (ProjectOptions (..))
-import Hix.Data.Version (Versions)
+import Hix.Data.Overrides (IsRevision (..), Override (..), Overrides)
+import Hix.Data.Version (SourceHash (..), Versions)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
-import Hix.Managed.Cabal.Data.SourcePackage (SourcePackageId (description), SourcePackages)
+import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
@@ -22,7 +22,7 @@ import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines, listEqTail)
 import qualified Hix.Test.Managed.Run
-import Hix.Test.Managed.Run (Result (Result), TestParams (..), bumpTest, nosortOptions, testParams)
+import Hix.Test.Managed.Run (Result (Result), TestParams (..), bumpTest, nosortOptions, testParams, withoutRevisions)
 import Hix.Test.Utils (UnitTest, unitTest)
 
 packages :: ProjectPackages
@@ -37,6 +37,7 @@ packages =
       "direct5",
       "direct6",
       "direct7",
+      "direct8",
       "local1",
       "local2 <0.9",
       "local3 <0.9",
@@ -60,6 +61,7 @@ installed =
     ("direct5-1.0.1", []),
     ("direct6-1.0.1", []),
     ("direct7-1.0.1", ["transitive1-1.0.1"]),
+    ("direct8-1.0.1", []),
     ("transitive1-1.0.1", ["direct6-1.0.1"])
   ]
 
@@ -103,10 +105,11 @@ available =
     ("direct7", [
       ([1, 0, 1], ["transitive1 <1.1"])
     ]),
+    ("direct8", [
+      ([1, 0, 1], [])
+    ]),
     ("transitive1", [
-      ([1, 0, 1], ["direct6 <1.2"] {
-        description = Just (emptyPackageDescription {customFieldsPD = [("x-revision", "2")]})
-      })
+      ([1, 0, 1], ["direct6 <1.2"])
     ]),
     ("local2", [
       ([0, 8, 0], []),
@@ -126,14 +129,14 @@ available =
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed, available}
 
-build :: Versions -> M BuildStatus
+build :: Versions -> M (BuildStatus, Overrides)
 build = \case
   versions
     | Just [0, 9, 0] <- versions !! "local2"
-    -> pure Failure
+    -> failure
   versions
     | Just [0, 9, 0] <- versions !! "local3"
-    -> pure Failure
+    -> failure
   [
     ("base", [4, 12, 0, 0]),
     ("direct1", [1, 2, 1]),
@@ -143,12 +146,20 @@ build = \case
     ("direct5", [1, 1, 1]),
     ("direct6", [1, 0, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Success
+    ] -> pure (Success, [
+      ("direct8", Override {
+        version = [1, 0, 1],
+        hash = SourceHash "direct8-1.0.1",
+        repo = Nothing,
+        revision = Just IsRevision
+      })
+    ])
 
   [
     ("base", [4, 12, 0, 0]),
@@ -159,12 +170,13 @@ build = \case
     ("direct5", [1, 1, 1]),
     ("direct6", [1, 0, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Failure
+    ] -> failure
 
   [
     ("base", [4, 12, 0, 0]),
@@ -175,12 +187,13 @@ build = \case
     ("direct5", [1, 1, 1]),
     ("direct6", [1, 0, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Success
+    ] -> success
 
   [
     ("base", [4, 12, 0, 0]),
@@ -191,12 +204,13 @@ build = \case
     ("direct5", [1, 2, 1]),
     ("direct6", [1, 0, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Success
+    ] -> success
 
   [
     ("base", [4, 12, 0, 0]),
@@ -207,12 +221,13 @@ build = \case
     ("direct5", [1, 2, 1]),
     ("direct6", [1, 1, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Success
+    ] -> success
 
   [
     ("base", [4, 12, 0, 0]),
@@ -223,12 +238,13 @@ build = \case
     ("direct5", [1, 2, 1]),
     ("direct6", [1, 1, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 8, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Success
+    ] -> success
 
   [
     ("base", [4, 12, 0, 0]),
@@ -239,12 +255,13 @@ build = \case
     ("direct5", [1, 2, 1]),
     ("direct6", [1, 1, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 10, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Success
+    ] -> success
 
 --   -- second iteration
   [
@@ -256,14 +273,19 @@ build = \case
     ("direct5", [1, 2, 1]),
     ("direct6", [1, 1, 1]),
     ("direct7", [1, 0, 1]),
+    ("direct8", [1, 0, 1]),
     ("local2", [0, 8, 0]),
     ("local3", [0, 8, 0]),
     ("local4", [0, 10, 0]),
     ("local5", [1, 0]),
     ("transitive1", [1, 0, 1])
-    ] -> pure Failure
+    ] -> failure
 
   versions -> throwM (Fatal [exon|Unexpected build plan: #{showP versions}|])
+  where
+    success = pure (Success, mempty)
+
+    failure = pure (Failure, mempty)
 
 state :: ProjectStateProto
 state =
@@ -322,6 +344,10 @@ stateFileTarget =
         lower = null;
         upper = "1.1";
       };
+      direct8 = {
+        lower = null;
+        upper = "1.1";
+      };
       local1 = {
         lower = null;
         upper = null;
@@ -358,6 +384,7 @@ stateFileTarget =
       direct5 = "1.2.1";
       direct6 = "1.1.1";
       direct7 = "1.0.1";
+      direct8 = "1.0.1";
       local2 = "0.8.0";
       local3 = "0.8.0";
       local4 = "0.10.0";
@@ -394,6 +421,11 @@ stateFileTarget =
       direct7 = {
         version = "1.0.1";
         hash = "direct7-1.0.1";
+      };
+      direct8 = {
+        version = "1.0.1";
+        hash = "direct8-1.0.1";
+        revision = true;
       };
       local2 = {
         version = "0.8.0";
@@ -440,6 +472,7 @@ logTarget =
     📦 [34mdirect5[0m   1.2.1      ↕ [no bounds] -> <[32m1.3[0m
     📦 [34mdirect6[0m   1.1.1      ↕ <[31m1.1[0m -> <[32m1.2[0m
     📦 [34mdirect7[0m   1.0.1      ↕ [no bounds] -> <[32m1.1[0m
+    📦 [34mdirect8[0m   1.0.1      ↕ [no bounds] -> <[32m1.1[0m
     📦 [34mlocal2[0m    0.8.0      ↕ <0.9
     📦 [34mlocal3[0m    0.8.0      ↕ <0.9
     📦 [34mlocal4[0m    0.10.0     ↕ <[31m0.9[0m -> <[32m0.11[0m
@@ -479,6 +512,21 @@ logTarget =
 -- - @direct5@ has an existing override for version 1.1.1, which will be replaced by the successful candidate 1.2.1.
 --   It has a dependency on @direct4@ with an upper bound of <1.2, which would prevent it from being selected by the
 --   solver if we didn't use @AllowNewer@.
+--
+-- - @direct6@ is a direct dependency of the project, and a direct dependency of @transitive1@.
+--   @transitive1@ is a direct dependency of @direct7@, and therefore @direct6@ is a transitive dependency of both
+--   @direct7@ and the project.
+--   While @direct7@ and @transitive1@ both have their latest versions installed, the installed version of @transitive1@
+--   has a dependency on @direct6-1.0.1@ (since installed versions don't have range deps, and need the precise package
+--   ID of dependencies with which they were installed).
+--   When @direct6@ is then bumped regularly to the latest version, both @transitive1@ and @direct7@ are overridden as
+--   well by the solver.
+--
+-- - The installed version of @direct8@ is simulated to have incompatible bounds, which is indicated by the fact that
+--   'build' returns a revision override for it in the first build.
+--   In later builds, the solver configures an override for @direct8@ initially, since revisions are persisted across
+--   mutations in @SolverState@.
+--   In the final state file, the override for @direct8@ includes the flag @revision = true@.
 --
 -- - @local2@ is in a different env, so it will be treated as a mutable dependency despite being a local package.
 --   It also has no installed version, since it wasn't available on Hackage (yet) at the time of the nixpkgs snapshot
@@ -598,7 +646,7 @@ test_bumpMutationUpToDate = do
     params = (testParams False packages_upToDate) {
       ghcPackages = ghcPackages_upToDate,
       state = state_upToDate,
-      build = build_upToDate
+      build = withoutRevisions build_upToDate
     }
 
 test_bumpMutation :: TestTree

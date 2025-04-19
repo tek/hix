@@ -5,6 +5,7 @@ import Data.Map.Strict ((!?))
 
 import Hix.Data.Monad (M)
 import Hix.Data.NixExpr (Expr)
+import Hix.Data.Overrides (Overrides)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (PackageName)
@@ -28,7 +29,7 @@ import qualified Hix.Managed.Handlers.StateFile.Test as StateFile
 handlersUnitTest ::
   MonadIO m =>
   GhcPackages ->
-  (Versions -> M BuildResult) ->
+  (Versions -> M (BuildResult, Overrides)) ->
   m (BuildHandlers, IORef [Expr], IORef [FailedMutation])
 handlersUnitTest ghcPackages builder = do
   (stateFile, stateFileRef) <- StateFile.handlersUnitTest

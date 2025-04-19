@@ -19,6 +19,7 @@ import Hix.Managed.Build.Adapt (
   )
 import Hix.Managed.Build.NixOutput.Analysis (FailureReason (..))
 import Hix.Managed.Build.NixProcess (nixBuild)
+import Hix.Managed.Cabal.Data.SolvedId (SolvedId)
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.StageState (BuildResult (..), buildUnsuccessful)
 import Hix.Managed.Data.Targets (Targets, firstMTargets)
@@ -132,7 +133,7 @@ buildTargets ::
   EnvBuilderResources ->
   Bool ->
   Versions ->
-  [PackageId] ->
+  [SolvedId] ->
   M (BuildResult, Overrides)
 buildTargets builder allowRevisions _ overrideVersions = do
   overrides <- packageOverrides builder.global.hackage builder.localUnavailable overrideVersions

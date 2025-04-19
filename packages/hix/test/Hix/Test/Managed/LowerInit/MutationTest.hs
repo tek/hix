@@ -6,6 +6,7 @@ import Exon (exon)
 import Hix.Class.Map ((!!))
 import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Options (ProjectOptions (..))
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Changes (SolverPlan (SolverPlan))
@@ -23,7 +24,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines, listEqTail, listEqZip)
-import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, nosortOptions, testParams)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, nosortOptions, testParams, withoutRevisions)
 import Hix.Test.Utils (UnitTest)
 
 packages :: ProjectPackages
@@ -119,8 +120,8 @@ state =
     resolving = False
   }
 
-build :: Versions -> M BuildStatus
-build = \case
+build :: Versions -> M (BuildStatus, Overrides)
+build = withoutRevisions \case
   versions
     | Just [1, 0, n] <- versions !! "direct1"
     , n /= 5

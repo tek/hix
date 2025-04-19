@@ -99,6 +99,7 @@ library
       Hix.Managed.Cabal.Data.InstalledOverrides
       Hix.Managed.Cabal.Data.Packages
       Hix.Managed.Cabal.Data.Revision
+      Hix.Managed.Cabal.Data.SolvedId
       Hix.Managed.Cabal.Data.SolveResources
       Hix.Managed.Cabal.Data.SolverState
       Hix.Managed.Cabal.Data.SolveTarget

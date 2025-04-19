@@ -16,11 +16,12 @@ import Hix.Http (httpManager)
 import Hix.Managed.Build.SolverPackages (solverGhc)
 import Hix.Managed.Build.Target (BuilderResources (..), EnvBuilderResources (..), buildTargets)
 import qualified Hix.Managed.Cabal.Data.Config as CabalConfig
-import Hix.Managed.Cabal.Data.Config (CabalConfig (..), HackagePurpose (ForVersions), allHackages)
+import Hix.Managed.Cabal.Data.Config (CabalConfig (..), GhcDb, HackagePurpose (ForVersions), allHackages)
 import Hix.Managed.Cabal.Data.InstalledOverrides (InstalledOverrides (..))
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.EnvContext (EnvContext (..))
 import Hix.Managed.Data.EnvState (EnvState (..))
+import qualified Hix.Managed.Data.Initial as Initial
 import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import Hix.Managed.Handlers.AvailableVersions (AvailableVersionsHandlers)
@@ -53,8 +54,8 @@ withTempProject use = do
         use tmpRoot
     \ (err :: IOError) -> throwM (Fatal (show err))
 
-storeSolverOverrides :: Overrides -> Initial EnvState -> EnvState
-storeSolverOverrides new (Initial EnvState {..}) =
+storeSolverOverrides :: Overrides -> EnvState -> EnvState
+storeSolverOverrides new EnvState {..} =
   EnvState {solver = new, ..}
 
 -- | Determine the set of package IDs that should not be treated as installed in the solver package set when Cabal
@@ -84,18 +85,28 @@ installedOverrides EnvState {solver} =
     Jailbreak -> Nothing
     Local -> Nothing
 
+withSolverOverrides ::
+  GhcDb ->
+  EnvState ->
+  BuilderResources ->
+  EnvBuilderContext ->
+  (EnvBuilder -> Initial EnvState -> M a) ->
+  M a
+withSolverOverrides ghc state global EnvBuilderContext {initCabal, env = EnvContext {env, targets}} use = do
+  (cabal, localUnavailable) <- initCabal.run (installedOverrides state) ghc
+  use EnvBuilder {buildTargets = buildTargets EnvBuilderResources {..}, ..} (Initial state)
+
 withEnvBuilder ::
   ∀ a .
   BuilderResources ->
   EnvBuilderContext ->
   (EnvBuilder -> Initial EnvState -> M a) ->
   M a
-withEnvBuilder global EnvBuilderContext {initCabal, env = EnvContext {env, targets, ghc}, initialState} use = do
-  (resolvedGhc, solverOverrides) <- solverGhc global env ((.solver) <$> initialState) ghc
-  let state = maybe (.value) storeSolverOverrides solverOverrides initialState
-  (cabal, localUnavailable) <- initCabal.run (installedOverrides state) resolvedGhc
+withEnvBuilder global context@EnvBuilderContext {env = EnvContext {env, ghc}, initialState} use = do
   writeInitialEnvState global.stateFile global.root env initialState
-  use EnvBuilder {buildTargets = buildTargets EnvBuilderResources {..}, ..} (Initial state)
+  (resolvedGhc, solverOverrides) <- solverGhc global env ((.solver) <$> initialState) ghc
+  let state = maybe id storeSolverOverrides solverOverrides (Initial.initial initialState)
+  withSolverOverrides resolvedGhc state global context use
 
 withBuilder ::
   SourceHashHandlers ->

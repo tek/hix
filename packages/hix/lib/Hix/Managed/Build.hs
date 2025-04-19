@@ -22,6 +22,7 @@ import qualified Hix.Log as Log
 import Hix.Managed.Build.Solve (solveMutation)
 import qualified Hix.Managed.Cabal.Changes
 import Hix.Managed.Cabal.Config (isNonReinstallableDep, isReinstallableId)
+import Hix.Managed.Cabal.Data.SolvedId (SolvedId (..))
 import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
@@ -62,7 +63,7 @@ import Hix.Pretty (prettyL, showP, showPL)
 logBuildInputs ::
   EnvName ->
   Text ->
-  [PackageId] ->
+  [SolvedId] ->
   M ()
 logBuildInputs env description overrides = do
   Log.info [exon|Building targets in #{Color.env env} with #{Color.package description}...|]
@@ -108,7 +109,7 @@ buildVersions ::
   Text ->
   Bool ->
   Versions ->
-  [PackageId] ->
+  [SolvedId] ->
   M (Overrides, BuildStatus)
 buildVersions builder context description allowRevisions versions overrideVersions = do
   logBuildInputs context.env description reinstallable
@@ -116,7 +117,7 @@ buildVersions builder context description allowRevisions versions overrideVersio
   logBuildResult description result
   pure (overrides, buildStatus result)
   where
-    reinstallable = filter isReinstallableId overrideVersions
+    reinstallable = filter (isReinstallableId . (.package)) overrideVersions
 
 buildConstraints ::
   EnvBuilder ->

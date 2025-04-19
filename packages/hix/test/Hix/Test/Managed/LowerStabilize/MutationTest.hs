@@ -3,6 +3,7 @@ module Hix.Test.Managed.LowerStabilize.MutationTest where
 import Exon (exon)
 
 import Hix.Data.Error (ErrorMessage (Fatal))
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
@@ -16,7 +17,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams, withoutRevisions)
 import Hix.Test.Utils (UnitTest)
 
 available :: SourcePackages
@@ -72,8 +73,8 @@ state =
     resolving = False
   }
 
-build :: Versions -> M BuildStatus
-build = \case
+build :: Versions -> M (BuildStatus, Overrides)
+build = withoutRevisions \case
   [("direct1", [2, 0, 1]), ("direct2", [2, 0, 1])] -> pure Success
   [("direct1", [1, 8, 1]), ("direct2", [1, 8, 1])] -> pure Failure
   [("direct1", [1, 8, 1]), ("direct2", [2, 0, 1])] -> pure Failure
