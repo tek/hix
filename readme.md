@@ -21,7 +21,7 @@ You can convert an existing Cabal project by executing this command in the proje
 
 ```
 nix run 'https://flakehub.com/f/tek/hix/~0.9.tar.gz#bootstrap'
-nix run 'github:tek/hix?ref=0.9.0#bootstrap'
+nix run 'github:tek/hix?ref=0.9.1#bootstrap'
 ```
 
 You can create a new project in the current or an arbitrary directory:
