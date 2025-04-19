@@ -98,7 +98,7 @@ stabilizeStage ::
   BuildConfig ->
   Flow ()
 stabilizeStage handlers conf =
-  runStage_ "stabilize"  (lowerStabilize handlers conf)
+  runStage_ "stabilize" (lowerStabilize handlers conf)
 
 stabilizeIfPossible ::
   BuildHandlers ->

@@ -15,6 +15,7 @@ import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.StageState (BuildResult (..))
 import Hix.Monad (appContext, eitherFatal)
 import Hix.Pretty (showP)
+import Hix.Class.Map (nNull)
 
 badOutput :: Text -> Text
 badOutput output = [exon|The output of building the solver package set is not a single valid store path: #{output}|]
@@ -49,9 +50,12 @@ nixSolverGhc resources env (Initial storedOverrides) =
     leftA cleanBuild =<< previousBuild
   where
     cleanBuild err = do
-      Log.verbose "Build with previous solver overrides failed"
+      Log.info
+        if nNull storedOverrides
+        then "Vanilla package set doesn't build. Computing overrides..."
+        else "Build with previous solver overrides failed. Recomputing overrides..."
       Log.debug err
-      appContext "computing the overrides for the solver package set" do
+      appContext "computing new overrides for the solver package set" do
         solverResult =<< runStateT (build (suggestJailbreakAndLatestVersion resources)) (mempty, mempty)
 
     previousBuild = do

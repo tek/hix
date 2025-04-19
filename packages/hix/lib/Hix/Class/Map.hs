@@ -792,3 +792,10 @@ nMember ::
   Bool
 nMember k =
   Map.member k . nGet
+
+nNull ::
+  NMap map k v sort =>
+  map ->
+  Bool
+nNull =
+  null . nGet
