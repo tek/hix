@@ -207,6 +207,8 @@
     then
       abort 'CLI release failed.'
     fi
+    # `.#release-source` only adds the cabal config of the uploaded package, not `integration`
+    ${git} add packages/*/*.cabal
   fi
   ${checkDevCliTests}
   ${commitAndTag}
