@@ -295,7 +295,7 @@ appContextT ::
   t M a ->
   t M a
 appContextT =
-  appContextAtT LogVerbose LogInfo
+  appContextAtT LogVerbose LogError
 
 appContextAt :: LogLevel -> LogLevel -> Text -> M a -> M a
 appContextAt logLevel level description ma =
@@ -303,7 +303,7 @@ appContextAt logLevel level description ma =
     appContextAtT logLevel level description (IdentityT ma)
 
 appContext :: Text -> M a -> M a
-appContext = appContextAt LogVerbose LogInfo
+appContext = appContextAt LogVerbose LogError
 
 appContextVerbose :: Text -> M a -> M a
 appContextVerbose desc ma = do
