@@ -13,6 +13,7 @@ import qualified Hix.Managed.Cabal.Resources as SolveResources
 import Hix.Managed.Cabal.Solve (solveWithCabal')
 import Hix.Managed.Cabal.Sort (sortDeps)
 import Hix.Managed.Data.EnvContext (EnvDeps (EnvDeps))
+import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.Mutable (unsafeMutableDep)
 import Hix.Pretty (prettyL, showP, showPL)
 import Hix.Test.Run (logConfigDebug, runMTestDir)
@@ -40,7 +41,7 @@ test_solve =
         putStrLn "Sorted:"
         putStrLn (showPL sorted)
   where
-    state = solverState [] (EnvDeps (Set.fromList (unsafeMutableDep <$> nKeys constraints))) constraints def
+    Initial state = solverState [] (EnvDeps (Set.fromList (unsafeMutableDep <$> nKeys constraints))) constraints def
     constraints =
       [
         ("ansi-terminal", mempty),

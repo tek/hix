@@ -1,12 +1,11 @@
 module Hix.Managed.Lower.Data.LowerMode where
 
-import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import Hix.Managed.Data.Mutation (MutationResult (MutationFailed, MutationKeep))
 
 data LowerMode =
   LowerMode {
     firstSuccess :: Bool,
-    noSuccess :: MutationResult SolverState
+    noSuccess :: MutationResult
   }
   deriving stock (Eq, Show, Generic)
 

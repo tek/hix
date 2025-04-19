@@ -8,6 +8,7 @@ import Hix.Managed.Cabal.Data.SolverState (solverState)
 import Hix.Managed.Constraints (fromVersions)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext)
+import Hix.Managed.Data.Initial (initial)
 import Hix.Managed.Data.Mutable (MutableVersions)
 import Hix.Managed.Data.StageState (BuildStatus (Failure))
 import Hix.Managed.Handlers.Build (EnvBuilder)
@@ -22,7 +23,7 @@ buildVersions ::
   Maybe Overrides ->
   M BuildStatus
 buildVersions builder context description versions prevOverrides =
-  buildConstraints builder context description False (fold prevOverrides) solver <&> \case
+  buildConstraints builder context description False (fold prevOverrides) (initial solver) <&> \case
     Just (_, _, status) -> status
     Nothing -> Failure
   where

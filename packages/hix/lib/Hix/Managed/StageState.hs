@@ -2,22 +2,23 @@ module Hix.Managed.StageState where
 
 import qualified Data.Map.Strict as Map
 
+import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import qualified Hix.Managed.Data.MutableId
 import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (DepMutation, MutationResult (..))
 import Hix.Managed.Data.StageState (BuildSuccess (CandidateBuilt, Unmodified), StageState (..))
 
 updateStageState ::
-  StageState a s ->
+  StageState a SolverState ->
   DepMutation a ->
-  MutationResult s ->
-  StageState a s
+  MutationResult ->
+  StageState a SolverState
 updateStageState old mutation = \case
   MutationSuccess {..} ->
     old {
       success = Map.insert candidate.name buildSuccess old.success,
       state,
-      ext
+      ext = solverState
     }
     where
       buildSuccess | changed = CandidateBuilt candidate

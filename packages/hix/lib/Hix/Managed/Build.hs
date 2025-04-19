@@ -27,6 +27,7 @@ import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvContext)
+import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.Mutable (MutableDep, addBuildVersions)
 import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (BuildMutation (BuildMutation), DepMutation, MutationResult (..))
@@ -152,7 +153,7 @@ buildMutation builder context state BuildMutation {description, solverState, upd
 
 logMutationResult ::
   MutableDep ->
-  MutationResult s ->
+  MutationResult ->
   M ()
 logMutationResult package = \case
   MutationSuccess {candidate, changed = True} ->
@@ -167,10 +168,10 @@ logMutationResult package = \case
 validateMutation ::
   EnvBuilder ->
   EnvContext ->
-  MutationHandlers a s ->
-  StageState a s ->
+  MutationHandlers a ->
+  StageState a SolverState ->
   DepMutation a ->
-  M (StageState a s)
+  M (StageState a SolverState)
 validateMutation envBuilder context handlers stageState mutation = do
   result <- processReinstallable
   logMutationResult mutation.package result
@@ -179,19 +180,19 @@ validateMutation envBuilder context handlers stageState mutation = do
     processReinstallable =
       if isNonReinstallableDep mutation.package
       then pure MutationKeep
-      else handlers.process stageState.ext mutation build
+      else handlers.process (Initial stageState.ext) mutation build
 
     build = buildMutation envBuilder context stageState.state
 
 convergeMutations ::
   Pretty a =>
-  MutationHandlers a s ->
+  MutationHandlers a ->
   BuildConfig ->
   EnvBuilder ->
   EnvContext ->
-  StageState a s ->
+  StageState a SolverState ->
   [DepMutation a] ->
-  M (StageState a s)
+  M (StageState a SolverState)
 convergeMutations handlers conf builder context state0 =
   spin state0 {iterations = 0}
   where
@@ -235,16 +236,16 @@ reinstallableCandidates candidates (Query query) =
 processQuery ::
   Pretty a =>
   (QueryDep -> M (Maybe (DepMutation a))) ->
-  MutationHandlers a s ->
+  MutationHandlers a ->
   BuildConfig ->
   StageContext ->
-  s ->
-  M (StageState a s)
-processQuery candidates handlers conf StageContext {env, builder, state, query = query} ext = do
+  Initial SolverState ->
+  M (StageState a SolverState)
+processQuery candidates handlers conf StageContext {env, builder, state, query = query} solverState = do
   mutations <- postprocess =<< reinstallableCandidates candidates query
   convergeMutations handlers conf builder env stageState mutations
   where
     postprocess | conf.toposortMutations = sortMutations
                 | otherwise = pure
-    stageState = initStageState state ext
+    stageState = initStageState state solverState
     CabalHandlers {sortMutations} = builder.cabal

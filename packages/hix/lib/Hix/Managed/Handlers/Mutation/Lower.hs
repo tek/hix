@@ -16,6 +16,7 @@ import Hix.Managed.Cabal.Data.SolverState (SolverState)
 import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import Hix.Managed.Data.Constraints (MutationConstraints)
+import Hix.Managed.Data.Initial (Initial, initial)
 import qualified Hix.Managed.Data.Lower
 import Hix.Managed.Data.Lower (Lower (Lower))
 import Hix.Managed.Data.MutableId (MutableId)
@@ -36,14 +37,14 @@ processMutationLower ::
   BuildConfig ->
   LowerMode ->
   (Bool -> MutableId -> PackageId -> MutationConstraints -> MutationConstraints) ->
-  SolverState ->
+  Initial SolverState ->
   DepMutation Lower ->
   (BuildMutation -> M (Maybe MutationState)) ->
-  M (MutationResult SolverState)
-processMutationLower conf mode update solver DepMutation {package, retract, mutation = Lower {majors}} build = do
+  M MutationResult
+processMutationLower conf mode update solverInit DepMutation {package, retract, mutation = Lower {majors}} build = do
   foldM buildMajor (Right 0, Nothing) majors <&> \case
-    (_, Just (candidate, ext, state)) ->
-      MutationSuccess {candidate, changed = True, state, ext}
+    (_, Just (candidate, solverResult, state)) ->
+      MutationSuccess {candidate, changed = True, state, solverState = solverResult}
     (_, Nothing) ->
       mode.noSuccess
   where
@@ -72,12 +73,12 @@ processMutationLower conf mode update solver DepMutation {package, retract, muta
           Just result -> (Left 0, Just result)
           Nothing -> (bimap (+ 1) (+ 1) failed, prev)
 
-    builder = buildCandidate build withLower (update retract) solver package
+    builder = buildCandidate build withLower (update retract) (initial solverInit) package
 
 handlersLower ::
   BuildConfig ->
   LowerMode ->
   (Bool -> MutableId -> PackageId -> MutationConstraints -> MutationConstraints) ->
-  MutationHandlers Lower SolverState
+  MutationHandlers Lower
 handlersLower conf mode updatePackageParams =
   MutationHandlers {process = processMutationLower conf mode updatePackageParams}

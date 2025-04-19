@@ -17,6 +17,7 @@ import Hix.Managed.Constraints (explicitBounds, noBounds)
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.EnvContext (EnvDeps)
+import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.Mutable (MutableDep, depName)
 
 data SolverFlags =
@@ -64,9 +65,9 @@ solverState ::
   EnvDeps ->
   EnvConstraints ->
   SolverFlags ->
-  SolverState
+  Initial SolverState
 solverState user deps modeConstraints flags =
-  UnsafeSolverState constraints flags
+  Initial (UnsafeSolverState constraints flags)
   where
     constraints =
       modeConstraints <>

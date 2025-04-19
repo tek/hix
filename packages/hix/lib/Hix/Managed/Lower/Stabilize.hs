@@ -16,7 +16,7 @@ import Hix.Managed.Data.BuildConfig (BuildConfig)
 import qualified Hix.Managed.Data.Constraints
 import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints))
 import qualified Hix.Managed.Data.EnvContext
-import Hix.Managed.Data.Initial (Initial (Initial))
+import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.Mutable (MutableDep, depName)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId)
@@ -111,8 +111,8 @@ stabilizeIfPossible handlers conf =
 
 validateCurrent :: Flow BuildStatus
 validateCurrent =
-  execStatelessStage "stabilize-current" \
-    StageContext {env, state = Initial MutationState {versions, overrides}, builder} ->
+  execStatelessStage "stabilize-current"
+    \ StageContext {env, state = Initial MutationState {versions, overrides}, builder} ->
       buildVersions builder env "current lower bounds" versions (Just overrides) <&> \case
         Success -> StageNoAction (Just "Env builds successfully with the current bounds.")
         Failure -> StageFailure (FailedPrecondition ["Env does not build successfully with the current bounds."])
