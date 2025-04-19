@@ -203,7 +203,7 @@
   then
     message 'Dry run, skipping CLI release.'
   else
-    if ! nix run .#release -- -v $version
+    if ! nix run .#release-source -- -v $version
     then
       abort 'CLI release failed.'
     fi
