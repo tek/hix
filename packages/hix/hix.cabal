@@ -5,7 +5,7 @@ cabal-version: 3.0
 -- see: https://github.com/sol/hpack
 
 name:           hix
-version:        0.8.0
+version:        0.9.0
 synopsis:       Haskell/Nix development build tools
 description:    See https://hackage.haskell.org/package/hix/docs/Hix.html
 category:       Build
@@ -394,7 +394,7 @@ library testing
     , generic-lens ==2.2.*
     , generics-sop ==0.5.*
     , hedgehog >=1.1 && <1.5
-    , hix:hix ==0.8.0
+    , hix:hix ==0.9.0
     , http-client ==0.7.*
     , http-client-tls ==0.3.*
     , http-types ==0.12.*
@@ -556,7 +556,7 @@ test-suite hix-test
     , extra ==1.7.*
     , hedgehog >=1.1 && <1.5
     , hix
-    , hix:testing ==0.8.0
+    , hix:testing ==0.9.0
     , incipit-base >=0.5 && <0.7
     , path ==0.9.*
     , path-io >=1.7 && <1.9
