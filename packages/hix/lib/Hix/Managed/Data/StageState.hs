@@ -5,7 +5,7 @@ import Text.PrettyPrint (brackets, hang, vcat, (<+>))
 
 import Hix.Data.Error (Error)
 import Hix.Data.PackageId (PackageId)
-import Hix.Managed.Data.Initial (Initial (Initial))
+import Hix.Managed.Data.Initial (Initial (..))
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))
@@ -99,6 +99,6 @@ data StageState a s =
   }
   deriving stock (Eq, Show)
 
-initStageState :: Initial MutationState -> s -> StageState a s
-initStageState (Initial state) ext =
-  StageState {success = [], failed = [], iterations = 0, ..}
+initStageState :: Initial MutationState -> Initial s -> StageState a s
+initStageState (Initial state) (Initial ext) =
+  StageState {success = [], failed = [], iterations = 0, state, ..}

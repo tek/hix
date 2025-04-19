@@ -13,7 +13,7 @@ import Hix.Managed.Cabal.Data.InstalledOverrides (InstalledOverrides)
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import Hix.Managed.Data.EnvContext (EnvContext (..))
 import Hix.Managed.Data.EnvState (EnvState)
-import Hix.Managed.Data.Initial (Initial (..))
+import Hix.Managed.Data.Initial (Initial, initial)
 import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import Hix.Managed.Data.StageState (BuildFailure (UnknownFailure), BuildResult (BuildFailure))
 import qualified Hix.Managed.Handlers.AvailableVersions as AvailableVersions
@@ -66,10 +66,10 @@ testBuilder ::
   M a
 testBuilder buildTargets use =
   use Builder {
-    withEnvBuilder = \ EnvBuilderContext {initCabal, env = EnvContext {ghc}, initialState = Initial state} useE -> do
+    withEnvBuilder = \ EnvBuilderContext {initCabal, env = EnvContext {ghc}, initialState} useE -> do
       ghcDb <- noteClient "Test builder needs an explicit GHC DB" ghc
       (cabal, _) <- initCabal.run mempty ghcDb
-      useE EnvBuilder {..} (Initial state)
+      useE EnvBuilder {state = initial initialState, ..} initialState
   }
 
 versionsBuilder :: SourceHashHandlers -> (Versions -> M BuildResult) -> (Builder -> M a) -> M a

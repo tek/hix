@@ -12,3 +12,6 @@ newtype Initial a =
 
 instance Pretty a => Pretty (Initial a) where
   pretty (Initial a) = pretty a
+
+initial :: Initial a -> a
+initial = coerce

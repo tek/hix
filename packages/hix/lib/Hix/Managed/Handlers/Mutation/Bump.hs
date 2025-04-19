@@ -12,6 +12,7 @@ import qualified Hix.Managed.Data.Bump
 import Hix.Managed.Data.Bump (Bump (Bump))
 import qualified Hix.Managed.Data.Constraints
 import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints))
+import Hix.Managed.Data.Initial (Initial, initial)
 import Hix.Managed.Data.MutableId (MutableId)
 import qualified Hix.Managed.Data.Mutation
 import Hix.Managed.Data.Mutation (
@@ -33,18 +34,18 @@ updateBound = VersionBounds.withUpper . nextMajor
 
 -- TODO Avoid building unchanged candidates after the first build of the same set of deps.
 processMutationBump ::
-  SolverState ->
+  Initial SolverState ->
   DepMutation Bump ->
   (BuildMutation -> M (Maybe MutationState)) ->
-  M (MutationResult SolverState)
-processMutationBump solver DepMutation {package, mutation = Bump {version, changed}} build =
+  M MutationResult
+processMutationBump solverState DepMutation {package, mutation = Bump {version, changed}} build =
   builder version <&> \case
-    Just (candidate, ext, state) ->
-      MutationSuccess {candidate, changed, state, ext}
+    Just (candidate, solverResult, state) ->
+      MutationSuccess {candidate, changed, state, solverState = solverResult}
     Nothing ->
       MutationFailed
   where
-    builder = buildCandidate build updateBound updateConstraintsBump solver package
+    builder = buildCandidate build updateBound updateConstraintsBump (initial solverState) package
 
-handlersBump :: MutationHandlers Bump SolverState
+handlersBump :: MutationHandlers Bump
 handlersBump = MutationHandlers {process = processMutationBump}
