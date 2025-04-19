@@ -9,6 +9,7 @@ import Hix.Data.PackageName (LocalPackage, isLocalPackage)
 import qualified Hix.Managed.Handlers.SourceHash
 import Hix.Managed.Handlers.SourceHash (SourceHashHandlers)
 import Hix.Monad (fatalError)
+import Hix.Managed.Cabal.Data.SolvedId (SolvedId (..))
 
 -- | Fetch an override's hash from the given sources, which is the set of configured Hackages in production.
 -- If the package wasn't found anywhere, and it is part of the local build, assume that it hasn't been published yet and
@@ -44,9 +45,9 @@ packageRevision =
 packageOverrides ::
   SourceHashHandlers ->
   Set LocalPackage ->
-  [PackageId] ->
+  [SolvedId] ->
   M Overrides
 packageOverrides handlers localUnavailable versions =
-  nForAssoc versions \ package -> do
-    o <- packageOverrideRegular handlers localUnavailable package
+  nForAssoc versions \ SolvedId {..} -> do
+    o <- packageOverride revision handlers localUnavailable package
     pure (package.name, o)

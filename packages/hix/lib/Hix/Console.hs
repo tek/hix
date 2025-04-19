@@ -49,6 +49,9 @@ color :: Int -> Text -> Text
 color n =
   sgis [show (30 + n)]
 
+bold :: Text -> Text
+bold = sgis ["1"]
+
 data ColorOffsets =
   ColorOffsets {
     black :: Int,

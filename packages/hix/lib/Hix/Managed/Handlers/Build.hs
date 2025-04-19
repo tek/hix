@@ -4,12 +4,12 @@ import Data.IORef (IORef, newIORef)
 
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
-import Hix.Data.PackageId (PackageId)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Cabal.Changes (SolverPlan)
 import Hix.Managed.Cabal.Data.Config (GhcDb (..))
 import Hix.Managed.Cabal.Data.InstalledOverrides (InstalledOverrides)
+import Hix.Managed.Cabal.Data.SolvedId (SolvedId)
 import Hix.Managed.Data.Constraints (EnvConstraints)
 import Hix.Managed.Data.EnvContext (EnvContext (..))
 import Hix.Managed.Data.EnvState (EnvState)
@@ -41,7 +41,7 @@ data EnvBuilder =
   EnvBuilder {
     state :: EnvState,
     cabal :: CabalHandlers,
-    buildTargets :: Bool -> Versions -> [PackageId] -> M (BuildResult, Overrides)
+    buildTargets :: Bool -> Versions -> [SolvedId] -> M (BuildResult, Overrides)
   }
 
 data Builder =
@@ -61,7 +61,7 @@ data BuildHandlers =
   }
 
 testBuilder ::
-  (Bool -> Versions -> [PackageId] -> M (BuildResult, Overrides)) ->
+  (Bool -> Versions -> [SolvedId] -> M (BuildResult, Overrides)) ->
   (Builder -> M a) ->
   M a
 testBuilder buildTargets use =
@@ -72,12 +72,12 @@ testBuilder buildTargets use =
       useE EnvBuilder {state = initial initialState, ..} initialState
   }
 
-versionsBuilder :: SourceHashHandlers -> (Versions -> M BuildResult) -> (Builder -> M a) -> M a
+versionsBuilder :: SourceHashHandlers -> (Versions -> M (BuildResult, Overrides)) -> (Builder -> M a) -> M a
 versionsBuilder hackage build =
   testBuilder \ _ versions overrideVersions -> do
     overrides <- packageOverrides hackage mempty overrideVersions
-    status <- build versions
-    pure (status, overrides)
+    (status, revisions) <- build versions
+    pure (status, revisions <> overrides)
 
 handlersNull :: BuildHandlers
 handlersNull =

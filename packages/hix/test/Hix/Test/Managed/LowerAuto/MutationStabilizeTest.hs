@@ -4,6 +4,7 @@ import Exon (exon)
 
 import Hix.Class.Map (nGen, (!!))
 import Hix.Data.Error (ErrorMessage (Fatal))
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
@@ -18,7 +19,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams, withoutRevisions)
 import Hix.Test.Utils (UnitTest)
 
 packages :: ProjectPackages
@@ -96,8 +97,8 @@ state =
         fromString [exon|direct#{show num}-1.0|]
       )
 
-build :: Versions -> M BuildStatus
-build = \case
+build :: Versions -> M (BuildStatus, Overrides)
+build = withoutRevisions \case
   versions
     | Just v <- versions !! "direct2"
     , v <= [1, 0]

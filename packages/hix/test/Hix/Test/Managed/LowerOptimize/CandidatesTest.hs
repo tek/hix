@@ -10,6 +10,7 @@ import Hix.Data.VersionBounds (fromLower, fromUpper)
 import qualified Hix.Managed.Cabal.Data.SolverState
 import Hix.Managed.Cabal.Data.SolverState (SolverState (SolverState), solverState, updateSolverState)
 import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints, mutation))
+import Hix.Managed.Data.Initial (initial)
 import Hix.Managed.Data.Mutable (MutableDep)
 import qualified Hix.Managed.Data.MutableId
 import Hix.Managed.Data.MutableId (MutableId (MutableId))
@@ -79,10 +80,12 @@ test_candidatesOptimize = do
     for majors \ mut ->
       processMutationLower def lowerOptimizeMode lowerOptimizeUpdate initialState mut (build buildRef)
   mutationResults <- evalEither result
-  Just (MutationSuccess candidate True mstate (updateSolverState (const newConstraints) initialState)) === mutationResults
+  Just target === mutationResults
   triedVersions <- liftIO (readIORef buildRef)
   (Just <$> targets) === triedVersions
   where
+    target = MutationSuccess candidate True mstate (updateSolverState (const newConstraints) (initial initialState))
+
     dep = simpleQueryDep mutable [[2, 4]]
 
     mstate =

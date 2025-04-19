@@ -5,6 +5,7 @@ import Test.Tasty (TestTree, testGroup)
 
 import Hix.Class.Map (nGen, (!!))
 import Hix.Data.Error (ErrorMessage (Fatal))
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages), InstalledPackages)
@@ -19,7 +20,7 @@ import Hix.Monad (M, throwM)
 import Hix.NixExpr (renderRootExpr)
 import Hix.Pretty (showP)
 import Hix.Test.Hedgehog (eqLines)
-import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams)
+import Hix.Test.Managed.Run (Result (..), TestParams (..), lowerTest, testParams, withoutRevisions)
 import Hix.Test.Utils (UnitTest, unitTest)
 
 packages :: ProjectPackages
@@ -94,8 +95,8 @@ available =
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed, available}
 
-buildVersionsBasic :: Versions -> M BuildStatus
-buildVersionsBasic = \case
+buildVersionsBasic :: Versions -> M (BuildStatus, Overrides)
+buildVersionsBasic = withoutRevisions \case
   versions
     | Just v <- versions !! "direct2"
     , v <= [1, 0]
@@ -337,7 +338,7 @@ test_lowerAutoMutationOptimizeReset = do
       (testParams False packages) {
         ghcPackages,
         state = initialState,
-        build = buildVersionsReset
+        build = withoutRevisions buildVersionsReset
       }
 
 test_lowerAutoMutationOptimize :: TestTree

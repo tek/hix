@@ -9,6 +9,7 @@ import Hix.Data.Monad (LogLevel (..), M)
 import Hix.Data.NixExpr (Expr)
 import qualified Hix.Data.Options as ProjectOptions
 import Hix.Data.Options (ProjectOptions)
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Cabal.Changes (SolverPlan)
@@ -45,7 +46,7 @@ data TestParams =
     ghcPackages :: GhcPackages,
     state :: ProjectStateProto,
     projectOptions :: ProjectOptions,
-    build :: Versions -> M BuildStatus
+    build :: Versions -> M (BuildStatus, Overrides)
   }
 
 nosortOptions :: ProjectOptions
@@ -65,8 +66,16 @@ testParams debug packages =
     ghcPackages = GhcPackages {installed = [], available = []},
     state = def,
     projectOptions = nosortOptions,
-    build = const (pure Failure)
+    build = const (pure (Failure, mempty))
   }
+
+withoutRevisions ::
+  (Versions -> M BuildStatus) ->
+  Versions ->
+  M (BuildStatus, Overrides)
+withoutRevisions build versions = do
+  status <- build versions
+  pure (status, mempty)
 
 data Result a =
   Result {
@@ -100,7 +109,7 @@ managedTest' ::
 managedTest' defaultEnvName params main =
   withFrozenCallStack do
     (handlers0, stateFileRef, _) <-
-      BuildHandlers.handlersUnitTest params.ghcPackages (fmap resultFromStatus . params.build)
+      BuildHandlers.handlersUnitTest params.ghcPackages (fmap (first resultFromStatus) . params.build)
     (cabalRef, handlers1) <-
       if params.cabalLog
       then first Just <$> BuildHandlers.logCabal handlers0

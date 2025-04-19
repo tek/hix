@@ -10,6 +10,7 @@ import Distribution.Solver.Types.SolverPackage (SolverPackage (..))
 import Distribution.Solver.Types.SourcePackage (SourcePackage (..))
 import Text.PrettyPrint (hang, ($+$))
 
+import Hix.Managed.Cabal.Data.SolvedId (SolvedId)
 import qualified Hix.Data.PackageId as PackageId
 import Hix.Data.PackageId (PackageId)
 import Hix.Data.Version (Versions)
@@ -56,14 +57,10 @@ solverPlan plan =
 data SolverChanges =
   SolverChanges {
     versions :: Versions,
-    overrides :: [PackageId]
-    --   ,
-    -- projectDeps :: Versions
+    overrides :: [SolvedId]
   }
   deriving stock (Eq, Show, Generic)
 
 instance Pretty SolverChanges where
   pretty SolverChanges {..} =
     hang "overrides:" 2 (prettyL overrides)
-    -- $+$
-    -- hang "projectDeps:" 2 (pretty projectDeps)

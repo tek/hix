@@ -1,6 +1,7 @@
 module Hix.Test.Managed.LowerOptimize.OrderTest where
 
 import Hix.Data.Monad (M)
+import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Cabal.Changes (SolverPlan (..))
 import qualified Hix.Managed.Cabal.Data.Packages
@@ -73,8 +74,8 @@ state =
     resolving = False
   }
 
-build :: Versions -> M BuildStatus
-build _ = pure Success
+build :: Versions -> M (BuildStatus, Overrides)
+build _ = pure (Success, mempty)
 
 cabalTarget :: [(EnvConstraints, Maybe SolverPlan)]
 cabalTarget =
