@@ -7,7 +7,7 @@
 
   appimages = let
 
-    envMain = env: pkgs: internal.env.setWithMain (main: pkgs.${main.name}) env // pkgs;
+    envMain = env: pkgs: internal.env.setWithMain (main: pkgs.${main.name} or {}) env // pkgs;
 
     target = env: pkg: outputs:
     util.maybe {} (mainAppimage outputs) pkg
