@@ -10,8 +10,6 @@ import Text.PrettyPrint (vcat)
 
 import Hix.Class.Map (nToMaybe)
 import qualified Hix.Color as Color
-import qualified Hix.Console
-import Hix.Console (color, colors)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (IsRevision (..), Override (..), Overrides)
@@ -58,7 +56,7 @@ import qualified Hix.Managed.Handlers.Mutation
 import Hix.Managed.Handlers.Mutation (MutationHandlers)
 import Hix.Managed.StageState (updateStageState)
 import Hix.Monad (appContext, appContextDebug)
-import Hix.Pretty (prettyL, showP, showPL)
+import Hix.Pretty (prettyL, showPL)
 
 logBuildInputs ::
   EnvName ->
@@ -158,13 +156,13 @@ logMutationResult ::
   M ()
 logMutationResult package = \case
   MutationSuccess {candidate, changed = True} ->
-    Log.verbose [exon|Build succeeded for #{showP candidate}|]
+    Log.debug [exon|Build succeeded for #{Color.package candidate}|]
   MutationSuccess {changed = False} ->
-    Log.verbose [exon|Build is up to date for '##{package}'|]
+    Log.verbose [exon|Build is up to date for #{Color.package package}|]
   MutationKeep ->
-    Log.verbose [exon|No better version found for '##{package}'|]
+    Log.verbose [exon|No better version found for #{Color.package package}|]
   MutationFailed ->
-    Log.verbose [exon|Could not find a buildable version of #{color colors.blue (showP package)}|]
+    Log.verbose [exon|Could not find a buildable version of #{Color.package package}|]
 
 validateMutation ::
   EnvBuilder ->

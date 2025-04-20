@@ -20,6 +20,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
 import Exon (exon)
 
+import qualified Hix.Color as Color
 import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Monad (M)
 import qualified Hix.Managed.Data.EnvContext
@@ -80,8 +81,8 @@ runStage ::
 runStage description stage = do
   EnvRequest {context = EnvContext {env}} <- Flow (gets (.env))
   let
-    desc = if Text.null description then "unnamed stage" else [exon|stage '#{description}'|]
-    contextMessage = [exon|executing #{desc} for '##{env}'|]
+    desc = if Text.null description then "unnamed stage" else [exon|stage #{Color.magenta description}|]
+    contextMessage = [exon|executing #{desc} for #{Color.env env}|]
   context <- newContext
   (result, o) <- liftM $ appContext contextMessage do
     stage context
