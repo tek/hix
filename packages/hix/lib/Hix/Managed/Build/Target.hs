@@ -8,7 +8,7 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Override (..), Overrides)
 import Hix.Data.PackageId (PackageId (..))
-import Hix.Data.PackageName (LocalPackage, PackageName)
+import Hix.Data.PackageName (LocalPackage (..), PackageName)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Build.Adapt (
   FailedPackage (..),
@@ -28,6 +28,7 @@ import Hix.Managed.Handlers.SourceHash (SourceHashHandlers)
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import Hix.Managed.Overrides (packageOverrideRegular, packageOverrides, packageRevision)
 import Hix.Managed.StateFile (writeBuildStateFor, writeSolverStateFor)
+import qualified Hix.Managed.Targets as Targets
 
 data BuilderResources =
   BuilderResources {
@@ -67,13 +68,16 @@ buildSolverPackages builder env overrides = do
 
 suggestRevision ::
   BuilderResources ->
+  Targets ->
   FailureCounts ->
   FailedPackage ->
   Maybe Override ->
   FailureReason ->
   M (Maybe RetryPackage)
-suggestRevision resources _ pkg = \cases
+suggestRevision resources targets _ pkg = \cases
   Nothing (BoundsError _)
+    | Targets.member (LocalPackage pkg.package) targets
+    -> pure Nothing
     | Just package <- failedPackageId pkg
     -> do
       override <- packageRevision resources.hackage [] package
@@ -141,4 +145,4 @@ buildTargets builder allowRevisions _ overrideVersions = do
       s0 = (overrides, [])
   second fst <$> runStateT (firstMTargets (BuildSuccess []) buildUnsuccessful build builder.targets) s0
   where
-    suggest = if allowRevisions then suggestRevision builder.global else suggestNothing
+    suggest = if allowRevisions then suggestRevision builder.global builder.targets else suggestNothing
