@@ -7,10 +7,10 @@ import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
 import Hix.Data.Version (Version)
-import Hix.Data.VersionBounds (fromUpper)
+import Hix.Data.VersionBounds (Bound (..), fromUpper)
 import Hix.Managed.Build (processQuery)
 import Hix.Managed.Cabal.Data.SolverState (solverState)
-import Hix.Managed.Constraints (fromVersions)
+import Hix.Managed.Constraints (fromVersions, preferInstalledUnlessBounded)
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import qualified Hix.Managed.Data.Constraints
 import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints))
@@ -37,7 +37,7 @@ import Hix.Managed.StageResult (stageResultInit)
 
 lowerInitUpdate :: Bool -> MutableId -> PackageId -> MutationConstraints -> MutationConstraints
 lowerInitUpdate _ _ PackageId {version} MutationConstraints {..} =
-  MutationConstraints {mutation = fromUpper version, ..}
+  MutationConstraints {mutation = fromUpper version, installed = Just False, ..}
 
 success :: Map MutableDep BuildSuccess -> Word -> Text
 success _ iterations =
@@ -71,7 +71,9 @@ lowerInit handlers conf buildConf context = do
 
     mutationHandlers = Mutation.handlersLower buildConf lowerInitMode lowerInitUpdate
 
-    ext = solverState context.env.solverBounds context.env.deps (fromVersions fromUpper keep) def
+    ext = solverState context.env.solverBounds context.env.deps solverParams def
+
+    solverParams = preferInstalledUnlessBounded BoundUpper (fromVersions fromUpper keep)
 
     keep | conf.reset = mempty
          | otherwise = context.initialVersions

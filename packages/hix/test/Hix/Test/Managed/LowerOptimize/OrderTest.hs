@@ -1,5 +1,6 @@
 module Hix.Test.Managed.LowerOptimize.OrderTest where
 
+import Hix.Class.Map (nMap)
 import Hix.Data.Monad (M)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
@@ -7,7 +8,7 @@ import Hix.Managed.Cabal.Changes (SolverPlan (..))
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
-import Hix.Managed.Data.Constraints (EnvConstraints)
+import Hix.Managed.Data.Constraints (EnvConstraints, MutationConstraints (..))
 import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
@@ -79,7 +80,7 @@ build _ = pure (Success, mempty)
 
 cabalTarget :: [(EnvConstraints, Maybe SolverPlan)]
 cabalTarget =
-  [
+  fmap (first (nMap @EnvConstraints withInstalled)) [
     ([
       "dep1 <=2.1",
       "dep2 <=2.1",
@@ -118,6 +119,10 @@ cabalTarget =
   ]
   where
     plan changes = Just SolverPlan {changes, matching = [], nonReinstallable = Nothing}
+
+    withInstalled = \case
+      cntr@MutationConstraints {installed = Nothing} -> cntr {installed = Just False}
+      cntr -> cntr
 
 test_mutationOrder :: UnitTest
 test_mutationOrder = do

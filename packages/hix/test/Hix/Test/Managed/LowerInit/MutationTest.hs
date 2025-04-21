@@ -3,7 +3,7 @@ module Hix.Test.Managed.LowerInit.MutationTest where
 import qualified Data.Text as Text
 import Exon (exon)
 
-import Hix.Class.Map ((!!))
+import Hix.Class.Map (nMap, (!!))
 import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Options (ProjectOptions (..))
 import Hix.Data.Overrides (Overrides)
@@ -14,7 +14,7 @@ import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
 import Hix.Managed.Cabal.Mock.SourcePackage (allDep, allDeps)
-import Hix.Managed.Data.Constraints (EnvConstraints)
+import Hix.Managed.Data.Constraints (EnvConstraints, MutationConstraints (..))
 import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectStateProto
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (ProjectStateProto))
@@ -167,21 +167,21 @@ build = withoutRevisions \case
 -- the bounds (inclusive or exclusive) to construct @VersionBounds@.
 cabalTarget :: [(EnvConstraints, Maybe SolverPlan)]
 cabalTarget =
-  [
+  fmap (first (nMap @EnvConstraints withInstalled)) [
     item1 3 1,
     item1 4 1,
     item1 5 2,
     ([
-      "direct1",
-      "direct2 ==5.0",
+      ins True "direct1",
+      ins True "direct2 ==5.0",
       "direct3 <=1.0.1",
-      "direct4"
+      ins True "direct4"
     ], Nothing),
     ([
-      "direct1",
-      "direct2 ==5.0.5",
+      ins True "direct1",
+      ins True "direct2 ==5.0.5",
       "direct3 <=1.0.1",
-      "direct4"
+      ins True "direct4"
     ], plan ["direct1-1.0.5", "direct2-5.0.5", "direct3-1.0.1", "direct4-1.0.4", "transitive2-1.0.1", "transitive3-1.0.1", "transitive4-1.0.1"]),
     item2 1,
     item2 2,
@@ -204,8 +204,8 @@ cabalTarget =
     ], plan ["direct1-1.0.5", "direct2-5.0.5", "direct3-1.0.1", "direct4-1.0.3", "transitive2-1.0.1", "transitive3-1.0.1", "transitive4-1.0.1"]),
     -- lower-special
     ([
-      "direct2 ==5.0",
-      "local6"
+      ins True "direct2 ==5.0",
+      ins True "local6"
     ], plan ["direct2-5.0", "direct3-1.4", "local6-0.9", "transitive3-1.0.1"]),
     ([
       "direct2 <=5.0",
@@ -215,29 +215,35 @@ cabalTarget =
   where
     item1 (v1 :: Natural) (nt :: Natural) =
       ([
-        fromString [exon|direct1 ==1.0.#{show v1}|],
-        "direct2",
+        ins True (fromString [exon|direct1 ==1.0.#{show v1}|]),
+        ins True "direct2",
         "direct3 <=1.0.1",
-        "direct4"
+        ins True "direct4"
       ], plan [fromString [exon|direct1-1.0.#{show v1}|], "direct2-5.0.5", "direct3-1.0.1", "direct4-1.0.4", fromString [exon|transitive#{show nt}-1.0.1|], "transitive3-1.0.1", "transitive4-1.0.1"])
 
     item2 (v1 :: Natural) =
       ([
-        "direct1",
-        "direct2",
+        ins True "direct1",
+        ins True "direct2",
         "direct3 <=1.0.1",
-        fromString [exon|direct4 ==1.0.#{show v1}|]
+        ins True (fromString [exon|direct4 ==1.0.#{show v1}|])
       ], plan ["direct1-1.0.5", "direct2-5.0.5", "direct3-1.0.1", fromString [exon|direct4-1.0.#{show v1}|], "transitive2-1.0.1", "transitive3-1.0.1", "transitive4-1.0.1"])
 
     item3 (v1 :: Natural) (nt :: Natural) =
       ([
-        fromString [exon|direct1 <=1.0.5 && ==1.0.#{show v1}|],
+        (fromString [exon|direct1 <=1.0.5 && ==1.0.#{show v1}|]),
         "direct2 <=5.0.5",
         "direct3 <=1.0.1",
         "direct4 <=1.0.3"
       ], plan [fromString [exon|direct1-1.0.#{show v1}|], "direct2-5.0.5", "direct3-1.0.1", "direct4-1.0.3", fromString [exon|transitive#{show nt}-1.0.1|], "transitive3-1.0.1", "transitive4-1.0.1"])
 
     plan changes = Just SolverPlan {changes, matching = [], nonReinstallable = Nothing}
+
+    withInstalled = \case
+      cntr@MutationConstraints {installed = Nothing} -> cntr {installed = Just False}
+      cntr -> cntr
+
+    ins a (n, cntr) = (n, cntr {installed = Just a})
 
 stateFileTarget :: Text
 stateFileTarget =

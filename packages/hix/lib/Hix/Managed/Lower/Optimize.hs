@@ -5,10 +5,10 @@ import Exon (exon)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.PackageId
 import Hix.Data.PackageId (PackageId (PackageId))
-import Hix.Data.VersionBounds (fromUpper)
+import Hix.Data.VersionBounds (Bound (..), fromUpper)
 import Hix.Managed.Build (processQuery)
 import Hix.Managed.Cabal.Data.SolverState (solverState)
-import Hix.Managed.Constraints (fromVersions)
+import Hix.Managed.Constraints (fromVersions, preferInstalledUnlessBounded)
 import Hix.Managed.Data.BuildConfig (BuildConfig)
 import qualified Hix.Managed.Data.Constraints
 import Hix.Managed.Data.Constraints (MutationConstraints (MutationConstraints))
@@ -58,7 +58,9 @@ lowerOptimize handlers conf context@StageContext {env, state = Initial MutationS
 
     mutationHandlers = Mutation.handlersLower conf lowerOptimizeMode lowerOptimizeUpdate
 
-    ext = solverState env.solverBounds env.deps (fromVersions fromUpper versions) def
+    ext = solverState env.solverBounds env.deps solverParams def
+
+    solverParams = preferInstalledUnlessBounded BoundUpper (fromVersions fromUpper versions)
 
 lowerOptimizeStage ::
   BuildHandlers ->
