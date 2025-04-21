@@ -10,6 +10,10 @@ let
     # systemd access
     "DBUS_SESSION_BUS_ADDRESS"
 
+    # Writing UTF-8 to stdio from the CLI fails without these
+    "LANG"
+    "LOCALE_ARCHIVE"
+
     "_hix_test_system_bin_nix"
     "_hix_test_system_bin_systemd"
     "hix_test_show_stderr"
@@ -26,10 +30,6 @@ let
 
     # systemd access
     "XDG_RUNTIME_DIR"
-
-    # Writing UTF-8 to stdio from the CLI fails without these
-    "LANG"
-    "LC_ALL"
   ];
 
   sharedPreamble = ''
