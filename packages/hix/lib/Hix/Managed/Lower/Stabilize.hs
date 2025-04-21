@@ -52,7 +52,7 @@ buildLowerInit = do
   where
     msg =
       [
-        [exon|Cannot stabilize since the build with initial bounds failed.|],
+        "Cannot stabilize since the build with initial bounds failed.",
         "Please run 'lower.init --reset' or fix the build manually."
       ]
 

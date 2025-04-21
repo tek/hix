@@ -95,6 +95,7 @@ available =
 ghcPackages :: GhcPackages
 ghcPackages = GhcPackages {installed, available}
 
+-- See @buildVersionsReset@ for more detailed explanations of the dynamics.
 buildVersionsBasic :: Versions -> M (BuildStatus, Overrides)
 buildVersionsBasic = withoutRevisions \case
   versions
@@ -105,31 +106,31 @@ buildVersionsBasic = withoutRevisions \case
     | Just v <- versions !! "direct3"
     , v >= [1, 5]
     -> pure Failure
-  -- initialize direct3
+  -- Initialize direct3. The other two deps already have initial bounds, so they are skipped.
   [
     ("direct1", [1, 5]),
     ("direct2", [1, 5]),
     ("direct3", [1, 2])
     ] -> pure Success
-  -- optimize direct1
+  -- Optimize direct1
   [
     ("direct1", _),
     ("direct2", [1, 5]),
     ("direct3", [1, 2])
     ] -> pure Success
-  -- optimize direct2
+  -- Optimize direct2
   [
     ("direct1", [0, 9]),
     ("direct2", [1, 2]),
     ("direct3", [1, 2])
     ] -> pure Success
-  -- optimize direct3
+  -- Optimize direct3
   [
     ("direct1", [0, 9]),
     ("direct2", [1, 2]),
     ("direct3", [1, 0])
     ] -> pure Success
-  -- optimize direct3
+  -- Optimize direct3
   [
     ("direct1", [0, 9]),
     ("direct2", [1, 2]),
@@ -225,37 +226,47 @@ buildVersionsReset = \case
     | Just v <- versions !! "direct3"
     , v >= [1, 5]
     -> pure Failure
-  -- initialize all versions (latest versions build for direct1 and direct2, so only direct3 deviates)
+  -- Initialize direct1, starting the mutation at the first major 1.9.
+  -- For the others, Cabal selects the installed version, because they're unmutated and should therefore minimize their
+  -- contribution to build time.
+  [
+    ("direct1", [1, 9]),
+    ("direct2", [1, 2]),
+    ("direct3", [1, 2])
+    ] -> pure Success
+  -- Initialize direct2, starting the mutation at the first major 1.9, same as above.
+  -- Afterwards, direct3 is initialized, which fails for all versions >= 1.5 in the second case above, and therefore the
+  -- first successful mutation reaches this branch as well.
   [
     ("direct1", [1, 9]),
     ("direct2", [1, 9]),
     ("direct3", [1, 2])
     ] -> pure Success
-  -- optimize direct1
+  -- Optimize direct1: this branch is hit for all versions successively until finishing at 0.9.
   [
     ("direct1", _),
     ("direct2", [1, 9]),
     ("direct3", [1, 2])
     ] -> pure Success
-  -- optimize direct2, first major
+  -- Optimize direct2, first major
   [
     ("direct1", [0, 9]),
     ("direct2", [1, 5]),
     ("direct3", [1, 2])
     ] -> pure Success
-  -- optimize direct2, second major
+  -- Optimize direct2, second major. The following mutation fails in the first branch above.
   [
     ("direct1", [0, 9]),
     ("direct2", [1, 2]),
     ("direct3", [1, 2])
     ] -> pure Success
-  -- optimize direct3, first major
+  -- Optimize direct3, first major
   [
     ("direct1", [0, 9]),
     ("direct2", [1, 2]),
     ("direct3", [1, 0])
     ] -> pure Success
-  -- optimize direct3, second major
+  -- Optimize direct3, second major
   [
     ("direct1", [0, 9]),
     ("direct2", [1, 2]),

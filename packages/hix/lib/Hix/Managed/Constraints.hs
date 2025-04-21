@@ -6,7 +6,7 @@ import Hix.Class.Map (nGenWith, nMap, nTransform)
 import Hix.Data.Bounds (Ranges)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.Version (Version, Versions)
-import Hix.Data.VersionBounds (VersionBounds, anyBounds)
+import Hix.Data.VersionBounds (Bound, VersionBounds, anyBounds, hasBound)
 import Hix.Managed.Data.Constraints (EnvConstraints, MutationConstraints (..))
 import Hix.Managed.Data.Mutable (MutableDep (MutableDep), MutableVersions)
 
@@ -31,6 +31,10 @@ preferVersions = preferRanges . nMap thisVersion
 preferInstalled :: Set MutableDep -> EnvConstraints
 preferInstalled =
   forDeps \ _ -> mempty {mutation = mempty, installed = Just True}
+
+preferInstalledUnlessBounded :: Bound -> EnvConstraints -> EnvConstraints
+preferInstalledUnlessBounded bound =
+  nMap \ old -> old {installed = Just (not (hasBound bound old.mutation))}
 
 explicitBounds :: Ranges -> EnvConstraints
 explicitBounds =

@@ -18,7 +18,7 @@ import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Data.Json (aesonParsec, jsonParsec)
 import Hix.Data.Version (range0)
 import Hix.Pretty (showP)
-import Hix.Version (lowerVersion, upperVersion, nextMajor, prevMajor)
+import Hix.Version (lowerVersion, nextMajor, prevMajor, upperVersion)
 
 data Bound =
   BoundLower
@@ -72,6 +72,11 @@ instance ToJSON VersionBounds where
       "lower" .= toJSON (showP @Text <$> lower),
       "upper" .= toJSON (showP @Text <$> upper)
     ]
+
+hasBound :: Bound -> VersionBounds -> Bool
+hasBound = \cases
+  BoundLower VersionBounds {lower} -> isJust lower
+  BoundUpper VersionBounds {upper} -> isJust upper
 
 maybeRange ::
   (Bound -> Version -> VersionRange) ->
