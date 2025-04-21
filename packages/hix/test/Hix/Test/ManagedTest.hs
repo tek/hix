@@ -2,6 +2,7 @@ module Hix.Test.ManagedTest where
 
 import Test.Tasty (TestTree, testGroup)
 
+import Hix.Test.Managed.AnalysisTest (test_analysis)
 import Hix.Test.Managed.BuildOutputTest (test_buildOutput)
 import Hix.Test.Managed.Bump.CandidatesTest (test_candidatesBump)
 import Hix.Test.Managed.Bump.MutationTest (test_bumpMutation)
@@ -41,5 +42,6 @@ test_managed =
       test_diff,
       test_maint,
       test_tag,
-      test_hackageData
+      test_hackageData,
+      test_analysis
     ]
