@@ -5,8 +5,9 @@
 
 in {
   compiler = "ghc98";
-  ghcVersions = ["ghc96" "ghc98" "ghc910"];
+  ghcVersions = ["ghc96" "ghc98"];
   main = "hix";
+  gen-overrides.enable = true;
 
   packages.hix = ({config, ...}: {
     src = ./packages/hix;
@@ -17,38 +18,38 @@ in {
       enable = true;
       dependencies = [
         "Cabal"
-        "aeson >= 2.0 && < 2.3"
+        "aeson"
         "bytestring"
         "cabal-install"
         "cabal-install-solver"
-        "casing ^>= 0.1.4"
+        "casing"
         "containers"
-        "exceptions ^>= 0.10"
-        "exon >= 1.4 && < 1.8"
-        "extra ^>= 1.7"
-        "filepattern ^>= 0.1"
-        "generic-lens ^>= 2.2"
-        "generics-sop ^>= 0.5"
-        "http-client ^>= 0.7"
-        "http-client-tls ^>= 0.3"
-        "http-types ^>= 0.12"
-        "generic-lens ^>= 2.2"
-        "generics-sop ^>= 0.5"
-        "lens >= 5.1 && < 5.4"
-        "lens-regex-pcre ^>= 1.1"
-        "monad-control ^>= 1.0"
+        "exceptions"
+        "exon"
+        "extra"
+        "filepattern"
+        "generic-lens"
+        "generics-sop"
+        "http-client"
+        "http-client-tls"
+        "http-types"
+        "generic-lens"
+        "generics-sop"
+        "lens"
+        "lens-regex-pcre"
+        "monad-control"
         "network"
         "network-uri"
-        "optparse-applicative >= 0.17 && <0.19"
-        "path ^>= 0.9"
-        "path-io >= 1.7 && < 1.9"
+        "optparse-applicative"
+        "path"
+        "path-io"
         "pretty"
-        "random ^>= 1.2"
+        "random"
         "template-haskell"
-        "these ^>=1.2"
+        "these"
         "time"
         "transformers"
-        "typed-process ^>= 0.2"
+        "typed-process"
         "unix"
       ];
     };
@@ -57,40 +58,13 @@ in {
       public = true;
       dependencies = [
         "Cabal"
-        "aeson >= 2.0 && < 2.3"
-        "bytestring"
-        "cabal-install"
-        "cabal-install-solver"
-        "casing ^>= 0.1.4"
-        "containers"
-        "exceptions ^>= 0.10"
-        "exon >= 1.4 && < 1.8"
-        "extra ^>= 1.7"
-        "filepattern ^>= 0.1"
-        "generic-lens ^>= 2.2"
-        "generics-sop ^>= 0.5"
-        "hedgehog >= 1.1 && < 1.5"
-        "http-client ^>= 0.7"
-        "http-client-tls ^>= 0.3"
-        "http-types ^>= 0.12"
-        "lens >= 5.1 && < 5.4"
-        "lens-regex-pcre ^>= 1.1"
-        "monad-control ^>= 1.0"
-        "network"
-        "network-uri"
-        "optparse-applicative >= 0.17 && <0.19"
-        "path ^>= 0.9"
-        "path-io >= 1.7 && < 1.9"
-        "pretty"
-        "random ^>= 1.2"
-        "tasty ^>= 1.4"
-        "tasty-hedgehog >= 1.3 && < 1.5"
-        "template-haskell"
-        "these ^>=1.2"
-        "time"
-        "transformers"
-        "typed-process ^>= 0.2"
-        "unix"
+        "exon"
+        "extra"
+        "hedgehog"
+        "path"
+        "path-io"
+        "tasty"
+        "tasty-hedgehog"
         config.library.dep.exact
       ];
     };
@@ -101,21 +75,23 @@ in {
       enable = true;
       dependencies = [
         "Cabal"
-        "aeson >= 2.0 && < 2.3"
-        "exon >= 1.4 && < 1.8"
-        "extra ^>= 1.7"
-        "hedgehog >= 1.1 && < 1.5"
-        "path ^>= 0.9"
-        "path-io >= 1.7 && < 1.9"
+        "aeson"
+        "exon"
+        "extra"
+        "hedgehog"
+        "path"
+        "path-io"
         "pretty"
-        "tasty ^>= 1.4"
-        "tasty-hedgehog >= 1.3 && < 1.5"
+        "tasty"
+        "tasty-hedgehog"
         config.libraries.testing.dep.exact
-        "these ^>=1.2"
+        "these"
         "time"
         "transformers"
       ];
     };
+
+    override = {nodoc, ...}: nodoc;
 
   });
 
@@ -125,16 +101,16 @@ in {
     library = {
       enable = true;
       dependencies = [
-        "aeson >= 2.0 && < 2.3"
+        "aeson"
         "async"
         "casing"
-        "exon >= 1.4 && < 1.7"
+        "exon"
         "exceptions"
         "hackage-server"
         "network-uri"
-        "optparse-applicative >= 0.17 && <0.19"
-        "path ^>= 0.9"
-        "path-io >= 1.7 && < 1.9"
+        "optparse-applicative"
+        "path"
+        "path-io"
         config.packages.hix.dep.exact
       ];
     };
@@ -142,16 +118,16 @@ in {
     test = {
       enable = true;
       dependencies = [
-        "aeson >= 2.0 && < 2.3"
+        "aeson"
         "Cabal"
-        "exon >= 1.4 && < 1.7"
-        "extra ^>= 1.7"
-        "hedgehog >= 1.1 && < 1.5"
-        "lens >= 5.1 && < 5.4"
-        "path ^>= 0.9"
-        "path-io >= 1.7 && < 1.9"
-        "tasty ^>= 1.4"
-        "tasty-hedgehog >= 1.3 && < 1.5"
+        "exon"
+        "extra"
+        "hedgehog"
+        "lens"
+        "path"
+        "path-io"
+        "tasty"
+        "tasty-hedgehog"
         "time"
         "transformers"
         config.packages.hix.dep.exact
@@ -169,10 +145,7 @@ in {
   cabal = {
     prelude = {
       enable = true;
-      package = {
-        name = "incipit-base";
-        version = ">=0.5 && <0.7";
-      };
+      package = "incipit-base";
       module = "IncipitBase";
     };
     paths = false;
@@ -184,9 +157,7 @@ in {
     meta = {
       maintainer = "hackage@tryp.io";
       category = "Build";
-      git = "https://git.tryp.io/tek/hix";
-      homepage = "https://git.tryp.io/tek/hix";
-      bug-reports = "https://github.com/tek/hix/issues";
+      github = "tek/hix";
       synopsis = "Haskell/Nix development build tools";
     };
   };
@@ -202,6 +173,13 @@ in {
     if source && publish
     then release.updateCliVersion
     else "";
+  };
+
+  managed = {
+    enable = true;
+    lower.enable = true;
+    latest.compiler = "ghc910";
+    lower.compiler = "ghc96";
   };
 
   commands.integration-hackage = {
@@ -251,24 +229,25 @@ in {
         tar = hackage "0.6.3.0" "02nq0l9bsnkk5w8lbp493anc01fyf45l7zbcahhzji02agjwxkqm";
       };
 
+      ghc.gen-overrides = false;
+
     };
 
     dev = cabalInstallFix;
 
     ghc98 = cabalInstallFix;
 
-    ghc910.overrides = {hackage, jailbreak, notest, ...}: {
-      exon = hackage "1.7.1.0" "16vf84nnpivxw4a46g7jsy2hg4lpla7grkv3gp8nd69zlv43777l";
-      generics-sop = jailbreak (hackage "0.5.1.4" "0ai089kly1cajn4djqnplkg2jmnapqlb3crrsyvfnadcyzc9h3km");
-      incipit-base = hackage "0.6.1.0" "0iyyvxpyyybn5ygr875pav6g5hbs00wa9jbr7qslszqpkfpy5x33";
-      pcre-heavy = notest;
-    };
+    latest.packages = lib.mkForce ["hix"];
+    lower.packages = lib.mkForce ["hix"];
 
   };
 
   internal.cabal-extra.default-extensions = ["StrictData"];
 
-  internal.hixCli.dev = false;
+  internal.hixCli = {
+    commit = "199c3c7990abdd2ada54f479f8977295b62982dc";
+    sha256 = "1sjympc0xgag6sb3nvd1wnjphyrfq6jchfq52gf0bxr7a7d2awlz";
+  };
 
   outputs = let
 

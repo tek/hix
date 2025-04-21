@@ -9,7 +9,7 @@ version:        0.9.1
 synopsis:       Haskell/Nix development build tools
 description:    See https://hackage.haskell.org/package/hix/docs/Hix.html
 category:       Build
-homepage:       https://git.tryp.io/tek/hix
+homepage:       https://github.com/tek/hix#readme
 bug-reports:    https://github.com/tek/hix/issues
 author:         Torsten Schmits
 maintainer:     hackage@tryp.io
@@ -20,7 +20,7 @@ build-type:     Simple
 
 source-repository head
   type: git
-  location: https://git.tryp.io/tek/hix
+  location: https://github.com/tek/hix
 
 library
   exposed-modules:
@@ -291,40 +291,40 @@ library
       NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      Cabal
-    , aeson >=2.0 && <2.3
-    , base ==4.*
-    , bytestring
-    , cabal-install
-    , cabal-install-solver
-    , casing >=0.1.4 && <0.2
-    , containers
-    , exceptions ==0.10.*
-    , exon >=1.4 && <1.8
-    , extra ==1.7.*
+      Cabal >=3.14.1.0 && <3.15
+    , aeson >=2.1.2.1 && <2.3
+    , base >=4.18.2.1 && <4.21
+    , bytestring >=0.11.5.3 && <0.13
+    , cabal-install >=3.14.1.0 && <3.15
+    , cabal-install-solver >=3.14.1.0 && <3.15
+    , casing >=0.1.0.0 && <0.2
+    , containers >=0.6.7 && <0.8
+    , exceptions >=0.10.7 && <0.11
+    , exon >=1.4.0.0 && <1.8
+    , extra >=1.7.11 && <1.9
     , filepattern ==0.1.*
-    , generic-lens ==2.2.*
-    , generics-sop ==0.5.*
-    , http-client ==0.7.*
-    , http-client-tls ==0.3.*
-    , http-types ==0.12.*
-    , incipit-base >=0.5 && <0.7
-    , lens >=5.1 && <5.4
-    , lens-regex-pcre ==1.1.*
-    , monad-control ==1.0.*
-    , network
-    , network-uri
-    , optparse-applicative >=0.17 && <0.19
-    , path ==0.9.*
-    , path-io >=1.7 && <1.9
-    , pretty
-    , random ==1.2.*
-    , template-haskell
+    , generic-lens >=2.2.1.0 && <2.3
+    , generics-sop >=0.5.1.3 && <0.6
+    , http-client >=0.5.11 && <0.8
+    , http-client-tls >=0.3.0 && <0.4
+    , http-types >=0.11 && <0.13
+    , incipit-base >=0.5.1.0 && <0.7
+    , lens >=5.2.1 && <5.4
+    , lens-regex-pcre >=1.0.0.0 && <1.2
+    , monad-control >=1.0.3.1 && <1.1
+    , network >=3.1.4.0 && <3.2
+    , network-uri >=2.6.4.2 && <2.7
+    , optparse-applicative >=0.16.1.0 && <0.19
+    , path >=0.9.1 && <0.10
+    , path-io >=1.6.3 && <1.9
+    , pretty >=1.1.3.6 && <1.2
+    , random >=1.2.1.2 && <1.3
+    , template-haskell >=2.20.0.0 && <2.23
     , these ==1.2.*
-    , time
-    , transformers
-    , typed-process ==0.2.*
-    , unix
+    , time >=1.12.2 && <1.13
+    , transformers >=0.6.1.0 && <0.7
+    , typed-process >=0.2.5.0 && <0.3
+    , unix >=2.8.4.0 && <2.9
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -380,44 +380,17 @@ library testing
       NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      Cabal
-    , aeson >=2.0 && <2.3
-    , base ==4.*
-    , bytestring
-    , cabal-install
-    , cabal-install-solver
-    , casing >=0.1.4 && <0.2
-    , containers
-    , exceptions ==0.10.*
-    , exon >=1.4 && <1.8
-    , extra ==1.7.*
-    , filepattern ==0.1.*
-    , generic-lens ==2.2.*
-    , generics-sop ==0.5.*
-    , hedgehog >=1.1 && <1.5
+      Cabal >=3.14.1.0 && <3.15
+    , base >=4.18.2.1 && <4.21
+    , exon >=1.4.0.0 && <1.8
+    , extra >=1.7.11 && <1.9
+    , hedgehog >=1.3 && <1.6
     , hix:hix ==0.9.1
-    , http-client ==0.7.*
-    , http-client-tls ==0.3.*
-    , http-types ==0.12.*
-    , incipit-base >=0.5 && <0.7
-    , lens >=5.1 && <5.4
-    , lens-regex-pcre ==1.1.*
-    , monad-control ==1.0.*
-    , network
-    , network-uri
-    , optparse-applicative >=0.17 && <0.19
-    , path ==0.9.*
-    , path-io >=1.7 && <1.9
-    , pretty
-    , random ==1.2.*
-    , tasty ==1.4.*
-    , tasty-hedgehog >=1.3 && <1.5
-    , template-haskell
-    , these ==1.2.*
-    , time
-    , transformers
-    , typed-process ==0.2.*
-    , unix
+    , incipit-base >=0.5.1.0 && <0.7
+    , path >=0.9.1 && <0.10
+    , path-io >=1.6.3 && <1.9
+    , tasty >=1.4.2.2 && <1.6
+    , tasty-hedgehog >=1.4.0.1 && <1.5
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -467,9 +440,9 @@ executable hix
       NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      base ==4.*
+      base >=4.18.2.1 && <4.21
     , hix
-    , incipit-base >=0.5 && <0.7
+    , incipit-base >=0.5.1.0 && <0.7
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -550,23 +523,23 @@ test-suite hix-test
       NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      Cabal
-    , aeson >=2.0 && <2.3
-    , base ==4.*
-    , exon >=1.4 && <1.8
-    , extra ==1.7.*
-    , hedgehog >=1.1 && <1.5
+      Cabal >=3.14.1.0 && <3.15
+    , aeson >=2.1.2.1 && <2.3
+    , base >=4.18.2.1 && <4.21
+    , exon >=1.4.0.0 && <1.8
+    , extra >=1.7.11 && <1.9
+    , hedgehog >=1.3 && <1.6
     , hix
     , hix:testing ==0.9.1
-    , incipit-base >=0.5 && <0.7
-    , path ==0.9.*
-    , path-io >=1.7 && <1.9
-    , pretty
-    , tasty ==1.4.*
-    , tasty-hedgehog >=1.3 && <1.5
+    , incipit-base >=0.5.1.0 && <0.7
+    , path >=0.9.1 && <0.10
+    , path-io >=1.6.3 && <1.9
+    , pretty >=1.1.3.6 && <1.2
+    , tasty >=1.4.2.2 && <1.6
+    , tasty-hedgehog >=1.4.0.1 && <1.5
     , these ==1.2.*
-    , time
-    , transformers
+    , time >=1.12.2 && <1.13
+    , transformers >=0.6.1.0 && <0.7
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)

@@ -5,8 +5,8 @@ let
   ghcModule = import ./ghc.nix { global = config; inherit util; };
 
   cliNixpkgs = builtins.fetchTarball {
-    url = "https://github.com/nixos/nixpkgs/archive/e913ae340076bbb73d9f4d3d065c2bca7caafb16.tar.gz";
-    sha256 = "07qjibn85hc6p8c7lwg00fwpyqjlmaxncz9wa2l6qpy1hsk51k8f";
+    url = "https://github.com/nixos/nixpkgs/archive/b2243f41e860ac85c0b446eadc6930359b294e79.tar.gz";
+    sha256 = "0bhibarcx56j1szd40ygv1nm78kap3yr4s24p5cv1kdiy4hsb21k";
   };
 
 in {
@@ -74,7 +74,7 @@ in {
 
   config.internal.hixCli = {
 
-    overrides = {hackage, source, minimal, jailbreak, ...}: let
+    overrides = {hackage, source, minimal, jailbreak, super, ...}: let
 
       conf = config.internal.hixCli;
 
@@ -95,6 +95,7 @@ in {
 
     in {
       hix = minimal hix;
+      cabal-install = super.cabal-install.overrideScope (cself: csuper: { semaphore-compat = null; });
     } // lib.optionalAttrs (!useDev) {
       exon = hackage "1.6.0.1" "0wnjywsxsmfqhyymzxlk8zzc5k4jr15y8rgl3lcdw48jl80i6ix9";
     };

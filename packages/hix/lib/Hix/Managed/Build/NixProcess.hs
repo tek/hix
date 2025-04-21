@@ -5,10 +5,10 @@ import qualified Data.ByteString.Char8 as ByteString
 import qualified Data.Text as Text
 import Exon (exon)
 import Path (Abs, Dir, Path, toFilePath)
+import System.Exit (ExitCode (..))
 import System.IO (BufferMode (LineBuffering), Handle, hSetBuffering)
 import System.IO.Error (tryIOError)
 import System.Process.Typed (
-  ExitCode (ExitFailure, ExitSuccess),
   ProcessConfig,
   byteStringOutput,
   createPipe,
