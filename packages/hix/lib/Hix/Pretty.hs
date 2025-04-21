@@ -1,7 +1,7 @@
 module Hix.Pretty where
 
 import qualified Data.Map.Strict as Map
-import Distribution.Pretty (Pretty, pretty)
+import Distribution.Pretty (Pretty (pretty))
 import Path (Path, SomeBase (Abs, Rel), toFilePath)
 import qualified Text.PrettyPrint as PrettyPrint
 import Text.PrettyPrint (Doc, comma, hang, hcat, punctuate, sep, text, vcat, (<+>))

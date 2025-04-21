@@ -158,19 +158,19 @@ updateBuilds [Right updatedDone, _, _, Right updatedFailed] s@OutputState {build
     newFailed = updatedFailed - failed
 updateBuilds _ s = s
 
-processResult :: Integer -> Int -> [Either Text Int] -> OutputState -> OutputState
+processResult :: Integer -> Int -> [Either Text Int] -> OutputState -> (Maybe Text, OutputState)
 processResult aid rtype fields s
   -- result type @Progress@
   | rtype == 105
   , Just BuildsState {id = buildsId} <- s.builds
   , aid == buildsId
-  = updateBuilds fields s
+  = (Nothing, updateBuilds fields s)
   -- result type @BuildLogLine@
   | rtype == 101
   , Left message : _ <- fields
-  = s {running = Map.adjust (addLogMessage message) aid s.running}
+  = (Just message, s {running = Map.adjust (addLogMessage message) aid s.running})
   | otherwise
-  = s
+  = (Nothing, s)
 
 processMessage ::
   BuildConfig ->
@@ -179,7 +179,9 @@ processMessage ::
   StateT OutputState M ()
 processMessage config _raw = \case
   NixResult {aid, rtype, fields} ->
-    modify' (processResult aid rtype fields)
+    state (processResult aid rtype fields) >>= traverse_ \ message ->
+      when config.buildOutput do
+        lift (Log.infoPlain message)
 
   NixStartBuilds i ->
     modify' \ s -> s {builds = Just BuildsState {id = i, done = 0, failed = 0, unassigned = []}}
@@ -211,4 +213,4 @@ outputParse config outputLine
   | Just payload <- ByteString.stripPrefix "@nix " outputLine
   = either parseError (processMessage config payload) (Aeson.eitherDecodeStrict' payload)
   | otherwise
-  = lift (Log.debug (decodeUtf8 outputLine))
+  = lift (Log.debug ("Unknown prefix on Nix output line: " <> decodeUtf8 outputLine))

@@ -14,7 +14,7 @@ import Hix.Data.Options (projectOptions)
 import Hix.Data.PackageId (PackageId (..))
 import Hix.Data.PackageName (PackageName)
 import Hix.Integration.Hackage (HackageId (..), TestHackage (..), withHackageIds)
-import Hix.Integration.Utils (UnitTest, addFile, runMTest, withHixDir)
+import Hix.Integration.Utils (UnitTest, addFile, runMTestLog, withHixDir)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import Hix.Managed.Cabal.Data.Config (CabalConfig (..))
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo (..), contextHackageRepo)
@@ -172,7 +172,8 @@ hackageIds :: [HackageId]
 hackageIds =
   [
     hackageId "dep1" [],
-    hackageId "dep2" [unsafeDep "dep1 <0.5"]
+    hackageId "dep2" [unsafeDep "dep1", unsafeDep "dep3"],
+    hackageId "dep3" []
   ]
 
 targetStateFile :: Text
@@ -250,7 +251,12 @@ targetStateFile =
       };
       dep2 = {
         version = "1";
-        hash = "1smp9w97s67myqqckq0ndrcm43jki0lavlkwj59gjpr1hwi8iiky";
+        hash = "1ghvihzgflbqwvx9l607vldxf785hcd6banm1zk4cipvi6wfjz8x";
+        repo = "test";
+      };
+      dep3 = {
+        version = "1";
+        hash = "1lrmbhqzbqggk3zvszj4sdq4m22jbhpc170ar9n6ja4jrglk9sjz";
         repo = "test";
       };
       extra = {
@@ -270,7 +276,12 @@ targetStateFile =
       };
       dep2 = {
         version = "1";
-        hash = "1smp9w97s67myqqckq0ndrcm43jki0lavlkwj59gjpr1hwi8iiky";
+        hash = "1ghvihzgflbqwvx9l607vldxf785hcd6banm1zk4cipvi6wfjz8x";
+        repo = "test";
+      };
+      dep3 = {
+        version = "1";
+        hash = "1lrmbhqzbqggk3zvszj4sdq4m22jbhpc170ar9n6ja4jrglk9sjz";
         repo = "test";
       };
       extra = {
@@ -296,7 +307,12 @@ targetStateFile =
       };
       dep2 = {
         version = "1";
-        hash = "1smp9w97s67myqqckq0ndrcm43jki0lavlkwj59gjpr1hwi8iiky";
+        hash = "1ghvihzgflbqwvx9l607vldxf785hcd6banm1zk4cipvi6wfjz8x";
+        repo = "test";
+      };
+      dep3 = {
+        version = "1";
+        hash = "1lrmbhqzbqggk3zvszj4sdq4m22jbhpc170ar9n6ja4jrglk9sjz";
         repo = "test";
       };
     };
@@ -334,7 +350,7 @@ targetStateFile =
 test_bump :: UnitTest
 test_bump =
   withHixDir \ hixRoot -> do
-    stateFileContent <- runMTest False do
+    stateFileContent <- runMTestLog def do
       withHackageIds hackageIds \ hackage ->
         bumpNativeTest hackage hixRoot
     eqLines targetStateFile stateFileContent

@@ -96,6 +96,11 @@ withSolverOverrides ghc state global EnvBuilderContext {initCabal, env = EnvCont
   (cabal, localUnavailable) <- initCabal.run (installedOverrides state) ghc
   use EnvBuilder {buildTargets = buildTargets EnvBuilderResources {..}, ..} (Initial state)
 
+-- TODO If @solverGhc@ fails, the entire app aborts, even though other envs might work.
+-- Also the error message isn't precise enough.
+-- The preceding info message should be changed to:
+-- > Vanilla package set for the env latest-hix doesn't build.
+-- And maybe some hint about how to fix it would be helpful.
 withEnvBuilder ::
   ∀ a .
   BuilderResources ->

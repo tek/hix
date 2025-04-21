@@ -190,8 +190,8 @@ defaultModule name =
   where
     moduleName = toText (pascal (toString name))
 
-testCabalContent :: PackageId -> [ModuleName] -> Text
-testCabalContent PackageId {..} modules =
+testCabalContent :: PackageId -> [ModuleName] -> [Dep] -> Text
+testCabalContent PackageId {..} modules deps =
   [exon|cabal-version: 1.12
 name: ##{name}
 version: #{showP version}
@@ -205,27 +205,28 @@ library
     exposed-modules:  #{Text.intercalate ", " (coerce modules)}
     hs-source-dirs:   .
     default-language: GHC2021
-    build-depends: base <5
+    build-depends: #{Text.intercalate ", " depIds}
 |]
+  where
+    depIds = "base <5" : (showP <$> deps)
 
 createPackageDir ::
   Path Abs Dir ->
-  PackageId ->
-  [(ModuleName, Text)] ->
+  HackageId ->
   M (Path Abs Dir)
-createPackageDir root pid@PackageId {name} modulesSpec = do
+createPackageDir root HackageId {package, deps, modules = modulesSpec} = do
   tryIOM do
-    dir <- parseRelDir (toString name)
+    dir <- parseRelDir (toString package.name)
     let packageDir = root </> dir
     createDir packageDir
     for_ modules \ (moduleName, content) -> do
       fileName <- parseRelFile [exon|##{moduleName}.hs|]
       Text.writeFile (toFilePath (packageDir </> fileName)) content
-    cabalName <- parseRelFile [exon|#{toString name}.cabal|]
-    Text.writeFile (toFilePath (packageDir </> cabalName)) (testCabalContent pid (fst <$> modules))
+    cabalName <- parseRelFile [exon|#{toString package.name}.cabal|]
+    Text.writeFile (toFilePath (packageDir </> cabalName)) (testCabalContent package (fst <$> modules) deps)
     pure packageDir
   where
-    modules = toList (fromMaybe [defaultModule name] (nonEmpty modulesSpec))
+    modules = toList (fromMaybe [defaultModule package.name] (nonEmpty modulesSpec))
 
 withHackageIds ::
   [HackageId] ->
@@ -243,9 +244,9 @@ withHackageIds ids use =
       let uploadConfig = UploadConfig {verbosity, user = "test", password = "test"}
           root = tmp </> [reldir|hackage-ids|]
       createDir root
-      for_ ids \ HackageId {package, modules} ->
+      for_ ids \ hid@HackageId {package} ->
         appContextDebug [exon|publishing test package #{showP package}|] do
-          packageDir <- createPackageDir root package modules
+          packageDir <- createPackageDir root hid
           targz <- sourceDistribution packageDir package
           publishPackage uploadConfig flags targz
 
