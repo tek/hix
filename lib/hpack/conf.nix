@@ -180,7 +180,8 @@
     conf = comp.__conf;
     isLib = conf.internal.sort == "library";
     mainLib = isLib && conf.internal.single;
-  in wrap isLib mainLib conf { ${name} = comp; };
+    cleaned = util.removeKeys ["__conf"] comp;
+  in wrap isLib mainLib conf { ${name} = cleaned; };
 
   hpackProto = pkg: util.mergeAllAttrs (lib.mapAttrsToList hpackComponent pkg);
 
