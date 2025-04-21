@@ -9,7 +9,7 @@ version:        0.9.1
 synopsis:       Haskell/Nix development build tools
 description:    See https://hackage.haskell.org/package/integration/docs/Integration.html
 category:       Build
-homepage:       https://git.tryp.io/tek/hix
+homepage:       https://github.com/tek/hix#readme
 bug-reports:    https://github.com/tek/hix/issues
 author:         Torsten Schmits
 maintainer:     hackage@tryp.io
@@ -20,7 +20,7 @@ build-type:     Simple
 
 source-repository head
   type: git
-  location: https://git.tryp.io/tek/hix
+  location: https://github.com/tek/hix
 
 library
   exposed-modules:
@@ -69,19 +69,19 @@ library
       NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      aeson >=2.0 && <2.3
+      aeson
     , async
-    , base ==4.*
+    , base <5
     , casing
     , exceptions
-    , exon >=1.4 && <1.7
+    , exon
     , hackage-server
     , hix ==0.9.1
-    , incipit-base >=0.5 && <0.7
+    , incipit-base
     , network-uri
-    , optparse-applicative >=0.17 && <0.19
-    , path ==0.9.*
-    , path-io >=1.7 && <1.9
+    , optparse-applicative
+    , path
+    , path-io
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -131,8 +131,8 @@ executable integration
       NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
-      base ==4.*
-    , incipit-base >=0.5 && <0.7
+      base <5
+    , incipit-base
     , integration
   mixins:
       base hiding (Prelude)
@@ -193,20 +193,20 @@ test-suite integration-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
-    , aeson >=2.0 && <2.3
-    , base ==4.*
-    , exon >=1.4 && <1.7
-    , extra ==1.7.*
-    , hedgehog >=1.1 && <1.5
+    , aeson
+    , base <5
+    , exon
+    , extra
+    , hedgehog
     , hix ==0.9.1
     , hix:testing ==0.9.1
-    , incipit-base >=0.5 && <0.7
+    , incipit-base
     , integration
-    , lens >=5.1 && <5.4
-    , path ==0.9.*
-    , path-io >=1.7 && <1.9
-    , tasty ==1.4.*
-    , tasty-hedgehog >=1.3 && <1.5
+    , lens
+    , path
+    , path-io
+    , tasty
+    , tasty-hedgehog
     , time
     , transformers
   mixins:
