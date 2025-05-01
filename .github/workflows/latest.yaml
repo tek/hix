@@ -16,7 +16,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: DeterminateSystems/nix-installer-action@v17
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: cachix/cachix-action@v16
