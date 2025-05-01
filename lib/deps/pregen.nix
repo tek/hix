@@ -13,7 +13,7 @@
 
     result = ghc.override {
       overrides = self: super: let
-        os = deps.normalize overrides self super;
+        os = builtins.removeAttrs (deps.normalize overrides self super) ["__all"];
         decs = lib.concatMapAttrs (override self super) os;
       in decs // { __hix_pkgs = lib.attrNames os; };
     };

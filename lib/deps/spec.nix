@@ -56,7 +56,9 @@ let
   compile = specs: let
 
     check = acc: spec: specs:
-    if spec.type == "decl"
+    if !(spec ? type)
+    then throw "invalid override combinator without type attribute: ${lib.generators.toPretty {} spec}"
+    else if spec.type == "decl"
     then acc // { decl = spec; }
     else if spec.type == "transform"
     then spin (acc // { trans = acc.trans ++ [spec]; }) specs

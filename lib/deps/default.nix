@@ -6,20 +6,46 @@ let
   spec = import ./spec.nix { inherit (pkgs) lib; };
   mkApi = import ./api.nix { inherit config pkgs; };
 
+  # A mock derivation used to exfiltrate the function `mkDerivation` that is manipulated by `overrideCabal`.
+  # The initial value is taken from the `super` set.
+  mkDerivationSpec = super:
+    spec.drv (lib.makeOverridable ({mkDerivation}: { inherit mkDerivation; }) { inherit (super) mkDerivation; });
+
+  # Transform a list of OCs into a derivation for `pkg` using `self` and `super` as the active GHC package set.
+  # If the OCs do not include a `decl` spec, transformations are applied to `super.${pkg}`.
+  reifySpecs = self: super: pkg: spec.reify { inherit pkgs self super pkg; };
+
   # This reverses the list of overrides from different sources, because the rightmost source should have the highest
   # precedence and the DSL composes combinators right-to-left.
   normalize = overrides: self: super: let
     api = mkApi { inherit self super; };
-  in lib.zipAttrsWith (_: lib.concatLists) (lib.reverseList (map (o: lib.mapAttrs (_: spec.listOC) (o api)) overrides));
+    flat = map (o: lib.mapAttrs (_: spec.listOC) (o api)) overrides;
+  in lib.zipAttrsWith (_: lib.concatLists) (lib.reverseList flat);
 
-  compile = overrides: self: super:
-  lib.mapAttrs (_: spec.compile) (normalize overrides self super);
+  # Apply the function `f` to each override after normalizing it.
+  # The override for `__all` is applied to `mkDerivation` and removed from the resulting set.
+  apply = f: overrides: self: super: let
+    normalized = normalize overrides self super;
 
-  reifySpec = self: super: pkg: spec.reify { inherit pkgs self super pkg; };
+    regular = lib.mapAttrs f (builtins.removeAttrs normalized ["__all"]);
+
+    mkDerivation = let
+      dummy = spec.listOC (mkDerivationSpec super);
+      withOverrides = reifySpecs self super "__all" (normalized.__all ++ dummy);
+    in withOverrides.mkDerivation;
+
+    special =
+      if normalized ? __all
+      then { inherit mkDerivation; }
+      else {};
+
+  in regular // special;
+
+  compile = apply (_: spec.compile);
 
   # Directly reify the override combinators, without using pregenerated derivations.
   reify = overrides: self: super:
-  lib.mapAttrs (reifySpec self super) (normalize overrides self super);
+  apply (reifySpecs self super) overrides self super;
 
   noPackage = ghcName: pkg: desc: ''
   The package '${pkg}' is declared in the overrides as a pregenerated derivation (${desc}),
@@ -68,5 +94,5 @@ let
   in lib.mapAttrs (replaceDecl error ghcName self super pregen) comp;
 
 in {
-  inherit normalize compile reify replace;
+  inherit normalize apply compile reify replace;
 }
