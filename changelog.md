@@ -3,6 +3,8 @@
 * Change the OC `ghcOptions` to accept a list of options as well as a string.
 * Add OC `ghcOption` that only accepts a single string.
 * Add OC `noshared` that disables creation of shared libraries.
+* Add special treatment for the override named `__all`, applying to the result of `mkDerivation`, and therefore all
+  packages.
 
 # 0.9.0
 
