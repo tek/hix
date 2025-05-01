@@ -4,6 +4,8 @@
 * Add OC `ghcOption` that only accepts a single string.
 * Default to `language = "Haskell2010"` to avoid eager evaluation of environment configs.
 * Add OC `noshared` that disables creation of shared libraries.
+* Add special treatment for the override named `__all`, applying to the result of `mkDerivation`, and therefore all
+  packages.
 
 # 0.9.0
 
