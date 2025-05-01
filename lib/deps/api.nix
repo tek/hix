@@ -51,6 +51,7 @@ let
     nodoc = transform_ "nodoc" modifiers.nodoc;
     bench = transform_ "bench" modifiers.bench;
     nobench = transform_ "nobench" modifiers.nobench;
+    noshared = transform_ "noshared" modifiers.noshared;
   };
 
   reset = drv null;

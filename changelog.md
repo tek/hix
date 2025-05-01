@@ -1,7 +1,8 @@
 # Unreleased
 
-* Changed the OC `ghcOptions` to accept a list of options as well as a string.
-* Added the OC `ghcOption` that only accepts a single string.
+* Change the OC `ghcOptions` to accept a list of options as well as a string.
+* Add OC `ghcOption` that only accepts a single string.
+* Add OC `noshared` that disables creation of shared libraries.
 
 # 0.9.0
 
