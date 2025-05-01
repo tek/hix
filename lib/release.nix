@@ -1,6 +1,6 @@
 {config, util}: let
 
-  inherit (config.internal) pkgs;
+  inherit (util) pkgs;
 
   git = "${pkgs.git}/bin/git";
   grep = "${pkgs.gnugrep}/bin/grep";

@@ -31,12 +31,13 @@
   }
   '';
 
+  packageNames = lib.attrNames config.packages;
+
   defaultMain = let
-      names = config.internal.packageNames;
-      count = lib.length names;
+      count = lib.length packageNames;
     in
       if count == 1
-      then lib.head names
+      then lib.head packageNames
       else if count == 0
       then ''
       This action requires at least one package to be defined, as in:
@@ -54,6 +55,7 @@ in {
 
   inherit
   defaultPackages
+  packageNames
   defaultMain
   packagePaths
   ;

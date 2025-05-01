@@ -8,7 +8,7 @@ let
 
   envServiceModule = import ./env/service.nix { inherit lib global; };
 
-  ghcModule = import ./ghc.nix { inherit global util; };
+  ghcModule = import ./ghc.nix { inherit util; };
 
   exposeModule = import ./expose.nix { inherit util; type = "env"; default = false; };
 
@@ -55,7 +55,7 @@ let
     lib.concatMap serviceConfig built.resolvedServices
     ;
 
-  ghcidMod = if util.minGhc "9.4" config then config.ghc.pkgs.haskell.lib.dontCheck else lib.id;
+  ghcidMod = if util.minGhc "9.4" config then built.toolchain.pkgs.haskell.lib.dontCheck else lib.id;
 
 in {
   options = let
@@ -115,10 +115,33 @@ in {
       default = null;
     };
 
+    compiler = util.maybeOption types.str {
+      description = ''
+      The name of a compiler configuration in [](#opt-general-main) or an attribute in nixpkgs' `haskell.packages`, like
+      `"ghc910"`.
+      This is a convenience option for configuring [the compiler option](#opt-package-set-compiler) in the env's
+      [package set](#opt-env-package-set).
+      '';
+    };
+
+    package-set = internal.modules.extensibleOption {
+      module = util.types.package-set;
+      type = util.types.ref.package-set;
+      attr = "package-sets";
+      desc = "that provides the packages for this environment";
+      extender = config.name;
+    };
+
+    toolchain = lib.mkOption {
+      description = ''
+      The pkgs, compiler and package set configured by [](#opt-env-package-set).
+      '';
+      type = util.types.toolchain;
+    };
+
     ghc = lib.mkOption {
-      description = "The GHC configuration for this environment.";
+      description = "Deprecation shim.";
       type = types.submodule ghcModule;
-      default = {};
     };
 
     ghcWithPackages = lib.mkOption {
@@ -193,8 +216,8 @@ in {
       description = ''
       Whether to add the local packages as overrides to this env's GHC package set.
 
-      This does not usually have any effect on outputs – it only exposes derivations on [](#opt-ghc-ghc) that can be
-      ignored.
+      This does not usually have any effect on outputs – it only exposes derivations on [](#opt-env-toolchain.packages)
+      that can be ignored.
       However, if another package depends on a local package, that dep will be overridden by the local derivation.
       Imagine defining a local package named `containers` and building `cabal-install` in this env.
 
@@ -297,7 +320,6 @@ in {
       package = lib.mkOption {
         description = "The package for GHCid, defaulting to the one from the env's GHC without overrides.";
         type = package;
-        default = ghcidMod config.ghc.vanillaGhc.ghcid;
       };
     };
 
@@ -307,7 +329,6 @@ in {
       package = lib.mkOption {
         description = "The package for HLS, defaulting to the one from the env's GHC without overrides.";
         type = package;
-        default = config.ghc.vanillaGhc.haskell-language-server;
       };
     };
 
@@ -503,7 +524,7 @@ in {
 
     services.ssh.enable = config.defaults;
 
-    ghc = let
+    package-set = let
 
       inherited = lib.optionals config.inheritOverrides;
 
@@ -522,12 +543,32 @@ in {
         ];
 
     in {
-      name = lib.mkDefault config.name;
 
-      overrides = lib.mkDefault (util.concatOverrides overrideSources);
+      compiler = lib.mkIf (config.compiler != null) (internal.modules.envDefault (
+        if global.compilers ? ${config.compiler}
+        then config.compiler
+        else { source = config.compiler; }
+      ));
 
-      gen-overrides = lib.mkDefault true;
+      overrides = internal.modules.envDefault (util.concatOverrides overrideSources);
+
+      gen-overrides = internal.modules.envDefault true;
+
     };
+
+    toolchain = let
+      duplicateCompiler =
+        config.compiler != null &&
+        config.package-set.compiler != config.compiler &&
+        config.package-set.compiler != { source = config.compiler; };
+
+      message = ''
+      The configuration for 'envs.${name}' specifies both 'compiler' and 'package-set.compiler.source'.
+      The former will be ignored.
+      '';
+    in internal.warn.warnEval duplicateCompiler "env.duplicate-compiler" message built.toolchain;
+
+    ghc.toolchain = built.toolchain;
 
     hostPorts = util.mapListCatAttrs (s: lib.mapAttrs (_: effectiveHostPort) s.ports) built.resolvedServices;
 
@@ -544,6 +585,10 @@ in {
       util.ghc.packageDbFull config ({ withHoogle = config.hoogle; } // config.ghcWithPackagesArgs);
 
     code = internal.env.scripts.setup { env = config; };
+
+    ghcid.package = lib.mkDefault (ghcidMod built.toolchain.vanilla.ghcid);
+
+    hls.package = lib.mkDefault built.toolchain.vanilla.haskell-language-server;
 
     vm = {
 
@@ -584,7 +629,7 @@ in {
           [config.overrides]
         );
 
-        overridesInherited = util.unlessDev config global.envs.dev.internal.overridesInherited;
+        overridesInherited = util.unlessDevEnv config global.envs.dev.internal.overridesInherited;
 
         # Config is given by modules merged into the option declaration
         resolvedServices = lib.mapAttrs (_: _: {}) config.services;

@@ -90,14 +90,14 @@
 
   mkBuildInputs = env: spec:
   if lib.isFunction spec
-  then spec env.ghc.pkgs
+  then spec env.toolchain.pkgs
   else spec;
 
   buildInputs = env:
   mkBuildInputs env env.buildInputs ++
   mkBuildInputs env config.buildInputs ++
-  env.haskellTools env.ghc.vanillaGhc ++
-  config.haskellTools env.ghc.vanillaGhc ++
+  env.haskellTools env.toolchain.vanilla ++
+  config.haskellTools env.toolchain.vanilla ++
   lib.optional env.hls.enable env.hls.package ++
   lib.optional env.ghcid.enable env.ghcid.package ++
   [env.ghcWithPackages]

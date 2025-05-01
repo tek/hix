@@ -2,15 +2,16 @@
 with lib;
 let
 
+  inherit (util) build internal;
+
   envModule = import ./env.nix { global = config; inherit util; };
 
-  ghcModule = import ./ghc.nix { global = config; inherit util; };
-
   ghcVersionEnv = compiler: {
-    ghc = {
+    package-set = {
       name = compiler;
-      inherit compiler;
-      nixpkgs = config.inputs.nixpkgs;
+      compiler = {
+        extends = lib.mkDefault compiler;
+      };
     };
     # TODO this didn't use mkForce before, should that mean that all dep overrides are active in this env?
     internal.overridesInherited = mkForce (util.overridesGlobal [compiler]);
@@ -50,13 +51,6 @@ in {
       default = ["ghc94" "ghc96" "ghc98" "ghc910"];
     };
 
-    # TODO deprecate
-    devGhc = mkOption {
-      description = "Backwards-compat alias for `envs.dev.ghc`.";
-      type = submodule ghcModule;
-      readOnly = true;
-    };
-
   };
 
   config = {
@@ -66,14 +60,8 @@ in {
     envs = ghcVersionEnvs // util.managed.env.modules // {
 
       dev = {
-        ghc = {
-          compiler = mkDefault config.compiler;
-          overlays = mkDefault [];
-          nixpkgs = mkDefault config.inputs.nixpkgs;
-          nixpkgsOptions = mkDefault {};
-        };
         internal.overridesInherited = (util.overridesGlobal ["dev"]);
-        hls.enable = true;
+        hls.enable = lib.mkDefault true;
         expose = {
           packages = mkDefault true;
           apps = mkDefault true;
@@ -106,8 +94,8 @@ in {
 
       hls = {
         hls.enable = true;
-        hls.package = mkDefault config.envs.hls.ghc.ghc.haskell-language-server;
-        ghc.overrides = config.envs.hls.overrides;
+        hls.package = internal.modules.envDefault build.envs.hls.toolchain.packages.haskell-language-server;
+        package-set.overrides = config.envs.hls.overrides;
         localOverrides = false;
         inheritOverrides = false;
         localDeps = false;
@@ -124,6 +112,6 @@ in {
 
     };
 
-    devGhc = mkDefault config.envs.dev.ghc;
   };
+
 }

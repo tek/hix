@@ -2,9 +2,7 @@
 with builtins;
 with util.lib;
 let
-  inherit (util) app build config project;
-
-  pkgs = config.internal.pkgs;
+  inherit (util) app build config project pkgs internal;
 
   git = "${pkgs.git}/bin/git";
 
@@ -12,7 +10,7 @@ let
 
   gitAdd = cfg.commit || cfg.add;
 
-  allTargets = if cfg.packages == null then config.internal.packageNames else cfg.packages;
+  allTargets = if cfg.packages == null then internal.project.packageNames else cfg.packages;
 
   allCabals = concatMapStringsSep " " (n: "${project.packages.${n}.path}/${n}.cabal") allTargets;
 

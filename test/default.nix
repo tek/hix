@@ -24,6 +24,7 @@ let
       "deps"
       "direnv"
       "gen-cabal"
+      "ghc-build"
       "ghci"
       "hackage"
       "hackage-legacy"
@@ -99,15 +100,23 @@ let
     basic-1 = framework.suite tests-basic-1;
     basic-2 = framework.suite tests-basic-2;
     basic-3 = framework.suite tests-basic-3;
-    vm = framework.suite tests-vm;
-    managed = framework.suite tests-managed;
     examples = framework.suite tests-managed;
+    managed = framework.suite tests-managed;
+    vm = framework.suite tests-vm;
     framework = framework.suite tests-framework;
     debug = framework.suite tests-debug;
     all = framework.suite (tests // tests-framework) // { attr = "test"; };
   };
 
-  ci-tests = util.catSets [tests-basic-1 tests-basic-2 tests-basic-3 tests-managed tests-vm tests-framework];
+  ci-tests = util.catSets [
+    tests-basic-1
+    tests-basic-2
+    tests-basic-3
+    tests-examples
+    tests-managed
+    tests-vm
+    tests-framework
+  ];
 
 in {
   inherit suites;

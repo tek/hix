@@ -8,22 +8,11 @@
 
   inherit (toolchain.pkgs.__hix) packages;
 
-  # FIXME make sure to test the performance in the end, by running the test suite in the parent commit for baseline
-  # times.
-
-  # FIXME Push the package built by the `ghc-build` test to cachix
-
-  # FIXME update docs
-
-  # FIXME add missing eval warning replacement instructions, like `vanillaGhc` -> `env.toolchain.vanilla`
-
   docLink = "You can find more information about customizing compilers and package sets at [https://hix.how#ghc].";
 
   option = args: internal.modules.deprecatedOption ({
     key = "env.ghc";
-    extra = ''
-
-    ${docLink}'';
+    extra = "\n${docLink}";
   } // args);
 
 in {

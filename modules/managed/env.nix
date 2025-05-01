@@ -43,12 +43,7 @@ in {
 
   config = {
 
-    verbatim = default "verbatim" {
-      managed = mkDefault true;
-      ghc.nixpkgsOptions = {
-        config.allowBroken = true;
-      };
-    };
+    verbatim = default "verbatim" {};
 
     solverOverrides = default "solverOverrides" [];
 

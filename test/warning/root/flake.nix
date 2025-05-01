@@ -9,6 +9,12 @@
 
     outputs.legacyPackages = {
       package-subpath = config.packages.root.subpath;
+      ghc-version = config.envs.dev.ghc.version;
+    };
+
+    envs.duplicate = {
+      compiler = "ghc910";
+      package-set.compiler.source = "ghc98";
     };
 
   });

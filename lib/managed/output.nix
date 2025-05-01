@@ -1,5 +1,5 @@
 {util}: let
-  inherit (util) config lib;
+  inherit (util) config lib internal;
 
   # TODO refactor this into the new outputs protocol
   appsWith = cons: {
@@ -34,7 +34,7 @@
     if sets == "all"
     then appsForEnvs { latest = "latest"; lower = "lower"; }
     else if sets == "each"
-    then managedMulti config.internal.packageNames
+    then managedMulti internal.project.packageNames
     else if lib.isAttrs sets
     then managedMulti (lib.attrNames sets)
     else throw "Unexpected value for 'managed.sets': ${lib.generators.toPretty sets}"

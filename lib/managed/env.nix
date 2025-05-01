@@ -1,18 +1,28 @@
 {util}: let
-  inherit (util) config lib;
+  inherit (util) config lib internal;
   conf = config.managed;
 
-  envDefault = lib.mkOverride 500;
-
-  envFor = packages: special: {
-    inherit packages;
+  staticConfig = {
+    package-set.compiler = {
+      nixpkgs.config.config.allowBroken = true;
+    };
     managed = lib.mkDefault true;
     # TODO use fine-grained variant
     expose = lib.mkDefault true;
-  } // special.envs.verbatim // {
-    ghc = { compiler = envDefault special.compiler; } // special.envs.verbatim.ghc or {};
-    internal = { overridesSolver = envDefault special.envs.solverOverrides; } // special.envs.verbatim.internal or {};
   };
+
+  derivedConfig = conf: {
+    package-set.compiler.source = internal.modules.envDefault conf.compiler;
+    internal.overridesSolver = internal.modules.envDefault conf.envs.solverOverrides;
+  };
+
+  envFor = packages: special:
+  lib.mkMerge [
+    { inherit packages; }
+    staticConfig
+    (derivedConfig special)
+    special.envs.verbatim
+  ];
 
   envsFor = suf: packages: {
     ${"latest${suf}"} = envFor packages config.managed.latest;
@@ -26,7 +36,7 @@
 
   envsSet = name: envsFor "-${name}";
 
-  envsEach = util.mapListCatAttrs envsSingle config.internal.packageNames;
+  envsEach = util.mapListCatAttrs envsSingle internal.project.packageNames;
 
   envsSets = lib.concatMapAttrs envsSet conf.sets;
 

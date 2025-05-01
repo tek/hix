@@ -4,7 +4,7 @@
   inputs.hix.url = "HIX";
 
   outputs = {hix, ...}:
-  hix.lib._hix_test ({config, ...}: {
+  hix.lib._hix_test {
     packages.root = {
       src = ./.;
       cabal.dependencies = ["text"];
@@ -21,11 +21,11 @@
     };
     envs.cross = {
       expose = true;
-      ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
+      package-set.cross = "musl64";
     };
     overrides = { hsLib, self, ... }: {
       static-override = hsLib.justStaticExecutables self.root;
     };
     output.extraPackages = ["static-override"];
-  });
+  };
 }
