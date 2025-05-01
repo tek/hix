@@ -701,6 +701,7 @@ in {
   - `nodoc` – Disable Haddock
   - `bench` – Enable benchmarks
   - `nobench` – Disable benchmarks
+  - `noshared` – Disable creation of shared libraries
   - `minimal` – Unbreak and disable profiling libraries, Haddock, benchmarks and tests
   - `fast` – Disable profiling and Haddock
   - `force` – Unbreak, jailbreak and disable benchmarks and tests
