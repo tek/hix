@@ -1,14 +1,15 @@
 {config, lib, extra ? {}, ...}:
-with lib;
 let
-
-  pkgs = config.pkgs;
 
   basic = import ./default.nix { inherit lib; };
 
   paramApp = import ./param-app.nix { inherit config lib util; };
 
   types = import ./types.nix { inherit config lib util; };
+
+  build = import ./build/default.nix { inherit util; };
+
+  pkgs = build.nixpkgs.internal.pkgs;
 
   hsLib = config.pkgs.haskell.lib;
 
@@ -49,10 +50,10 @@ let
     packageConf = pkg: {
       inherit (pkg) name;
       src = util.project.packages.${pkg.name}.path;
-      components = mapAttrs (_: componentConf) (util.internal.packages.normalized pkg);
+      components = lib.mapAttrs (_: componentConf) (util.internal.packages.normalized pkg);
     };
 
-    packages = mapAttrs (_: packageConf) config.packages;
+    packages = lib.mapAttrs (_: packageConf) config.packages;
 
     env = default: {
       mainPackage = config.main;
@@ -74,12 +75,14 @@ let
   };
 
   minGhcs = version:
-  all (basic.minGhc version) (attrValues config.envs);
+  lib.all (basic.minGhc version) (lib.attrValues config.envs);
 
   minGhcDev = version:
   basic.minGhc version config.envs.dev;
 
-  unlessDev = conf: v: mkIf (conf.name != "dev") (mkDefault v);
+  unlessDevEnv = conf: v: lib.mkIf (conf.name != "dev") (lib.mkDefault v);
+
+  unlessDevGhc = conf: v: lib.mkIf (conf.env != "dev") (lib.mkDefault v);
 
   scriptErr = name: text: pkgs.writeScript name ''
   #!${pkgs.runtimeShell}
@@ -159,7 +162,7 @@ let
     verbose ? true,
     nix ? false,
   }: let
-    extraPath = optional nix nixWrapper;
+    extraPath = lib.optional nix nixWrapper;
   in
   basic.unlines (
     lib.optional console (basic.loadConsoleWith { inherit verbose; })
@@ -199,7 +202,7 @@ let
   '';
 
   envSystemAllowed = env:
-  env.systems == null || (elem config.system env.systems);
+  env.systems == null || (lib.elem config.system env.systems);
 
   runBuildApp = name:
   "nix --quiet --quiet --quiet --show-trace run .#${util.internalScope}.${name}";
@@ -233,6 +236,7 @@ let
     inherit
     config
     pkgs
+    build
     hsLib
     paramApp
     types
@@ -248,7 +252,8 @@ let
     json
     minGhcs
     minGhcDev
-    unlessDev
+    unlessDevEnv
+    unlessDevGhc
     scriptErr
     script
     scriptBin
@@ -280,8 +285,6 @@ let
 
     ghc = import ./ghc.nix { inherit config lib util; };
 
-    ghcOverlay = import ./ghc-overlay.nix { inherit util; };
-
     managed = import ./managed/default.nix { inherit util; };
 
     command = import ./command.nix { inherit util; };
@@ -293,8 +296,6 @@ let
     internal = import ./internal/default.nix { inherit util; };
 
     project = import ./project/default.nix { inherit util; };
-
-    build = import ./build/default.nix { inherit util; };
 
     outputs = import ./outputs/default.nix { inherit util; };
   };

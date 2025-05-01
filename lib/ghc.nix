@@ -29,15 +29,16 @@
         env.internal.overridesSolver
         (internal.env.managedSolverOverrides env.name)
       ];
-  in env.ghc.vanillaGhc.override { overrides = (deps { inherit (env.ghc) pkgs; }).reify overrides; };
+  in env.toolchain.vanilla.override { overrides = (deps { inherit (env.ghc) pkgs; }).reify overrides; };
 
   packageDbSolver = noLocalsInDeps: env: (solverGhc env).ghcWithPackages (packageDb noLocalsInDeps env);
 
+  # TODO these two aren't used
   packageDbSolverShallow = noLocalsInDeps: env: map (p: p.drvPath) (packageDb noLocalsInDeps env (solverGhc env));
 
   packageDbSolverNames = noLocalsInDeps: env: map (p: p.name) (packageDb noLocalsInDeps env (solverGhc env));
 
-  packageDbFull = env: args: env.ghc.ghc.ghcWithPackages.override args (packageDb false env);
+  packageDbFull = env: args: env.toolchain.packages.ghcWithPackages.override args (packageDb false env);
 
 in {
   inherit packageDb packageDbSolver packageDbSolverShallow packageDbSolverNames packageDbFull;

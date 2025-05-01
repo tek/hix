@@ -55,9 +55,15 @@
     (options.importMod "env/expose" { inherit util; })
   ];
 
-  ghcExclude = [
-  ];
-  mod-ghc = options.moduleWithout ghcExclude "ghc" { global = config; inherit util; };
+  mod-nixpkgs = options.module "nixpkgs" { inherit util; };
+
+  mod-compiler = options.module "compiler" { inherit util; };
+
+  mod-ghc-build = options.module "ghc-build" { inherit util; };
+
+  mod-package-set = options.module "package-set" { inherit util; };
+
+  mod-toolchain = options.module "toolchain" { inherit util; };
 
   commandExclude = [
     { type = "sub"; path = ["env"]; }
@@ -137,7 +143,11 @@
         (text prose.environments)
         (opt "env" "Environment" mod-env)
         (opt "env-expose" "Environment exposure" mod-envExpose)
-        (opt "ghc" "GHC" mod-ghc)
+        (opt "nixpkgs" "Nixpkgs" mod-nixpkgs)
+        (opt "compiler" "Compiler" mod-compiler)
+        (opt "ghc-build" "GHC build" mod-ghc-build)
+        (opt "package-set" "Package set" mod-package-set)
+        (opt "toolchain" "Toolchain" mod-toolchain)
         (opt "command" "Command" mod-command)
         (opt "ghci" "GHCi(d)" mod-ghci)
         (opt "service" "Service" mod-service)

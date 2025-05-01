@@ -233,28 +233,31 @@ in {
     };
 
     pkgs = mkOption {
-      type = util.types.pkgs;
+      type = types.pkgs;
       description = ''
-        The nixpkgs attrset used by the default GHC.
+      The vanilla nixpkgs set configured by [`nixpkgs.internal`](#opt-general-nixpkgs).
+      Convenience option for the purpose of generic functionality like `pkgs.writeText`.
+      For package set specific tasks, please use the corresponding set configured by [](#opt-package-set).
+      In particular, [override](#overrides) functions are provided with the proper `pkgs` argument.
       '';
       readOnly = true;
     };
 
     internal = {
 
-      pkgs = mkOption {
+      pkgs = internal.modules.deprecatedOption {
         type = unspecified;
-        readOnly = true;
+        key = "internal.pkgs";
       };
 
-      basicGhc = mkOption {
+      basicGhc = internal.modules.deprecatedOption {
         type = util.types.haskellPackages;
-        readOnly = true;
+        key = "internal.basicGhc";
       };
 
-      packageNames = mkOption {
+      packageNames = internal.modules.deprecatedOption {
         type = listOf str;
-        readOnly = true;
+        key = "internal.packageNames";
       };
 
       cabal-extra = mkOption {
@@ -291,12 +294,22 @@ in {
 
     name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
-    pkgs = mkDefault config.envs.dev.ghc.pkgs;
-    nixpkgs.default = {
-      extends = null;
-      source = lib.mkDefault util.config.inputs.nixpkgs;
-      config.allowUnfree = lib.mkDefault true;
-      args = { inherit (util.config) system; };
+    nixpkgs = {
+
+      default = {
+        extends = null;
+        source = lib.mkDefault util.config.inputs.nixpkgs;
+        config.allowUnfree = lib.mkDefault true;
+        args = { inherit (util.config) system; };
+      };
+
+      internal = {
+        extends = null;
+        source = lib.mkDefault util.config.inputs.nixpkgs;
+        config.allowUnfree = lib.mkDefault true;
+        args = { inherit (util.config) system; };
+      };
+
     };
 
     compilers.default = {
@@ -306,6 +319,8 @@ in {
     package-sets.default = {
       extends = null;
     };
+
+    pkgs = mkDefault util.pkgs;
 
     haskellTools = ghc: [ghc.cabal-install];
 

@@ -2,9 +2,7 @@
 with builtins;
 with util.lib;
 let
-  inherit (util) app build config project;
-
-  pkgs = config.internal.pkgs;
+  inherit (util) app build config project pkgs;
 
   git = "${pkgs.git}/bin/git";
 

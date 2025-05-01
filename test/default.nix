@@ -25,6 +25,7 @@ let
       "direnv"
       "examples"
       "gen-cabal"
+      "ghc-build"
       "ghci"
       "hackage"
       "hackage-legacy"

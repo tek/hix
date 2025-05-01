@@ -391,7 +391,8 @@ in {
   flakes, because it evaluates *all* outputs before running the checks.
   Hix defines checks for all packages and GHC versions, so it is generally desirable to be able to run this command in
   CI.
-  Unfortunately, `cabal2nix` (which generates all Haskell derivations) uses IFD.
+  Unfortunately, `cabal2nix` (the tooling infrastructure in nixpkgs that Hix uses to generate Haskell derivations from
+  Cabal files) uses IFD.
 
   ### On-the-fly derivations {#no-ifd}
 
@@ -776,8 +777,8 @@ in {
   - `hsLibC` – The entire nixpkgs tool set `haskell.lib.compose`.
     This is preferable to `hsLib`, but for historic reasons that one ended up in here first, and it's gonna stay for
     compatibility.
-  - `compilerName` – The `name` attribute of the GHC package
-  - `compilerVersion` – The `version` attribute of the GHC package
+  - `ghcName` – The `name` attribute of the GHC package
+  - `ghcVersion` – The `version` attribute of the GHC package
 
   #### Transitive overrides {#overrides-transitive}
 
@@ -1239,11 +1240,12 @@ in {
 
   Note that this does not result in a static binary – it will still be linked dynamically against libc.
 
-  For more elaborate cross-compilation setups, each GHC can be configured to use a [cross pkgs set](#opt-ghc-crossPkgs):
+  For more elaborate cross-compilation setups, each package set can be configured to use a [cross pkgs
+  set](#opt-package-set-cross):
 
   ```
   {
-    envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
+    envs.dev.package-set.cross = "musl64";
   }
   ```
 

@@ -2,7 +2,7 @@
 
   inherit (lib) types;
 
-  ghc = config.envs.hix-build-tools.ghc.ghc;
+  ghc = config.envs.hix-build-tools.toolchain.packages;
 
 in {
 
