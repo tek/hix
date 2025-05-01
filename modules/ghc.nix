@@ -1,19 +1,21 @@
 { global, util }:
-{ lib, config, ... }:
-with lib;
-{
-  options = with types; {
-    name = mkOption {
-      type = str;
+{ lib, config, ... }: let
+
+  inherit (lib) types;
+
+in {
+  options = {
+    name = lib.mkOption {
+      type = types.str;
       description = "A unique identifier of the package set.";
     };
 
-    compiler = mkOption {
-      type = str;
+    compiler = lib.mkOption {
+      type = types.str;
       description = "The attribute name for a GHC version in the set `haskell.packages`.";
     };
 
-    overrides = mkOption {
+    overrides = lib.mkOption {
       type = util.types.cabalOverrides;
       description = ''
       The overrides used for this package set – see [](#ghc) for an explanation.
@@ -24,7 +26,7 @@ with lib;
       default = [];
     };
 
-    nixpkgs = mkOption {
+    nixpkgs = lib.mkOption {
       type = util.types.nixpkgs;
       description = ''
       The path to a nixpkgs source tree, used as the basis for the package set.
@@ -34,17 +36,17 @@ with lib;
     };
 
     # TODO make sure this is the type that recursively merges attrsets
-    nixpkgsOptions = mkOption {
-      type = attrsOf unspecified;
+    nixpkgsOptions = lib.mkOption {
+      type = types.attrsOf types.unspecified;
       description = "Additional options to pass to nixpkgs when importing.";
     };
 
-    pkgs = mkOption {
+    pkgs = lib.mkOption {
       type = util.types.pkgs;
       description = "The nixpkgs set used for this GHC.";
     };
 
-    crossPkgs = mkOption {
+    crossPkgs = lib.mkOption {
       type = util.types.pkgs;
       description = ''
       This option can be used to override the pkgs set used for the Haskell package set, for example an element of
@@ -52,37 +54,37 @@ with lib;
       '';
     };
 
-    overlays = mkOption {
-      type = listOf util.types.overlay;
+    overlays = lib.mkOption {
+      type = types.listOf util.types.overlay;
       description = "Additional nixpkgs overlays.";
     };
 
-    vanillaGhc = mkOption {
+    vanillaGhc = lib.mkOption {
       type = util.types.ghc;
       description = "The package set without overrides.";
       readOnly = true;
     };
 
-    ghc = mkOption {
+    ghc = lib.mkOption {
       type = util.types.ghc;
       description = "The package set with overrides.";
       readOnly = true;
     };
 
-    version = mkOption {
+    version = lib.mkOption {
       description = "The GHC version as a canonical string, like `9.2.5`, for use in conditions.";
-      type = str;
+      type = types.str;
       readOnly = true;
     };
 
-    gen-overrides = mkOption {
+    gen-overrides = lib.mkOption {
       description = ''
       Allow this GHC to use pregenerated overrides.
       Has no effect when [](#opt-general-gen-overrides.enable) is `false`.
 
       Disabled by default, but enabled for GHCs that are defined in an environment.
       '';
-      type = bool;
+      type = types.bool;
       default = false;
     };
 
@@ -95,17 +97,17 @@ with lib;
     nixpkgsOptions = util.unlessDev config global.envs.dev.ghc.nixpkgsOptions;
 
     pkgs = let
-      go = util.ghcOverlay { ghc = config; };
-      options = recursiveUpdate {
+      ghcOverlay = util.ghcOverlay { ghc = config; };
+      options = lib.recursiveUpdate {
         inherit (global) system;
-        overlays = [go] ++ config.overlays;
+        overlays = [ghcOverlay] ++ config.overlays;
         config.allowUnfree = true;
       } config.nixpkgsOptions;
     in import config.nixpkgs options;
 
-    crossPkgs = mkDefault config.pkgs;
+    crossPkgs = lib.mkDefault config.pkgs;
 
-    vanillaGhc = mkDefault (config.crossPkgs.haskell.packages.${config.compiler});
+    vanillaGhc = lib.mkDefault (config.crossPkgs.haskell.packages.${config.compiler});
 
     ghc = config.crossPkgs.hixPackages;
 
