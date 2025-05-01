@@ -1,3 +1,8 @@
+# Unreleased
+
+* Changed the OC `ghcOptions` to accept a list of options as well as a string.
+* Added the OC `ghcOption` that only accepts a single string.
+
 # 0.9.0
 
 * Add an experimental app, `maint`, that uploads Hackage revisions for previous tags when bounds can be bumped.

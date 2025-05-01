@@ -20,6 +20,10 @@ let
   (drv.override (args: args // { mkDerivation = drv: (args.mkDerivation drv).overrideAttrs f; }))
   // { overrideScope = scope: overrideAttrsCabal f (drv.overrideScope scope); };
 
+  ghcOption = opt: "--ghc-options=${opt}";
+
+  concatGhcOptions = opts: lib.concatMapStringsSep " " ghcOption (lib.toList opts);
+
   transformers = {
     transformDrv = transform_ "transform-drv";
     modify = transform_ "modify";
@@ -29,7 +33,8 @@ let
     configures = flags: transform_ "configures" (hsLibC.appendConfigureFlags flags);
     enable = flag: transform_ "enable" (hsLibC.enableCabalFlag flag);
     disable = flag: transform_ "disable" (hsLibC.disableCabalFlag flag);
-    ghcOptions = flag: transform_ "ghcOptions" (hsLibC.appendConfigureFlag "--ghc-options=${flag}");
+    ghcOption = opt: transform_ "ghcOption" (hsLibC.appendConfigureFlag (ghcOption opt));
+    ghcOptions = opts: transform_ "ghcOptions" (hsLibC.appendConfigureFlag (concatGhcOptions opts));
     override = conf: transform_ "override" (hsLibC.overrideCabal conf);
     overrideAttrs = f: transform_ "overrideAttrs" (overrideAttrsCabal f);
     buildInputs = inputs: transform_ "buildInputs" (

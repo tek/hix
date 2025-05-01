@@ -711,7 +711,13 @@ in {
   - `configures` – Add multiple Cabal configure CLI options (in a list)
   - `enable` – Enable a Cabal flag (`-f<flag>`)
   - `disable` – Disable a Cabal flag (`-f-<flag>`)
-  - `ghcOptions` – Pass GHC options to Cabal (`--ghc-options`)
+  - `ghcOptions` – Pass GHC options to Cabal, either a single string or a list of strings.
+    This uses Cabal's `--ghc-options` via `appendConfigureFlag`, which sets the derivation attribute `configureFlags`,
+    which performs string splitting on whitespace for each entry.
+    That means that whitespace-separated arguments, quoted or not, will get separated. For example,
+    `--ghc-options='-x -y'` will result in two arguments being given to Cabal, `--ghc-options='-x` and `-y'`.
+    So, it's advisable to use multiple values in a list instead.
+  - `ghcOption` – Pass a single GHC option string to Cabal
   - `override` – Use `overrideCabal` to modify the arguments passed to the Haskell-specific derivation builder (the
     function `mkDerivation` explained below).
     Similar to the more general `stdenv.mkDerivation` used by most nixpkgs packages (and wrapped by the Haskell
