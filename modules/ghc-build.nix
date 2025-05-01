@@ -10,7 +10,7 @@ in {
     version = lib.mkOption {
       description = ''
       The GHC version built by the custom config.
-      If [](#options-ghc-build.rev) or [](#opt-ghc-build.src) are not specified, the release sources for that version
+      If [](#opt-ghc-build-rev) or [](#opt-ghc-build-src) are not specified, the release sources for that version
       are used.
       In any case, the version determines other aspects in nixpkgs' builder, like patches.
       '';

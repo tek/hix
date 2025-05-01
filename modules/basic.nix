@@ -233,7 +233,7 @@ in {
     };
 
     pkgs = mkOption {
-      type = util.types.pkgs;
+      type = types.pkgs;
       description = ''
         The nixpkgs attrset used by the default GHC.
       '';
@@ -291,7 +291,6 @@ in {
 
     name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
-    pkgs = mkDefault config.envs.dev.ghc.pkgs;
     nixpkgs.default = {
       extends = null;
       source = lib.mkDefault util.config.inputs.nixpkgs;
@@ -306,6 +305,9 @@ in {
     package-sets.default = {
       extends = null;
     };
+
+    # TODO figure this out
+    pkgs = mkDefault util.vanillaPkgs;
 
     haskellTools = ghc: [ghc.cabal-install];
 

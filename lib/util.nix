@@ -4,6 +4,8 @@ let
 
   pkgs = config.pkgs;
 
+  vanillaPkgs = config.internal.pkgs;
+
   basic = import ./default.nix { inherit lib; };
 
   paramApp = import ./param-app.nix { inherit config lib util; };
@@ -79,7 +81,9 @@ let
   minGhcDev = version:
   basic.minGhc version config.envs.dev;
 
-  unlessDev = conf: v: mkIf (conf.name != "dev") (mkDefault v);
+  unlessDevEnv = conf: v: mkIf (conf.name != "dev") (mkDefault v);
+
+  unlessDevGhc = conf: v: mkIf (conf.env != "dev") (mkDefault v);
 
   scriptErr = name: text: pkgs.writeScript name ''
   #!${pkgs.runtimeShell}
@@ -233,6 +237,7 @@ let
     inherit
     config
     pkgs
+    vanillaPkgs
     hsLib
     paramApp
     types
@@ -248,7 +253,8 @@ let
     json
     minGhcs
     minGhcDev
-    unlessDev
+    unlessDevEnv
+    unlessDevGhc
     scriptErr
     script
     scriptBin
@@ -279,8 +285,6 @@ let
     path = import ./path.nix { inherit util; };
 
     ghc = import ./ghc.nix { inherit config lib util; };
-
-    ghcOverlay = import ./ghc-overlay.nix { inherit util; };
 
     managed = import ./managed/default.nix { inherit util; };
 

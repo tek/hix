@@ -1,25 +1,26 @@
 {config, lib, util, ...}:
 let
   inherit (lib) types;
-
-  ghcModule = import ./ghc.nix { global = config; inherit util; };
+  inherit (util) build;
 
   cliNixpkgs = builtins.fetchTarball {
     url = "https://github.com/nixos/nixpkgs/archive/b2243f41e860ac85c0b446eadc6930359b294e79.tar.gz";
     sha256 = "0bhibarcx56j1szd40ygv1nm78kap3yr4s24p5cv1kdiy4hsb21k";
   };
 
+  package-set = build.package-sets config.internal.hixCli.ghc;
+
 in {
 
     options.internal.hixCli = {
 
       ghc = lib.mkOption {
-        description = "The GHC config used for the Hix CLI, defaulting to the dev GHC without overrides.";
-        type = types.submodule ghcModule;
+        description = "The GHC config used for the Hix CLI.";
+        type = types.submodule (import ./package-set.nix { inherit util; });
       };
 
       overrides = lib.mkOption {
-        description = "The overrides used for the CLI client.";
+        description = "The overrides used for the CLI package set.";
         type = util.types.cabalOverrides;
       };
 
@@ -102,14 +103,18 @@ in {
 
     ghc = {
       name = "hix";
-      compiler = "ghc98";
+      compiler = {
+        nixpkgs = {
+          source = cliNixpkgs;
+          extends = null;
+        };
+        source = "ghc98";
+        extends = null;
+      };
       overrides = lib.mkForce config.internal.hixCli.overrides;
-      nixpkgs = cliNixpkgs;
-      nixpkgsOptions = {};
-      overlays = [];
     };
 
-    package = config.internal.hixCli.ghc.ghc.hix;
+    package = package-set.packages.hix;
 
   };
 

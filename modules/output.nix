@@ -4,7 +4,7 @@ let
 
   tags = import ../lib/tags.nix { inherit config util; };
 
-  genOverrides = import ../lib/gen-overrides.nix { inherit config lib util; };
+  genOverrides = import ../lib/gen-overrides.nix { inherit util; };
 
   showOverrides = import ../lib/show-overrides.nix { inherit util; };
 

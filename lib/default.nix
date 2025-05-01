@@ -23,6 +23,8 @@ let
 
   unlines = concatStringsSep "\n";
 
+  lines = lib.splitString "\n";
+
   unlinesMap = lib.concatMapStringsSep "\n";
 
   unlinesConcatMap = f: xs: concatStringsSep "\n" (lib.concatMap f xs);
@@ -108,13 +110,17 @@ let
 
   removeKeys = lib.flip builtins.removeAttrs;
 
+  pickNonNullAttrAs = rename: name: attrs: maybeNull {} (value: { ${rename} = value; }) attrs.${name};
+
+  pickNonNullAttr = name: pickNonNullAttrAs name name;
+
   toTitle = s:
   if lib.stringLength s == 0
   then s
   else lib.toUpper (lib.substring 0 1 s) + lib.substring 1 (-1) s;
 
   minGhc = version: env:
-  lib.versionAtLeast env.ghc.version version;
+  lib.versionAtLeast env.toolchain.version version;
 
   empty = v: if isAttrs v then empty (attrNames v) else v == [];
 
@@ -415,6 +421,7 @@ in
   concatMapAttrsToList
   unwords
   unlines
+  lines
   unlinesMap
   unlinesConcatMap
   catSets
@@ -435,6 +442,8 @@ in
   fromMaybeNull
   restrictKeys
   removeKeys
+  pickNonNullAttrAs
+  pickNonNullAttr
   toTitle
   minGhc
   empty

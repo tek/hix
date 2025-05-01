@@ -24,6 +24,7 @@ let
       "deps"
       "direnv"
       "gen-cabal"
+      "ghc-build"
       "ghci"
       "hackage"
       "hackage-legacy"
