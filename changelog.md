@@ -7,6 +7,8 @@
 * Add OC `shared` that enables linking Haskell libraries dynamically in executables.
 * Add special treatment for the override named `__all`, applying to the result of `mkDerivation`, and therefore all
   packages.
+* Add the attribute `exe` to derivations in `build.*.executables`, containing the full path to the executable in the
+  store.
 
 # 0.9.0
 
