@@ -20,8 +20,14 @@
 
   appimageDerivation = nix-appimage.bundlers.${config.system}.default;
 
+  binAttr = name: drv: { exe = "${drv}/bin/${name}"; };
+
   exeDrv = name: drv:
-  drv.overrideAttrs { pname = name; meta.mainProgram = name; };
+  drv.overrideAttrs (old: {
+    pname = name;
+    meta.mainProgram = name;
+    passthru = old.passthru or {} // binAttr name drv;
+  });
 
   staticExeDrv = name: drv:
   exeDrv name (util.hsLib.justStaticExecutables drv);
@@ -32,7 +38,7 @@
       package = exeDrv name drv;
       musl = staticExeDrv name muslDrv;
       static = staticExeDrv name staticDrv;
-    in {
+    in binAttr name drv // {
       app = util.app "${package}/bin/${name}";
       inherit package static musl;
       appimage = appimageDerivation musl;
