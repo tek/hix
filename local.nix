@@ -207,7 +207,7 @@ in {
       owner = "tek";
       repo = "hackage-server";
       sha256 = "sha256-bm9jpskrYM4QKbP5tjdBy3BemSZnMH/Tx2yUuvuhr8c=";
-      rev = "678022773f7cd7db9264d8f9bf275e0ead9ea28a";
+      rev = "9cb8231bd034d4e57116ba752bdf8a1830a1ee99";
     };
 
   in {
