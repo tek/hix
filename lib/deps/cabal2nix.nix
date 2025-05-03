@@ -44,7 +44,7 @@
     c2nArgs = optionCat "cabal2nix-overrides" options;
   in setRevision pkgs options (replaceCabal2nixSrc properSrc (self.callPackage meta.drv c2nArgs));
 
-  genHackageDrv = createDrv: meta: args@{self, pkg, options, pkgs, ...}: let
+  genHackageDrv = createDrv: meta: args@{pkg, options, pkgs, ...}: let
 
     c2nArgs = optionCat "cabal2nix-overrides" options;
 
@@ -89,7 +89,9 @@
 # ----------------------------------------------------------------------------------------------------------------------
 
   cabal2nixDrv = {src}: {self, pkg, options, ...}:
-  self.callCabal2nixWithOptions pkg src (optionWords "cabal2nix" options) (optionCat "cabal2nix-overrides" options);
+  self.callCabal2nixWithOptions pkg src
+  (optionWords "cabal2nix" options)
+  (optionCat "cabal2nix-overrides" options);
 
   srcCabal2nix = meta: pkg: meta.src;
 
