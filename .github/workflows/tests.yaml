@@ -34,12 +34,12 @@ jobs:
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Flake checks
-        run: nix flake check
+        run: nix --show-trace flake check
       - id: ci-matrix
         name: Output CI matrix
         run: |
           echo -n "tests=" >> "$GITHUB_OUTPUT"
-          nix eval --json .#ci-matrix >> "$GITHUB_OUTPUT"
+          nix --show-trace eval --json .#ci-matrix >> "$GITHUB_OUTPUT"
 
   tests:
     name: 🛠️ ${{ matrix.test }}
@@ -71,7 +71,7 @@ jobs:
       - name: Configure apparmor to permit appimages to execute
         run: sudo sysctl kernel.apparmor_restrict_unprivileged_userns=0
       - name: Run test '${{ matrix.test }}'
-        run: nix run .#test -- ${{ matrix.test }}
+        run: nix --show-trace run .#test -- ${{ matrix.test }}
 
   appimage:
     name: Build the AppImage
@@ -97,7 +97,7 @@ jobs:
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Build the AppImage
-        run: nix -L build .#min.appimage
+        run: nix --show-trace -L build .#min.appimage
 
   docs:
     name: Build the docs
@@ -123,4 +123,4 @@ jobs:
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Build the docs
-        run: nix -L build .#docs
+        run: nix --show-trace -L build .#docs
