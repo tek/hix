@@ -4,6 +4,7 @@
   envs = import ./envs.nix { inherit util; };
   ghc = import ./ghc.nix { inherit util; };
   modules = import ./modules.nix { inherit util; };
+  overrides = import ./overrides.nix { inherit util; };
   package = import ./package.nix { inherit util; };
   packages = import ./packages.nix { inherit util; };
   project = import ./project.nix { inherit util; };

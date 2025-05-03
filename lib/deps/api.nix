@@ -102,6 +102,8 @@ let
 in transformers // {
   inherit (c2n) hackageAt source;
   inherit self super pkgs;
+  final = self;
+  prev = super;
   inherit reset transform transform_ noHpack cabalOverrides cabal2nixOverrides cabal2nixArgs revision drv;
   inherit hackageConfGen hackageConf hackage;
   inherit (spec) option;
