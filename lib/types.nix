@@ -4,6 +4,10 @@ with types;
 
 let
 
+  fileModule = name: import ../modules/${name}.nix { inherit util; };
+
+  fileSubmodule = name: types.submodule (fileModule name);
+
   cabalDepModule = {
     options = {
 
@@ -113,11 +117,19 @@ let
 in {
   inherit nestedPackages flakeApp cabalOverridesVia app;
 
-  nixpkgs = mkOptionType {
-    name = "nixpkgs";
-    description = "nixpkgs snapshot";
-    merge = mergeOneOption;
+  ref = {
+
+    nixpkgs = mkOptionType {
+      name = "ref.nixpkgs";
+      description = "name of a nixpkgs configuration in config.nixpkgs.";
+      descriptionClass = "noun";
+      check = a: isString a && hasAttr a config.nixpkgs;
+      merge = mergeOneOption;
+    };
+
   };
+
+  nixpkgs = fileModule "nixpkgs";
 
   pkgs = mkOptionType {
     name = "pkgs";
@@ -125,10 +137,10 @@ in {
     merge = mergeOneOption;
   };
 
-  overlay = mkOptionType {
+  overlay = types.functionTo (types.functionTo types.pkgs) // {
     name = "overlay";
-    description = "overlay";
-    merge = mergeOneOption;
+    description = "nixpkgs overlay";
+    descriptionClass = "noun";
   };
 
   cabalOverrides = cabalOverridesVia null;
@@ -136,6 +148,7 @@ in {
   ghc = mkOptionType {
     name = "ghc";
     description = "Haskell package set";
+    check = a: isAttrs a;
     merge = mergeOneOption;
   };
 
