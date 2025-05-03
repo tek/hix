@@ -66,7 +66,7 @@ in {
     };
 
     ghc = lib.mkOption {
-      type = util.types.ghc;
+      type = util.types.haskellPackages;
       description = "The package set with overrides.";
       readOnly = true;
     };

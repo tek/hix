@@ -2,6 +2,7 @@
 
   env = import ./env.nix { inherit util; };
   envs = import ./envs.nix { inherit util; };
+  ghc = import ./ghc.nix { inherit util; };
   modules = import ./modules.nix { inherit util; };
   package = import ./package.nix { inherit util; };
   packages = import ./packages.nix { inherit util; };
