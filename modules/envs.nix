@@ -31,6 +31,8 @@ let
 
   ghcVersionEnvs = genAttrs config.ghcVersions ghcVersionEnv;
 
+  ghcVersionCompilers = genAttrs config.ghcVersions (compiler: { source = compiler; });
+
 in {
   options = with types; {
 
@@ -58,6 +60,9 @@ in {
   };
 
   config = {
+
+    compilers = ghcVersionCompilers;
+
     envs = ghcVersionEnvs // util.managed.env.modules // {
 
       dev = {

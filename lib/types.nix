@@ -127,13 +127,31 @@ in {
       merge = mergeOneOption;
     };
 
+    compiler = mkOptionType {
+      name = "ref.compiler";
+      description = "name of a compiler defined in config.compilers";
+      descriptionClass = "noun";
+      check = a: isString a && hasAttr a config.compilers;
+      merge = mergeOneOption;
+    };
+
+
   };
 
   nixpkgs = fileModule "nixpkgs";
 
+  compiler = fileModule "compiler";
+
   pkgs = mkOptionType {
     name = "pkgs";
     description = "nixpkgs attrset";
+    merge = mergeOneOption;
+  };
+
+  haskellPackages = mkOptionType {
+    name = "haskellPackages";
+    description = "Haskell package set";
+    check = a: isAttrs a;
     merge = mergeOneOption;
   };
 
