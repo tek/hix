@@ -71,6 +71,12 @@ in {
       default = {};
     };
 
+    package-sets = lib.mkOption {
+      description = "Different GHC package set configurations.";
+      type = types.attrsOf (types.submodule util.types.package-set);
+      default = {};
+    };
+
     cabal = mkOption {
       description = ''
       Cabal options that are applied to all packages and components.
@@ -294,6 +300,10 @@ in {
     };
 
     compilers.default = {
+      extends = null;
+    };
+
+    package-sets.default = {
       extends = null;
     };
 

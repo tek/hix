@@ -135,12 +135,22 @@ in {
       merge = mergeOneOption;
     };
 
+    package-set = mkOptionType {
+      name = "ref.package-set";
+      description = "name of a package set defined in config.package-sets";
+      check = a: isString a && hasAttr a config.package-sets;
+      merge = mergeOneOption;
+    };
 
   };
 
   nixpkgs = fileModule "nixpkgs";
 
   compiler = fileModule "compiler";
+
+  package-set = fileModule "package-set";
+
+  toolchain = fileSubmodule "toolchain";
 
   pkgs = mkOptionType {
     name = "pkgs";
