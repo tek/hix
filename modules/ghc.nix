@@ -60,7 +60,7 @@ in {
     };
 
     vanillaGhc = lib.mkOption {
-      type = util.types.ghc;
+      type = util.types.package-set;
       description = "The package set without overrides.";
       readOnly = true;
     };
