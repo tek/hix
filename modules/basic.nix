@@ -59,6 +59,12 @@ in {
       default = "hix-project";
     };
 
+    nixpkgs = lib.mkOption {
+      description = "Different configurations of nixpkgs.";
+      type = types.attrsOf (types.submodule util.types.nixpkgs);
+      default = {};
+    };
+
     cabal = mkOption {
       description = ''
       Cabal options that are applied to all packages and components.
@@ -267,6 +273,12 @@ in {
     name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
     pkgs = mkDefault config.envs.dev.ghc.pkgs;
+    nixpkgs.default = {
+      extends = null;
+      source = lib.mkDefault util.config.inputs.nixpkgs;
+      config.allowUnfree = lib.mkDefault true;
+      args = { inherit (util.config) system; };
+    };
 
     haskellTools = ghc: [ghc.cabal-install];
 
