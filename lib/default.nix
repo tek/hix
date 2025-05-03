@@ -3,24 +3,6 @@ let
 
   inherit (lib) mapAttrs isAttrs isList concatStringsSep attrNames isDerivation length head tail;
 
-  internalScope = "__hix-internal__";
-
-  flake-utils = import (builtins.fetchTarball {
-    url = "https://github.com/numtide/flake-utils/archive/refs/tags/v1.0.0.tar.gz";
-    sha256 = "0hynd4rbkbplxzl2a8wb3r8z0h17z2alhhdsam78g3vgzpzg0d43";
-  });
-
-  utilWithConfig = {config, extra ? {}}:
-  import ./util.nix { inherit config lib extra; };
-
-  utilModule = extra: {config, ...}: let
-    util = utilWithConfig { inherit config extra; };
-  in {
-    _module.args = {
-      inherit util;
-      inherit (util) internal project build outputs pkgs;
-    };
-  };
 
   mergeOverrides = lib.zipAttrsWith (_: lib.concatLists);
 
@@ -134,10 +116,6 @@ let
   lib.versionAtLeast env.ghc.version version;
 
   empty = v: if isAttrs v then empty (attrNames v) else v == [];
-
-  evalModules = modules: lib.evalModules { inherit modules; };
-
-  evalConfig = modules: (evalModules modules).config;
 
   overridesVia = desc: o:
   if desc == null
@@ -421,13 +399,14 @@ let
   # find :: (a -> Bool) -> [a] -> Maybe a
   find = pred: as: justNonNull (lib.findFirst pred null as);
 
-in {
+in
+  # TODO split the rest of the file, and util.nix
+  # Wait! We actually wanted to move everything to `internal`.
+  # Possible that we'll only want to do that for `util`, so splitting this might still be desirable.
+  import ./lib/boot.nix { inherit lib; }
+  // {
   inherit
   lib
-  internalScope
-  utilWithConfig
-  utilModule
-  flake-utils
   mergeOverrides
   concatOverrides
   normalizeOverrides
@@ -457,8 +436,6 @@ in {
   toTitle
   minGhc
   empty
-  evalModules
-  evalConfig
   overridesVia
   cabalDepPackage
   appDesc
