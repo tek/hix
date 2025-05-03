@@ -3,6 +3,7 @@ let
 
   inherit (lib) mapAttrs isAttrs isList concatStringsSep attrNames isDerivation length head tail;
 
+  maybeOption = type: args: lib.mkOption ({ type = lib.types.nullOr type; default = null; } // args);
 
   mergeOverrides = lib.zipAttrsWith (_: lib.concatLists);
 
@@ -407,6 +408,7 @@ in
   // {
   inherit
   lib
+  maybeOption
   mergeOverrides
   concatOverrides
   normalizeOverrides

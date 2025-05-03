@@ -65,6 +65,12 @@ in {
       default = {};
     };
 
+    compilers = lib.mkOption {
+      description = "Different GHC builds.";
+      type = types.attrsOf (types.submodule util.types.compiler);
+      default = {};
+    };
+
     cabal = mkOption {
       description = ''
       Cabal options that are applied to all packages and components.
@@ -229,7 +235,7 @@ in {
       };
 
       basicGhc = mkOption {
-        type = util.types.ghc;
+        type = util.types.haskellPackages;
         readOnly = true;
       };
 
@@ -278,6 +284,10 @@ in {
       source = lib.mkDefault util.config.inputs.nixpkgs;
       config.allowUnfree = lib.mkDefault true;
       args = { inherit (util.config) system; };
+    };
+
+    compilers.default = {
+      extends = null;
     };
 
     haskellTools = ghc: [ghc.cabal-install];

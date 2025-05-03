@@ -10,6 +10,7 @@
 * Add the attribute `exe` to derivations in `build.*.executables`, containing the full path to the executable in the
   store.
 * WIP: Add the option `nixpkgs` for configuring different nixpkgs versions.
+* WIP: Add the option `compilers` for configuring different GHC builds.
 
 # 0.9.0
 
