@@ -11,6 +11,7 @@
   store.
 * Add the option `nixpkgs` for configuring different nixpkgs versions.
 * Add the option `compilers` for configuring different GHC builds.
+* Add the option `package-sets` for configuring different GHC package sets.
 
 # 0.9.0
 
