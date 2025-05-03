@@ -27,7 +27,7 @@ in {
     };
 
     nixpkgs = lib.mkOption {
-      type = util.types.nixpkgs;
+      type = types.raw;
       description = ''
       The path to a nixpkgs source tree, used as the basis for the package set.
 
