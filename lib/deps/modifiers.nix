@@ -21,6 +21,8 @@ let
 
   noshared = hl.disableSharedLibraries;
 
+  shared = hl.enableSharedExecutables;
+
   minimal = p: noprofiling (nodoc (nobench (notest (unbreak p))));
 
   fast = p: noprofiling (nodoc p);
@@ -30,5 +32,19 @@ let
   force' = p: nodoc (force p);
 
 in {
-  inherit unbreak jailbreak profiling noprofiling notest bench nobench nodoc noshared minimal fast force force';
+  inherit
+  unbreak
+  jailbreak
+  profiling
+  noprofiling
+  notest
+  bench
+  nobench
+  nodoc
+  noshared
+  shared
+  minimal
+  fast
+  force
+  force';
 }

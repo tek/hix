@@ -52,6 +52,7 @@ let
     bench = transform_ "bench" modifiers.bench;
     nobench = transform_ "nobench" modifiers.nobench;
     noshared = transform_ "noshared" modifiers.noshared;
+    shared = transform_ "shared" modifiers.shared;
   };
 
   reset = drv null;
