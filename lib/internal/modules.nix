@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) lib build;
+  inherit (util) lib build internal;
   inherit (lib) types;
 
   extendsDefault = lib.mkOverride 900;
@@ -157,6 +157,35 @@
   then api.${spec}
   else api spec;
 
+  deprecatedOptionDefined = loc: extra:
+  ''
+  The option '${lib.showOption loc}' is deprecated.
+  ${extra}
+  '';
+
+  deprecated = {type, key, replacement ? null, extra ? null}: type // {
+    name = "deprecated ${type.name}";
+    merge = loc: defs:
+      if lib.length defs == 1
+      then internal.warn.deprecatedOptionReadOnly {
+        inherit replacement extra key;
+        option = lib.showOption loc;
+      } (lib.head defs).value
+      else throw (deprecatedOptionDefined loc extra)
+      ;
+  };
+
+  deprecatedOption = {
+    type,
+    key,
+    replacement ? null,
+    extra ? null,
+    description ? "Deprecated.",
+  }: lib.mkOption {
+    inherit description;
+    type = deprecated { inherit type key replacement extra; };
+  };
+
 in {
   inherit
   extendsDefault
@@ -166,5 +195,6 @@ in {
   extensibleModule
   extensibleOption
   resolveExtensibleModule
+  deprecatedOption
   ;
 }
