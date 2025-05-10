@@ -23,6 +23,7 @@ let
       "dep-versions"
       "deps"
       "direnv"
+      "examples"
       "gen-cabal"
       "ghci"
       "hackage"

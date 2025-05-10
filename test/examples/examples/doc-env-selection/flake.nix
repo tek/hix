@@ -10,14 +10,15 @@
 
     packages.root = {
       src = ./.;
-      executable.env = config.envs.two;
+      executable.env = "two";
     };
 
     commands.number = {
-      env = config.envs.one;
+      env = "one";
       command = ''
-      echo $number
+      echo $(( $number + ''${1-0} ))
       '';
+      expose = true;
       component = true;
     };
 

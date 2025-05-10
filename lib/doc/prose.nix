@@ -1,6 +1,6 @@
 {hixUrl}: let
 
-  exampleFile = path: builtins.readFile (../../examples + "/${path}");
+  exampleFile = path: builtins.readFile (../../test/examples/examples + "/${path}");
 
 in {
 

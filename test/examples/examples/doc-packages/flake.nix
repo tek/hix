@@ -6,7 +6,7 @@
       src = ./.;
       library = {
         enable = true;
-        dependencies = ["aeson ^>= 2.0" "bytestring"];
+        dependencies = ["aeson ^>= 2.2" "bytestring"];
       };
       executable.enable = true;
     };
