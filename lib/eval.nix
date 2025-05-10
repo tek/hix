@@ -7,9 +7,28 @@
 let
   libBase = import ./default.nix { inherit lib; };
 
+  addFile = _file: module:
+  if lib.isFunction module
+  then lib.mirrorFunctionArgs module (args: { inherit _file; } // module args)
+  else module
+  ;
+
+  canonicalize = file: spec:
+  if lib.isFunction spec
+  then addFile file spec
+  else if builtins.isAttrs spec
+  then canonicalize file (_: spec)
+  else if lib.isPath spec
+  then canonicalize spec (import spec)
+  # Let nixpkgs throw errors.
+  else spec
+  ;
+
   userModules = extraModules ++ lib.toList projectModules;
 
-  allModules = hixModules ++ userModules;
+  canonicalModules = map (canonicalize "flake.nix") userModules;
+
+  allModules = hixModules ++ canonicalModules;
 
   moduleArgs = evaledModules:
   libBase.utilModule { inherit allModules evaledModules; };
@@ -17,18 +36,16 @@ let
   finalModules = system: evaled: allModules ++ [(moduleArgs evaled) { inherit system; }];
 
   # TODO maybe this could include gen-overrides so the default systems may depend on it
-  #
-  # TODO we can use `lib.mirrorFunctionArgs` for the wrapper
   onlySystemsConfig = m:
   if lib.isFunction m
-  then a@{util, pkgs, build, outputs, project, internal, ...}: onlySystemsConfig (m a)
+  then lib.mirrorFunctionArgs m (args: onlySystemsConfig (m args))
+  # Anything irregular will be ignored by the `?` operator.
   else
   lib.optionalAttrs (m ? systems) { inherit (m) systems; } //
   lib.optionalAttrs (m ? config && m.config ? systems) { config = { inherit (m.config) systems; }; }
   ;
 
-  # TODO should this include extraModules?
-  bootConfig = libBase.evalConfig ([(import ../modules/systems.nix)] ++ map onlySystemsConfig projectModules);
+  bootConfig = libBase.evalConfig ([(import ../modules/systems.nix)] ++ map onlySystemsConfig canonicalModules);
 
   evalSystem = system: let
     evaled = libBase.evalModules (finalModules system evaled);
