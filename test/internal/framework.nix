@@ -162,7 +162,7 @@ let
     local sub() {
       if (( $# > 0 ))
       then
-        sed -i "s#HIX#$hix_dir#" "$@"
+        sed -i "s#\bHIX\b#path:$hix_dir#" "$@"
         sed -i "s#BASE#$work_dir#" "$@"
       fi
     }
@@ -269,6 +269,11 @@ let
     local flake
     for flake in **/flake.nix(N)
     do
+      if [[ $flake == "flake.nix" ]]
+      then
+        error_message "$(blue 'flake.nix') should not be in the test root."
+        return 1
+      fi
       pushd ''${flake%/flake.nix}
       step_nix --quiet flake update
       popd
@@ -281,7 +286,7 @@ let
   {
     description = "hix test project";
 
-    inputs.hix.url = "path:HIX";
+    inputs.hix.url = "HIX";
 
     outputs = {self, hix}:
     hix.lib._hix_test {

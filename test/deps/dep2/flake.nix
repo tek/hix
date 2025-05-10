@@ -1,7 +1,7 @@
 {
   description = "hix test dep 2";
 
-  inputs.hix.url = "path:HIX";
+  inputs.hix.url = "HIX";
 
   outputs = { hix, ... }: hix.lib._hix_test {
     packages.dep2 = {

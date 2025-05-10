@@ -1,7 +1,7 @@
 {
   description = "hix test project";
 
-  inputs.hix.url = "path:HIX";
+  inputs.hix.url = "HIX";
   inputs.dep1.url = "path:BASE/dep1";
   inputs.dep2.url = "path:BASE/dep2";
 
