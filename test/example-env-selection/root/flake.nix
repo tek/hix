@@ -1,7 +1,7 @@
 {
   description = "hix test project";
   inputs.hix.url = "github:tek/hix?ref=0.9.1";
-  outputs = {hix, ...}: hix ({config, ...}: {
+  outputs = {hix, ...}: hix {
     envs = {
       one.env = { number = 1; };
       two.env = { number = 2; };
@@ -10,16 +10,17 @@
 
     packages.root = {
       src = ./.;
-      executable.env = config.envs.two;
+      executable.env = "two";
     };
 
     commands.number = {
-      env = config.envs.one;
+      env = "one";
       command = ''
-      echo $number
+      echo $(( $number + ''${1-0} ))
       '';
+      expose = true;
       component = true;
     };
 
-  });
+  };
 }

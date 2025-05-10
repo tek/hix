@@ -77,7 +77,15 @@ let
       "managed-nom"
     ];
 
-  tests = tests-basic-1 // tests-basic-2 // tests-basic-3 // tests-vm // tests-managed;
+  tests-examples =
+    testsNamed [
+      "example-env-selection"
+      "example-flakes-basic"
+      "example-flakes-hs"
+      "example-packages"
+    ];
+
+  tests = tests-basic-1 // tests-basic-2 // tests-basic-3 // tests-vm // tests-managed // tests-examples;
 
   tests-framework = testsNamed ["framework-step"];
 
@@ -89,6 +97,7 @@ let
     basic-3 = framework.suite tests-basic-3;
     vm = framework.suite tests-vm;
     managed = framework.suite tests-managed;
+    examples = framework.suite tests-examples;
     framework = framework.suite tests-framework;
     debug = framework.suite tests-debug;
     all = framework.suite (tests // tests-framework) // { attr = "test"; };
