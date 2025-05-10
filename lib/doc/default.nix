@@ -14,7 +14,7 @@ let
 
   util = import ../util.nix { inherit config lib; };
 
-  prose = import ./prose.nix { inherit hixUrl; };
+  prose = import ./prose.nix { inherit lib hixUrl; };
 
   chapters = import ./chapters.nix { inherit config pkgs util prose; };
 

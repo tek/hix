@@ -1,6 +1,8 @@
-{hixUrl}: let
+{lib, hixUrl}: let
 
-  exampleFile = path: builtins.readFile (../../examples + "/${path}");
+  exampleFile = name: path:
+  lib.replaceStrings ["HIX"] [hixUrl]
+  (builtins.readFile (../../test + "/example-${name}/root/${path}"));
 
 in {
 
@@ -38,7 +40,7 @@ in {
   The library has a single module named `Parser.hs` in the subdirectory `lib/` with the content:
 
   ```haskell
-  ${exampleFile "doc-packages/lib/Parser.hs"}
+  ${exampleFile "packages" "lib/Parser.hs"}
   ```
 
   The function `parseNumber` converts the first command line argument into an integer and returns a JSON string that
@@ -65,7 +67,7 @@ in {
   The second file in this project is the executable's entry point, located at `app/Main.hs`:
 
   ```haskell
-  ${exampleFile "doc-packages/app/Main.hs"}
+  ${exampleFile "packages" "app/Main.hs"}
   ```
 
   The `main` function calls `parseNumber` and prints the returned string to stdout.
@@ -117,7 +119,7 @@ in {
   A basic example for an application that prints "Hello" could look like this:
 
   ```nix
-  ${exampleFile "doc-flakes-basic/flake.nix"}
+  ${exampleFile "flakes-basic" "flake.nix"}
   ```
 
   The single input is the nixpkgs repository at a specific commit, which contains both the build definitions for tens of
@@ -154,7 +156,7 @@ in {
   For the Cabal project described in the previous section, we can create a derivation and an app with this flake:
 
   ```nix
-  ${exampleFile "doc-flakes-hs/flake.nix"}
+  ${exampleFile "flakes-hs" "flake.nix"}
   ```
 
   Now the app can be executed with:
@@ -197,7 +199,7 @@ in {
   on the packages `aeson` and `bytestring`, can be declared in a flake like this:
 
   ```nix
-  ${exampleFile "doc-packages/flake.nix"}
+  ${exampleFile "packages" "flake.nix"}
   ```
 
   In order to build the project, we first have to generate the Cabal file:
@@ -215,7 +217,7 @@ in {
   This command will create the file `parser.cabal` in the project directory, with the following content:
 
   ```cabal
-  ${exampleFile "doc-packages/parser.cabal"}
+  ${exampleFile "packages" "parser.cabal"}
   ```
 
   Using the package definition and the generated Cabal file, Hix creates flake outputs for building and running the
@@ -873,7 +875,7 @@ in {
   There are three alternative selection methods, illustrated by this example:
 
   ```
-  ${exampleFile "doc-env-selection/flake.nix"}
+  ${exampleFile "env-selection" "flake.nix"}
   ```
 
   The first method is to use the flake app path to select an environment by name, then append the command name:
