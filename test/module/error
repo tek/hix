@@ -1,0 +1,3 @@
+       error: The option `name' has conflicting definition values:
+       - In `/nix/store/hash-source/config-b.nix': "b"
+       - In `flake.nix': "a"
