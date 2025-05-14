@@ -62,7 +62,10 @@ let
 
   in self.callPackage ({mkDerivation}: mkDerivation ({
     inherit pname;
-    src = srcWithCabal pkgs conf pname pkg.src;
+    src =
+      if config.genCabalInDerivations
+      then srcWithCabal pkgs conf pname pkg.src
+      else src;
     version = attr "version";
     license = attr "license";
     libraryHaskellDepends = deps (conf.library or {}) ++ compDeps "internal-libraries";

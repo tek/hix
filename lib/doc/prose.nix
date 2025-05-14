@@ -166,6 +166,14 @@ in {
   {"number":63}
   ```
 
+  Alternatively, the package can be built without running it.
+  In this mode, Nix will create a directory in `/nix/store` containing the package's libraries and executables built by
+  the derivation, and create a symbolic link to that store path in the working directory, named `result`:
+
+  ```
+  nix build .#parser
+  ```
+
   To create a derivation for the Haskell app, we select a package set for the GHC version 9.2.5 with
   `pkgs.haskell.packages.ghc92` and call the builder exposed by that set that wraps the tool
   [cabal2nix](https://github.com/NixOS/cabal2nix), which converts the Cabal file in the specified directory to a
@@ -194,6 +202,7 @@ in {
   - Generating Cabal build files from configuration declared in Nix expressions.
   - Creating reproducible derivations from those files for different configurable environments that obtain dependencies
     from the Nix package set, which can be built and run via the flake interface.
+    These derivations use Cabal internally to build packages.
 
   The package from the tutorial section, consisting of an executable in `app/` and a library in `lib/` with dependencies
   on the packages `aeson` and `bytestring`, can be declared in a flake like this:
@@ -202,7 +211,22 @@ in {
   ${exampleFile "packages" "flake.nix"}
   ```
 
-  In order to build the project, we first have to generate the Cabal file:
+  Using this package definition, Hix creates flake outputs for building and running the application.
+
+  However, in order to compile the project in the derivation's build script, Cabal requires the previously introduced
+  package configuration file to be present in the source tree.
+  Luckily, when generating derivations for project packages, Hix can add a preprocessing step that runs before the Cabal
+  build starts, which permits it to generate that config file on the fly!
+  As a consequence, you can build and run the package out of the box, without having to care about Cabal whatsoever:
+
+  ```
+  $ nix run .#parser -- 63
+  {"number":63}
+  ```
+
+  Despite the convenience of this automation, the presence of Cabal files in the project is a necessity for some vital
+  tasks, most notably [Haskell Language Server](#hls).
+  For this purpose, the Hix flake exposes a command that generates Cabal configs:
 
   ```
   $ nix run .#gen-cabal
@@ -210,7 +234,7 @@ in {
 
   ::: {.note}
   Flake commands ignore files that are not under version control when operating in a git repository.
-  If there are untracked files in your project, running `nix build .#gen-cabal` might fail, so either `git add`
+  If there are untracked files in your project, running `nix run .#gen-cabal` might fail, so either `git add`
   everything or run the command as `nix run path:.#gen-cabal`, which bypasses this mechanism.
   :::
 
@@ -220,20 +244,14 @@ in {
   ${exampleFile "packages" "parser.cabal"}
   ```
 
-  Using the package definition and the generated Cabal file, Hix creates flake outputs for building and running the
-  application with `nix build` and `nix run`:
-
-  ```
-  $ nix run .#parser -- 63
-  {"number":63}
-  ```
+  You can find more information on how Hix generates derivations in [](#ifd).
 
   The generated flake outputs have roughly the following structure, analogous to the example in {#nix-flakes}:
 
   ```nix
   {
     outputs = let
-      parser = callCabal2nix "parser" ./. {};
+      parser = generateCabalDerivation "parser" ./.; # Hix's equivalent of `callCabal2nix`
     in {
       packages.x86_64-linux.parser = parser;
       apps.x86_64-linux.parser = { type = "app"; program = "''${parser}/bin/parser"; };
@@ -248,21 +266,21 @@ in {
   The CLI command `init` will create a project skeleton with an executable and test suite in the current directory:
 
   ```
-  nix run '${hixUrl}#init' -- --name project-name --author 'Your Name'
+  $ nix run '${hixUrl}#init' -- --name project-name --author 'Your Name'
   ```
 
   Alternatively, the command `new` creates the specified directory and uses the last component as the project name
   (unless overridden explicitly):
 
   ```
-  nix run '${hixUrl}#new' -- --author 'Your Name' path/to/project-name
+  $ nix run '${hixUrl}#new' -- --author 'Your Name' path/to/project-name
   ```
 
   If you have an existing project with Cabal files in it, the `bootstrap` command will create a flake that configures
   the more basic components:
 
   ```
-  nix run '${hixUrl}#bootstrap'
+  $ nix run '${hixUrl}#bootstrap'
   ```
 
   ### Cabal configuration {#cabal-conf}
@@ -389,16 +407,28 @@ in {
   in the same evaluation (which is called Import From Derivation, IFD), evaluating this output will cause that
   derivation to be built.
 
-  This becomes a critical problem when running the command `nix flake check`, which is a sort of test suite runner for
-  flakes, because it evaluates *all* outputs before running the checks.
+  This used to be a critical problem when running the command `nix flake check`, which is a sort of test suite runner
+  for flakes, because Nix evaluated *all* outputs before running the checks in earlier versions, including unsupported
+  architectures.
+  Today, it is still possible to reproduce this behavior by specifying `nix flake check --all-systems`.
+  While it may be useful to ensure that the outputs evaluate successfully for all architectures, in particular when they
+  involve specialized logic for compatibility, this issue has become less of a blocker.
+
   Hix defines checks for all packages and GHC versions, so it is generally desirable to be able to run this command in
   CI.
-  Unfortunately, `cabal2nix` (which generates all Haskell derivations) uses IFD.
+  Unfortunately, `cabal2nix` (the tooling infrastructure in nixpkgs that Hix uses to generate Haskell derivations from
+  Cabal files) uses IFD.
+  As a consequence, the mere evaluation of an output may cause some derivations to be _built_, which usually fails for
+  foreign architectures.
+  In practice, this may entail an attempt at building GHC for this architecture while simply checking that an output can
+  be evaluated.
+  Without `--all-systems`, this isn't much of a problem; however, it still has the effect that the inputs required for
+  generating `cabal2nix` derivations will be downloaded and, potentially, built.
 
   ### On-the-fly derivations {#no-ifd}
 
-  To mitigate this problem, Hix can generate derivations in a similar manner to `cabal2nix`, controlled by the option
-  [](#opt-general-ifd) (on by default).
+  To mitigate this problem, Hix can generate derivations in a manner similar to `cabal2nix`, controlled by the option
+  [](#opt-general-ifd) (enabled by default).
   For local packages, this is rather straightforward – Hix can use the package config to determine the derivations
   dependencies and synthesize a simple derivation.
 
@@ -438,6 +468,18 @@ in {
   shell.
   For that purpose, the option [](#opt-env-systems) can be used to define for which systems the environment should be
   exposed.
+
+  ### Cabal config generation {#drv-cabal-gen}
+
+  Generating derivation dependencies directly from the flake config implies that Cabal config files are ignored entirely
+  for the Nix component of the build.
+  Hix takes this a step further and fully synthesizes a Cabal config file as part of the build script, overwriting the
+  existing file.
+
+  The main benefit of this is that the dependencies of the Cabal build in the derivation are in sync with the Nix build
+  inputs, but it also means that you never have to remember to run `.#gen-cabal` before starting a build.
+
+  If this behavior is undesirable, you can turn it off by setting [](#opt-general-genCabalInDerivations) to `false`.
   '';
 
   ui = ''
@@ -465,7 +507,7 @@ in {
     outputs = {hix, ...}: hix ({config, ...}: {
       envs.example = {
 
-        ghc.compiler = "ghc94";
+        compiler = "ghc94";
 
         buildInputs = [config.pkgs.socat];
 
@@ -854,7 +896,7 @@ in {
   starting the virtual machine, before running the specified Cabal command line:
 
   ```
-  nix run .#cmd.integration-test
+  $ nix run .#cmd.integration-test
   ```
 
   ### Component-dependent environments {#commands-component-env}
@@ -922,8 +964,8 @@ in {
   default mode, leading to sub-second feedback loops on small projects (or dependency closures).
 
   ```
-  nix run .#ghci -- -p root -r server
-  nix run .#ghcid -- -p root -t test_server -r hedgehog-unit
+  $ nix run .#ghci -- -p root -r server
+  $ nix run .#ghcid -- -p root -t test_server -r hedgehog-unit
   ```
 
   Their interface is mostly identical to the generic commands described above, while taking three additional, optional
@@ -953,7 +995,7 @@ in {
   To find out what the defaults for these settings are, you can run:
 
   ```
-  nix run .#show-config -- ghci
+  $ nix run .#show-config -- ghci
   ```
 
   Lastly, you can specify arbitrary additional command line arguments for GHCi and GHCid with `--ghci-options` and
@@ -961,7 +1003,7 @@ in {
   Like basic commands, GHCi options can also be given as plain arguments:
 
   ```
-  nix run .#ghcid -- -p root -Werror
+  $ nix run .#ghcid -- -p root -Werror
   ```
 
   The CLI parser will pick out known options and pass the rest to GHCi.
@@ -1010,7 +1052,7 @@ in {
   The environment `test` references the service, so when a command uses this environment, a VM will be started:
 
   ```
-  nix run .#env.test.ghcid -- -p root
+  $ nix run .#env.test.ghcid -- -p root
   ```
 
   Since the environment uses `basePort = 10000`, the nginx server will listen on port 12000.
@@ -1116,7 +1158,7 @@ in {
   Hix provides a flake app for running HLS with the proper GHC (for the `dev` env) and the project dependencies:
 
   ```
-  nix run .#hls
+  $ nix run .#hls
   ```
 
   In order to use it with your IDE, you need to specify the command in the editor configuration as: `nix run .#hls --`,
@@ -1147,7 +1189,7 @@ in {
   ```
 
   ```
-  nix run .#env.ghc94.hls
+  $ nix run .#env.ghc94.hls
   ```
 
   This is disabled by default to avoid building HLS for environments whose GHCs don't have its derivation in the Nix
@@ -1165,7 +1207,7 @@ in {
   For that purpose, the `checks` output contains all packages across those environments, which can be built with:
 
   ```
-  nix flake check
+  $ nix flake check
   ```
   '';
 
@@ -1175,9 +1217,9 @@ in {
   Hix provides flake apps that run the flake checks and upload package candidates, releases or docs to Hackage:
 
   ```
-  nix run .#candidates
-  nix run .#release
-  nix run .#docs
+  $ nix run .#candidates
+  $ nix run .#release
+  $ nix run .#docs
   ```
 
   If `versionFile` is set, the script will substitute the `version:` line in that Cabal file after asking for
@@ -1203,7 +1245,7 @@ in {
   For example, to publish `parser` at version `2.5.0.1`:
 
   ```
-  nix run .#release -- parser -v 2.5.0.1
+  $ nix run .#release -- parser -v 2.5.0.1
   ```
 
   The upload command will use your global Cabal config to obtain credentials, please consult the Cabal docs for more.
@@ -1218,7 +1260,7 @@ in {
   and the local packages:
 
   ```
-  nix run .#tags
+  $ nix run .#tags
   ```
 
   This will result in the creation of the file `.tags`.
@@ -1230,13 +1272,13 @@ in {
   All package outputs can be cross-compiled with the following syntax:
 
   ```
-  nix build .#parser.cross.musl64
+  $ nix build .#parser.cross.musl64
   ```
 
   In addition, the package may also be linked statically against its Haskell dependencies:
 
   ```
-  nix build .#parser.cross.musl64.static
+  $ nix build .#parser.cross.musl64.static
   ```
 
   Note that this does not result in a static binary – it will still be linked dynamically against libc.
@@ -1252,7 +1294,7 @@ in {
   For `musl`, there are two native package sets in nixpkgs that are supported by Hix:
 
   ```
-  nix build .#parser.musl
+  $ nix build .#parser.musl
   ```
 
   This will result in a binary that's similar to `.#parser.cross.musl64.static`.
@@ -1271,10 +1313,10 @@ in {
   to generate AppImage executables, exposed in the following flake apps:
 
   ```
-  nix run '.#appimage' # The default executable from the default package
-  nix run '.#<pkgname>.appimage' # The default executable from the specified package
-  nix run '.#<exename>.appimage' # The specified executable from whatever package defines it
-  nix run '.#env.<envname>.[<pkg/exe>.]appimage' # The same as above, but from the specified env
+  $ nix run '.#appimage' # The default executable from the default package
+  $ nix run '.#<pkgname>.appimage' # The default executable from the specified package
+  $ nix run '.#<exename>.appimage' # The specified executable from whatever package defines it
+  $ nix run '.#env.<envname>.[<pkg/exe>.]appimage' # The same as above, but from the specified env
   ```
 
   This will print a store path:
@@ -1504,7 +1546,7 @@ in {
   Hix provides additional tools to automate this procedure:
 
   ```
-  nix run .#maint -- [args]
+  $ nix run .#maint -- [args]
   ```
 
   This app will run `.#bump` on special branches based on each package's latest tag, and upload Hackage revisions when
@@ -1531,7 +1573,7 @@ in {
   line:
 
   ```
-  nix run .#revision -- --branch 'release/api/0.5' --hackage="hackage.haskell.org:password:$hackage_password"
+  $ nix run .#revision -- --branch 'release/api/0.5' --hackage="hackage.haskell.org:password:$hackage_password"
   ```
 
   The app will upload to all Hackage repos for which [](#opt-hackage-hackage.repos._name_.publish) is `true`, so you'll
@@ -1578,7 +1620,7 @@ in {
   For `staging`, the credentials must be specified as CLI args:
 
   ```
-  nix run .#revision -- --branch 'release/api/0.5' \
+  $ nix run .#revision -- --branch 'release/api/0.5' \
     --hackage="staging:user:ci-staging" \
     --hackage="staging:password:''${{ secrets.hackage_password }}"
   ```
@@ -1595,7 +1637,7 @@ in {
   ### Show overrides {#show-overrides}
 
   ```
-  nix run .#show-overrides
+  $ nix run .#show-overrides
   ```
 
   Prints all environments' overrides.
@@ -1603,7 +1645,7 @@ in {
   ### Show config {#show-config}
 
   ```
-  nix run .#show-config
+  $ nix run .#show-config
   ```
 
   Prints the project's entire configuration.
@@ -1611,9 +1653,9 @@ in {
   ### Show dependency versions {#dep-versions}
 
   ```
-  nix run .#dep-versions
-  nix run .#ghc96.dep-versions
-  nix run .#env.ghc96.dep-versions
+  $ nix run .#dep-versions
+  $ nix run .#ghc96.dep-versions
+  $ nix run .#env.ghc96.dep-versions
   ```
 
   Prints all components' dependencies and their actual versions in the dev environment, or the named environment in the

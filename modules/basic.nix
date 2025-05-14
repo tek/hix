@@ -90,35 +90,28 @@ in {
       default = {};
     };
 
+    ifd = mkOption {
+      description = ''
+      Whether to use `cabal2nix`, which uses Import From Derivation, or to generate simple derivations, for local
+      packages.
+      '';
+      type = bool;
+      default = false;
+    };
+
+    genCabalInDerivations = lib.mkOption {
+      description = ''
+      Whether [Hix-generated derivations](#no-ifd) should synthesize Cabal files from [](#opt-general-packages).
+      '';
+      type = types.bool;
+      default = true;
+    };
+
     # TODO cli must be able to resolve components from metadata by reading cabal.project and *.cabal
     manualCabal = mkOption {
       description = ''
       Don't use the options in [](#opt-general-packages) as Cabal configuration for the ghci preprocessor and search
       path assembler.
-      '';
-      type = bool;
-      default = false;
-    };
-
-    forceCabal2nix = mkOption {
-      description = "Whether to use cabal2nix even if there is no Cabal file.";
-      type = bool;
-      default = false;
-    };
-
-    # TODO is this effective and desired?
-    forceCabalGen = mkOption {
-      description = ''
-      Whether to generate a Cabal file from Nix config even if there is one in the source directory.
-      '';
-      type = bool;
-      default = false;
-    };
-
-    ifd = mkOption {
-      description = ''
-      Whether to use `cabal2nix`, which uses Import From Derivation, or to generate simple derivations, for local
-      packages.
       '';
       type = bool;
       default = false;
