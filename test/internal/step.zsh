@@ -294,13 +294,17 @@ _step_check_combined()
 _step_diff()
 {
   local actual_file=$1 expected=$2 headline=$3
-  local expected_desc=''
+  local expected_desc='' diff_options=()
+  if (( ${+_step_diff_ignore_trailing_space} == 1 ))
+  then
+    diff_options+=(--ignore-trailing-space)
+  fi
   if [[ -f $expected ]]
   then
     expected_desc=" [$(color_path $(_unclutter_store_path <<< $expected))]"
-    diff $expected $actual_file &> $step_diff
+    diff $expected $actual_file $=diff_options &> $step_diff
   else
-    diff <(print -- $expected) $actual_file &> $step_diff
+    diff <(print -- $expected) $actual_file $=diff_options &> $step_diff
   fi
   if (( $? != 0 ))
   then
@@ -605,6 +609,7 @@ step()
     _step_preproc_files \
     _step_allow_failure \
     _step_combined_output \
+    _step_diff_ignore_trailing_space \
     _step_validated_out \
     _step_validated_err \
     _step_description
@@ -756,6 +761,11 @@ error_ignore()
 describe()
 {
   _step_description="$*"
+}
+
+diff_ignore_trailing_space()
+{
+  _step_diff_ignore_trailing_space=1
 }
 
 # Output preprocessors
