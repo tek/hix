@@ -44,9 +44,9 @@ in {
     mk_success 2 'multi-fail'
 
     target2="[35m[1m>>>[0m Building targets in [33mlatest[0m with [36mmulti-fail2-0.1.0[0m...
-    [35m[1m>>>[0m Build with [36mmulti-fail2-0.1.0[0m failed in [36mmulti-fail2[0m, [36mmulti-fail1[0m
+    [35m[1m>>>[0m Build with [36mmulti-fail2-0.1.0[0m failed in [36mmulti-fail1[0m, [36mmulti-fail2[0m
     [35m[1m>>>[0m Building targets in [33mlatest[0m with [36mmulti-fail1-0.1.0[0m...
-    [35m[1m>>>[0m Build with [36mmulti-fail1-0.1.0[0m failed in [36mmulti-fail2[0m, [36mmulti-fail1[0m
+    [35m[1m>>>[0m Build with [36mmulti-fail1-0.1.0[0m failed in [36mmulti-fail1[0m, [36mmulti-fail2[0m
 
     [35m[1m>>>[0m [33mlatest[0m
     [35m[1m>>>[0m Couldn't find working latest versions for some deps after 1 iteration.

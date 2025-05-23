@@ -32,7 +32,7 @@
       };
     };
 
-    internal.hixCli.dev = false;
+    internal.hixCli.dev = true;
 
   });
 }

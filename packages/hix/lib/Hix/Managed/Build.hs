@@ -84,7 +84,7 @@ logBuildResult description result =
     packageFragment pkgs =
       [exon| in #{names}|]
       where
-        names = Text.intercalate ", " (Color.package . (.name) <$> pkgs)
+        names = Text.intercalate ", " (Color.package . (.name) <$> sort pkgs)
 
 updateMutationState ::
   (Version -> VersionBounds -> VersionBounds) ->
