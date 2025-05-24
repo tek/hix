@@ -30,6 +30,7 @@ let
       "hackage-legacy"
       "hackage-local"
       "lazy-ifd"
+      "lazy-env"
       "local-prelude"
       "module"
       "multi-exe"
