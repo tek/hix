@@ -406,7 +406,7 @@ in {
         replacement = "project.packages.*.path";
         extra = ''
 
-        For instructions on how to access 'project', see [https://tryp.io/hix#intermediate-outputs].'';
+        For instructions on how to access 'project', see [https://hix.how#intermediate-outputs].'';
       }
       project.packages.${name}.path;
 

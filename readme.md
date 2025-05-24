@@ -12,7 +12,7 @@ declarative interface for a range of build related tasks:
 - Virtual Machines for testing
 - Compatibility checks for multiple GHC versions
 
-To learn more, please visit the [documentation page](https://tryp.io/hix/index.html).
+To learn more, please visit the [documentation page](https://hix.how).
 
 # tldr
 
