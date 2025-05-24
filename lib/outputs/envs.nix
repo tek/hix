@@ -5,7 +5,9 @@
   systemAllowed = env:
   env.systems == null || (lib.elem config.system env.systems);
 
-  validEnvs = lib.filterAttrs (_: env: systemAllowed env && env.enable) config.envs;
+  valid = env: env.enable && systemAllowed env;
+
+  validEnvs = lib.filterAttrs (_: valid) config.envs;
 
   validBuildEnvs = internal.envs.mapMaybe (env: a: justIf (systemAllowed env) a) build.envs;
 

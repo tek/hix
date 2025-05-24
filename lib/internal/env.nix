@@ -33,7 +33,6 @@
 
   prefixed = lib.concatMapAttrs prefixedWith;
 
-  # TODO do we need `systemAllowed` here?
   justEnabled = env:
   justIf (env.enable or false);
 
