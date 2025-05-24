@@ -153,6 +153,7 @@ in {
     license = "BSD-2-Clause-Patent";
     license-file = "LICENSE";
     author = "Torsten Schmits";
+    language = "GHC2021";
 
     meta = {
       maintainer = "hackage@tryp.io";

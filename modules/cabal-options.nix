@@ -133,13 +133,9 @@ in {
     language = mkOption {
       description = ''
       The default extension set used for all components in this option tree.
-      It is set to `GHC2021` if the GHC versions of all defined envs are 9.2 or greater, and `Haskell2010` otherwise.
       '';
       type = str;
-      default =
-        if util.minGhcs "9.2"
-        then "GHC2021"
-        else "Haskell2010";
+      default = "Haskell2010";
     };
 
     dependencies = mkOption {
