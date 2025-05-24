@@ -21,8 +21,10 @@
       "LiberalTypeSynonyms"
       "MonadComprehensions"
       "MultiWayIf"
+      "NoFieldSelectors"
       "OverloadedLabels"
       "OverloadedLists"
+      "OverloadedRecordDot"
       "OverloadedStrings"
       "PackageImports"
       "PartialTypeSignatures"
@@ -38,42 +40,7 @@
       "UndecidableInstances"
       "UnicodeSyntax"
       "ViewPatterns"
-    ] ++
-    (
-      if util.minGhcs "9.2"
-      then ["OverloadedRecordDot" "NoFieldSelectors"]
-      else [
-        "BangPatterns"
-        "BinaryLiterals"
-        "ConstraintKinds"
-        "DeriveDataTypeable"
-        "DeriveFoldable"
-        "DeriveFunctor"
-        "DeriveGeneric"
-        "DeriveLift"
-        "DeriveTraversable"
-        "DoAndIfThenElse"
-        "EmptyCase"
-        "EmptyDataDecls"
-        "ExistentialQuantification"
-        "FlexibleContexts"
-        "FlexibleInstances"
-        "GeneralizedNewtypeDeriving"
-        "InstanceSigs"
-        "KindSignatures"
-        "MultiParamTypeClasses"
-        "NamedFieldPuns"
-        "PatternGuards"
-        "PolyKinds"
-        "RankNTypes"
-        "ScopedTypeVariables"
-        "StandaloneDeriving"
-        "TupleSections"
-        "TypeApplications"
-        "TypeOperators"
-        "TypeSynonymInstances"
-      ]
-    );
+    ];
 
     ghc-options = [
       "-Wall"

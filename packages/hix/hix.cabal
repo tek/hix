@@ -270,8 +270,10 @@ library
       LiberalTypeSynonyms
       MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -287,8 +289,6 @@ library
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal >=3.14.1.0 && <3.15
@@ -359,8 +359,10 @@ library testing
       LiberalTypeSynonyms
       MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -376,8 +378,6 @@ library testing
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal >=3.14.1.0 && <3.15
@@ -419,8 +419,10 @@ executable hix
       LiberalTypeSynonyms
       MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -436,8 +438,6 @@ executable hix
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       base >=4.18.2.1 && <4.21
@@ -502,8 +502,10 @@ test-suite hix-test
       LiberalTypeSynonyms
       MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -519,8 +521,6 @@ test-suite hix-test
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal >=3.14.1.0 && <3.15

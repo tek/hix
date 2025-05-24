@@ -48,8 +48,10 @@ library
       LiberalTypeSynonyms
       MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -65,8 +67,6 @@ library
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       aeson
@@ -110,8 +110,10 @@ executable integration
       LiberalTypeSynonyms
       MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -127,8 +129,6 @@ executable integration
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       base <5
@@ -171,8 +171,10 @@ test-suite integration-test
       LiberalTypeSynonyms
       MonadComprehensions
       MultiWayIf
+      NoFieldSelectors
       OverloadedLabels
       OverloadedLists
+      OverloadedRecordDot
       OverloadedStrings
       PackageImports
       PartialTypeSignatures
@@ -188,8 +190,6 @@ test-suite integration-test
       UndecidableInstances
       UnicodeSyntax
       ViewPatterns
-      OverloadedRecordDot
-      NoFieldSelectors
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Widentities -Wincomplete-uni-patterns -Wmissing-deriving-strategies -Wredundant-constraints -Wunused-type-patterns -Wunused-packages
   build-depends:
       Cabal
