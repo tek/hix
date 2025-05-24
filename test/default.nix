@@ -28,7 +28,7 @@ let
       "hackage"
       "hackage-legacy"
       "hackage-local"
-      "lazy"
+      "lazy-ifd"
       "local-prelude"
       "multi-exe"
       "package-default"
