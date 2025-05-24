@@ -37,13 +37,13 @@
   { inherit (outputs) release; }
   ;
 
-  legacyDev = env: _pkg: outputs:
+  legacyDev = env: outputs:
   specialOutputs outputs
   //
   { inherit (outputs) executables; }
   ;
 
-  fullPackage = env: pkg: outputs: legacyDev env pkg outputs // outputs.package;
+  fullPackage = env: pkg: outputs: legacyDev env outputs // outputs.package;
 
   # Expose packages using the path `<package>.<env>`.
   # Expose keys `packages` (for packages) and `envKeyed` (for envs, defaults to `false`).
@@ -109,7 +109,7 @@
   # This excludes the main derivation at the root of each package because those are already present in
   # `outputs.packages`.
   # It uses the exposure key `packages` because the outputs aren't contained in env-key scopes.
-  devOnly = (build.targetsFor "packages" legacyDev).dev;
+  devOnly = (build.targetsFor "packages" (env: _: legacyDev env)).dev;
 
   appimage = [
     { env = appimages; }
@@ -144,7 +144,7 @@ in {
 
   # Unconditionally exposing the main package, seems reasonable.
   packages =
-    (build.targetsFor "packages" (_: _: outputs: outputs.package)).dev
+    (build.targetsFor "packages" (_: _: {package, ...}: package)).dev
     //
     internal.packages.setWithMain mainPackageOutputs
     ;

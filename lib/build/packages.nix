@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config lib internal;
+  inherit (util) config lib internal build maybe justAttr;
 
   cabalConfig = config.hpack.internal.packages;
 
@@ -15,8 +15,8 @@
 
   cross = toolchain: name: let
     arch = _: pkgs: let
-      drv = (packageSet pkgs).${name};
-    in drv // { static = util.hsLib.justStaticExecutables drv; };
+      drv = (packageSet pkgs).${name} or null;
+    in lib.optionalAttrs (drv != null) (drv // { static = util.hsLib.justStaticExecutables drv; });
   in
   lib.mapAttrs arch toolchain.pkgs.pkgsCross;
 
@@ -34,7 +34,7 @@
   staticExeDrv = name: drv:
   exeDrv name (util.hsLib.justStaticExecutables drv);
 
-  executables = drv: muslDrv: staticDrv: cabal: pkg: let
+  executables = exists: drv: muslDrv: staticDrv: cabal: pkg: let
 
     executable = name: _: let
       package = exeDrv name drv;
@@ -48,7 +48,7 @@
 
     mainExe = main: let
       exe = executable main.name null;
-    in { ${pkg.name} = exe; };
+    in { ${pkg.name} = lib.optionalAttrs exists exe; };
 
   in
   internal.package.setWithExe mainExe pkg
@@ -61,34 +61,56 @@
     executables = {};
   };
 
-  local = generic: pkg: let
+  # For the reason described in `buildPackage`, we cannot use `optionalAttrs exists (executables ...)`.
+  # This set is moved to the top level in `outputs.packages.envApps`.
+  local = outputs: pkg: let
     cabal = cabalConfig.${pkg.name};
   in {
     inherit cabal;
     inherit (pkg) expose;
-    executables = executables generic.package generic.musl generic.static cabal pkg;
+    executables = executables outputs.exists outputs.package outputs.musl outputs.static cabal pkg;
   };
 
+  # Assemble all the different derivation variants for a package, consisting of various cross compilations and the
+  # release derivation.
+  #
+  # Note: This needs great care to avoid eager evaluation.
+  # For example, `exists` needs to access the GHC package set, which forces the entire toolchain; thus, it cannot be
+  # used to decide which attributes to include in the result set.
+  # The top-level result attributes as well as `executables` will be examined by the merging logic for outputs, so they
+  # are guaranteed to be evaluated whenever an output of the same category is accessed.
+  #
+  # Therefore, avoid using constructs like `optionalAttrs exists {...}` in those expressions.
   buildPackage = env: pkgName: let
+
     tc = env.toolchain;
+
     ghc = tc.packages;
-    package = ghc.${pkgName};
-    generic = {
-      inherit package ghc;
-      static = (packageSet tc.pkgs.pkgsStatic).${pkgName};
-      musl = (packageSet tc.pkgs.pkgsMusl).${pkgName};
+
+    package = ghc.${pkgName} or null;
+
+    exists = package != null;
+
+    general = {
+      inherit exists ghc package;
+      static = (packageSet tc.pkgs.pkgsStatic).${pkgName} or null;
+      musl = (packageSet tc.pkgs.pkgsMusl).${pkgName} or null;
       cross = cross tc pkgName;
-      release = release package;
+      release = lib.mapNullable release package;
     };
-  in
-  generic //
-  util.maybeNull nonlocal (local generic) (config.packages.${pkgName} or null)
-  ;
+
+    special = maybe nonlocal (local general) (justAttr pkgName config.packages);
+
+  in general // special;
 
   buildPackages = envName: env: let
-    all = internal.project.packageNames ++ config.output.extraPackages ++ lib.toList env.packages;
-    existing = lib.filter (p: p != null && env.toolchain.packages ? ${p}) all;
-  in lib.genAttrs existing (buildPackage env);
 
-  # TODO should we use build.envs here?
-in lib.mapAttrs buildPackages config.envs
+    envPackages = util.fromMaybeNull [] env.packages;
+
+    all = internal.project.packageNames ++ config.output.extraPackages ++ envPackages;
+
+    nonNull = lib.filter (p: p != null) all;
+
+  in lib.genAttrs nonNull (buildPackage env);
+
+in lib.mapAttrs buildPackages build.envs

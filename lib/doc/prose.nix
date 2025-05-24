@@ -1742,13 +1742,19 @@ in {
     - `project.packages.*.path` contains the relative path to a package, either given by [](#opt-package-relativePath)
       if that's non-null, or the directory inferred from `project.base`.
 
-  - `build` contains the full set of derivations for each package in each env.
+  - `build` contains the full set of derivations for each package in each env, as well as some other important data for
+    environments and commands used to build outputs.
     Its API looks roughly like this:
     ```
     {
       packages = {
         dev = {
           core = {
+            # Whether this package exists in this environment.
+            # If this is `false`, all derivations are null.
+            # The package cannot be filtered out entirely, since that would eagerly evaluate all environments and tank
+            # performance.
+            exists = true;
             package = <derivation>;
             static = <derivation>;
             musl = <derivation>;
@@ -1783,8 +1789,13 @@ in {
       };
       envs = {
         dev = {
-          # All executables of all packages, flattened
-          executables = <attrs>;
+          buildInputs = [...];
+          package-set = { ... };
+          toolchain = { ... };
+          packages = [ <names of custom env targets> ];
+          pkgs = { <nixpkgs> };
+          shell = { <devShell> };
+          ...
         };
         ...
       };
