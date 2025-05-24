@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config lib internal;
+  inherit (util) config lib internal build maybe justAttr;
 
   cabalConfig = config.hpack.internal.packages;
 
@@ -15,8 +15,8 @@
 
   cross = toolchain: name: let
     arch = _: pkgs: let
-      drv = (packageSet pkgs).${name};
-    in drv // { static = util.hsLib.justStaticExecutables drv; };
+      drv = (packageSet pkgs).${name} or null;
+    in lib.optionalAttrs (drv != null) (drv // { static = util.hsLib.justStaticExecutables drv; });
   in
   lib.mapAttrs arch toolchain.pkgs.pkgsCross;
 
@@ -61,34 +61,44 @@
     executables = {};
   };
 
-  local = generic: pkg: let
+  local = outputs: pkg: let
     cabal = cabalConfig.${pkg.name};
   in {
     inherit cabal;
     inherit (pkg) expose;
-    executables = executables generic.package generic.musl generic.static cabal pkg;
+    executables = lib.optionalAttrs outputs.exists (executables outputs.package outputs.musl outputs.static cabal pkg);
   };
 
   buildPackage = env: pkgName: let
+
     tc = env.toolchain;
+
     ghc = tc.packages;
-    package = ghc.${pkgName};
-    generic = {
-      inherit package ghc;
-      static = (packageSet tc.pkgs.pkgsStatic).${pkgName};
-      musl = (packageSet tc.pkgs.pkgsMusl).${pkgName};
+
+    package = ghc.${pkgName} or null;
+
+    exists = package != null;
+
+    general = {
+      inherit exists ghc package;
+      static = (packageSet tc.pkgs.pkgsStatic).${pkgName} or null;
+      musl = (packageSet tc.pkgs.pkgsMusl).${pkgName} or null;
       cross = cross tc pkgName;
-      release = release package;
+      release = lib.mapNullable release package;
     };
-  in
-  generic //
-  util.maybeNull nonlocal (local generic) (config.packages.${pkgName} or null)
-  ;
+
+    special = maybe nonlocal (local general) (justAttr pkgName config.packages);
+
+  in general // special;
 
   buildPackages = envName: env: let
-    all = internal.project.packageNames ++ config.output.extraPackages ++ lib.toList env.packages;
-    existing = lib.filter (p: p != null && env.toolchain.packages ? ${p}) all;
-  in lib.genAttrs existing (buildPackage env);
 
-  # TODO should we use build.envs here?
-in lib.mapAttrs buildPackages config.envs
+    envPackages = util.fromMaybeNull [] env.packages;
+
+    all = internal.project.packageNames ++ config.output.extraPackages ++ envPackages;
+
+    nonNull = lib.filter (p: p != null) all;
+
+  in lib.genAttrs nonNull (buildPackage env);
+
+in lib.mapAttrs buildPackages build.envs
