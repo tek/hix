@@ -1783,13 +1783,6 @@ in {
       };
       envs = {
         dev = {
-          # Like above, but only for the main package of the set
-          static = <derivation>;
-          musl = <derivation>;
-          cross = <attrs>;
-          release = <derivation>;
-          # Main executable of the main package
-          api = <derivation>;
           # All executables of all packages, flattened
           executables = <attrs>;
         };

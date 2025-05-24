@@ -9,8 +9,7 @@
   ${new}"
   '';
 
-in {
-  source = lib.optionalString (lib.versionAtLeast builtins.nixVersion "2.19") ''
+  evalTests = lib.optionalString (lib.versionAtLeast builtins.nixVersion "2.19") ''
   ${warningTest
   ''The option 'packages.*.subpath' is deprecated in favor of 'project.packages.*.path'.''
   ''
@@ -54,4 +53,31 @@ in {
   preproc_error 'take_end 4'
   step_eval ghc-overrides
   '';
+
+in {
+  source = ''
+  ${evalTests}
+
+  error_exact "\
+  [1m[35m>>>[0m[0m [31mThe environment [33munexposed[0m[31m is configured not to be exposed at this \
+  flake output.[0m
+  [1m[35m>>>[0m[0m [31mYou can enable it by setting [34menvs.unexposed.expose.shell = \
+  true;[0m[31m[0m"
+  exit_code 1
+  step_develop_in unexposed echo 'do not execute'
+
+  error_exact "\
+  [1m[35m>>>[0m[0m [31mThe environment [33msystems[0m[31m is disabled because \
+  [35menvs.systems.systems[0m[31m is set and does not contain the current system, \
+  [32mx86_64-linux[0m[31m.[0m"
+  exit_code 1
+  step_develop_in systems echo 'do not execute'
+
+  error_exact "\
+  [1m[35m>>>[0m[0m [31mThe environment [33mdisabled[0m[31m is disabled because the option \
+  [35menvs.disabled.enable[0m[31m is set to [34mfalse[0m[31m.[0m"
+  exit_code 1
+  step_develop_in disabled echo 'do not execute'
+  ''
+  ;
 }

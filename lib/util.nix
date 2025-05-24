@@ -167,8 +167,10 @@ let
     exportPathOptional (extraPath ++ mkPackages path)
   );
 
+  setupScriptFile = conf: pkgs.writeText "hix-setup-script" (setupScript conf);
+
   hixScript = name: conf: main: zscript name ''
-  ${setupScript conf}
+  source ${setupScriptFile conf}
   ${main}
   '';
 

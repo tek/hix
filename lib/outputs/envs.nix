@@ -1,49 +1,36 @@
 {util}: let
 
-  inherit (util) config build internal lib justIf;
-
-  systemAllowed = env:
-  env.systems == null || (lib.elem config.system env.systems);
-
-  valid = env: env.enable && systemAllowed env;
-
-  validEnvs = lib.filterAttrs (_: valid) config.envs;
-
-  validBuildEnvs =
-    internal.envs.mapMaybe (env: a: justIf (systemAllowed env) a) (internal.envs.filterEnabled build.envs);
+  inherit (util) config build lib;
+  inherit (util.internal.env) mapValidatedOutputs;
 
   depVersions = env: import ../dep-versions.nix { inherit config lib util env; };
 
-  legacyEnv = env: outputs:
-  justIf util.expose.internals {
+  legacyEnv = env:
+  lib.optionalAttrs util.expose.internals {
     inherit (env.toolchain) pkgs;
     ghc = env.toolchain.packages;
     ghc0 = env.toolchain.vanilla;
   };
 
-  appsEnv = env: outputs: { dep-versions = depVersions env.name;  inherit (env) shell; };
+  appsEnv = env: { dep-versions = depVersions env.name; inherit (env) shell; };
 
   managedEnv = env: {
     solver = util.ghc.packageDbSolver (!config.managed.internal.localsInPackageDb) env;
   };
 
-  prefixed.env =
-    util.mergeAll [
-      (internal.envs.mapMaybe legacyEnv validBuildEnvs)
-      (internal.envs.map appsEnv validBuildEnvs)
-    ];
+  prefixedEnv = env:
+  legacyEnv env // appsEnv env;
+
+  prefixed.env = mapValidatedOutputs null prefixedEnv build.envs;
+
+  scoped = mapValidatedOutputs "scoped" appsEnv build.envs;
 
 in {
 
-  legacyPackages =
-    prefixed
-    //
-    (internal.envs.map appsEnv (internal.envs.filterExposed "scoped" validBuildEnvs))
-    ;
+  legacyPackages = prefixed // scoped;
 
-  shells = util.mapValues (e: e.shell) (internal.envs.filterExposed "shell" validEnvs);
+  shells = mapValidatedOutputs "shell" (e: e.shell) build.envs;
 
-  internal.env =
-    util.mapValues managedEnv util.managed.env.envs;
+  internal.env = util.mapValues managedEnv util.managed.env.envs;
 
 }
