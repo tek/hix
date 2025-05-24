@@ -4,6 +4,8 @@
 
   internal.cabal-extra = {
 
+    language = lib.mkDefault (if util.config.managed.lower.enable then "Haskell2010" else "GHC2021");
+
     default-extensions = [
       "AllowAmbiguousTypes"
       "ApplicativeDo"

@@ -73,9 +73,6 @@ let
 
   };
 
-  minGhcs = version:
-  all (basic.minGhc version) (attrValues config.envs);
-
   minGhcDev = version:
   basic.minGhc version config.envs.dev;
 
@@ -246,7 +243,6 @@ let
     attrsetMainName
     jsonFile
     json
-    minGhcs
     minGhcDev
     unlessDev
     scriptErr

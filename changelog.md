@@ -2,6 +2,7 @@
 
 * Changed the OC `ghcOptions` to accept a list of options as well as a string.
 * Added the OC `ghcOption` that only accepts a single string.
+* Default to `language = "Haskell2010"` to avoid eager evaluation of environment configs.
 
 # 0.9.0
 
