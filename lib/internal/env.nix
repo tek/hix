@@ -37,7 +37,7 @@
   justIf (env.enable or false);
 
   isExposed = purpose: item:
-  if isNull item
+  if isNull item || isNull purpose
   then false
   else
   if lib.isAttrs item.expose

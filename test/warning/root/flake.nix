@@ -17,5 +17,16 @@
       package-set.compiler.source = "ghc98";
     };
 
+    envs.unexposed = {
+      expose = false;
+    };
+
+    envs.systems = {
+      expose.shell = true;
+      systems = ["other-system"];
+    };
+
+    envs.disabled.enable = false;
+
   });
 }
