@@ -23,11 +23,12 @@ let
       else "Unknown source";
   in declsVia desc (specs api);
 
+  # TODO this should probably remove `__all` – add it to the test
   decls = env: let
-    self = env.ghc.ghc;
-    super = env.ghc.vanillaGhc;
-    individual = lib.concatMap (declSet self super) env.ghc.overrides;
-    combined = declsVia "combined" (deps.normalize env.ghc.overrides self super);
+    self = env.toolchain.packages;
+    super = env.toolchain.vanilla;
+    individual = lib.concatMap (declSet self super) env.toolchain.overrides;
+    combined = declsVia "combined" (deps.normalize env.toolchain.overrides self super);
   in indent (individual ++ combined);
 
   showEnv = env: ["${chevrons} Environment ${color green env.name}"] ++ decls env ++ [""];

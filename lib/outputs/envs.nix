@@ -9,13 +9,17 @@
 
   validEnvs = lib.filterAttrs (_: valid) config.envs;
 
-  validBuildEnvs = internal.envs.mapMaybe (env: a: justIf (systemAllowed env) a) build.envs;
+  validBuildEnvs =
+    internal.envs.mapMaybe (env: a: justIf (systemAllowed env) a) (internal.envs.filterEnabled build.envs);
 
   depVersions = env: import ../dep-versions.nix { inherit config lib util env; };
 
   legacyEnv = env: outputs:
-  justIf util.expose.internals { inherit (env.ghc) pkgs ghc; ghc0 = env.ghc.vanillaGhc; }
-  ;
+  justIf util.expose.internals {
+    inherit (env.toolchain) pkgs;
+    ghc = env.toolchain.packages;
+    ghc0 = env.toolchain.vanilla;
+  };
 
   appsEnv = env: outputs: { dep-versions = depVersions env.name;  inherit (env) shell; };
 
@@ -41,4 +45,5 @@ in {
 
   internal.env =
     util.mapValues managedEnv util.managed.env.envs;
+
 }

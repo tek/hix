@@ -15,7 +15,7 @@
   # packages (i.e. targets of a different env).
   packageDb = noLocalsInDeps: env: ghc: let
     targets = util.internal.env.targets env;
-    unwanted = if noLocalsInDeps then config.internal.packageNames else targets;
+    unwanted = if noLocalsInDeps then internal.project.packageNames else targets;
     bInputs = p: p.buildInputs ++ p.propagatedBuildInputs;
     isWanted = p: !(p ? pname && lib.elem p.pname unwanted);
     targetDeps = lib.filter isWanted (lib.filter (a: a != null) (lib.concatMap bInputs (map (p: ghc.${p}) targets)));
@@ -29,15 +29,16 @@
         env.internal.overridesSolver
         (internal.env.managedSolverOverrides env.name)
       ];
-  in env.ghc.vanillaGhc.override { overrides = (deps { inherit (env.ghc) pkgs; }).reify overrides; };
+  in env.toolchain.vanilla.override { overrides = (deps { inherit (env.ghc) pkgs; }).reify overrides; };
 
   packageDbSolver = noLocalsInDeps: env: (solverGhc env).ghcWithPackages (packageDb noLocalsInDeps env);
 
+  # TODO these two aren't used
   packageDbSolverShallow = noLocalsInDeps: env: map (p: p.drvPath) (packageDb noLocalsInDeps env (solverGhc env));
 
   packageDbSolverNames = noLocalsInDeps: env: map (p: p.name) (packageDb noLocalsInDeps env (solverGhc env));
 
-  packageDbFull = env: args: env.ghc.ghc.ghcWithPackages.override args (packageDb false env);
+  packageDbFull = env: args: env.toolchain.packages.ghcWithPackages.override args (packageDb false env);
 
 in {
   inherit packageDb packageDbSolver packageDbSolverShallow packageDbSolverNames packageDbFull;

@@ -230,7 +230,7 @@ in {
         tar = hackage "0.6.3.0" "02nq0l9bsnkk5w8lbp493anc01fyf45l7zbcahhzji02agjwxkqm";
       };
 
-      ghc.gen-overrides = false;
+      package-set.gen-overrides = false;
 
     };
 

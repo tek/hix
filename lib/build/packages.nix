@@ -11,12 +11,14 @@
 
   release = import ../release-derivation.nix { inherit util; };
 
-  cross = ghc: name: let
+  packageSet = pkgs: pkgs.__hix.packages;
+
+  cross = toolchain: name: let
     arch = _: pkgs: let
-      drv = pkgs.hixPackages.${name};
+      drv = (packageSet pkgs).${name};
     in drv // { static = util.hsLib.justStaticExecutables drv; };
   in
-  lib.mapAttrs arch ghc.pkgs.pkgsCross;
+  lib.mapAttrs arch toolchain.pkgs.pkgsCross;
 
   appimageDerivation = nix-appimage.bundlers.${config.system}.default;
 
@@ -59,7 +61,7 @@
     executables = {};
   };
 
-  local = env: generic: pkg: let
+  local = generic: pkg: let
     cabal = cabalConfig.${pkg.name};
   in {
     inherit cabal;
@@ -68,23 +70,25 @@
   };
 
   buildPackage = env: pkgName: let
-    ghc = env.ghc.ghc;
+    tc = env.toolchain;
+    ghc = tc.packages;
     package = ghc.${pkgName};
     generic = {
       inherit package ghc;
-      static = env.ghc.pkgs.pkgsStatic.hixPackages.${pkgName};
-      musl = env.ghc.pkgs.pkgsMusl.hixPackages.${pkgName};
-      cross = cross env.ghc pkgName;
+      static = (packageSet tc.pkgs.pkgsStatic).${pkgName};
+      musl = (packageSet tc.pkgs.pkgsMusl).${pkgName};
+      cross = cross tc pkgName;
       release = release package;
     };
   in
   generic //
-  util.maybeNull nonlocal (local env generic) (config.packages.${pkgName} or null)
+  util.maybeNull nonlocal (local generic) (config.packages.${pkgName} or null)
   ;
 
   buildPackages = envName: env: let
-    all = config.internal.packageNames ++ config.output.extraPackages ++ lib.toList env.packages;
-    existing = lib.filter (p: p != null && env.ghc.ghc ? ${p}) all;
+    all = internal.project.packageNames ++ config.output.extraPackages ++ lib.toList env.packages;
+    existing = lib.filter (p: p != null && env.toolchain.packages ? ${p}) all;
   in lib.genAttrs existing (buildPackage env);
 
+  # TODO should we use build.envs here?
 in lib.mapAttrs buildPackages config.envs

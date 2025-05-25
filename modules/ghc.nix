@@ -1,116 +1,113 @@
-{ global, util }:
-{ lib, config, ... }: let
+{util}:
+{lib, config, ...}: let
 
+  inherit (util) internal;
   inherit (lib) types;
+
+  toolchain = config.toolchain;
+
+  inherit (toolchain.pkgs.__hix) packages;
+
+  docLink = "You can find more information about customizing compilers and package sets at [https://hix.how#ghc].";
+
+  option = args: internal.modules.deprecatedOption ({
+    key = "env.ghc";
+    extra = "\n${docLink}";
+  } // args);
 
 in {
   options = {
-    name = lib.mkOption {
-      type = types.str;
-      description = "A unique identifier of the package set.";
+
+    toolchain = lib.mkOption {
+      description = ''
+      Reference to the package set structure of an environment.
+      Used for backwards-compat options.
+      '';
+      type = util.types.toolchain;
+      readOnly = true;
     };
 
-    compiler = lib.mkOption {
+    compiler = option {
       type = types.str;
-      description = "The attribute name for a GHC version in the set `haskell.packages`.";
+      replacement = "envs.*.toolchain.compiler";
+      definitionReplacement = "compilers.*.source";
     };
 
-    overrides = lib.mkOption {
+    pkgs = option {
+      type = types.pkgs;
+      replacement = "envs.*.toolchain.pkgs";
+      definitionReplacement = "compilers.*.nixpkgs";
+    };
+
+    overrides = option {
       type = util.types.cabalOverrides;
-      description = ''
-      The overrides used for this package set – see [](#ghc) for an explanation.
-
-      This option is set by environments (see [](#envs)), but GHC modules can be used outside of environments, so this
-      might be set by the user.
-      '';
-      default = [];
+      replacement = "envs.*.toolchain.overrides";
+      definitionReplacement = "package-sets.*.overrides";
     };
 
-    nixpkgs = lib.mkOption {
-      type = types.raw;
-      description = ''
-      The path to a nixpkgs source tree, used as the basis for the package set.
-
-      This can be a flake input or a regular type of path, like the result of `fetchGit`.
-      '';
+    nixpkgs = option {
+      type = types.anything;
+      replacement = "nixpkgs.*.source";
     };
 
-    # TODO make sure this is the type that recursively merges attrsets
-    nixpkgsOptions = lib.mkOption {
-      type = types.attrsOf types.unspecified;
-      description = "Additional options to pass to nixpkgs when importing.";
+    nixpkgsOptions = option {
+      type = types.anything;
+      replacement = "nixpkgs.*.config";
     };
 
-    pkgs = lib.mkOption {
-      type = util.types.pkgs;
-      description = "The nixpkgs set used for this GHC.";
+    crossPkgs = option {
+      type = types.pkgs;
+      replacement = "envs.*.toolchain.pkgs";
+      definitionReplacement = "package-sets.*.cross";
     };
 
-    crossPkgs = lib.mkOption {
-      type = util.types.pkgs;
-      description = ''
-      This option can be used to override the pkgs set used for the Haskell package set, for example an element of
-      `pkgsCross`: `envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64`
-      '';
-    };
-
-    overlays = lib.mkOption {
+    overlays = option {
       type = types.listOf util.types.overlay;
-      description = "Additional nixpkgs overlays.";
+      replacement = "nixpkgs.*.overlays";
     };
 
-    vanillaGhc = lib.mkOption {
-      type = util.types.ghc;
-      description = "The package set without overrides.";
-      readOnly = true;
+    vanillaGhc = option {
+      type = util.types.haskellPackages;
+      replacement = "envs.*.toolchain.vanilla";
     };
 
-    ghc = lib.mkOption {
-      type = util.types.ghc;
-      description = "The package set with overrides.";
-      readOnly = true;
+    ghc = option {
+      type = util.types.haskellPackages;
+      replacement = "envs.*.toolchain.packages";
     };
 
-    version = lib.mkOption {
-      description = "The GHC version as a canonical string, like `9.2.5`, for use in conditions.";
+    version = option {
       type = types.str;
-      readOnly = true;
+      replacement = "envs.*.toolchain.version";
     };
 
-    gen-overrides = lib.mkOption {
-      description = ''
-      Allow this GHC to use pregenerated overrides.
-      Has no effect when [](#opt-general-gen-overrides.enable) is `false`.
-
-      Disabled by default, but enabled for GHCs that are defined in an environment.
-      '';
+    gen-overrides = option {
       type = types.bool;
-      default = false;
+      replacement = "package-sets.*.gen-overrides";
     };
 
   };
 
   config = {
-    compiler = util.unlessDev config global.envs.dev.ghc.compiler;
-    overlays = util.unlessDev config global.envs.dev.ghc.overlays;
-    nixpkgs = util.unlessDev config global.envs.dev.ghc.nixpkgs;
-    nixpkgsOptions = util.unlessDev config global.envs.dev.ghc.nixpkgsOptions;
 
-    pkgs = let
-      ghcOverlay = util.ghcOverlay { ghc = config; };
-      options = lib.recursiveUpdate {
-        inherit (global) system;
-        overlays = [ghcOverlay] ++ config.overlays;
-        config.allowUnfree = true;
-      } config.nixpkgsOptions;
-    in import config.nixpkgs options;
+    compiler = toolchain.tag;
 
-    crossPkgs = lib.mkDefault config.pkgs;
+    pkgs = toolchain.pkgs;
 
-    vanillaGhc = lib.mkDefault (config.crossPkgs.haskell.packages.${config.compiler});
+    overrides = toolchain.overrides;
 
-    ghc = config.crossPkgs.hixPackages;
+    nixpkgs = {};
 
-    version = config.ghc.ghc.version;
+    nixpkgsOptions = {};
+
+    vanillaGhc = toolchain.vanilla;
+
+    ghc = packages;
+
+    version = packages.ghc.version;
+
+    gen-overrides = toolchain.conf.gen-overrides;
+
   };
+
 }
