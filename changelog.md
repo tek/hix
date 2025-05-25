@@ -14,6 +14,7 @@
 * Add the option `package-sets` for configuring different GHC package sets.
 * Removed some attributes in the [intermediate build outputs](https://hix.how#intermediate-outputs) set to avoid eager
   evaluation.
+* Add options for building GHC from source.
 
 # 0.9.0
 
