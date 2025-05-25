@@ -560,13 +560,14 @@ in {
   All environments are exposed in the flake output namespace `devShells` (so they can be used with
   `nix develop .#<env-name>`), unless the option [](#opt-env-expose-shell) is set to `false`.
 
-  ### Configuring GHC {#ghc}
+  ## Configuring GHC {#ghc}
 
   The most important part of an environment is the associated GHC.
-  As demonstrated in the above example, the option `ghc.compiler` in an environment is used to select the package set
-  corresponding to a version.
+  As demonstrated in the above example, the option [](#opt-env-compiler) in an environment can be used to select the
+  package set corresponding to a version.
   These package sets are predefined by nixpkgs – each snapshot has a certain number of GHC versions with packages
   obtained from Stackage and Hackage.
+  More flexible customization will be explained in [](#toolchain).
 
   The GHC executable provided by an environment comes preloaded with all dependencies declared in the project's Cabal
   files (which amounts to those declared in `packages`).
@@ -588,28 +589,106 @@ in {
   as its argument a set of combinators and metadata for declaring those specifications, like the `hackage` combinator
   used above that takes a version and Nix store hash to fetch a package directly from Hackage.
   They can be specified at different levels, like dependencies: At the top level for all environments, in each
-  individual environment, and on the `ghc` module in an environment (although the latter is populated by Hix with the
-  merged global and local overrides).
+  individual environment, and on the `package-set` module in an environment (although the latter is populated by Hix
+  with the merged global and local overrides).
 
   The special attribute name `__all` is recognized as a set of transformations applied to all packages – local as well
   as dependencies, causing the latter to be rebuilt completely.
   This works by overriding the package set attribute `mkDerivation` used by all packages (see below for details about
   this function).
 
-  ::: {.note}
-  nixpkgs' shipped GHC package sets come with a few special derivations whose attribute names are suffixed with a
-  concrete version, like `Cabal_3_10_2_1`, to be used as overrides for packages with incompatible requirements.
-  If you create a Hackage override for such a package, there's a chance that it will result in an `infinite recursion`
-  error.
-  The precise reason for this is not clear to me yet, but it can be avoided by using that special derivation, if it is
-  compatible with your dependency set:
+  ### Selecting the toolchain {#toolchain}
+
+  The basic method of compiler selection provided by the convenience option [`env.compiler`](#opt-env-compiler) should
+  be sufficient for the majority of use cases.
+  For more advanced requirements, Hix allows you to adjust all parts of the toolchain:
+  An environment contains a package set, which contains a compiler config, which in turn contains a nixpkgs config.
+
+  For example, the equivalent of setting [`env.compiler`](#opt-env-compiler), using this nested configuration schema,
+  would be setting [](#opt-compiler-source) in the env's package set:
+
+  ```nix
+  ${exampleFile "env-compiler-1" "config.nix"}
   ```
+
+  Each of these nested configs can be specified in two ways: a submodule (like above) or a string.
+  If a string, say `"my-ghc"`, is assigned to [`env.package-set`](#opt-env-package-set), the env will use the
+  configuration in [`package-sets.my-ghc`](#opt-general-package-sets), which is the global pool of package set
+  configurations.
+  Analogously, the option sets [](#opt-general-compilers) and [](#opt-general-nixpkgs) configure the global set of
+  these respective types.
+
+  These methods can be mixed:
+
+  ```nix
+  ${exampleFile "env-compiler-2" "config.nix"}
   ```
+
+  Here the package set uses an inline submodule, but its [](#opt-package-set-compiler) option references the compiler
+  named `my-ghc`.
+
+  Toolchain component modules exhibit another special functionality: when a new submodule of these types is defined,
+  their default values are inherited from another configuration.
+  Unless overridden in the option [](#opt-package-set-extends), modules extend the entry named `default`, e.g.
+  `package-set.default`.
+  This feature can be used to reuse configuration in multiple environments while customizing some options:
+
+  ```nix
+  ${exampleFile "env-compiler-3" "config.nix"}
+  ```
+
+  #### Custom GHC builds {#ghc-build}
+
+  The final example in the previous section sneakily introduced an alternative method of selecting the compiler, next to
+  [`compiler.source`](#opt-compiler-source): building GHC from an arbitrary commit.
+
+  The configuration interface roughly maps to the parameters of nixpkgs' internal functions for building the compiler,
+  with multiple alternative ways of selecting the source tree.
+  If [](#opt-ghc-build-version) is specified and nothing else, a release snapshot will be used.
+  With [](#opt-ghc-build-src), the source tree can be provided explicitly, and [](#opt-ghc-build-rev) selects a specific
+  commit in the official GHC Gitlab repository (or in [](#opt-ghc-build-url) if present).
+
+  Note that in any case, you will have to specify the [](#opt-ghc-build-hash), which will be printed by Nix when you
+  attempt to build the compiler (by running an arbitrary flake build that uses it), so you can copy it from there.
+
+  Check out the complete [list of options](#options-ghc-build) to learn more.
+
+  #### Customizing nixpkgs {#nixpkgs}
+
+  Like compilers and package sets, [](#opt-general-nixpkgs) has a `default` configuration, and its
+  [](#opt-nixpkgs-source) is provided by an input of the Hix flake.
+
+  Configuring additional nixpkgs snapshots is useful for compatibility checks for older versions of GHC that aren't
+  supported in the default nixpkgs commit anymore:
+
+  ```nix
+  ${exampleFile "old-nixpkgs" "config.nix"}
+  ```
+
+  Another use case may be an externally customized version of nixpkgs that provides dependencies for local Haskell
+  packages.
+  While it might be tempting to override the flake input, it is advisable to ensure that Hix's internals have access to
+  a compatible version of nixpkgs.
+
+  The entry `nixpkgs.internal`, which provides the global module argument `pkgs` used for generic tasks like creating
+  shell scripts, also uses the flake input instead of configuring a pinned commit, in order to avoid double-downloading
+  the same archive through different paths.
+
+  Instead, you can add another flake input or configure the metadata in [](#opt-nixpkgs-source):
+
+  ```nix
   {
-    overrides = {super, ...}: {
-      broken-dep = super.broken-dep_1_2_3;
+    nixpkgs.default.source = {
+      rev = "b2243f41e860ac85c0b446eadc6930359b294e79";
+      hash = "sha256-M4ilIfGxzbBZuURokv24aqJTbdjPA9K+DtKUzrJaES4=";
     };
   }
+  ```
+
+  ::: {.note}
+  The option `nixpkgs.internal.source` _must_ be a path or flake input, not a submodule.
+  Submodules that specify a Git repo require an existing `pkgs` to fetch, for which Hix uses the source configured in
+  `nixpkgs.internal`.
   :::
 
   ### Override combinators {#overrides-combinators}
@@ -820,8 +899,8 @@ in {
   - `hsLibC` – The entire nixpkgs tool set `haskell.lib.compose`.
     This is preferable to `hsLib`, but for historic reasons that one ended up in here first, and it's gonna stay for
     compatibility.
-  - `compilerName` – The `name` attribute of the GHC package
-  - `compilerVersion` – The `version` attribute of the GHC package
+  - `ghcName` – The `name` attribute of the GHC package
+  - `ghcVersion` – The `version` attribute of the GHC package
 
   #### Transitive overrides {#overrides-transitive}
 
@@ -841,35 +920,6 @@ in {
     };
   }
   ```
-
-  ### Configuring nixpkgs {#ghc-nixpkgs}
-
-  The GHC package set uses the same nixpkgs snapshot that is also used for Hix internals, which is configured as a flake
-  input of the Hix repository.
-  You can override this globally:
-
-  ```nix
-  {
-    inputs.hix.inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
-  }
-  ```
-
-  In order to avoid incompatiblities with the Hix internals, it might be advisable to only override the nixpkgs used by
-  GHC:
-
-  ```nix
-  {
-    inputs.hix.url = "github:tek/hix";
-    inputs.ghc_nixpkgs.url = "github:nixos/nixpkgs/nixos-23.05";
-
-    outputs = { hix, ghc_nixpkgs, ... }: hix {
-      envs.dev.ghc.nixpkgs = ghc_nixpkgs;
-    };
-  }
-  ```
-
-  Since the usage of nixpkgs within the library is tightly interwoven with the GHC package set, this might have a slight
-  potential for breakage, but (like the global variant) it should be minimal.
 
   ## Commands {#commands}
 
@@ -1283,11 +1333,12 @@ in {
 
   Note that this does not result in a static binary – it will still be linked dynamically against libc.
 
-  For more elaborate cross-compilation setups, each GHC can be configured to use a [cross pkgs set](#opt-ghc-crossPkgs):
+  For more elaborate cross-compilation setups, each package set can be configured to use a [cross pkgs
+  set](#opt-package-set-cross):
 
   ```
   {
-    envs.dev.ghc.crossPkgs = config.envs.dev.ghc.pkgs.pkgsCross.musl64;
+    envs.dev.package-set.cross = "musl64";
   }
   ```
 

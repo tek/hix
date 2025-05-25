@@ -226,28 +226,33 @@ in {
     };
 
     pkgs = mkOption {
-      type = util.types.pkgs;
+      type = types.pkgs;
       description = ''
-        The nixpkgs attrset used by the default GHC.
+      The vanilla nixpkgs set configured by [`nixpkgs.internal`](#opt-general-nixpkgs).
+      Convenience read-only option for the purpose of generic functionality like `pkgs.writeText`.
+
+      Don't use this if you're customizing specific package sets and accessing Haskell packages, but the corresponding
+      set configured by [](#options-package-set) instead.
+      In particular, [override](#overrides-combinators) functions are provided with the proper `pkgs` argument.
       '';
       readOnly = true;
     };
 
     internal = {
 
-      pkgs = mkOption {
+      pkgs = internal.modules.deprecatedOption {
         type = unspecified;
-        readOnly = true;
+        key = "internal.pkgs";
       };
 
-      basicGhc = mkOption {
+      basicGhc = internal.modules.deprecatedOption {
         type = util.types.haskellPackages;
-        readOnly = true;
+        key = "internal.basicGhc";
       };
 
-      packageNames = mkOption {
+      packageNames = internal.modules.deprecatedOption {
         type = listOf str;
-        readOnly = true;
+        key = "internal.packageNames";
       };
 
       cabal-extra = mkOption {
@@ -284,12 +289,22 @@ in {
 
     name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
-    pkgs = mkDefault config.envs.dev.ghc.pkgs;
-    nixpkgs.default = {
-      extends = null;
-      source = lib.mkDefault util.config.inputs.nixpkgs;
-      config.allowUnfree = lib.mkDefault true;
-      args = { inherit (util.config) system; };
+    nixpkgs = {
+
+      default = {
+        extends = null;
+        source = lib.mkDefault util.config.inputs.nixpkgs;
+        config.allowUnfree = lib.mkDefault true;
+        args = { inherit (util.config) system; };
+      };
+
+      internal = {
+        extends = null;
+        source = lib.mkDefault util.config.inputs.nixpkgs;
+        config.allowUnfree = lib.mkDefault true;
+        args = { inherit (util.config) system; };
+      };
+
     };
 
     compilers.default = {
@@ -300,13 +315,15 @@ in {
       extends = null;
     };
 
+    pkgs = mkDefault util.pkgs;
+
     haskellTools = ghc: [ghc.cabal-install];
 
     internal = {
 
       pkgs = import config.inputs.nixpkgs { inherit (config) system; };
 
-      basicGhc = config.internal.pkgs.haskell.packages.${config.compiler};
+      basicGhc = config.pkgs.haskell.packages.${config.compiler};
 
       packageNames = attrNames config.packages;
 

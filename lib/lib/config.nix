@@ -3,7 +3,7 @@
   maybeOption = type: args: lib.mkOption ({ type = lib.types.nullOr type; default = null; } // args);
 
   minGhc = version: env:
-  lib.versionAtLeast env.ghc.version version;
+  lib.versionAtLeast env.toolchain.version version;
 
   cabalDepPackage = dep:
   if lib.isAttrs dep

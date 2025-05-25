@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config;
+  inherit (util) config build;
 
   showConfig = import ../show-config.nix { inherit util; };
 
@@ -21,8 +21,9 @@ in {
       {
         inherit (util) build outputs;
         inherit config;
-        inherit (config.envs.dev.ghc) pkgs ghc;
-        ghc0 = config.envs.dev.ghc.vanillaGhc;
+        inherit (build.envs.dev.toolchain) pkgs;
+        ghc = build.envs.dev.toolchain.packages;
+        ghc0 = build.envs.dev.toolchain.vanilla;
         show-config = show-config.shell;
       }
     ];

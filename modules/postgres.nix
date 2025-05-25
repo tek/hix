@@ -49,7 +49,7 @@ with lib;
         host all all 0.0.0.0/0 md5
         host all all ::/0 md5
         '';
-        initialScript = global.internal.pkgs.writeText "vm-postgresql-init" ''
+        initialScript = global.pkgs.writeText "vm-postgresql-init" ''
         create database "${config.name}";
         create role "${config.creds.user}" with login password '${config.creds.password}' createdb;
         grant all privileges on database "${config.name}" to "${config.creds.user}";

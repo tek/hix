@@ -10,7 +10,7 @@ let
 
   pkgs = config.pkgs;
 
-  ghc = config.envs.${env}.ghc.ghc;
+  ghc = config.envs.${env}.toolchain.packages;
 
   dep = spec: let
 

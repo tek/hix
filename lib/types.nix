@@ -152,12 +152,6 @@ in {
 
   toolchain = fileSubmodule "toolchain";
 
-  pkgs = mkOptionType {
-    name = "pkgs";
-    description = "nixpkgs attrset";
-    merge = mergeOneOption;
-  };
-
   haskellPackages = mkOptionType {
     name = "haskellPackages";
     description = "Haskell package set";
@@ -172,13 +166,6 @@ in {
   };
 
   cabalOverrides = cabalOverridesVia null;
-
-  ghc = mkOptionType {
-    name = "ghc";
-    description = "Haskell package set";
-    check = a: isAttrs a;
-    merge = mergeOneOption;
-  };
 
   cabalDep = either str (submodule cabalDepModule);
 

@@ -1,21 +1,22 @@
-{config, lib, util}:
+{util}:
 let
+  inherit (util) build lib config;
+
   pkgs = config.pkgs;
   overridesFile = config.gen-overrides.file;
-
-  inherit (pkgs) lib;
-
-  pregen = import ./deps/pregen.nix { inherit config; } { inherit pkgs; };
 
   drvAttr = pkg: dump: "  ${pkg} = ${toString dump};";
 
   genEnv = env: let
+    toolchain = build.envs.${env.name}.toolchain;
 
-    enable = env.enable && env.ghc.gen-overrides;
+    pregen = import ./deps/pregen.nix { inherit config; } { pkgs = toolchain.pkgs; };
 
-    attrs = lib.mapAttrsToList drvAttr (pregen.overrides env.ghc.vanillaGhc env.ghc.overrides);
+    enable = env.enable && env.package-set.gen-overrides;
 
-    lines = ["${env.ghc.name} = {"] ++ lib.optionals enable attrs ++ ["};"];
+    attrs = lib.mapAttrsToList drvAttr (pregen.overrides toolchain.vanilla toolchain.overrides);
+
+    lines = ["${env.name} = {"] ++ lib.optionals enable attrs ++ ["};"];
 
   in lines;
 
@@ -34,9 +35,9 @@ let
     cp ${file} ${overridesFile}
     chmod u+w ${overridesFile}
     ${lib.optionalString config.gen-overrides.gitAdd ''
-      if ${config.pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]] && [[ -f ${overridesFile} ]]
+      if ${pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]] && [[ -f ${overridesFile} ]]
       then
-        ${config.pkgs.git}/bin/git add ${overridesFile}
+        ${pkgs.git}/bin/git add ${overridesFile}
       fi
     ''}
   '';

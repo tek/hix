@@ -6,7 +6,7 @@
   Could not determine the project's root directory in the store.
 
   ${message}
-  See https://tryp.io/hix/index.html#packages for more information.
+  See https://hix.how#packages for more information.
   '';
 
   explicitInstructions = pkg: ''

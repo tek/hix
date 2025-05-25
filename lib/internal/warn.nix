@@ -18,8 +18,9 @@
   warnEval = pred: warnWith false (enabled: lib.warnIf (pred && enabled));
 
   deprecatedWith = {handler, key, desc, replacement, color ? true, extra ? null}: let
+    extraAdjusted = lib.optionalString (extra != null) " ${extra}";
     suggestion = if replacement == null then "" else " in favor of ${colorIf color colors.blue replacement}";
-    message = "${desc} is deprecated${suggestion}. ${extra}";
+    message = "${desc} is deprecated${suggestion}.${extraAdjusted}";
   in warnWith color handler "deprecated.${key}" message;
 
   # TODO does "$(cat ${warning})" cause problems with quotes in the file?
@@ -45,7 +46,7 @@
 
   deprecatedEval = args: deprecatedWith ({ color = false; handler = lib.warnIf; } // args);
 
-  deprecatedOptionReadOnly = { key, option, replacement, extra ? "" }:
+  deprecatedOptionReadOnly = { key, option, replacement, extra ? null }:
   deprecatedEval {
     key = "option.${key}";
     desc = "The option '${option}'";

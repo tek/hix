@@ -25,7 +25,7 @@ let
   then
     chmod u+w ${cabal}
   fi
-  ${config.internal.basicGhc.hpack}/bin/hpack --force
+  ${config.build-tools.hpack.package}/bin/hpack --force
   rm -f package.yaml
   '';
 

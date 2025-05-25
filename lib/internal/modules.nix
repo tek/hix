@@ -157,13 +157,15 @@
   then api.${spec}
   else api spec;
 
-  deprecatedOptionDefined = loc: extra:
-  ''
-  The option '${lib.showOption loc}' is deprecated.
-  ${extra}
+  deprecatedOptionDefined = {loc, extra ? null, replacement ? null}: let
+    replacementMessage = lib.optionalString (replacement != null)
+    "\nIt is superseded by '${replacement}', possibly with changed semantics.";
+  in ''
+  The option '${lib.showOption loc}' is deprecated.${replacementMessage}
+  ${util.fromMaybeNull "" extra}
   '';
 
-  deprecated = {type, key, replacement ? null, extra ? null}: type // {
+  deprecated = {type, key, replacement ? null, definitionReplacement ? null, extra ? null}: type // {
     name = "deprecated ${type.name}";
     merge = loc: defs:
       if lib.length defs == 1
@@ -171,7 +173,7 @@
         inherit replacement extra key;
         option = lib.showOption loc;
       } (lib.head defs).value
-      else throw (deprecatedOptionDefined loc extra)
+      else throw (deprecatedOptionDefined { inherit loc extra; replacement =  definitionReplacement; })
       ;
   };
 
@@ -179,11 +181,12 @@
     type,
     key,
     replacement ? null,
+    definitionReplacement ? replacement,
     extra ? null,
     description ? "Deprecated.",
   }: lib.mkOption {
     inherit description;
-    type = deprecated { inherit type key replacement extra; };
+    type = deprecated { inherit type key replacement definitionReplacement extra; };
   };
 
 in {
