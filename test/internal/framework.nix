@@ -2,7 +2,7 @@
 let
   inherit (util) pkgs lib;
 
-  testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter pkgs.gnused pkgs.rsync];
+  testTools = [pkgs.ripgrep pkgs.git pkgs.ansifilter pkgs.gnused pkgs.rsync pkgs.tree];
 
   keepVars = lib.concatMapStringsSep " " (var: "-k ${var}");
 

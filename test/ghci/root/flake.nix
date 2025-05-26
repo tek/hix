@@ -27,6 +27,7 @@
           enable = true;
           dependencies = [
             config.packages.api.libraries.testing.dep.exact
+            "typed-process"
           ];
         };
       };

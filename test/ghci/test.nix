@@ -6,6 +6,10 @@
   output_match 'one module loaded'
   step_ghci ghci -p api -m Root.LibGhc
 
+  describe 'Test dep exposed in package DB'
+  output_ignore
+  step_ghci ghci -p api -c test
+
   describe 'GHCi changes directory'
   output_match "$PWD/pkg/"
   step_ghci ghci --root $PWD -c lib -m Root.Lib -r cwd
