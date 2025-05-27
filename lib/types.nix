@@ -159,7 +159,7 @@ in {
     merge = mergeOneOption;
   };
 
-  overlay = types.functionTo (types.functionTo types.pkgs) // {
+  overlay = types.functionTo (types.functionTo types.raw) // {
     name = "overlay";
     description = "nixpkgs overlay";
     descriptionClass = "noun";
