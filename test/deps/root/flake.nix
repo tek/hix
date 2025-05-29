@@ -44,10 +44,10 @@
 
     output.final = config.outputs // {
       stm-chans-version =
-        with lib;
         let
           pred = dep: dep != null && dep.pname == "stm-chans";
-          stm-chans = findFirst pred { version = "missing"; } config.outputs.packages.root.getCabalDeps.libraryHaskellDepends;
+          stm-chans =
+            lib.findFirst pred { version = "missing"; } config.outputs.packages.root.getCabalDeps.libraryHaskellDepends;
         in stm-chans.version;
       };
 

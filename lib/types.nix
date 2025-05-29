@@ -1,8 +1,22 @@
 { config, lib, util, ... }:
-with lib;
-with types;
-
 let
+  inherit (lib)
+  types
+  mkOption
+  literalExpression
+  mkOptionType
+  mergeOneOption
+  ;
+
+  inherit (types)
+  str
+  nullOr
+  int
+  bool
+  either
+  listOf
+  submodule
+  ;
 
   fileModule = name: import ../modules/${name}.nix { inherit util; };
 
@@ -66,13 +80,13 @@ let
     };
   };
 
-  nestedPackages = lazyAttrsOf (either package nestedPackages);
+  nestedPackages = types.lazyAttrsOf (either types.package nestedPackages);
 
   # Not checking that `program` is a string because it would evaluate it
   checkFlakeApp = a:
-    isAttrs a &&
+    lib.isAttrs a &&
     a ? type &&
-    isString a.type &&
+    lib.isString a.type &&
     a ? program;
 
   flakeApp = mkOptionType {
@@ -87,8 +101,8 @@ let
     name = "cabal-overrides";
     description = "Haskell package override function specified in the Hix DSL";
     descriptionClass = "noun";
-    check = a: isFunction a || (isList a && all isFunction a);
-    merge = _: defs: util.overridesVia desc (concatLists (map (a: toList a.value) defs));
+    check = a: lib.isFunction a || (lib.isList a && lib.all lib.isFunction a);
+    merge = _: defs: util.overridesVia desc (lib.concatLists (map (a: lib.toList a.value) defs));
   };
 
   passwordModule = {
@@ -115,7 +129,7 @@ let
   };
 
 in {
-  inherit nestedPackages flakeApp cabalOverridesVia app;
+  inherit nestedPackages flakeApp cabalOverridesVia;
 
   ref = {
 
@@ -123,7 +137,7 @@ in {
       name = "ref.nixpkgs";
       description = "name of a nixpkgs configuration in config.nixpkgs.";
       descriptionClass = "noun";
-      check = a: isString a && hasAttr a config.nixpkgs;
+      check = a: lib.isString a && lib.hasAttr a config.nixpkgs;
       merge = mergeOneOption;
     };
 
@@ -131,14 +145,14 @@ in {
       name = "ref.compiler";
       description = "name of a compiler defined in config.compilers";
       descriptionClass = "noun";
-      check = a: isString a && hasAttr a config.compilers;
+      check = a: lib.isString a && lib.hasAttr a config.compilers;
       merge = mergeOneOption;
     };
 
     package-set = mkOptionType {
       name = "ref.package-set";
       description = "name of a package set defined in config.package-sets";
-      check = a: isString a && hasAttr a config.package-sets;
+      check = a: lib.isString a && lib.hasAttr a config.package-sets;
       merge = mergeOneOption;
     };
 
@@ -155,7 +169,7 @@ in {
   haskellPackages = mkOptionType {
     name = "haskellPackages";
     description = "Haskell package set";
-    check = a: isAttrs a;
+    check = a: lib.isAttrs a;
     merge = mergeOneOption;
   };
 
@@ -171,13 +185,13 @@ in {
 
   bounds = submodule boundsModule;
 
-  componentSort = enum ["library" "executable" "test" "benchmark"];
+  componentSort = types.enum ["library" "executable" "test" "benchmark"];
 
   localPackage = mkOptionType {
     name = "local-package";
     description = "name of a package defined in config.packages";
     descriptionClass = "noun";
-    check = a: isString a && hasAttr a config.packages;
+    check = a: lib.isString a && lib.hasAttr a config.packages;
     merge = mergeOneOption;
   };
 
@@ -185,7 +199,7 @@ in {
     name = "env-ref";
     description = "name of an environment defined in config.envs";
     descriptionClass = "noun";
-    check = a: isString a && hasAttr a config.envs;
+    check = a: lib.isString a && lib.hasAttr a config.envs;
     merge = mergeOneOption;
   };
 
@@ -193,7 +207,7 @@ in {
     name = "hpack-dep";
     description = "package dependency in HPack format";
     descriptionClass = "noun";
-    check = a: isString a || isAttrs a;
+    check = a: lib.isString a || lib.isAttrs a;
     merge = mergeOneOption;
   };
 
@@ -207,8 +221,8 @@ in {
     name = "multi-enable";
     description = "boolean flag that uses conjunction for merging";
     descriptionClass = "noun";
-    check = isBool;
-    merge = _: defs: all id (map (a: a.value) defs);
+    check = lib.isBool;
+    merge = _: defs: lib.all lib.id (map (a: a.value) defs);
   };
 
   password = types.either types.str (submodule passwordModule);

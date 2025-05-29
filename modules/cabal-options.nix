@@ -1,15 +1,16 @@
 { global, util, }:
 { lib, config, ... }:
-with lib;
 
 let
 
+  inherit (lib) types mkOption literalExpression;
+  inherit (types) nullOr str;
   inherit (util) project;
 
   preludeModule = {
 
-    options = with types; {
-      enable = mkEnableOption "an alternative Prelude";
+    options = {
+      enable = lib.mkEnableOption "an alternative Prelude";
 
       package = mkOption {
         description = "The package containing the alternative Prelude.";
@@ -30,7 +31,7 @@ let
 
 in {
 
-  options = with types; {
+  options = {
 
     license = mkOption {
       description = ''
@@ -58,7 +59,7 @@ in {
       default = let
         f = global.hackage.versionFile;
       in
-        if (f != null && hasSuffix ".nix" f)
+        if (f != null && lib.hasSuffix ".nix" f)
         then import "${project.base}/${f}"
         else "0.1.0.0";
     };
@@ -101,7 +102,7 @@ in {
 
     ghc-options = mkOption {
       description = "GHC options for all components in this option tree.";
-      type = listOf str;
+      type = types.listOf str;
       example = literalExpression ''["-Wunused-imports" "-j6"]'';
       default = [];
     };
@@ -115,7 +116,7 @@ in {
       [](#opt-cabal-ghc-options).
       These options are not used for benchmarks.
       '';
-      type = listOf str;
+      type = types.listOf str;
       default = [
         "-threaded"
         "-rtsopts"
@@ -125,7 +126,7 @@ in {
 
     default-extensions = mkOption {
       description = "GHC extensions for all components in this option tree.";
-      type = listOf str;
+      type = types.listOf str;
       example = literalExpression ''["DataKinds" "FlexibleContexts" "OverloadedLists"]'';
       default = [];
     };
@@ -140,7 +141,7 @@ in {
 
     dependencies = mkOption {
       description = "Cabal dependencies used for all components in this option tree.";
-      type = listOf util.types.hpackDep;
+      type = types.listOf util.types.hpackDep;
       example = literalExpression ''["aeson" "containers"]'';
       default = [];
     };
@@ -163,7 +164,7 @@ in {
 
     prelude = mkOption {
       description = "Configure an alternative Prelude package.";
-      type = submodule preludeModule;
+      type = types.submodule preludeModule;
       default = {};
     };
 
@@ -175,7 +176,7 @@ in {
       of the names used in this module.
       Setting this option to `false` prevents this module from being generated.
       '';
-      type = bool;
+      type = types.bool;
       default = !config.prelude.enable;
     };
 
@@ -184,7 +185,7 @@ in {
       Convenience feature that automatically adds a dependency on the library component to all executable components, if
       the library exists.
       '';
-      type = bool;
+      type = types.bool;
       default = true;
     };
 
@@ -234,7 +235,7 @@ in {
       This should only be used for keys that have no corresponding module option, otherwise the values defined in a
       package might be overridden by option definitions in the global config.
       '';
-      type = attrsOf unspecified;
+      type = types.attrsOf types.unspecified;
       default = {};
     };
 
@@ -250,14 +251,14 @@ in {
       attrsets).
       :::
       '';
-      type = attrsOf unspecified;
+      type = types.attrsOf types.unspecified;
       default = {};
     };
 
   };
 
   config = {
-    copyright = mkIf (config.author != null) (mkDefault "${config.copyrightYear} ${config.author}");
+    copyright = lib.mkIf (config.author != null) (lib.mkDefault "${config.copyrightYear} ${config.author}");
   };
 
 }

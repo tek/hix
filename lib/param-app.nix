@@ -6,21 +6,20 @@
   pre ? "",
   shellName ? name,
 }:
-with lib;
 let
 
   inherit (config) pkgs;
 
   param = i: p: ''$(arg "${p}" ${toString i})'';
 
-  paramLines = concatStringsSep "\n  " (imap1 param params);
+  paramLines = lib.concatStringsSep "\n  " (lib.imap1 param params);
 
   script = cmd: pkgs.writeScriptBin "hix-param-app" (toString cmd);
 
   shell = args: let
     cmd = func args;
-    command = if isDerivation cmd then cmd else cmd.command;
-    shell = if isDerivation cmd then pkgs.mkShell {} else cmd.shell;
+    command = if lib.isDerivation cmd then cmd else cmd.command;
+    shell = if lib.isDerivation cmd then pkgs.mkShell {} else cmd.shell;
   in shell.overrideAttrs (old: {
     nativeBuildInputs = old.nativeBuildInputs or [] ++ [(script command)];
   });
@@ -37,9 +36,9 @@ let
           print "$1 = \"$args[$2]\";"
         fi
       }
-      if [[ $num_args > ${toString (length params)} ]]
+      if [[ $num_args > ${toString (lib.length params)} ]]
       then
-        print "Usage: nix run .#${name} -- ${concatStringsSep " " params}"
+        print "Usage: nix run .#${name} -- ${lib.concatStringsSep " " params}"
         exit 1
       fi
       if [[ $argstr[1] == '{' ]]

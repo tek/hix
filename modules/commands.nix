@@ -1,29 +1,29 @@
 {config, lib, util, ...}:
-with lib;
 let
+  inherit (lib) types;
 
   commandModule = import ./command.nix { global = config; inherit util; };
 
 in {
-  options = with types; {
+  options = {
 
-    hls.genCabal = mkOption {
+    hls.genCabal = lib.mkOption {
       description = ''
       When running HLS with `nix run .#hls`, the command first generates Cabal files from Hix config to ensure that HLS
       works.
       If that is not desirable, set this option to `false`.
       '';
-      type = bool;
+      type = types.bool;
       default = true;
     };
 
-    commands = mkOption {
+    commands = lib.mkOption {
       description = ''
       Commands are shell scripts associated with an environment that are exposed as flake apps.
       All commands are accessible as attributes of `.#cmd.<name>`, and those that set `expose = true` are additionally
       exposed at the top level.
       '';
-      type = attrsOf (submodule commandModule);
+      type = types.attrsOf (types.submodule commandModule);
       default = {};
     };
 

@@ -1,10 +1,10 @@
-{lib, ...}:
-with lib;
-{
-  options = with types; {
-    inputs = mkOption {
+{lib, ...}: let
+  inherit (lib) types;
+in {
+  options = {
+    inputs = lib.mkOption {
       description = "The inputs of the Hix flake.";
-      type = lazyAttrsOf unspecified;
+      type = types.lazyAttrsOf types.unspecified;
       readOnly = true;
     };
   };

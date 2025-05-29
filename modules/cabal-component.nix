@@ -13,8 +13,8 @@
   config,
   ...
 }:
-with lib;
 let
+  inherit (lib) types mkOption;
 
   enableDesc = if single then "the ${desc} for this package" else "this ${desc}";
 
@@ -30,26 +30,26 @@ let
 
 in {
 
-  options = with types; {
+  options = {
 
-    enable = mkEnableOption enableDesc // { default = !single; };
+    enable = lib.mkEnableOption enableDesc // { default = !single; };
 
     name = mkOption {
       description =
         "The name of the ${desc}, defaulting to the attribute name in the config or the package name.";
-      type = str;
+      type = types.str;
       default = if single then "${pkgName}${nameSuffix}" else name;
     };
 
     source-dirs = mkOption {
       description = "Directories with Haskell sources.";
-      type = either str (listOf str);
+      type = types.either types.str (types.listOf types.str);
       default = if single then src else name;
     };
 
     env = mkOption {
       description = "The environment used when running GHCi with a module from this component.";
-      type = nullOr util.types.env;
+      type = types.nullOr util.types.env;
       default = null;
     };
 
@@ -66,7 +66,7 @@ in {
         description = ''
         Whether this is the main component of its sort, declared as `test` rather than `tests.foo`.
         '';
-        type = bool;
+        type = types.bool;
         default = single;
         readOnly = true;
       };

@@ -1,13 +1,12 @@
-{ lib, config, ... }:
-with lib;
+{lib, ...}:
 let
-
+  inherit (lib) types;
 in {
-  options = with types; {
+  options = {
 
-    system = mkOption {
+    system = lib.mkOption {
       description = "The system string like `x86_64-linux`, set by iterating over [](#opt-general-systems).";
-      type = str;
+      type = types.str;
       readOnly = true;
     };
 

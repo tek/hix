@@ -1,13 +1,12 @@
 { lib, }:
-with lib;
 let
 
-  isOC = oc: isAttrs oc && oc ? __hix_oc;
+  isOC = oc: lib.isAttrs oc && oc ? __hix_oc;
 
   listOC = oc:
-  if isDerivation oc
+  if lib.isDerivation oc
   then [(drv oc).single]
-  else if isList oc
+  else if lib.isList oc
   then oc
   else if oc ? multi
   then oc.multi
@@ -15,7 +14,7 @@ let
   then [oc.single]
   else if oc == null
   then [disable.single]
-  else throw "Bad value for listOC: ${generators.toPretty {} oc}";
+  else throw "Bad value for listOC: ${lib.generators.toPretty {} oc}";
 
   composeOC = cur: prev: {
     multi = listOC cur ++ listOC prev;
@@ -49,7 +48,7 @@ let
     else if spec.type == "option"
     then { found = false; result = result // { ${spec.name} = (result.${spec.name} or []) ++ [spec.meta]; }; }
     else { found = false; inherit result; };
-  in (foldl folder { found = false; result = {}; } specs).result;
+  in (lib.foldl folder { found = false; result = {}; } specs).result;
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -71,7 +70,7 @@ let
     spin = acc: specs:
       if specs == []
       then acc
-      else check acc (head specs) (tail specs);
+      else check acc (lib.head specs) (lib.tail specs);
 
   in spin { decl = null; trans = []; options = {}; } (listOC specs);
 
@@ -97,7 +96,7 @@ let
     apply = drv: trans:
     trans.impl drv args comp.options;
 
-    transformed = foldl apply drv comp.trans;
+    transformed = lib.foldl apply drv comp.trans;
 
     final =
       if comp.trans == [] || drv == null
@@ -113,11 +112,11 @@ let
   call = name: f: args: options: f (args // { inherit options; });
 
   finalDecl = specs:
-  findFirst (a: a.type == "decl") null specs;
+  lib.findFirst (a: a.type == "decl") null specs;
 
   renderPregen = self: ''
   {
-    meta = ${generators.toPretty { indent = "  "; } self.meta};
+    meta = ${lib.generators.toPretty { indent = "  "; } self.meta};
     drv = ${self.drv};
   }
   '';

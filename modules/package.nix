@@ -1,8 +1,8 @@
 { global, util }:
 { name, lib, config, ... }:
-with lib;
 let
   inherit (util) internal project;
+  inherit (lib) types mkOption literalExpression;
 
   pkgConfig = config;
   pkgName = name;
@@ -12,7 +12,7 @@ let
   exposeModule = import ./expose.nix { inherit util; type = "package"; };
   packageExposeModule = import ./package-expose.nix { inherit util; };
 
-  anyEnabled = set: any (a: a.enable) (attrValues set);
+  anyEnabled = set: lib.any (a: a.enable) (lib.attrValues set);
 
   # excludes `pkgConfig.executable` because it's used to determine whether the default executable should be enabled.
   hasComponents =
@@ -23,18 +23,18 @@ let
 
   libModule = {name ? pkgName, config, ...}: {
 
-    options = with types; {
+    options = {
 
       reexported-modules = mkOption {
         description = "Modules from dependencies that this library exposes for downstream projects to import.";
-        type = listOf str;
+        type = types.listOf types.str;
         example = literalExpression ''["Control.Concurrent.STM" "Data.Text"]'';
         default = [];
       };
 
       public = mkOption {
         description = "Whether to expose an internal library.";
-        type = bool;
+        type = types.bool;
         default = true;
       };
 
@@ -82,10 +82,10 @@ let
 
   exeModule = sort: default: {name ? pkgName, config, ...}: {
 
-    options = with types; {
+    options = {
 
       main = mkOption {
-        type = str;
+        type = types.str;
         description = "The file name of the main module.";
         default = "Main.hs";
       };
@@ -93,11 +93,11 @@ let
     };
 
     config =
-      optionalAttrs default { enable = mkDefault (!hasComponents); }
+      lib.optionalAttrs default { enable = lib.mkDefault (!hasComponents); }
       //
       {
-        dependencies = optional (config.dependOnLibrary && pkgConfig.library.enable) pkgName;
-        ghc-options = mkIf (sort != "benchmark") config.ghc-options-exe;
+        dependencies = lib.optional (config.dependOnLibrary && pkgConfig.library.enable) pkgName;
+        ghc-options = lib.mkIf (sort != "benchmark") config.ghc-options-exe;
       };
 
   };
@@ -127,11 +127,15 @@ let
 
   versionFromFile = let
     f = config.versionFile;
-  in optionalAttrs (f != null && hasSuffix ".nix" f) { version = import "${project.base}/${f}"; };
+  in lib.optionalAttrs (f != null && lib.hasSuffix ".nix" f) { version = import "${project.base}/${f}"; };
 
 in {
 
-  options = with types; {
+  options = let
+
+    inherit (types) str attrsOf nullOr;
+
+  in {
 
     name = mkOption {
       description = "The name of the package, determined by the attribute name in the config.";
@@ -142,7 +146,7 @@ in {
 
     src = mkOption {
       description = "The root directory of the package.";
-      type = path;
+      type = types.path;
       example = literalExpression "./packages/api";
     };
 
@@ -285,7 +289,7 @@ in {
 
     buildInputs = mkOption {
       description = "Additional non-Haskell dependencies required by this package.";
-      type = either (functionTo (listOf package)) (listOf package);
+      type = types.either (types.functionTo (types.listOf types.package)) (types.listOf types.package);
       default = [];
     };
 
@@ -293,12 +297,12 @@ in {
       description = ''
       Manipulate the package's derivation using the combinators described in [](#overrides-combinators).
       '';
-      type = functionTo unspecified;
+      type = types.functionTo types.unspecified;
       default = {id, ...}: id;
     };
 
     cabal = mkOption {
-      type = deferredModule;
+      type = types.deferredModule;
       description = ''
       Cabal options that are applied to all components.
 
@@ -312,7 +316,7 @@ in {
     };
 
     cabal-config = mkOption {
-      type = submoduleWith {
+      type = types.submoduleWith {
         modules = [
           cabalOptionsModule
           global.internal.cabal-extra
@@ -390,13 +394,13 @@ in {
 
   config = {
 
-    rootModule = mkDefault (concatMapStringsSep "." util.toTitle (splitString "-" config.name));
+    rootModule = lib.mkDefault (lib.concatMapStringsSep "." util.toTitle (lib.splitString "-" config.name));
 
-    hackageLink = mkDefault "https://hackage.haskell.org/package/${config.name}";
+    hackageLink = lib.mkDefault "https://hackage.haskell.org/package/${config.name}";
 
-    hackageRootLink = mkDefault "${config.hackageLink}/docs/${replaceStrings ["."] ["-"] config.rootModule}.html";
+    hackageRootLink = lib.mkDefault "${config.hackageLink}/docs/${lib.replaceStrings ["."] ["-"] config.rootModule}.html";
 
-    description = mkDefault "See ${config.hackageRootLink}";
+    description = lib.mkDefault "See ${config.hackageRootLink}";
 
     subpath =
       internal.warn.deprecatedOptionReadOnly

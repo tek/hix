@@ -1,7 +1,7 @@
-{config, lib, util, ...}:
-with lib;
-{
-  options = with types; {
+{config, lib, util, ...}: let
+  inherit (lib) types mkOption;
+in {
+  options = {
 
     overrides = mkOption {
       description = ''
@@ -12,7 +12,7 @@ with lib;
       The combinators are described in [](#overrides-combinators).
       '';
       type = util.types.cabalOverridesVia "global";
-      example = literalExpression ''
+      example = lib.literalExpression ''
       {hackage, fast, jailbreak, ...}: {
         aeson = fast (hackage "2.0.0.0" "sha54321");
         http-client = unbreak;
@@ -23,7 +23,7 @@ with lib;
 
     buildInputs = mkOption {
       description = "Additional non-Haskell dependencies provided to all packages and environments.";
-      type = either (functionTo (listOf package)) (listOf package);
+      type = types.either (types.functionTo (types.listOf types.package)) (types.listOf types.package);
       default = [];
     };
 
@@ -37,7 +37,7 @@ with lib;
       The special keys `local` and `localMin` contain the local packages and their minimal build variants, respectively.
       Local packages are only propagated when [](#opt-general-depsFull) is used.
       '';
-      type = lazyAttrsOf (util.types.cabalOverridesVia (util.withMainNameOr "dependency" id));
+      type = types.lazyAttrsOf (util.types.cabalOverridesVia (util.withMainNameOr "dependency" lib.id));
       default = {};
     };
 
@@ -48,7 +48,7 @@ with lib;
       However, if [](#opt-general-ifd) is `false` in the dependency, the local packages will need the `system` option,
       and therefore need to be imported from `legacyPackages.<system>.overrides`.
       '';
-      type = bool;
+      type = types.bool;
       default = true;
     };
 
@@ -62,13 +62,13 @@ with lib;
         Setting this flag instructs Hix to read the generated derivations when building, and to abort the build when
         they are missing or outdated.
         '';
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
       file = mkOption {
         description = "The relative path of the file in which the overrides are stored.";
-        type = str;
+        type = types.str;
         default = "ops/overrides.nix";
       };
 
@@ -77,7 +77,7 @@ with lib;
         Git-add [the overrides file](#opt-general-gen-overrides.file) after the first run.
         Since nix ignores untracked files in flakes, the next command would complain if the file wasn't added.
         '';
-        type = bool;
+        type = types.bool;
         default = true;
       };
 
@@ -88,7 +88,7 @@ with lib;
       getOverrides = o: let
         sys = o.legacyPackages.${config.system};
       in
-        if config.inheritSystemDependentOverrides && hasAttr config.system o.legacyPackages && sys ? overrides
+        if config.inheritSystemDependentOverrides && lib.hasAttr config.system o.legacyPackages && sys ? overrides
         then sys.overrides
         else o.overrides
         ;
@@ -103,7 +103,7 @@ with lib;
         description = ''
         The overrides inherited from dependency flakes via [](#opt-general-deps) and [](#opt-general-depsFull).
         '';
-        type = attrsOf util.types.cabalOverrides;
+        type = types.attrsOf util.types.cabalOverrides;
         default = util.mergeOverrides overridesDeps;
       };
 
@@ -111,15 +111,15 @@ with lib;
 
   };
 
-  config.exportedOverrides = mkDefault (
+  config.exportedOverrides = lib.mkDefault (
     {
-      local = util.overridesDeps "local" ++ toList config.envs.dev.internal.overridesLocal;
-      localMin = util.overridesDeps "localMin" ++ toList config.envs.min.internal.overridesLocal;
-      all = util.overridesDeps "all" ++ toList config.overrides;
-      dev = util.overridesDeps "dev" ++ toList config.envs.dev.internal.overridesEnv;
+      local = util.overridesDeps "local" ++ lib.toList config.envs.dev.internal.overridesLocal;
+      localMin = util.overridesDeps "localMin" ++ lib.toList config.envs.min.internal.overridesLocal;
+      all = util.overridesDeps "all" ++ lib.toList config.overrides;
+      dev = util.overridesDeps "dev" ++ lib.toList config.envs.dev.internal.overridesEnv;
     }
     //
-    genAttrs config.ghcVersions (v: util.overridesDeps v ++ toList config.envs.${v}.overrides)
+    lib.genAttrs config.ghcVersions (v: util.overridesDeps v ++ lib.toList config.envs.${v}.overrides)
   );
 
 }

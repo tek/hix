@@ -1,15 +1,16 @@
 {config, lib, util, ...}:
-with lib; let
+let
+  inherit (lib) types mkOption;
 
   envConfigModule = sort: import ./managed/env.nix { global = config; inherit sort util; };
 
 in {
-  options = with types; {
+  options = {
     managed = {
 
       enable = mkOption {
         description = "Enable managed dependencies.";
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
@@ -18,9 +19,9 @@ in {
         Select how to group packages for processing by the managed deps tool.
         `all` for a single set, `each` for one set per package, and an attrset for custom grouping.
         '';
-        type = either (enum ["all" "each"]) (attrsOf (listOf util.types.localPackage));
+        type = types.either (types.enum ["all" "each"]) (types.attrsOf (types.listOf util.types.localPackage));
         default = "all";
-        example = literalExpression ''
+        example = lib.literalExpression ''
         {
           main = ["core" "api" "app"];
           other = ["docs" "compat"];
@@ -30,7 +31,7 @@ in {
 
       file = mkOption {
         description = "Relative path to the file in which dependency versions should be stored.";
-        type = str;
+        type = types.str;
         default = "ops/managed.nix";
       };
 
@@ -38,13 +39,13 @@ in {
         description = ''
         Whether to regenerate cabal files and override derivations after updating the project.
         '';
-        type = bool;
+        type = types.bool;
         default = true;
       };
 
       check = mkOption {
         description = "Add builds with latest versions and lower bounds to the flake checks.";
-        type = bool;
+        type = types.bool;
         default = true;
       };
 
@@ -54,25 +55,25 @@ in {
         Since nix ignores untracked files in flakes, the state wouldn't be loaded if you forgot to add the file
         yourself.
         '';
-        type = bool;
+        type = types.bool;
         default = true;
       };
 
       verbose = mkOption {
         description = "Print verbose messages when managing dependencies.";
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
       debug = mkOption {
         description = "Print debug messages when managing dependencies.";
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
       quiet = mkOption {
         description = "Suppress informational messages when managing dependencies.";
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
@@ -82,7 +83,7 @@ in {
         These apply to both `latest` and `lower` environments; the modules [](#opt-managed-managed.latest.envs) and
         [](#opt-managed-managed.lower.envs) have precedence over them.
         '';
-        type = submodule (envConfigModule "common");
+        type = types.submodule (envConfigModule "common");
         default = {};
       };
 
@@ -94,7 +95,7 @@ in {
         The ranges defined here are intersected with the managed bounds.
         If you want to relax bounds, use [](#opt-managed-managed.forceBounds).
         '';
-        type = bool;
+        type = types.bool;
         default = false;
       };
 
@@ -105,9 +106,9 @@ in {
         used for the latest env isn't the newest one because the dependencies are all broken right after release, but
         you want it to build with that version anyway.
         '';
-        type = attrsOf util.types.bounds;
+        type = types.attrsOf util.types.bounds;
         default = {};
-        example = literalExpression ''
+        example = lib.literalExpression ''
         {
           base = { upper = "4.21"; };
         }
@@ -125,13 +126,13 @@ in {
           It is advisable to use the latest GHC version that you want to support, since boot libraries will fail to
           build with different GHCs.
           '';
-          type = str;
-          default = if config.ghcVersions == [] then config.compiler else last config.ghcVersions;
+          type = types.str;
+          default = if config.ghcVersions == [] then config.compiler else lib.last config.ghcVersions;
         };
 
         readFlakeBounds = mkOption {
           description = "Use the upper bounds from the flake for the first run.";
-          type = bool;
+          type = types.bool;
           default = false;
         };
 
@@ -140,7 +141,7 @@ in {
           Options for environments generated for latest versions.
           These default to the values in [](#opt-managed-managed.envs).
           '';
-          type = submodule (envConfigModule "latest");
+          type = types.submodule (envConfigModule "latest");
           default = {};
         };
 
@@ -150,7 +151,7 @@ in {
 
         enable = mkOption {
           description = "Enable an environment for testing lower bounds.";
-          type = bool;
+          type = types.bool;
           default = false;
         };
 
@@ -163,8 +164,8 @@ in {
           It is advisable to use the lowest GHC version that you want to support, since boot libraries will fail to
           build with different GHCs.
           '';
-          type = str;
-          default = if config.ghcVersions == [] then config.compiler else head config.ghcVersions;
+          type = types.str;
+          default = if config.ghcVersions == [] then config.compiler else lib.head config.ghcVersions;
         };
 
         envs = mkOption {
@@ -172,7 +173,7 @@ in {
           Options for environments generated for lower bounds.
           These default to the values in [](#opt-managed-managed.envs).
           '';
-          type = submodule (envConfigModule "latest");
+          type = types.submodule (envConfigModule "latest");
           default = {};
         };
 
@@ -183,7 +184,7 @@ in {
         localsInPackageDb = mkOption {
           description =
             "Whether to include local packages as source derivations in the package db used for the solver";
-          type = bool;
+          type = types.bool;
           default = false;
         };
 

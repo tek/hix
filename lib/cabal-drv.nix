@@ -1,10 +1,8 @@
 {config, lib, env}:
-with builtins;
-with lib;
 let
 
   hpackFile = conf:
-  toFile "package.yaml" (toJSON (removeAttrs conf ["passthru"]));
+  builtins.toFile "package.yaml" (builtins.toJSON (removeAttrs conf ["passthru"]));
 
   withoutLock = name: srcPath: builtins.path {
     path = srcPath;
@@ -31,20 +29,20 @@ let
 
   depPkg = spec: let
     name =
-    if isAttrs spec
+    if lib.isAttrs spec
     then spec.name
     else spec;
-    in head (splitString ":" (head (splitString " " name)));
+    in lib.head (lib.splitString ":" (lib.head (lib.splitString " " name)));
 
   drvWith = conf: { pkgs, self, hsLib, ... }: pname: pkg:
   let
     attr = n:
-    if hasAttr n conf
+    if lib.hasAttr n conf
     then conf.${n}
     else throw "The Cabal config for '${pname}' is missing the mandatory attribute '${n}'.";
 
     dep = n:
-    if hasAttr n self
+    if lib.hasAttr n self
     then self.${n}
     else
     throw "The Cabal config for '${pname}' in the env '${env}' has a dependency on the nonexistent package '${n}'.";
@@ -56,9 +54,9 @@ let
     then []
     else [(dep name)];
 
-    deps = c: concatMap depspec (c.dependencies or []);
+    deps = c: lib.concatMap depspec (c.dependencies or []);
 
-    compDeps = sort: concatMap deps (attrValues (conf.${sort} or {}));
+    compDeps = sort: lib.concatMap deps (lib.attrValues (conf.${sort} or {}));
 
   in self.callPackage ({mkDerivation}: mkDerivation ({
     inherit pname;
