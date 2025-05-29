@@ -82,7 +82,7 @@
   require_success echo "equal: $number" || return 1
 
   local target_step2="[1m[35m>>>[0m[0m [31mStep [36m2[0m[31m failed:[0m
-  [1m[35m>>>[0m[0m [31m  [1m[34mecho output_exact is reset after a step[0m[31m[1m[0m[31m[0m
+  [1m[35m>>>[0m[0m [31m  [1m[34mecho 'output_exact is reset after a step'[0m[31m[1m[0m[31m[0m
   [1m[35m>>>[0m[0m Command produced output, but no check was defined.
   [1m[35m>>>[0m[0m Output:
 
@@ -183,7 +183,7 @@
   preproc error'
 
   preproc_output bad_preproc
-  require_output $target_step15 'print hello' || return 1
+  require_output $target_step15 print hello || return 1
   unset bad_preproc
 
   bad_code()
