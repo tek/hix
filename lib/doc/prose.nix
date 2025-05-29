@@ -1,7 +1,7 @@
 {lib, hixUrl}: let
 
   exampleFile = name: path:
-  lib.replaceStrings ["HIX"] [hixUrl]
+  lib.replaceStrings ["HIX" ".lib._hix_test"] [hixUrl "hix"]
   (builtins.readFile (../../test + "/example-${name}/root/${path}"));
 
 in {
