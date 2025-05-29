@@ -65,7 +65,7 @@ let
     src =
       if config.genCabalInDerivations
       then srcWithCabal pkgs conf pname pkg.src
-      else src;
+      else pkg.src;
     version = attr "version";
     license = attr "license";
     libraryHaskellDepends = deps (conf.library or {}) ++ compDeps "internal-libraries";
