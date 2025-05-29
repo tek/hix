@@ -1,7 +1,7 @@
 {
   description = "hix test project";
   inputs.hix.url = "HIX";
-  outputs = {hix, ...}: hix {
+  outputs = {hix, ...}: hix.lib._hix_test {
     envs = {
       one.env = { number = 1; };
       two.env = { number = 2; };
