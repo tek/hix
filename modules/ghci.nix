@@ -7,6 +7,7 @@
 let
 
   inherit (lib) types mkOption;
+  inherit (util) outputs;
 
   cli = config.internal.hixCli.exe;
 
@@ -66,6 +67,18 @@ in {
 
   };
 
+  options.ghcid = {
+
+    args = lib.mkOption {
+      description = ''
+      Additional arguments passed to `ghcid`.
+      '';
+      type = types.listOf types.str;
+      default = [];
+    };
+
+  };
+
   config.ghci = {
 
     setup = {
@@ -84,7 +97,7 @@ in {
 
     preprocessor = lib.mkDefault (
       util.script "ghci-preprocessor" ''
-      ${cli} preproc --config ${util.json.preprocFile} --source "$1" --in "$2" --out "$3"
+      ${cli} preproc --config ${outputs.cli-context.json.preproc} --source "$1" --in "$2" --out "$3"
       ''
     );
 

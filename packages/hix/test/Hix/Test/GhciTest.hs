@@ -20,23 +20,27 @@ import Hix.Data.ComponentConfig (
   SourceDir (SourceDir),
   SourceDirs (SourceDirs),
   )
-import Hix.Data.GhciConfig (ChangeDir (ChangeDir), EnvConfig (..), GhciConfig (..))
+import Hix.Data.EnvName (EnvName)
+import Hix.Data.GhciConfig (ChangeDir (ChangeDir), CommandContext (..), CommandEnvContext (..), GhciContext (..))
 import qualified Hix.Data.GhciTest as GhciTest
 import qualified Hix.Data.Options as Options
+import qualified Hix.Data.Options as GhciOptions (GhciOptions (..))
 import Hix.Data.Options (
+  CommandOptions (..),
   ComponentCoords (ComponentCoords),
   ComponentSpec (ComponentSpec),
-  EnvRunnerOptions (EnvRunnerOptions),
-  GhciOptions (GhciOptions, component),
+  GhciOptions (..),
   GhcidOptions (GhcidOptions),
   PackageSpec (PackageSpec),
   TargetSpec (TargetForComponent, TargetForFile),
   TestOptions (TestOptions),
   )
 import Hix.Data.PathSpec (PathSpec (PathConcrete))
-import Hix.Env (envRunner)
+import Hix.Env (commandEnv)
 import Hix.Error (pathText)
 import Hix.Ghci (argsGhciRun, assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
+import qualified Hix.Managed.Handlers.Context as Context
+import Hix.Managed.Handlers.Context (ContextHandlers, ContextKey (..), ContextQuery (..))
 import Hix.Monad (runM)
 import Hix.Test.Utils (UnitTest, unitTest)
 
@@ -56,12 +60,12 @@ defaultRunner :: EnvRunner
 defaultRunner =
   EnvRunner [absfile|/default|]
 
-component :: ComponentName -> Path Rel Dir -> Set Dependency -> EnvRunner -> ComponentConfig
-component name dir deps runner =
+component :: ComponentName -> Path Rel Dir -> Set Dependency -> EnvName -> ComponentConfig
+component name dir deps env =
   ComponentConfig {
     name,
     sourceDirs = SourceDirs [SourceDir dir],
-    runner = Just runner,
+    env = Just env,
     extensions = [],
     language = "GHC2021",
     ghcOptions = [],
@@ -76,19 +80,19 @@ packages =
       name = "api",
       src = [reldir|packages/api|],
       components = [
-        ("library", component "api" [reldir|lib|] ["core:tools"] runner1),
-        ("testing", component "testing" [reldir|testing|] ["api:testing"] runner1),
-        ("server", component "server" [reldir|app|] ["api"] runner1),
-        ("api-test", component "api-test" [reldir|test|] ["api:testing", "api"] runner1)
+        ("library", component "api" [reldir|lib|] ["core:tools"] "env1"),
+        ("testing", component "testing" [reldir|testing|] ["api:testing"] "env1"),
+        ("server", component "server" [reldir|app|] ["api"] "env1"),
+        ("api-test", component "api-test" [reldir|test|] ["api:testing", "api"] "env1")
       ]
     }),
     ("core", PackageConfig {
       name = "core",
       src = [reldir|packages/core|],
       components = [
-        ("library", component "core" [reldir|lib|] ["core"] runner1),
-        ("tools", component "tools" [reldir|tools|] ["core"] runner2),
-        ("core-test", component "core-test" [reldir|test|] ["core"] runner2)
+        ("library", component "core" [reldir|lib|] ["core"] "env1"),
+        ("tools", component "tools" [reldir|tools|] ["core"] "env2"),
+        ("core-test", component "core-test" [reldir|test|] ["core"] "env2")
       ]
     })
   ]
@@ -100,35 +104,46 @@ spec1 =
     component = Just (ComponentSpec "test" (Just (SourceDir [reldir|test|])))
   }
 
+commandContext :: CommandContext
+commandContext =
+  CommandContext {
+    packages,
+    defaultEnv = Nothing,
+    mainPackage = Nothing
+  }
+
+ghciContext :: GhciContext
+ghciContext =
+  GhciContext {
+    command = commandContext,
+    setup = [("generic", "import Test.Tasty")],
+    run = [("generic", "check . property . test")],
+    args = ["-Werror"],
+    manualCabal = False
+  }
+
 ghciOptions :: GhciOptions
 ghciOptions =
   GhciOptions {
-    config = Left GhciConfig {
-      env = EnvConfig {
-        packages,
-        defaultEnv = EnvRunner [absfile|/invalid|],
-        mainPackage = Nothing
-      },
-      setup = [("generic", "import Test.Tasty")],
-      run = [("generic", "check . property . test")],
-      args = ["-Werror"],
-      manualCabal = False
+    context = Left ghciContext,
+    command = CommandOptions {
+      root = Nothing,
+      component = Just spec1,
+      env = Nothing
     },
-    root = Nothing,
-    component = spec1,
     test = TestOptions {
       mod = "Api.ServerTest",
       test = Just "test_server",
       runner = Just "generic",
       cd = ChangeDir True
     },
-    extra = Nothing,
+    extra = [],
     args = []
   }
 
 options :: GhcidOptions
 options =
-  GhcidOptions {ghci = ghciOptions, extra = Nothing}
+  GhcidOptions {ghci = ghciOptions, extra = []}
 
 searchPath :: Text -> [Text] -> Text
 searchPath dir subs =
@@ -148,20 +163,33 @@ ghcidTarget cwd scriptFile =
     path = searchPath dir ["api/test", "api/lib", "api/testing", "core/lib", "core/tools"]
     dir = pathText cwd
 
+contextHandlers :: ContextHandlers
+contextHandlers =
+  Context.handlersTest \case
+    ContextQuery (ContextCommandEnv name) -> do
+      let
+        envRunner = \case
+          "env1" -> Just runner1
+          "env2" -> Just runner2
+          _ -> Nothing
+      pure $ envRunner name <&> \ runner ->
+        CommandEnvContext {ghcidArgs = [], ghciArgs = [], runner}
+    _ -> pure Nothing
+
 test_ghcid :: UnitTest
 test_ghcid = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
-    runM root (ghcidCmdlineFromOptions tmp options)
+    runM root (ghcidCmdlineFromOptions contextHandlers tmp options)
   cmdline <- evalEither res
   ghcidTarget root cmdline.ghci.scriptFile === toList cmdline.args
 
 mainOptions :: GhciOptions
 mainOptions =
   GhciOptions {
-    config = Left GhciConfig {
-      env = EnvConfig {
+    context = Left GhciContext {
+      command = CommandContext {
         packages,
-        defaultEnv = EnvRunner [absfile|/invalid|],
+        defaultEnv = Nothing,
         mainPackage = Just "core"
       },
       setup = [("generic", "import Test.Tasty")],
@@ -169,15 +197,18 @@ mainOptions =
       args = [],
       manualCabal = False
     },
-    root = Nothing,
-    component = TargetForComponent (ComponentCoords Nothing Nothing),
+    command = CommandOptions {
+      root = Nothing,
+      component = Just (TargetForComponent (ComponentCoords Nothing Nothing)),
+      env = Nothing
+    },
     test = TestOptions {
       mod = "Main",
       test = Nothing,
       runner = Nothing,
       cd = ChangeDir True
     },
-    extra = Nothing,
+    extra = [],
     args = []
   }
 
@@ -197,7 +228,7 @@ mainPackageTarget cwd scriptFile =
 test_mainPackage :: UnitTest
 test_mainPackage = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
-    runM root (ghciCmdlineFromOptions tmp mainOptions)
+    runM root (ghciCmdlineFromOptions contextHandlers tmp mainOptions)
   cmdline <- evalEither res
   mainPackageTarget root cmdline.scriptFile === argsGhciRun cmdline
 
@@ -214,10 +245,15 @@ spec3 =
 
 runnerFor :: EnvRunner -> TargetSpec -> UnitTest
 runnerFor target spec = do
-  res <- evalEither =<< liftIO (runM root (envRunner conf))
-  target === res
+  res <- evalEither =<< liftIO (runM root (commandEnv contextHandlers commandContext opts))
+  target === res.runner
   where
-    conf = EnvRunnerOptions (Left (EnvConfig packages defaultRunner Nothing)) Nothing (Just spec)
+    opts = CommandOptions {
+      root = Nothing,
+      component = Just spec,
+      env = Nothing
+      -- (Left (EnvConfig packages defaultRunner Nothing)) Nothing (Just spec)
+    }
 
 test_componentEnv :: UnitTest
 test_componentEnv = do
@@ -240,8 +276,10 @@ import #{m}|]
 
 test_moduleName :: UnitTest
 test_moduleName = do
-  conf <- evalEither =<< liftIO (runM root (assemble options.ghci { component = spec4 }))
+  conf <- evalEither =<< liftIO (runM root (assemble opts ghciContext))
   target_moduleName === conf.script
+  where
+    opts = options.ghci {GhciOptions.command = options.ghci.command {component = Just spec4} }
 
 test_ghci :: TestTree
 test_ghci =

@@ -1,5 +1,6 @@
 {util}: {
 
+  command = import ./command.nix { inherit util; };
   env = import ./env.nix { inherit util; };
   envs = import ./envs.nix { inherit util; };
   ghc = import ./ghc.nix { inherit util; };

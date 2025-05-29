@@ -1,11 +1,12 @@
 {
   description = "hix test project";
-  inputs.hix.url = "github:tek/hix?ref=0.9.1";
+  inputs.hix.url = "HIX";
   outputs = {hix, ...}: hix {
     envs = {
       one.env = { number = 1; };
       two.env = { number = 2; };
       three.env = { number = 3; };
+      four.env = { number = 4; };
     };
 
     packages.root = {

@@ -11,9 +11,10 @@ import Path (Abs, Dir, File, Path, Rel)
 import Text.PrettyPrint (brackets, (<+>))
 
 import Hix.Data.ComponentName (ComponentName (..))
+import Hix.Data.EnvName (EnvName)
 import Hix.Data.Json (jsonParsec)
 import Hix.Data.PackageName (PackageName)
-import Hix.Pretty (prettyL)
+import Hix.Pretty (HPretty (..), field, prettyFieldsV, prettyL)
 
 newtype PackagePath =
   PackagePath { unPackagePath :: Path Rel Dir }
@@ -43,7 +44,7 @@ newtype ModuleName =
 newtype EnvRunner =
   EnvRunner (Path Abs File)
   deriving stock (Eq, Show, Generic)
-  deriving newtype (FromJSON)
+  deriving newtype (FromJSON, HPretty)
 
 data PreludePackage =
   PreludePackageName Text
@@ -92,7 +93,7 @@ data ComponentConfig =
   ComponentConfig {
     name :: ComponentName,
     sourceDirs :: SourceDirs,
-    runner :: Maybe EnvRunner,
+    env :: Maybe EnvName,
     extensions :: [String],
     language :: String,
     ghcOptions :: [String],
@@ -114,6 +115,14 @@ data PackageConfig =
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
+
+instance HPretty PackageConfig where
+  hpretty PackageConfig {..} =
+    prettyFieldsV [
+      field "name" name,
+      field "src" src,
+      field "components" components
+    ]
 
 type PackagesConfig = Map PackageName PackageConfig
 

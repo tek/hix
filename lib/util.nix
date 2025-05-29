@@ -11,7 +11,7 @@ let
 
   pkgs = build.nixpkgs.internal.pkgs;
 
-  hsLib = config.pkgs.haskell.lib;
+  hsLib = pkgs.haskell.lib;
 
   overridesDeps = name: config.internal.overridesDeps.${name} or [];
 
@@ -33,46 +33,7 @@ let
 
   attrsetMainName = withMainNameOr {};
 
-  jsonFile = name: value: config.pkgs.writeText "hix-${name}-json" (builtins.toJSON value);
-
-  json = let
-
-    componentConf = c: {
-      inherit (c) name language;
-      extensions = c.default-extensions;
-      ghcOptions = c.ghc-options;
-      prelude = if c.prelude.enable then c.prelude else null;
-      runner = if c.env == null then null else config.envs.${c.env}.runner;
-      sourceDirs = c.source-dirs;
-      deps = c.dependencies;
-    };
-
-    packageConf = pkg: {
-      inherit (pkg) name;
-      src = util.project.packages.${pkg.name}.path;
-      components = lib.mapAttrs (_: componentConf) (util.internal.packages.normalized pkg);
-    };
-
-    packages = lib.mapAttrs (_: packageConf) config.packages;
-
-    env = default: {
-      mainPackage = config.main;
-      inherit packages;
-      defaultEnv = default.runner;
-    };
-
-    preproc = {
-      packages = if config.manualCabal then null else packages;
-    };
-
-  in {
-    inherit packages preproc;
-
-    envFile = default: jsonFile "env-config" (env default);
-
-    preprocFile = jsonFile "preproc-config" preproc;
-
-  };
+  jsonFile = name: value: pkgs.writeText "hix-${name}.json" (builtins.toJSON value);
 
   minGhcDev = version:
   basic.minGhc version config.envs.dev;
@@ -150,7 +111,7 @@ let
 
   mkPackages = spec:
   if lib.isFunction spec
-  then spec config.pkgs
+  then spec pkgs
   else spec;
 
   setupScript = {
@@ -248,7 +209,6 @@ let
     withMainOr
     attrsetMainName
     jsonFile
-    json
     minGhcDev
     unlessDevEnv
     unlessDevGhc
@@ -284,8 +244,6 @@ let
     ghc = import ./ghc.nix { inherit config lib util; };
 
     managed = import ./managed/default.nix { inherit util; };
-
-    command = import ./command.nix { inherit util; };
 
     hpack = import ./hpack/default.nix { inherit util; };
 

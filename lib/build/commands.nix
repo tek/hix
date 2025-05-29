@@ -1,9 +1,9 @@
 {util}: let
 
-  inherit (util) config lib;
+  inherit (util) config lib internal;
 
   buildCommand = env: command:
-  (util.command.inEnv { inherit env command; }).extend (_: _: {
+  (internal.command.inEnv { inherit env command; }).extend (_: _: {
     inherit (command) expose;
   });
 

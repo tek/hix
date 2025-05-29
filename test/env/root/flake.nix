@@ -32,7 +32,5 @@
       '';
     };
 
-    internal.hixCli.dev = false;
-
   };
 }

@@ -13,6 +13,8 @@ import Exon (exon)
 import Text.PrettyPrint (hang, text, (<+>))
 
 import qualified Hix.Color as Color
+import Hix.Data.EnvName (EnvName)
+import Hix.Data.GhciConfig (CommandEnvContext, GhciConfig)
 import Hix.Data.Json (JsonConfig)
 import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Json (jsonConfig)
@@ -27,6 +29,8 @@ type ContextKey :: Symbol -> Type -> Type
 data ContextKey name a where
   ContextMaint :: ContextKey "maint" MaintContext
   ContextManaged :: ContextKey "managed" ProjectContextProto
+  ContextCommandEnv :: EnvName -> ContextKey "command-env" CommandEnvContext
+  ContextGhci :: EnvName -> ContextKey "ghci" GhciConfig
 
 instance KnownSymbol name => Pretty (ContextKey name a) where
   pretty _ = text (symbolVal (Proxy @name))
@@ -40,8 +44,13 @@ contextKeySlug ::
   IsString b =>
   ContextQuery a ->
   b
-contextKeySlug (ContextQuery @name _) =
-  fromString (symbolVal (Proxy @name))
+contextKeySlug (ContextQuery @name key) =
+  fromString case key of
+    ContextCommandEnv name -> [exon|#{main}.##{name}|]
+    ContextGhci name -> [exon|#{main}.##{name}|]
+    _ -> main
+  where
+    main = symbolVal (Proxy @name)
 
 instance Pretty (ContextQuery a) where
   pretty = text . contextKeySlug
@@ -84,7 +93,7 @@ queryFlake key@ContextQuery {} = do
   where
     args = ["build", "--print-out-paths", [exon|.#{"#"}#{internalScope}.cli-context.json.#{name}|]]
 
-    desc = [exon|Context query for '#{name}'|]
+    desc = [exon|Context query for #{Color.blue name}|]
 
     name = contextKeySlug key
 
@@ -100,16 +109,18 @@ handlersTest testContext =
     check key = noteFatal [exon|The context '#{showP key}' is not defined for this test.|]
 
 jsonOrQuery ::
+  HPretty a =>
   FromJSON a =>
   KnownSymbol name =>
   ContextHandlers ->
   ContextKey name a ->
   Either a (Maybe JsonConfig) ->
   M a
-jsonOrQuery ContextHandlers {query} confQuery =
-  either pure (maybe (query (ContextQuery confQuery)) jsonConfig)
+jsonOrQuery handlers confQuery =
+  either pure (maybe (queryContext handlers confQuery) jsonConfig)
 
 jsonOrQueryProd ::
+  HPretty a =>
   FromJSON a =>
   KnownSymbol name =>
   ContextKey name a ->
