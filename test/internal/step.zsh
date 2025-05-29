@@ -31,7 +31,7 @@ _unclutter_store_path()
 _step_unclutter_cmd()
 {
   local general=$(
-    print -- $step_cmd \
+    print -- ${(q-)step_cmd} \
       | _sub_store_bin \
       | _sub_store_hash \
       | _sub_test_dir
