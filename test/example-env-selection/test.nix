@@ -6,6 +6,10 @@
 
   describe 'env-selection 2'
   output_exact 4
-  step_run cmd.number -p root -c app 2 --floop
+  step_run cmd.number -p root -c app 2
+
+  describe 'env-selection 3'
+  output_exact 4
+  step_run cmd.number --env four
   '';
 }

@@ -26,7 +26,5 @@
       ports.nginx = { host = 2; guest = 80; };
     };
 
-    internal.hixCli.dev = false;
-
   };
 }

@@ -40,12 +40,11 @@
   componentConf = comp: let
     conf = comp.__conf;
   in {
-    inherit (conf) name;
+    inherit (conf) name env;
     inherit (comp) language;
     extensions = comp.default-extensions;
     ghcOptions = comp.ghc-options;
     prelude = if conf.prelude.enable then conf.prelude else null;
-    runner = if conf.env == null then null else config.envs.${conf.env}.runner;
     sourceDirs = comp.source-dirs;
     deps = comp.dependencies;
   };
@@ -58,18 +57,27 @@
 
   packages = lib.mapAttrs packageConf util.hpack.conf.normalized.components;
 
-  envConf = default: {
-    mainPackage = config.main;
-    inherit packages;
-    defaultEnv = default.runner;
+  commandEnv = env: {
+    inherit (env) runner;
+    ghciArgs = env.ghci.args;
+    ghcidArgs = env.ghcid.args;
   };
 
+  commandEnvs = util.mapValues commandEnv config.envs;
+
+  command = env: {
+    mainPackage = config.main;
+    inherit packages;
+    defaultEnv = env.name;
+  };
+
+  commands = util.mapValues command config.envs;
+
   # TODO add to this set:
-  # - component-dependent ghci args
   # - restarts
   # - cwd
   ghci = env: {
-    env = envConf env;
+    command = command env;
     mainPackage = config.main;
     inherit packages;
     setup = config.ghci.setup;
@@ -77,6 +85,8 @@
     args = config.ghci.args;
     inherit (config) manualCabal;
   };
+
+  ghcis = util.mapValues ghci config.envs;
 
   json = k: v: util.jsonFile "context-${k}" v;
 
@@ -97,14 +107,22 @@
       envs = util.mapValues maintEnv util.managed.env.envs;
     };
 
+    preproc = {
+      packages = if config.manualCabal then null else packages;
+    };
+
   };
 
 in data // {
 
   json = lib.mapAttrs json data // {
-    ghci = env: json "ghci" (ghci env);
+    command = lib.mapAttrs (name: json "command-${name}") commands;
+
+    ghci = lib.mapAttrs (name: json "ghci-${name}") ghcis;
+
+    command-env = lib.mapAttrs (name: json "command-env-${name}") commandEnvs;
   };
 
-  inherit ghci;
+  inherit commands commandEnvs ghcis;
 
 }

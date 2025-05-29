@@ -92,3 +92,7 @@ nonOption =
   eitherReader \case
     option@('-' : _) -> Left [exon|Invalid option: #{option}|]
     a -> Right (fromString a)
+
+deprecatedOption :: String -> ReadM a
+deprecatedOption new =
+  eitherReader \ _ -> Left [exon|Deprecated in favor of #{new}|]

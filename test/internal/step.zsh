@@ -684,6 +684,15 @@ error_rg()
   _step_rg_err=($@)
 }
 
+# output_match()
+# {
+#   if (( ${+_step_regex_out} == 0 ))
+#   then
+#     typeset -ga _step_regex_out
+#   fi
+#   _step_regex_out+=($*)
+# }
+
 output_match()
 {
   _step_regex_out=$*

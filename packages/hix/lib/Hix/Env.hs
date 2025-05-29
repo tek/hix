@@ -11,55 +11,74 @@ import qualified Hix.Color as Color
 import Hix.Component (targetComponent)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (EnvRunner (..), PackagesConfig, TargetOrDefault (..))
+import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.GhciConfig
-import Hix.Data.Monad (M)
-import qualified Hix.Data.Options as Options
-import Hix.Data.Options (CommandOptions (..), EnvRunnerOptions, TargetSpec)
+import Hix.Data.GhciConfig (CommandEnvContext (..), CommandContext)
+import Hix.Data.Monad (LogLevel (..), M)
+import Hix.Data.Options (CommandOptions (..), RunCommandOptions (..), TargetSpec)
 import Hix.Data.PackageName (PackageName)
-import Hix.Error (pathText)
+import Hix.Error (pathText, printError)
 import Hix.Json (jsonConfigE)
 import qualified Hix.Log as Log
-import Hix.Monad (fatalError)
+import qualified Hix.Managed.Handlers.Context as Context
+import Hix.Managed.Handlers.Context (ContextHandlers, ContextKey (ContextCommandEnv), queryContext)
+import Hix.Maybe (fromMaybeA)
+import Hix.Monad (appContext, catchM, fatalError)
 import Hix.Path (resolvePathSpec)
 
--- TODO when there is a solution for default command env fallback configuration, the DefaultTarget case must return
--- Nothing when the config requests it
 componentRunner ::
   Maybe (Path Abs Dir) ->
   Maybe PackageName ->
   PackagesConfig ->
   TargetSpec ->
-  M (Maybe EnvRunner)
+  M (Maybe EnvName)
 componentRunner cliRoot defaultPkg config spec =
-  targetComponent cliRoot defaultPkg config spec <&> \case
-    ExplicitTarget t -> t.component.runner
-    DefaultTarget t -> t.component.runner
+  targetComponent cliRoot defaultPkg config (Just spec) <&> \case
+    ExplicitTarget t -> t.component.env
+    DefaultTarget t -> t.component.env
     _ -> Nothing
 
-envRunner :: EnvRunnerOptions -> M EnvRunner
-envRunner opts = do
-  config <- jsonConfigE opts.config
-  root <- traverse resolvePathSpec opts.root
-  let runner = componentRunner root config.mainPackage config.packages
-  fromMaybe config.defaultEnv . join <$> traverse runner opts.component
+commandEnv ::
+  ContextHandlers ->
+  CommandContext ->
+  CommandOptions ->
+  M CommandEnvContext
+commandEnv contextHandlers context options =
+  appContext "resolving the command env" do
+    root <- traverse resolvePathSpec options.root
+    let fromComponent = componentRunner root context.mainPackage context.packages
+        resolve = fromMaybe (fromMaybe "dev" context.defaultEnv) . join <$> traverse fromComponent options.component
+    name <- fromMaybeA resolve options.env
+    catchM (queryContext contextHandlers (ContextCommandEnv name)) \ orig -> do
+      printError LogVerbose orig
+      fatalError (noEnv name)
+  where
+    noEnv name = [exon|No such environment: #{Color.env name}|]
 
-printEnvRunner :: EnvRunnerOptions -> M ()
-printEnvRunner opts = do
-  EnvRunner runner <- envRunner opts
+printEnvRunner ::
+  RunCommandOptions ->
+  M ()
+printEnvRunner options = do
+  context <- jsonConfigE options.context
+  CommandEnvContext {runner = EnvRunner runner} <- commandEnv Context.handlersProd context options.command
   liftIO (Text.putStrLn (pathText runner))
 
 runEnvProcess ::
-  EnvRunnerOptions ->
+  CommandEnvContext ->
   Text ->
   [Text] ->
   M ()
-runEnvProcess options exe args = do
-  EnvRunner runner <- envRunner options
+runEnvProcess CommandEnvContext {runner = EnvRunner runner} exe args = do
   let cmd = Text.unwords (exe : args)
   Log.debug [exon|Starting process: #{pathText runner} #{cmd}|]
   runProcess (setStderr inherit (setStdout inherit (proc (toFilePath runner) (toString <$> exe : args)))) >>= \case
     ExitSuccess -> unit
     ExitFailure n -> fatalError [exon|#{Color.shellCommand exe} exited with code #{Color.number n}|]
 
-runEnvCommand :: CommandOptions -> M ()
-runEnvCommand CommandOptions {..} = runEnvProcess env exe args
+runEnvCommand ::
+  RunCommandOptions ->
+  M ()
+runEnvCommand options@RunCommandOptions {exe, args} = do
+  context <- jsonConfigE options.context
+  config <- commandEnv Context.handlersProd context options.command
+  runEnvProcess config exe args

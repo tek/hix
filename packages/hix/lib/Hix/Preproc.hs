@@ -466,7 +466,7 @@ fromConfig ::
   M CabalConfig
 fromConfig cliRoot source pconf = do
   conf <- jsonConfigE pconf
-  target <- targetComponentOrError cliRoot Nothing conf.packages (TargetForFile $ PathConcrete (Abs source))
+  target <- targetComponentOrError cliRoot Nothing conf.packages (Just (TargetForFile (PathConcrete (Abs source))))
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,
     ghcOptions = stringUtf8 <$> target.component.ghcOptions,

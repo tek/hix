@@ -1,10 +1,12 @@
 module Hix.Options where
 
+import qualified Data.Text as Text
 import Exon (exon)
 import Options.Applicative (
   ArgumentFields,
   CommandFields,
   Mod,
+  OptionFields,
   Parser,
   argument,
   auto,
@@ -37,11 +39,10 @@ import Path (Abs, Dir, Path, SomeBase (Abs), parseRelDir, parseSomeDir, relfile)
 import Path.IO (getCurrentDir)
 import Prelude hiding (Mod, mod)
 
-import qualified Hix.Data.BootstrapProjectConfig
-import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (BootstrapProjectConfig))
-import Hix.Data.ComponentConfig (ComponentName (ComponentName), ModuleName, SourceDir (SourceDir))
+import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (..))
+import Hix.Data.ComponentConfig (ComponentName (..), ModuleName, SourceDir (..))
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.GhciConfig (ChangeDir (ChangeDir), RunnerName)
+import Hix.Data.GhciConfig (ChangeDir (..), GhciArgs (..), GhcidArgs (..), RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions (..))
 import Hix.Data.Json (JsonConfig)
 import Hix.Data.LogLevel (LogLevel (..))
@@ -62,9 +63,6 @@ import Hix.Data.Options (
   ComponentCoords (ComponentCoords),
   ComponentSpec (..),
   EnvRunnerCommandOptions (..),
-  EnvRunnerOptions (EnvRunnerOptions, component, config, root),
-  ExtraGhciOptions,
-  ExtraGhcidOptions,
   GhciOptions (..),
   GhcidOptions (..),
   HackageCommand (..),
@@ -80,6 +78,7 @@ import Hix.Data.Options (
   ProjectOptions (ProjectOptions),
   ReleaseMaintOptions (..),
   RevisionOptions (..),
+  RunCommandOptions (..),
   TargetSpec (..),
   TestOptions (..),
   )
@@ -96,6 +95,7 @@ import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import Hix.Optparse (
   buildHandlersOption,
+  deprecatedOption,
   hackageRepoFieldOption,
   jsonOption,
   maintHandlersOption,
@@ -201,24 +201,51 @@ testOptionsParser = do
   cd <- cdParser
   pure TestOptions {..}
 
-extraGhciParser :: Parser (Maybe ExtraGhciOptions)
-extraGhciParser =
-  optional (strOption (long "ghci-options" <> help "Additional command line options to pass to ghci"))
+deprecatedParser ::
+  String ->
+  Mod OptionFields a ->
+  Parser (Maybe a)
+deprecatedParser new mods =
+  optional (option (deprecatedOption new) (mods <> help [exon|Deprecated in favor of '#{new}'|]))
 
-extraGhcidParser :: Parser (Maybe ExtraGhcidOptions)
-extraGhcidParser =
-  optional (strOption (long "ghcid-options" <> help "Additional command line options to pass to ghcid"))
+consumeDeprecated :: Maybe Text -> [Text] -> [Text]
+consumeDeprecated _ args =
+  concatMap Text.words args
 
-envRunnerParser :: Parser EnvRunnerOptions
-envRunnerParser = do
-  config <- Right <$> jsonConfigParser
+extraGhciParser :: Parser GhciArgs
+extraGhciParser = do
+  deprecated <- deprecatedParser "ghci-args" (long "ghci-options")
+  args <- many (strOption (long "ghci-args" <> help "Additional command line arguments to pass to ghci"))
+  pure (GhciArgs (consumeDeprecated deprecated args))
+
+extraGhcidParser :: Parser GhcidArgs
+extraGhcidParser = do
+  deprecated <- deprecatedParser "ghcid-args" (long "ghcid-options")
+  args <- many (strOption (long "ghcid-args" <> help "Additional command line arguments to pass to ghcid"))
+  pure (GhcidArgs (consumeDeprecated deprecated args))
+
+envOverrideParser :: Parser (Maybe EnvName)
+envOverrideParser =
+  optional (strOption (long "env" <> short 'e' <> help "Override the env selected by any other method"))
+
+commandParser :: Parser CommandOptions
+commandParser = do
   root <- rootParser
   component <- optional targetSpecParser
-  pure EnvRunnerOptions {..}
+  env <- envOverrideParser
+  pure CommandOptions {..}
+
+runCommandParser :: Parser RunCommandOptions
+runCommandParser = do
+  context <- Right <$> jsonConfigParser
+  cmd <- commandParser
+  exe <- strOption (long "exe" <> help "The command executable")
+  args <- many (strArgument (metavar "ARG"))
+  pure RunCommandOptions {command = cmd, ..}
 
 envLegacyParser :: Parser EnvRunnerCommandOptions
 envLegacyParser = do
-  options <- envRunnerParser
+  options <- runCommandParser
   test <- testOptionsParser
   extraGhci <- extraGhciParser
   extraGhcid <- extraGhcidParser
@@ -226,26 +253,18 @@ envLegacyParser = do
 
 ghciParser :: Parser GhciOptions
 ghciParser = do
-  config <- Right <$> jsonConfigParser
-  root <- rootParser
-  component <- targetSpecParser
+  context <- Right <$> jsonConfigParser
+  cmd <- commandParser
   test <- testOptionsParser
   extra <- extraGhciParser
   args <- many (strArgument (metavar "ARG"))
-  pure GhciOptions {..}
+  pure GhciOptions {command = cmd, ..}
 
 ghcidParser :: Parser GhcidOptions
 ghcidParser = do
   ghci <- ghciParser
   extra <- extraGhcidParser
   pure GhcidOptions {..}
-
-commandParser :: Parser CommandOptions
-commandParser = do
-  env <- envRunnerParser
-  exe <- strOption (long "exe" <> help "The command executable")
-  args <- many (strArgument (metavar "ARG"))
-  pure CommandOptions {..}
 
 noInitGitAndFlakeParser :: Parser Bool
 noInitGitAndFlakeParser = switch (long "basic" <> short 'b' <> help "Skip git repo initialisation and nix flake lock")
@@ -426,7 +445,7 @@ commands =
   <>
   command "ghcid" (RunGhcid <$> info ghcidParser (progDesc "Run ghcid in a Hix env"))
   <>
-  command "command" (RunCommand <$> info commandParser (progDesc "Run a command in a Hix env"))
+  command "command" (RunCommand <$> info runCommandParser (progDesc "Run a command in a Hix env"))
   <>
   command "init" (Init <$> info initParser (progDesc "Create a new Hix project in the current directory"))
   <>

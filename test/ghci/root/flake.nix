@@ -59,6 +59,13 @@
       args = ["-package ghc"];
     };
 
+    envs.ghcid-args = {
+      expose = true;
+      ghcid.args = ["--test" ":quit"];
+    };
+
+    ghcid.args = ["--poll"];
+
     commands.ghci-app = {
       ghci = {
         enable = true;
@@ -67,7 +74,7 @@
       expose = true;
     };
 
-    internal.hixCli.dev = false;
+    internal.hixCli.dev = true;
 
   });
 }

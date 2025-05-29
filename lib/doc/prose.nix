@@ -964,7 +964,7 @@ in {
   The primary use case for this is to use a different environment when running a GHCid test, like running a database
   server for integration tests.
 
-  There are three alternative selection methods, illustrated by this example:
+  There are four alternative selection methods, illustrated by this example:
 
   ```
   ${exampleFile "env-selection" "flake.nix"}
@@ -995,6 +995,13 @@ in {
   This method needs to know the root directory of the project, which is determined by searching for `flake.nix` with a
   fallback to the current working directory.
   The root directory may also be specified explicitly using the CLI option `--root`.
+
+  The fourth method is to pass `--env` on the command line:
+
+  ```
+  $ nix run .#cmd.number -- --env four
+  4
+  ```
 
   If no selection arguments are given, the command's default environment is used:
 
@@ -1048,13 +1055,16 @@ in {
   $ nix run .#show-config -- ghci
   ```
 
-  Lastly, you can specify arbitrary additional command line arguments for GHCi and GHCid with `--ghci-options` and
-  `--ghcid-options`.
+  Lastly, you can specify arbitrary additional command line arguments for GHCi and GHCid with `--ghci-args` and
+  `--ghcid-args`.
   Like basic commands, GHCi options can also be given as plain arguments:
 
   ```
   $ nix run .#ghcid -- -p root -Werror
   ```
+
+  These options may also be set globally in [](#opt-ghci-ghci.args) and [](#opt-ghci-ghcid.args), or for an env in
+  [](#opt-env-ghci.args) and [](#opt-env-ghcid.args).
 
   The CLI parser will pick out known options and pass the rest to GHCi.
 

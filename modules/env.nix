@@ -314,13 +314,35 @@ in {
       default = 30;
     };
 
+    ghci = {
+
+      args = lib.mkOption {
+        description = ''
+        Additional arguments passed to `ghci` when run through this env.
+        '';
+        type = types.listOf types.str;
+        default = [];
+      };
+
+    };
+
     ghcid = {
+
       enable = lib.mkEnableOption "GHCid for this env" // { default = true; };
 
       package = lib.mkOption {
         description = "The package for GHCid, defaulting to the one from the env's GHC without overrides.";
         type = package;
       };
+
+      args = lib.mkOption {
+        description = ''
+        Additional arguments passed to `ghcid` when run through this env.
+        '';
+        type = types.listOf types.str;
+        default = [];
+      };
+
     };
 
     hls = {

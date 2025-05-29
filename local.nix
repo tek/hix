@@ -245,10 +245,7 @@ in {
 
   internal.cabal-extra.default-extensions = ["StrictData"];
 
-  internal.hixCli = {
-    commit = "199c3c7990abdd2ada54f479f8977295b62982dc";
-    sha256 = "1sjympc0xgag6sb3nvd1wnjphyrfq6jchfq52gf0bxr7a7d2awlz";
-  };
+  internal.hixCli.dev = true;
 
   outputs = let
 

@@ -22,7 +22,5 @@
       };
     };
 
-    internal.hixCli.dev = false;
-
   };
 }

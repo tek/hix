@@ -6,7 +6,7 @@ import Text.Show (show)
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig)
 import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
 import Hix.Data.EnvName (EnvName)
-import Hix.Data.GhciConfig (ChangeDir, EnvConfig, GhciConfig, RunnerName)
+import Hix.Data.GhciConfig (ChangeDir, CommandContext, GhciArgs, GhciContext, GhcidArgs, RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions)
 import Hix.Data.Json (JsonConfig)
 import Hix.Data.NewProjectConfig (InitProjectConfig, NewProjectConfig)
@@ -65,6 +65,10 @@ data TargetSpec =
   TargetForComponent ComponentCoords
   deriving stock (Eq, Show, Generic)
 
+defaultTargetSpec :: TargetSpec
+defaultTargetSpec =
+  TargetForComponent ComponentCoords {package = Nothing, component = Nothing}
+
 data TestOptions =
   TestOptions {
     mod :: ModuleName,
@@ -74,31 +78,20 @@ data TestOptions =
   }
   deriving stock (Eq, Show, Generic)
 
-data EnvRunnerOptions =
-  EnvRunnerOptions {
-    config :: Either EnvConfig JsonConfig,
+data CommandOptions =
+  CommandOptions {
     root :: Maybe (PathSpec Dir),
-    component :: Maybe TargetSpec
+    component :: Maybe TargetSpec,
+    env :: Maybe EnvName
   }
   deriving stock (Show, Generic)
 
-newtype ExtraGhciOptions =
-  ExtraGhciOptions Text
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString)
-
-newtype ExtraGhcidOptions =
-  ExtraGhcidOptions Text
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString)
-
 data GhciOptions =
   GhciOptions {
-    config :: Either GhciConfig JsonConfig,
-    root :: Maybe (PathSpec Dir),
-    component :: TargetSpec,
+    context :: Either GhciContext JsonConfig,
+    command :: CommandOptions,
     test :: TestOptions,
-    extra :: Maybe ExtraGhciOptions,
+    extra :: GhciArgs,
     args :: [Text]
   }
   deriving stock (Show, Generic)
@@ -106,13 +99,14 @@ data GhciOptions =
 data GhcidOptions =
   GhcidOptions {
     ghci :: GhciOptions,
-    extra :: Maybe ExtraGhcidOptions
+    extra :: GhcidArgs
   }
   deriving stock (Show, Generic)
 
-data CommandOptions =
-  CommandOptions {
-    env :: EnvRunnerOptions,
+data RunCommandOptions =
+  RunCommandOptions {
+    context :: Either CommandContext JsonConfig,
+    command :: CommandOptions,
     exe :: Text,
     args :: [Text]
   }
@@ -138,10 +132,10 @@ data BootstrapOptions =
 
 data EnvRunnerCommandOptions =
   EnvRunnerCommandOptions {
-    options :: EnvRunnerOptions,
+    options :: RunCommandOptions,
     test :: TestOptions,
-    extraGhci :: Maybe ExtraGhciOptions,
-    extraGhcid :: Maybe ExtraGhcidOptions
+    extraGhci :: GhciArgs,
+    extraGhcid :: GhcidArgs
   }
   deriving stock (Show, Generic)
 
@@ -254,7 +248,7 @@ data Command =
   |
   RunGhcid GhcidOptions
   |
-  RunCommand CommandOptions
+  RunCommand RunCommandOptions
   |
   Init InitOptions
   |

@@ -17,7 +17,13 @@ import Hix.Data.ComponentConfig (
   TargetOrDefault (DefaultTarget, ExplicitTarget, NoDefaultTarget),
   )
 import qualified Hix.Data.Options as Options
-import Hix.Data.Options (ComponentCoords, ComponentSpec (ComponentSpec), PackageSpec (PackageSpec), TargetSpec (..))
+import Hix.Data.Options (
+  ComponentCoords (..),
+  ComponentSpec (ComponentSpec),
+  PackageSpec (PackageSpec),
+  TargetSpec (..),
+  defaultTargetSpec,
+  )
 import Hix.Data.PackageName (PackageName (PackageName))
 import Hix.Error (pathText)
 import Hix.Monad (M, clientError, noteEnv)
@@ -177,17 +183,17 @@ targetComponent ::
   Maybe (Path Abs Dir) ->
   Maybe PackageName ->
   PackagesConfig ->
-  TargetSpec ->
+  Maybe TargetSpec ->
   M TargetOrDefault
 targetComponent cliRoot mainPkg config spec = do
   root <- rootDir cliRoot
-  targetComponentIn root mainPkg config spec
+  targetComponentIn root mainPkg config (fromMaybe defaultTargetSpec spec)
 
 targetComponentOrError ::
   Maybe (Path Abs Dir) ->
   Maybe PackageName ->
   PackagesConfig ->
-  TargetSpec ->
+  Maybe TargetSpec ->
   M Target
 targetComponentOrError cliRoot mainPkg config spec =
   targetComponent cliRoot mainPkg config spec >>= \case

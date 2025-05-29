@@ -15,6 +15,10 @@
 * Removed some attributes in the [intermediate build outputs](https://hix.how#intermediate-outputs) set to avoid eager
   evaluation.
 * Add options for building GHC from source.
+* Rename `--ghci{,d}-options` to `--ghci{,d}-args` in commands with env selection.
+* Add the options `envs.*.ghci{,d}.args` as env-specific extra arguments to those commands, based on env selection.
+* Add the options `ghci{,d}.args` as unconditional extra arguments to those commands.
+* Add the CLI option `--env` to override env selection for commands.
 
 # 0.9.0
 

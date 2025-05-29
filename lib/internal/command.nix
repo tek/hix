@@ -9,14 +9,19 @@ let
 
     cliCmd = if config.ghcid or false then "ghcid" else "ghci";
 
+    extra =
+      if (config.ghcid or false) && util.config.ghcid.args != []
+      then " --ghcid-args='${util.unwords util.config.ghcid.args}'"
+      else "";
+
     options = let
       opt = switch: o: lib.optionalString (config.${o} != null) " ${switch} ${config.${o}}";
     in "${opt "-r" "runner"}${opt "-p" "package"}${opt "-m" "module"}${opt "-c" "component"}";
 
-    json = outputs.cli-context.json.ghci env;
+    json = outputs.cli-context.json.ghci.${env.name};
 
   in ''
-  ${cli} ${cliCmd} --config ${json} ${options} "$@"
+  ${cli} ${cliCmd} --config ${json} ${options}${extra} "$@"
   '';
 
   inEnv = {command, env}:
@@ -29,7 +34,7 @@ let
 
     inherit cli;
 
-    json = util.json.envFile env;
+    json = outputs.cli-context.json.ghci.${env.name};
 
     script =
       if command.ghci.enable

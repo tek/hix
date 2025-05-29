@@ -2,6 +2,18 @@
   genCabal = true;
 
   source = ''
+  describe 'Pass extra options to ghcid via --ghcid-args'
+  exit_code 1
+  output_match 'testing: root'
+  error_ignore
+  step_run ghcid -p api -c test --ghcid-args='--test :quit'
+
+  describe 'Pass extra options to ghcid via ghcid.args and envs.*.ghcid.args'
+  exit_code 1
+  output_match 'testing: root'
+  error_match '--test=main --test :quit --poll'
+  step_run env.ghcid-args.ghcid -p api -c test --debug
+
   describe 'GHC library visible'
   output_match 'one module loaded'
   step_ghci ghci -p api -m Root.LibGhc
