@@ -1,7 +1,6 @@
 { config, lib, util, internal, ... }:
-with lib;
-with types;
 let
+  inherit (lib) types mkOption literalExpression;
 
   global = config;
 
@@ -9,7 +8,9 @@ let
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
 
 in {
-  options = {
+  options = let
+    inherit (types) str bool;
+  in {
 
     base = mkOption {
       description = ''
@@ -20,7 +21,7 @@ in {
       be set to `./.` explicitly.
       '';
       example = literalExpression "./.";
-      type = types.nullOr path;
+      type = types.nullOr types.path;
       default = null;
     };
 
@@ -35,7 +36,7 @@ in {
         api = { src = ./api; cabal.dependencies = ["aeson"]; library.enable = true; };
       }
       '';
-      type = attrsOf (submodule packageModule);
+      type = types.attrsOf (types.submodule packageModule);
       default = {};
     };
 
@@ -94,7 +95,7 @@ in {
       You can use {option}`cabal-config` for this purpose, though.
       :::
       '';
-      type = deferredModule;
+      type = types.deferredModule;
       default = {};
     };
 
@@ -103,7 +104,7 @@ in {
       Evaluated version of {option}`cabal`, for referencing in other config values.
       May not be set by the user.
       '';
-      type = submoduleWith { modules = [cabalOptionsModule config.cabal config.internal.cabal-extra]; };
+      type = types.submoduleWith { modules = [cabalOptionsModule config.cabal config.internal.cabal-extra]; };
       readOnly = true;
       default = {};
     };
@@ -160,7 +161,7 @@ in {
         The GHC versions for which to create compat checks. Defaults to [](#opt-general-ghcVersions).
         There has to be an env in [](#opt-general-envs) with the version as its name for each of these.
         '';
-        type = listOf str;
+        type = types.listOf str;
         default = config.ghcVersions;
       };
 
@@ -175,7 +176,7 @@ in {
     };
 
     deps = mkOption {
-      type = listOf path;
+      type = types.listOf types.path;
       default = [];
       description = ''
         Flake inputs containing hix projects whose overrides are merged into this project's.
@@ -185,7 +186,7 @@ in {
     };
 
     depsFull = mkOption {
-      type = listOf path;
+      type = types.listOf types.path;
       default = [];
       description = ''
         Flake inputs containing hix projects whose overrides are merged into this project's.
@@ -204,7 +205,7 @@ in {
       since the built-in definition doesn't use `mkDefault` to ensure that adding tools in your project won't
       mysteriously remove `cabal-install` from all shells.
       '';
-      type = functionTo (listOf package);
+      type = types.functionTo (types.listOf types.package);
       example = literalExpression ''ghc: [ghc.fourmolu]'';
     };
 
@@ -241,7 +242,7 @@ in {
     internal = {
 
       pkgs = internal.modules.deprecatedOption {
-        type = unspecified;
+        type = types.unspecified;
         key = "internal.pkgs";
       };
 
@@ -251,12 +252,12 @@ in {
       };
 
       packageNames = internal.modules.deprecatedOption {
-        type = listOf str;
+        type = types.listOf str;
         key = "internal.packageNames";
       };
 
       cabal-extra = mkOption {
-        type = attrsOf unspecified;
+        type = types.attrsOf types.unspecified;
         default = {};
       };
 
@@ -283,11 +284,11 @@ in {
 
   config = {
 
-    packages = mkDefault internal.project.defaultPackages;
+    packages = lib.mkDefault internal.project.defaultPackages;
 
-    main = mkDefault internal.project.defaultMain;
+    main = lib.mkDefault internal.project.defaultMain;
 
-    name = mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
+    name = lib.mkDefault (internal.packages.withMain "hix-project" (pkg: pkg.name));
 
     nixpkgs = {
 
@@ -315,7 +316,7 @@ in {
       extends = null;
     };
 
-    pkgs = mkDefault util.pkgs;
+    pkgs = lib.mkDefault util.pkgs;
 
     haskellTools = ghc: [ghc.cabal-install];
 
@@ -325,7 +326,7 @@ in {
 
       basicGhc = config.pkgs.haskell.packages.${config.compiler};
 
-      packageNames = attrNames config.packages;
+      packageNames = lib.attrNames config.packages;
 
       hixVersion = "0.9.1";
 

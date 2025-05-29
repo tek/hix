@@ -1,7 +1,7 @@
 {config, lib, util, ...}:
-with lib;
 let
 
+  inherit (lib) types mkDefault;
   inherit (util) build internal;
 
   envModule = import ./env.nix { global = config; inherit util; };
@@ -14,8 +14,8 @@ let
       };
     };
     # TODO this didn't use mkForce before, should that mean that all dep overrides are active in this env?
-    internal.overridesInherited = mkForce (util.overridesGlobal [compiler]);
-    ifd = mkIf (!config.compat.ifd) false;
+    internal.overridesInherited = lib.mkForce (util.overridesGlobal [compiler]);
+    ifd = lib.mkIf (!config.compat.ifd) false;
 
     expose = let
       isCompat = config.compat.enable && lib.elem compiler config.compat.versions;
@@ -30,24 +30,24 @@ let
 
   };
 
-  ghcVersionEnvs = genAttrs config.ghcVersions ghcVersionEnv;
+  ghcVersionEnvs = lib.genAttrs config.ghcVersions ghcVersionEnv;
 
-  ghcVersionCompilers = genAttrs config.ghcVersions (compiler: { source = compiler; });
+  ghcVersionCompilers = lib.genAttrs config.ghcVersions (compiler: { source = compiler; });
 
 in {
-  options = with types; {
+  options = {
 
-    envs = mkOption {
+    envs = lib.mkOption {
       description = "All environments for this project.";
-      type = attrsOf (submodule envModule);
+      type = types.attrsOf (types.submodule envModule);
       default = {};
     };
 
-    ghcVersions = mkOption {
+    ghcVersions = lib.mkOption {
       description = ''
       The GHC versions for which to create envs, specified by their attribute names in `pkgs.haskell.packages`.
       '';
-      type = listOf str;
+      type = types.listOf types.str;
       default = ["ghc94" "ghc96" "ghc98" "ghc910"];
     };
 

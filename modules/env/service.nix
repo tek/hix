@@ -1,15 +1,15 @@
 {global, lib}:
-with lib;
-{config, ...}:
-{
+{config, ...}: let
+  inherit (lib) types;
+in {
 
-  options = with types; {
+  options = {
 
-    enable = mkEnableOption "this service";
+    enable = lib.mkEnableOption "this service";
 
-    config = mkOption {
+    config = lib.mkOption {
       description = "";
-      type = unspecified;
+      type = types.unspecified;
       default = {};
     };
 

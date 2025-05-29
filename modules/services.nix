@@ -1,26 +1,26 @@
 {config, lib, ...}:
-with lib;
 let
+  inherit (lib) types;
 
   postgresModule = import ./postgres.nix { global = config; };
 
 in {
-  options = with types; {
+  options = {
 
-    services = mkOption {
+    services = lib.mkOption {
       description = ''
       Services are fragments of NixOS config that can be added to an environment to be started as virtual machines when
       the environment is used in a command or shell.
       '';
-      type = attrsOf deferredModule;
+      type = types.attrsOf types.deferredModule;
       default = {};
     };
 
     internal.services = {
 
-      postgres = mkOption {
+      postgres = lib.mkOption {
         description = "A PostgreSQL server.";
-        type = deferredModule;
+        type = types.deferredModule;
         readOnly = true;
       };
 

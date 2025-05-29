@@ -1,40 +1,41 @@
 {global, ...}:
-{config, lib, ...}:
-with lib;
+{config, lib, ...}: let
+  inherit (lib) types;
+in
 {
-  options = with types; {
+  options = {
 
-    package = mkOption {
+    package = lib.mkOption {
       description = "The postgresql package to use.";
-      type = package;
+      type = types.package;
       default = global.pkgs.postgresql_13;
     };
 
-    name = mkOption {
+    name = lib.mkOption {
       description = "Database name.";
-      type = str;
+      type = types.str;
     };
 
-    port = mkOption {
+    port = lib.mkOption {
       description = "Port on which to listen in the host system, added to the environment's `basePort`.";
-      type = port;
+      type = types.port;
       default = 32;
     };
 
     creds = {
-      user = mkOption {
+      user = lib.mkOption {
         description = "Database user, defaulting to the database name.";
-        type = str;
+        type = types.str;
         default = config.name;
       };
-      password = mkOption {
+      password = lib.mkOption {
         description = "Password for the user, defaulting to the user name.";
-        type = str;
+        type = types.str;
         default = config.creds.user;
       };
     };
 
-    log = mkEnableOption "logging";
+    log = lib.mkEnableOption "logging";
 
   };
 
