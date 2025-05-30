@@ -5,8 +5,7 @@
 in {
   internal.removeFlakeLockFromCabalDrvSrc = true;
   internal.hixCli = lib.mkIf (!cliReleaseOverride) {
-    dev = true;
-    # commit = "6a5f1e23c7d25343d01728b3e1666c200b833183";
-    # sha256 = "15rd5q8vx61zjfbm040dbgqd345abaqkwbwb9npjx496ggq1bvlf";
+    commit = "8d92716141f252642a45b0ff0d5468e28a0701c7";
+    sha256 = "05wp05hdls051xjavnkzppk494zigr9bp6pqhhlbydkrfc455fbz";
   };
 }
