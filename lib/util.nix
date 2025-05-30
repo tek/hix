@@ -241,8 +241,6 @@ let
 
     path = import ./path.nix { inherit util; };
 
-    ghc = import ./ghc.nix { inherit config lib util; };
-
     managed = import ./managed/default.nix { inherit util; };
 
     hpack = import ./hpack/default.nix { inherit util; };

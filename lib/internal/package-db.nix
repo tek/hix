@@ -1,8 +1,8 @@
-{config, lib, util}: let
+{util}: let
 
-  inherit (util) internal;
+  inherit (util) config lib internal;
 
-  deps = import ./deps/default.nix { inherit config; };
+  deps = import ../deps/default.nix { inherit config; };
 
   extraHs = env: ghc:
   if lib.isFunction env.haskellPackages
@@ -31,15 +31,10 @@
       ];
   in env.toolchain.vanilla.override { overrides = (deps { inherit (env.ghc) pkgs; }).reify overrides; };
 
-  packageDbSolver = noLocalsInDeps: env: (solverGhc env).ghcWithPackages (packageDb noLocalsInDeps env);
+  solver = noLocalsInDeps: env: (solverGhc env).ghcWithPackages (packageDb noLocalsInDeps env);
 
-  # TODO these two aren't used
-  packageDbSolverShallow = noLocalsInDeps: env: map (p: p.drvPath) (packageDb noLocalsInDeps env (solverGhc env));
-
-  packageDbSolverNames = noLocalsInDeps: env: map (p: p.name) (packageDb noLocalsInDeps env (solverGhc env));
-
-  packageDbFull = env: args: env.toolchain.packages.ghcWithPackages.override args (packageDb false env);
+  full = env: args: env.toolchain.packages.ghcWithPackages.override args (packageDb false env);
 
 in {
-  inherit packageDb packageDbSolver packageDbSolverShallow packageDbSolverNames packageDbFull;
+  inherit packageDb solver full;
 }
