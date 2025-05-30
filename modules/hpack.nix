@@ -1,6 +1,7 @@
-{ lib, config, util, ... }:
+{lib, config, util, ...}:
 let
   inherit (lib) types mkOption;
+  inherit (util) build internal;
 
 in {
   options = {
@@ -43,14 +44,14 @@ in {
 
     hpack = {
 
-      script = util.hpack.gen { verbose = true; };
+      script = internal.hpack.gen { verbose = true; };
 
-      scriptQuiet = util.hpack.gen { verbose = false; };
+      scriptQuiet = internal.hpack.gen { verbose = false; };
 
       internal.packages =
         if config.managed.enable
-        then util.hpack.conf.packagesWithManaged
-        else util.hpack.conf.packages
+        then build.hpack.packagesWithManaged
+        else build.hpack.packages
         ;
 
     };
