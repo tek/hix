@@ -74,7 +74,5 @@
       expose = true;
     };
 
-    internal.hixCli.dev = true;
-
   });
 }

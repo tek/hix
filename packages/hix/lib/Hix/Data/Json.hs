@@ -1,9 +1,11 @@
 module Hix.Data.Json where
 
-import Data.Aeson (FromJSON (parseJSON), Key, Object, Value, (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, (.:?))
 import Data.Aeson.Types (Parser)
 import Distribution.Parsec (Parsec, eitherParsec)
-import qualified Text.Show as Show
+import Path (File)
+
+import Hix.Data.PathSpec (PathSpec)
 
 aesonParsec ::
   Parsec a =>
@@ -62,9 +64,7 @@ instance (FromJSON a, FromJSON b) => FromJSON (JsonEither a b) where
   parseJSON v =
     JsonEither <$> ((Right <$> parseJSON v) <|> (Left <$> parseJSON v))
 
-newtype JsonConfig =
-  JsonConfig { unJsonConfig :: IO (Either String Value) }
-  deriving stock (Generic)
-
-instance Show JsonConfig where
-  show (JsonConfig _) = "JsonConfig"
+newtype JsonContext =
+  JsonContext { unJsonConfig :: PathSpec File }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (IsString)

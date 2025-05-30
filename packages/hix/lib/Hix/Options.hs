@@ -44,7 +44,7 @@ import Hix.Data.ComponentConfig (ComponentName (..), ModuleName, SourceDir (..))
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir (..), GhciArgs (..), GhcidArgs (..), RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions (..))
-import Hix.Data.Json (JsonConfig)
+import Hix.Data.Json (JsonContext)
 import Hix.Data.LogLevel (LogLevel (..))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
@@ -97,7 +97,6 @@ import Hix.Optparse (
   buildHandlersOption,
   deprecatedOption,
   hackageRepoFieldOption,
-  jsonOption,
   maintHandlersOption,
   nonOption,
   outputFormatOption,
@@ -117,9 +116,9 @@ rootParser :: Parser (Maybe (PathSpec Dir))
 rootParser =
   optional (strOption (long "root" <> help "The root directory of the project"))
 
-jsonConfigParser :: Parser JsonConfig
+jsonConfigParser :: Parser JsonContext
 jsonConfigParser =
-  option jsonOption (long "config" <> help "The Hix-generated config, file or text")
+  strOption (long "context" <> help "The Hix-generated configuration context for this app, JSON file or text")
 
 preprocParser :: Parser PreprocOptions
 preprocParser =

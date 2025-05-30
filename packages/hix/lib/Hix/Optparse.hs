@@ -1,14 +1,12 @@
 -- |Combinators for @optparse-applicative@.
 module Hix.Optparse where
 
-import Data.Aeson (eitherDecodeFileStrict', eitherDecodeStrict')
 import Data.List.Extra (stripInfix)
 import Distribution.Parsec (Parsec, eitherParsec)
 import Exon (exon)
 import Options.Applicative (ReadM, eitherReader)
-import Path (File, Path, Rel, parseAbsFile, parseRelFile, toFilePath)
+import Path (File, Path, Rel, parseAbsFile, parseRelFile)
 
-import Hix.Data.Json (JsonConfig (..))
 import Hix.Data.OutputFormat (OutputFormat (..))
 import Hix.Data.OutputTarget (OutputTarget (..))
 import Hix.Managed.Cabal.ContextHackageRepo (fieldUpdater)
@@ -28,13 +26,6 @@ pathOption desc parse =
 -- | A relative file path option for @optparse-applicative@.
 relFileOption :: ReadM (Path Rel File)
 relFileOption = pathOption "relative file" parseRelFile
-
-jsonOption :: ReadM JsonConfig
-jsonOption =
-  eitherReader \ raw -> do
-    pure $ JsonConfig case parseAbsFile raw of
-      Just f -> eitherDecodeFileStrict' (toFilePath f)
-      Nothing -> pure (eitherDecodeStrict' (encodeUtf8 raw))
 
 buildHandlersOption :: ReadM SpecialBuildHandlers
 buildHandlersOption =

@@ -25,7 +25,7 @@ import Hix.Cabal (buildInfoForFile)
 import Hix.Component (targetComponentOrError)
 import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (PreludeConfig, PreludePackage (PreludePackageName, PreludePackageSpec))
-import Hix.Data.Json (JsonConfig)
+import Hix.Data.Json (JsonContext)
 import Hix.Data.Monad (LogLevel (LogVerbose), M, liftE)
 import Hix.Data.Options (PreprocOptions (..), TargetSpec (TargetForFile))
 import Hix.Data.PackageName (PackageName (PackageName))
@@ -33,7 +33,7 @@ import Hix.Data.PathSpec (PathSpec (PathConcrete))
 import qualified Hix.Data.PreprocConfig
 import Hix.Data.PreprocConfig (PreprocConfig)
 import Hix.Error (Error (..), ErrorMessage (Client), sourceError)
-import Hix.Json (jsonConfigE)
+import Hix.Json (resolveContext)
 import Hix.Monad (tryIOM)
 import Hix.Path (PathSpecResolver (resolvePathSpec))
 import qualified Hix.Prelude as Prelude
@@ -462,10 +462,10 @@ preprocessWith opt conf = do
 fromConfig ::
   Maybe (Path Abs Dir) ->
   Path Abs File ->
-  Either PreprocConfig JsonConfig ->
+  Either PreprocConfig JsonContext ->
   M CabalConfig
 fromConfig cliRoot source pconf = do
-  conf <- jsonConfigE pconf
+  conf <- resolveContext pconf
   target <- targetComponentOrError cliRoot Nothing conf.packages (Just (TargetForFile (PathConcrete (Abs source))))
   pure CabalConfig {
     extensions = stringUtf8 <$> target.component.language : target.component.extensions,

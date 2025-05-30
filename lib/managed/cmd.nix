@@ -33,7 +33,7 @@
 
   managedScript = cmd: envs: let
     general = [
-      "--config ${cliJson}"
+      "--context ${cliJson}"
       readUpperBounds
       mergeBounds
     ];

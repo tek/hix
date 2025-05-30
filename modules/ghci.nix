@@ -97,7 +97,7 @@ in {
 
     preprocessor = lib.mkDefault (
       util.script "ghci-preprocessor" ''
-      ${cli} preproc --config ${outputs.cli-context.json.preproc} --source "$1" --in "$2" --out "$3"
+      ${cli} preproc --context ${outputs.cli-context.json.preproc} --source "$1" --in "$2" --out "$3"
       ''
     );
 
