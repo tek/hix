@@ -1,11 +1,11 @@
 {util}: let
 
-  inherit (util) config;
+  inherit (util) config internal;
 
 in {
   base =
     if config.base == null
-    then util.path.inferBase
+    then internal.path.inferBase
     else config.base
     ;
 
