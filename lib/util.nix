@@ -239,8 +239,6 @@ let
     expose
     ;
 
-    path = import ./path.nix { inherit util; };
-
     managed = import ./managed/default.nix { inherit util; };
 
     internal = import ./internal/default.nix { inherit util; };

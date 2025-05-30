@@ -1,12 +1,12 @@
 {util}: let
 
-  inherit (util) config lib;
+  inherit (util) config lib internal;
 
   package = name: conf: {
 
     path =
       if conf.relativePath == null
-      then util.path.relative conf.src
+      then internal.path.relative conf.src
       else conf.relativePath
       ;
 
