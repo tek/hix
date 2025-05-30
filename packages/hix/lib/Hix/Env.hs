@@ -13,12 +13,12 @@ import qualified Hix.Data.ComponentConfig
 import Hix.Data.ComponentConfig (EnvRunner (..), PackagesConfig, TargetOrDefault (..))
 import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.GhciConfig
-import Hix.Data.GhciConfig (CommandEnvContext (..), CommandContext)
+import Hix.Data.GhciConfig (CommandContext, CommandEnvContext (..))
 import Hix.Data.Monad (LogLevel (..), M)
 import Hix.Data.Options (CommandOptions (..), RunCommandOptions (..), TargetSpec)
 import Hix.Data.PackageName (PackageName)
 import Hix.Error (pathText, printError)
-import Hix.Json (jsonConfigE)
+import Hix.Json (resolveContext)
 import qualified Hix.Log as Log
 import qualified Hix.Managed.Handlers.Context as Context
 import Hix.Managed.Handlers.Context (ContextHandlers, ContextKey (ContextCommandEnv), queryContext)
@@ -59,7 +59,7 @@ printEnvRunner ::
   RunCommandOptions ->
   M ()
 printEnvRunner options = do
-  context <- jsonConfigE options.context
+  context <- resolveContext options.context
   CommandEnvContext {runner = EnvRunner runner} <- commandEnv Context.handlersProd context options.command
   liftIO (Text.putStrLn (pathText runner))
 
@@ -79,6 +79,6 @@ runEnvCommand ::
   RunCommandOptions ->
   M ()
 runEnvCommand options@RunCommandOptions {exe, args} = do
-  context <- jsonConfigE options.context
+  context <- resolveContext options.context
   config <- commandEnv Context.handlersProd context options.command
   runEnvProcess config exe args

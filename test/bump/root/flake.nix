@@ -53,7 +53,5 @@
       extra = throw "global overrides";
     };
 
-    internal.hixCli.dev = false;
-
   });
 }

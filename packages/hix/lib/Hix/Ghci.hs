@@ -42,7 +42,7 @@ import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (PackageName)
 import Hix.Env (commandEnv, runEnvProcess)
 import Hix.Error (Error, ErrorMessage (..), pathText, throwMessage, tryIO)
-import Hix.Json (jsonConfigE)
+import Hix.Json (resolveContext)
 import qualified Hix.Managed.Handlers.Context as Context
 import Hix.Managed.Handlers.Context (ContextHandlers)
 import Hix.Maybe (fromMaybeA)
@@ -279,7 +279,7 @@ ghciEnvContext ::
   GhciOptions ->
   M CommandEnvContext
 ghciEnvContext contextHandlers options = do
-  context <- jsonConfigE options.context
+  context <- resolveContext options.context
   commandEnv contextHandlers context.command options.command
 
 ghciContexts ::
@@ -287,7 +287,7 @@ ghciContexts ::
   GhciOptions ->
   M (GhciContext, CommandEnvContext)
 ghciContexts contextHandlers options = do
-  context <- jsonConfigE options.context
+  context <- resolveContext options.context
   envContext <- ghciEnvContext contextHandlers options
   pure (context, envContext)
 

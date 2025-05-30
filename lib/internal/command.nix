@@ -21,7 +21,7 @@ let
     json = outputs.cli-context.json.ghci.${env.name};
 
   in ''
-  ${cli} ${cliCmd} --config ${json} ${options}${extra} "$@"
+  ${cli} ${cliCmd} --context ${json} ${options}${extra} "$@"
   '';
 
   inEnv = {command, env}:
@@ -43,7 +43,7 @@ let
       else
       if command.component
       then ''
-      ${self.cli} command --config ${self.json} --exe "${self.exe}" "$@"
+      ${self.cli} command --context ${self.json} --exe "${self.exe}" "$@"
       ''
       else ''
       ${env.code}

@@ -15,9 +15,9 @@ import Text.PrettyPrint (hang, text, (<+>))
 import qualified Hix.Color as Color
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (CommandEnvContext, GhciConfig)
-import Hix.Data.Json (JsonConfig)
+import Hix.Data.Json (JsonContext)
 import Hix.Data.Monad (AppResources (..), M, appRes)
-import Hix.Json (jsonConfig)
+import Hix.Json (jsonContext)
 import qualified Hix.Log as Log
 import Hix.Managed.Data.MaintContext (MaintContext)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
@@ -114,17 +114,17 @@ jsonOrQuery ::
   KnownSymbol name =>
   ContextHandlers ->
   ContextKey name a ->
-  Either a (Maybe JsonConfig) ->
+  Either a (Maybe JsonContext) ->
   M a
 jsonOrQuery handlers confQuery =
-  either pure (maybe (queryContext handlers confQuery) jsonConfig)
+  either pure (maybe (queryContext handlers confQuery) jsonContext)
 
 jsonOrQueryProd ::
   HPretty a =>
   FromJSON a =>
   KnownSymbol name =>
   ContextKey name a ->
-  Either a (Maybe JsonConfig) ->
+  Either a (Maybe JsonContext) ->
   M a
 jsonOrQueryProd =
   jsonOrQuery handlersProd

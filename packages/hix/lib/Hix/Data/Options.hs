@@ -8,7 +8,7 @@ import Hix.Data.ComponentConfig (ComponentName, ModuleName, SourceDir)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (ChangeDir, CommandContext, GhciArgs, GhciContext, GhcidArgs, RunnerName)
 import Hix.Data.GlobalOptions (GlobalOptions)
-import Hix.Data.Json (JsonConfig)
+import Hix.Data.Json (JsonContext)
 import Hix.Data.NewProjectConfig (InitProjectConfig, NewProjectConfig)
 import Hix.Data.PackageName (PackageName)
 import Hix.Data.PathSpec (PathSpec)
@@ -30,7 +30,7 @@ data InfoCommand =
 
 data PreprocOptions =
   PreprocOptions {
-    config :: Maybe (Either PreprocConfig JsonConfig),
+    config :: Maybe (Either PreprocConfig JsonContext),
     root :: Maybe (PathSpec Dir),
     source :: PathSpec File,
     inFile :: PathSpec File,
@@ -88,7 +88,7 @@ data CommandOptions =
 
 data GhciOptions =
   GhciOptions {
-    context :: Either GhciContext JsonConfig,
+    context :: Either GhciContext JsonContext,
     command :: CommandOptions,
     test :: TestOptions,
     extra :: GhciArgs,
@@ -105,7 +105,7 @@ data GhcidOptions =
 
 data RunCommandOptions =
   RunCommandOptions {
-    context :: Either CommandContext JsonConfig,
+    context :: Either CommandContext JsonContext,
     command :: CommandOptions,
     exe :: Text,
     args :: [Text]
@@ -178,7 +178,7 @@ projectOptions envs = def {envs}
 
 data ManagedOptions =
   ManagedOptions {
-    context :: Either ProjectContextProto (Maybe JsonConfig),
+    context :: Either ProjectContextProto (Maybe JsonContext),
     project :: ProjectOptions,
     stateFile :: StateFileConfig,
     handlers :: Maybe SpecialBuildHandlers
@@ -212,7 +212,7 @@ data LowerCommand =
 
 data ReleaseMaintOptions =
   ReleaseMaintOptions {
-    context :: Either MaintContext (Maybe JsonConfig),
+    context :: Either MaintContext (Maybe JsonContext),
     managed :: ManagedOptions,
     handlers :: Maybe SpecialMaintHandlers,
     config :: MaintConfig
@@ -221,7 +221,7 @@ data ReleaseMaintOptions =
 
 data RevisionOptions =
   RevisionOptions {
-    context :: Either MaintContext (Maybe JsonConfig),
+    context :: Either MaintContext (Maybe JsonContext),
     config :: RevisionConfig,
     cabal :: CabalOptions
   }
