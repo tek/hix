@@ -96,15 +96,15 @@
 
     managed = {
       packages = lib.mapAttrs managedPackage build.hpack.components;
-      state = util.managed.state.current;
-      envs = util.mapValues managedEnv util.managed.env.envs;
+      state = internal.managed.state.current;
+      envs = util.mapValues managedEnv internal.managed.env.envs;
       hackage = config.hackage.repos;
     };
 
     maint = {
       packages = lib.mapAttrs maintPackage config.packages;
       hackage = config.hackage.repos;
-      envs = util.mapValues maintEnv util.managed.env.envs;
+      envs = util.mapValues maintEnv internal.managed.env.envs;
     };
 
     preproc = {

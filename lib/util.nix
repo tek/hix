@@ -239,8 +239,6 @@ let
     expose
     ;
 
-    managed = import ./managed/default.nix { inherit util; };
-
     internal = import ./internal/default.nix { inherit util; };
 
     project = import ./project/default.nix { inherit util; };

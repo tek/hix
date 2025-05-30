@@ -80,11 +80,11 @@
   ;
 
   managedOverrides = envName: api: let
-    os = util.managed.state.current.overrides.${envName} or {};
+    os = internal.managed.state.current.overrides.${envName} or {};
   in lib.mapAttrs (managedOverride api) os;
 
   managedSolverOverrides = envName: api: let
-    os = util.managed.state.current.solver.${envName} or {};
+    os = internal.managed.state.current.solver.${envName} or {};
   in lib.mapAttrs (managedOverride api) os;
 
   mkBuildInputs = env: spec:

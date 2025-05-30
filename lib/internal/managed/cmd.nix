@@ -1,5 +1,5 @@
 {util}: let
-  inherit (util) config lib outputs;
+  inherit (util) config lib outputs internal;
 
   cli = config.internal.hixCli.exe;
 
@@ -26,7 +26,7 @@
     then main
     else util.zscriptErrBin "managed-disabled" ''
     ${util.loadConsole}
-    die "Set $(blue '${lib.concatStringsSep "." flag} = true;') $(red 'to use this feature.')"
+    die "Set $(blue '${lib.concatStringsSep "." flag} = true;') to use this feature."
     '';
 
   cliJson = outputs.cli-context.json.managed;
@@ -52,7 +52,7 @@
     initial=true
   fi
   ${cli} ${verbose} ${debug} ${quiet} ${cmd} $@ ${args}
-  ${lib.optionalString conf.generate (util.runBuildApp "gen${lib.optionalString (!util.managed.minVerbose) "-quiet"} --quiet")}
+  ${lib.optionalString conf.generate (util.runBuildApp "gen${lib.optionalString (!internal.managed.minVerbose) "-quiet"} --quiet")}
   ${lib.optionalString conf.gitAdd ''
     if ${config.pkgs.git}/bin/git status &>/dev/null && [[ $initial == true ]] && [[ -f ${conf.file} ]]
     then

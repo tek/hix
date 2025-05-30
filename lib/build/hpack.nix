@@ -81,7 +81,7 @@
   in { inherit (norm) name mixin; inherit version; };
 
   managedBounds = name: hconf: let
-    state = util.managed.state.current;
+    state = internal.managed.state.current;
     bounds = state.bounds.${name} or {};
   in
   { dependencies = map (replaceManagedBounds bounds state.resolving) hconf.dependencies or []; };
