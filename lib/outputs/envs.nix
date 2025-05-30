@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config build lib;
+  inherit (util) config build lib internal;
   inherit (util.internal.env) mapValidatedOutputs;
 
   depVersions = env: import ../dep-versions.nix { inherit config lib util env; };
@@ -15,7 +15,7 @@
   appsEnv = env: { dep-versions = depVersions env.name; inherit (env) shell; };
 
   managedEnv = env: {
-    solver = util.ghc.packageDbSolver (!config.managed.internal.localsInPackageDb) env;
+    solver = internal.ghc.packageDb.solver (!config.managed.internal.localsInPackageDb) env;
   };
 
   prefixedEnv = env:

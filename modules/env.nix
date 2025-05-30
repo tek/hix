@@ -604,7 +604,7 @@ in {
     });
 
     ghcWithPackages =
-      util.ghc.packageDbFull config ({ withHoogle = config.hoogle; } // config.ghcWithPackagesArgs);
+      internal.ghc.packageDb.full config ({ withHoogle = config.hoogle; } // config.ghcWithPackagesArgs);
 
     code = internal.env.scripts.setup { env = config; };
 
