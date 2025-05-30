@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config lib;
+  inherit (util) config lib internal;
 
   gen = config.gen-overrides;
 
@@ -51,7 +51,7 @@
     in deps.replace fromFile.error name fromFile.stored packageSet.overrides;
 
   in
-    if gen.enable && packageSet.gen-overrides && !util.managed.state.current.resolving
+    if gen.enable && packageSet.gen-overrides && !internal.managed.state.current.resolving
     then restoreOverrides
     else directOverrides
     ;

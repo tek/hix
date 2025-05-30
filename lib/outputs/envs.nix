@@ -31,6 +31,6 @@ in {
 
   shells = mapValidatedOutputs "shell" (e: e.shell) build.envs;
 
-  internal.env = util.mapValues managedEnv util.managed.env.envs;
+  internal.env = util.mapValues managedEnv internal.managed.env.envs;
 
 }

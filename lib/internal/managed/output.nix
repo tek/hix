@@ -3,16 +3,16 @@
 
   # TODO refactor this into the new outputs protocol
   appsWith = cons: {
-    bump = cons { cmd = util.managed.cmd.bump; env = "latest"; sub = null; };
+    bump = cons { cmd = internal.managed.cmd.bump; env = "latest"; sub = null; };
     lower = {
-      auto = cons { cmd = util.managed.cmd.lower ""; env = "lower"; sub = "auto"; };
-      init = cons { cmd = util.managed.cmd.lower "init"; env = "lower"; sub = "init"; };
-      optimize = cons { cmd = util.managed.cmd.lower "optimize"; env = "lower"; sub = "optimize"; };
-      stabilize = cons { cmd = util.managed.cmd.lower "stabilize"; env = "lower"; sub = "stabilize"; };
+      auto = cons { cmd = internal.managed.cmd.lower ""; env = "lower"; sub = "auto"; };
+      init = cons { cmd = internal.managed.cmd.lower "init"; env = "lower"; sub = "init"; };
+      optimize = cons { cmd = internal.managed.cmd.lower "optimize"; env = "lower"; sub = "optimize"; };
+      stabilize = cons { cmd = internal.managed.cmd.lower "stabilize"; env = "lower"; sub = "stabilize"; };
     };
     # TODO maint should also be executable for individual sets
-    maint = cons { cmd = _: util.managed.cmd.maint; env = null; sub = null; };
-    revision = cons { cmd = _: util.managed.cmd.revision; env = null; sub = null; };
+    maint = cons { cmd = _: internal.managed.cmd.maint; env = null; sub = null; };
+    revision = cons { cmd = _: internal.managed.cmd.revision; env = null; sub = null; };
   };
 
   appsForEnvs = envs: appsWith ({cmd, env, sub}: cmd [envs.${env}]);
@@ -203,7 +203,7 @@
     };
   };
 
-  envGhcs = lib.mapAttrs (_: env: { ghc-local = util.managed.managedEnvGhc env; }) util.managed.env.envs;
+  envGhcs = lib.mapAttrs (_: env: { ghc-local = internal.managed.managedEnvGhc env; }) internal.managed.env.envs;
 
 in {
   inherit scopedAppsForEnvs legacyApps apps gen envGhcs;

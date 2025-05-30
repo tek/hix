@@ -1,6 +1,7 @@
 { lib, config, util, outputs, ... }:
 let
   inherit (lib) optionalAttrs mkOption types;
+  inherit (util) internal;
 
   tags = import ../lib/tags.nix { inherit config util; };
 
@@ -161,7 +162,7 @@ in {
 
         legacyPackages = {
           overrides = config.exportedOverrides;
-          ${prefix}.env = util.managed.output.envGhcs;
+          ${prefix}.env = internal.managed.output.envGhcs;
           ${util.internalScope} =
             lib.mapAttrs util.ensureLegacyApp basicApps
             //

@@ -1,18 +1,19 @@
 {util}: let
 
-  inherit (util) config;
+  inherit (util) config internal;
+  inherit (internal) managed;
 
-  envApps = env: util.managed.output.scopedAppsForEnvs { latest = env.name; lower = env.name; };
+  envApps = env: managed.output.scopedAppsForEnvs { latest = env.name; lower = env.name; };
 
 in {
 
   legacyPackages =
     util.mergeAll [
       { env = util.mapValues envApps config.envs; }
-      util.managed.output.legacyApps
-      util.managed.output.gen
+      managed.output.legacyApps
+      managed.output.gen
     ];
 
-  apps = util.managed.output.apps;
+  apps = managed.output.apps;
 
 }

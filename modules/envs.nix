@@ -57,7 +57,7 @@ in {
 
     compilers = ghcVersionCompilers;
 
-    envs = ghcVersionEnvs // util.managed.env.modules // {
+    envs = ghcVersionEnvs // internal.managed.env.modules // {
 
       dev = {
         internal.overridesInherited = (util.overridesGlobal ["dev"]);
