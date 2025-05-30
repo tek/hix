@@ -238,6 +238,7 @@ queryTestContext :: ContextQuery a -> Maybe a
 queryTestContext = \case
   ContextQuery ContextMaint -> Just maintContext
   ContextQuery ContextManaged -> Just bumpContext
+  _ -> Nothing
 
 versions :: PackageName -> M [Version]
 versions = \case
@@ -323,7 +324,7 @@ library
     exposed-modules:  Lib
     hs-source-dirs:   lib
     other-modules:    Paths_local1
-    default-language: GHC2021
+    default-language: Haskell2010
     build-depends:
         base <5,
         extra >=1.7 && <1.9,

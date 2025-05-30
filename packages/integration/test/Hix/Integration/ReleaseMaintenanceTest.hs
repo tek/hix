@@ -199,6 +199,7 @@ queryTestContext :: ContextQuery a -> Maybe a
 queryTestContext = \case
   ContextQuery ContextMaint -> Just maintContext
   ContextQuery ContextManaged -> Just bumpContext
+  _ -> Nothing
 
 versions :: PackageName -> M [Version]
 versions = \case
@@ -300,7 +301,7 @@ targetResults =
       Revision {
         user = "test",
         time = dummyTime,
-        sha256 = "9332f118cfcfb8eced7d76a338d4da50ca319bea4416fc733dd4167948ea6bf4",
+        sha256 = "b87225f48eda900b39d5d5cb00516065cfcdcd0cce27f93bb7d998f3cc66ed3c",
         number = 1
       }
 
@@ -325,7 +326,7 @@ library
     exposed-modules:  Lib
     hs-source-dirs:   lib
     other-modules:    Paths_local1
-    default-language: GHC2021
+    default-language: Haskell2010
     build-depends:
         base <5,
         extra >=1.7 && <1.9,
@@ -401,7 +402,7 @@ index a4cb674..0e77542 100644
    resolving = false;
  }
 diff --git a/packages/local1/local1.cabal b/packages/local1/local1.cabal
-index bbfba8c..76b20d4 100644
+index 40c3900..8b24d57 100644
 --- a/packages/local1/local1.cabal
 +++ b/packages/local1/local1.cabal
 @@ -22,6 +22,6 @@ library
@@ -412,7 +413,7 @@ index bbfba8c..76b20d4 100644
 -    , semigroups ==0.19.*
 +    , extra >=1.7 && <1.9
 +    , semigroups >=0.19 && <0.21
-   default-language: GHC2021
+   default-language: Haskell2010
 |]
 
 test_releaseMaintenance :: UnitTest
