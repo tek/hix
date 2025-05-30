@@ -1,7 +1,6 @@
-{config, util}:
-{verbose}:
+{util}:
 let
-  inherit (util) lib project;
+  inherit (util) lib project config;
   inherit (config.hpack.internal) packages;
 
   packageCall = n: p:
@@ -12,7 +11,8 @@ let
   packageCalls =
     lib.mapAttrsToList packageCall (util.mapValues (p: p.path) project.packages);
 
-in util.zscript "hpack.zsh" ''
+  gen = {verbose}:
+  util.zscript "hpack.zsh" ''
   setopt no_unset
   ${util.setupScript { inherit verbose; }}
 
@@ -57,4 +57,8 @@ in util.zscript "hpack.zsh" ''
 
   message 'Generating Cabal files...'
   ${lib.concatStringsSep "\n" packageCalls}
-''
+  '';
+
+in {
+  inherit gen;
+}

@@ -243,10 +243,6 @@ let
 
     managed = import ./managed/default.nix { inherit util; };
 
-    hpack = import ./hpack/default.nix { inherit util; };
-
-    oc = import ./deps/spec.nix { inherit lib; };
-
     internal = import ./internal/default.nix { inherit util; };
 
     project = import ./project/default.nix { inherit util; };

@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) config lib internal project;
+  inherit (util) config lib internal project build;
 
   packageDeps = comps: let
     handleMainLib = name: comp:
@@ -11,7 +11,7 @@
     lib.concatMap (c: c.dependencies) (lib.concatLists (lib.mapAttrsToList handleMainLib comps));
 
   managedPackage = name: comps: let
-    meta = util.hpack.conf.meta.${name};
+    meta = build.hpack.meta.${name};
   in {
     inherit name;
     inherit (meta) version;
@@ -26,8 +26,8 @@
   maintEnv = internal.env.targets;
 
   maintPackage = name: conf: let
-    comps = util.hpack.conf.components.${name};
-    meta = util.hpack.conf.meta.${name};
+    comps = build.hpack.components.${name};
+    meta = build.hpack.meta.${name};
   in {
     package = {
       inherit name;
@@ -55,7 +55,7 @@
     components = util.mapValues componentConf pkg;
   };
 
-  packages = lib.mapAttrs packageConf util.hpack.conf.normalized.components;
+  packages = lib.mapAttrs packageConf build.hpack.normalized.components;
 
   commandEnv = env: {
     inherit (env) runner;
@@ -95,7 +95,7 @@
     inherit packages;
 
     managed = {
-      packages = lib.mapAttrs managedPackage util.hpack.conf.components;
+      packages = lib.mapAttrs managedPackage build.hpack.components;
       state = util.managed.state.current;
       envs = util.mapValues managedEnv util.managed.env.envs;
       hackage = config.hackage.repos;
