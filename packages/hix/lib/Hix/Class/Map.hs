@@ -315,6 +315,15 @@ nFilter1 ::
 nFilter1 =
   nMap . nFilter
 
+nFilterWithKey ::
+  ∀ map k v sort .
+  NMap map k v sort =>
+  (k -> v -> Bool) ->
+  map ->
+  map
+nFilterWithKey =
+  nVia . Map.filterWithKey
+
 nPrettyWith ::
   Pretty k =>
   NMap map k v sort =>

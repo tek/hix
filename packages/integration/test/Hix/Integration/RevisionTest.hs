@@ -11,9 +11,9 @@ import Hix.Class.Map (nGen)
 import Hix.Data.Dep (Dep (..))
 import Hix.Data.Options (ManagedOptions (..), projectOptions)
 import Hix.Data.PackageId (PackageId (..))
-import Hix.Data.PackageName (LocalPackage, PackageName (..))
+import Hix.Data.PackageName (PackageName (..))
 import Hix.Data.Version (Version)
-import Hix.Data.VersionBounds (unsafeVersionBoundsFromRange)
+import Hix.Data.VersionBounds (Bound (BoundUpper), unsafeVersionBoundsFromRange)
 import Hix.Error (pathText)
 import Hix.Integration.Hackage (TestHackage (..), withHackageClient)
 import Hix.Integration.Utils (UnitTest, add, addP, libHs, local1, runMTest, withHixDir)
@@ -28,7 +28,7 @@ import Hix.Managed.Cabal.Sdist (sourceDistribution)
 import Hix.Managed.Cabal.Upload (UploadConfig (..), publishPackage, revisionCabalFile)
 import Hix.Managed.Data.EnvConfig (EnvConfig (..))
 import Hix.Managed.Data.Envs (Envs)
-import Hix.Managed.Data.MaintContext (MaintContext (..), MaintPackage (..))
+import Hix.Managed.Data.MaintContext (MaintContextProto (..), MaintEnv (..), MaintPackage (..))
 import Hix.Managed.Data.ManagedPackage (ManagedPackage (..), ProjectPackages)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
@@ -203,14 +203,14 @@ packages =
   [("local1", ManagedPackage {name = "local1", version = mkVersion [0, 2, 0], deps = initialDeps})]
 
 envConfigs :: Envs EnvConfig
-envConfigs = [("latest", EnvConfig {targets = ["local1"], ghc = Just (GhcDbSystem Nothing)})]
+envConfigs =
+  [
+    ("latest", EnvConfig {targets = ["local1"], ghc = Just (GhcDbSystem Nothing), managedBound = Just BoundUpper})
+  ]
 
-envTargets :: Envs [LocalPackage]
-envTargets = [("latest", ["local1"])]
-
-maintContext :: MaintContext
+maintContext :: MaintContextProto
 maintContext =
-  MaintContext {
+  MaintContextProto {
     packages = [
       ("local1", MaintPackage {
         package = ManagedPackage {
@@ -222,7 +222,7 @@ maintContext =
       })
     ],
     hackage = [],
-    envs = envTargets
+    envs = [("latest", MaintEnv { targets = ["local1"], managedBound = Just BoundUpper })]
   }
 
 bumpContext :: ProjectContextProto

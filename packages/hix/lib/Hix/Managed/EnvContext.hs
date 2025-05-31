@@ -3,7 +3,7 @@ module Hix.Managed.EnvContext where
 import Exon (exon)
 
 import Hix.Class.Map (nKeysSet, nMapWithKey)
-import Hix.Data.EnvName (EnvName)
+import Hix.Data.EnvName (EnvName (..))
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (ProjectOptions)
@@ -16,6 +16,7 @@ import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.ManagedPackage (ProjectPackages)
 import qualified Hix.Managed.Data.Mutable as Mutable
 import Hix.Managed.Data.Mutable (mutRelax)
+import Hix.Managed.Env (inferredBound)
 import qualified Hix.Managed.ManagedPackage as ManagedPackage
 import Hix.Monad (clientError)
 import Hix.Pretty (showPL)
@@ -42,9 +43,11 @@ envContext ::
   EnvConfig ->
   Either EnvDeps EnvContext
 envContext opts packages querySpec env envConfig =
-  maybeToRight deps (create <$> nonEmpty envQuery)
+  maybeToRight deps (create <$> envBound <*> nonEmpty envQuery)
   where
-    create query = EnvContext {ghc = envConfig.ghc, query, deps, ..}
+    create bound query = EnvContext {ghc = envConfig.ghc, query, deps, ..}
+
+    envBound = envConfig.managedBound <|> inferredBound env
 
     deps = EnvDeps {mutable}
 

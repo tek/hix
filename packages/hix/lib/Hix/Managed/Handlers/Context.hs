@@ -19,7 +19,7 @@ import Hix.Data.Json (JsonContext)
 import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Json (jsonContext)
 import qualified Hix.Log as Log
-import Hix.Managed.Data.MaintContext (MaintContext)
+import Hix.Managed.Data.MaintContext (MaintContextProto)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import Hix.Managed.Flake (runFlakeForSingleLine)
 import Hix.Monad (appContext, eitherFatal, noteFatal, tryIOM)
@@ -27,7 +27,7 @@ import Hix.Pretty (HPretty (hpretty), showP)
 
 type ContextKey :: Symbol -> Type -> Type
 data ContextKey name a where
-  ContextMaint :: ContextKey "maint" MaintContext
+  ContextMaint :: ContextKey "maint" MaintContextProto
   ContextManaged :: ContextKey "managed" ProjectContextProto
   ContextCommandEnv :: EnvName -> ContextKey "command-env" CommandEnvContext
   ContextGhci :: EnvName -> ContextKey "ghci" GhciConfig

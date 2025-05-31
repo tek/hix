@@ -11,7 +11,7 @@ import Hix.Data.PackageName (LocalPackage (..))
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Config (cabalConfig)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
-import Hix.Managed.Data.MaintContext (MaintContext (..))
+import Hix.Managed.Data.MaintContext (MaintContextProto (..))
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers (..))
@@ -30,6 +30,7 @@ import Hix.Managed.Maint.MaintPlan (maintPlan)
 import Hix.Managed.Maint.MaintResult (outputResults)
 import Hix.Managed.Maint.Package (maintPackage, publishRevisionIfChanged)
 import Hix.Managed.Maint.RevisionPlan (revisionPlan)
+import qualified Hix.Managed.MaintContext as MaintContext
 import Hix.Monad (appContext, ask)
 import Hix.Pretty (showP, showPL)
 
@@ -46,11 +47,12 @@ report packages = do
 releaseMaintenance ::
   MaintHandlers ->
   MaintConfig ->
-  MaintContext ->
+  MaintContextProto ->
   M (Packages MaintResult)
-releaseMaintenance handlers config context =
+releaseMaintenance handlers config proto =
   appContext "performing release maintenance" do
     root <- appRes.root
+    context <- MaintContext.validate proto
     plan <- maintPlan context config.targets
     Log.trace [exon|Maintenance plan: #{showP plan}|]
     results <- runGitApi handlers.git root "release maintenance" \ git@GitMaint {bracket} -> bracket do
@@ -71,10 +73,11 @@ releaseMaintenanceCli options = do
     Nothing -> Maint.handlersProd options.managed options.config cabal
   void $ releaseMaintenance handlers options.config context
 
-publishRevisions :: RevisionHandlers -> RevisionConfig -> MaintContext -> M ()
-publishRevisions handlers config context =
+publishRevisions :: RevisionHandlers -> RevisionConfig -> MaintContextProto -> M ()
+publishRevisions handlers config proto =
   appContext "processing pending revisions" do
     root <- appRes.root
+    context <- MaintContext.validate proto
     runGitApi handlers.git root "revisions" \ git@GitRevision {bracket} -> bracket do
       revisionPlan git context config.targets >>= \case
         Nothing -> Log.info "No packages are eligible for publishing a revision."

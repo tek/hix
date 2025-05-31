@@ -16,18 +16,18 @@
     internal.overridesSolver = internal.modules.envDefault conf.envs.solverOverrides;
   };
 
-  envFor = packages: special:
+  envFor = managedBound: packages: special:
   lib.mkMerge [
-    { inherit packages; }
+    { inherit packages managedBound; }
     staticConfig
     (derivedConfig special)
     special.envs.verbatim
   ];
 
   envsFor = suf: packages: {
-    ${"latest${suf}"} = envFor packages config.managed.latest;
+    ${"latest${suf}"} = envFor "upper" packages config.managed.latest;
   } // lib.optionalAttrs conf.lower.enable {
-    ${"lower${suf}"} = envFor packages config.managed.lower;
+    ${"lower${suf}"} = envFor "lower" packages config.managed.lower;
   };
 
   envsAll = envsFor "" null;

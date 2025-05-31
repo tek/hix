@@ -3,6 +3,7 @@ module Hix.Managed.Lower.App where
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (LowerOptions)
+import Hix.Data.VersionBounds (Bound (BoundLower))
 import Hix.Managed.App (managedApp)
 import Hix.Managed.Data.LowerConfig (LowerConfig, lowerConfig)
 import Hix.Managed.Data.ProjectContext (ProjectContext)
@@ -21,7 +22,7 @@ lowerApp ::
   M ProjectResult
 lowerApp main opts = do
   context <- jsonOrQueryProd ContextManaged opts.common.context
-  managedApp opts.common context (main (lowerConfig opts))
+  managedApp BoundLower opts.common context (main (lowerConfig opts))
 
 lowerCli ::
   (LowerConfig -> BuildHandlers -> ProjectContext -> M ProjectResult) ->

@@ -5,6 +5,7 @@ import Exon (exon)
 import Hix.Data.Error (ErrorMessage (Fatal))
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
+import Hix.Data.VersionBounds (Bound (BoundUpper))
 import qualified Hix.Managed.Cabal.Data.Packages
 import Hix.Managed.Cabal.Data.Packages (GhcPackages (GhcPackages))
 import Hix.Managed.Cabal.Data.SourcePackage (SourcePackages)
@@ -104,12 +105,14 @@ stateFileTarget =
     };
   };
   versions = {
+    latest = {};
     lower = {
       direct1 = "1.8.1";
       direct2 = "1.9.2";
     };
   };
   initial = {
+    latest = {};
     lower = {
       direct1 = "2.0.1";
       direct2 = "2.0.1";
@@ -152,6 +155,10 @@ test_lowerOptimizeMutation = do
   where
     params =
       (testParams False packages) {
+        envs = [
+          ("lower", (Nothing, ["local1"])),
+          ("latest", (Just (Just BoundUpper), ["local1"]))
+        ],
         ghcPackages,
         state,
         build

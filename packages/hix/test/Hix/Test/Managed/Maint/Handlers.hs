@@ -24,7 +24,7 @@ import Hix.Data.PackageName (LocalPackage (..), PackageName)
 import Hix.Managed.Cabal.Data.Revision (Revision (..))
 import Hix.Managed.Data.BuildOutput (DepChanges (..), ModifiedId (..))
 import Hix.Managed.Data.Envs (Envs)
-import Hix.Managed.Data.MaintContext (MaintContext (..), MaintPackage (..))
+import Hix.Managed.Data.MaintContext (MaintContextProto (..), MaintEnv (..), MaintPackage (..))
 import Hix.Managed.Data.ManagedPackage (ManagedPackage (..))
 import Hix.Managed.Data.Mutable (depName)
 import Hix.Managed.Data.Packages (Packages)
@@ -241,7 +241,7 @@ instance HPretty EnvOutput where
 buildOutputs :: Packages PackageMeta -> EnvStyle -> Envs EnvOutput
 buildOutputs packages = \case
   EnvAll ->
-    [("latest", output (nElems packages))]
+    [("latest", output (nElems packages)), ("lower", decoyOutput (nElems packages))]
   EnvEach ->
     flip nTransform packages \ name pkg ->
       ([exon|latest-##{name}|], output [pkg])
@@ -250,6 +250,12 @@ buildOutputs packages = \case
       EnvOutput {
         targets,
         changes = depChanges targets
+      }
+
+    decoyOutput targets =
+      EnvOutput {
+        targets,
+        changes = DepChanges {unmodified = [], modified = [], failed = []}
       }
 
 gitMaint ::
@@ -333,10 +339,10 @@ runBump outputs env = do
     addFile root cabalPath cabalConfig
   pure changes
 
-testContext :: Envs EnvOutput -> Packages PackageMeta -> M MaintContext
+testContext :: Envs EnvOutput -> Packages PackageMeta -> M MaintContextProto
 testContext outputs packages = do
   maintPackages <- nViaA (Map.traverseWithKey maintPackage) packages
-  pure MaintContext {packages = maintPackages, hackage = [], envs}
+  pure MaintContextProto {packages = maintPackages, hackage = [], envs}
   where
     maintPackage package PackageMeta {version, deps} = do
       path <- pathError package $ parseRelDir [exon|packages/##{package}|]
@@ -349,11 +355,16 @@ testContext outputs packages = do
         path
       }
 
-    envs = nOver outputs \ env -> [package | PackageMeta {package} <- env.targets]
+    envs =
+      nOver outputs \ env ->
+        MaintEnv {
+          targets = [package | PackageMeta {package} <- env.targets],
+          managedBound = Nothing
+        }
 
     pathError package = noteFatal [exon|testContext: Invalid package name for path: #{showP package}|]
 
-configQuery :: MaintContext -> ContextQuery a -> Maybe a
+configQuery :: MaintContextProto -> ContextQuery a -> Maybe a
 configQuery conf = \case
   ContextQuery ContextMaint -> Just conf
   _ -> Nothing
@@ -361,7 +372,7 @@ configQuery conf = \case
 maintTestHandlers ::
   Envs EnvOutput ->
   MaintPremise ->
-  M (MaintHandlers, MaintContext, MVar MaintState)
+  M (MaintHandlers, MaintContextProto, MVar MaintState)
 maintTestHandlers outputs premise = do
   state <- liftIO $ newMVar initialState
   context <- testContext outputs premise.packages

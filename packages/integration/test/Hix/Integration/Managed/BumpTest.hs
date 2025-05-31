@@ -13,6 +13,7 @@ import Hix.Data.Monad (AppResources (AppResources), M (M))
 import Hix.Data.Options (projectOptions)
 import Hix.Data.PackageId (PackageId (..))
 import Hix.Data.PackageName (PackageName)
+import Hix.Data.VersionBounds (Bound (..))
 import Hix.Integration.Hackage (HackageId (..), TestHackage (..), withHackageIds)
 import Hix.Integration.Utils (UnitTest, addFile, runMTestLog, withHixDir)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
@@ -134,9 +135,9 @@ setupProject repo hixRoot = do
 envsConfig :: Envs EnvConfig
 envsConfig =
   [
-    ("latest-local1", EnvConfig {targets = ["local1"], ghc = Nothing}),
-    ("latest-local2", EnvConfig {targets = ["local2"], ghc = Nothing}),
-    ("latest-local3", EnvConfig {targets = ["local3"], ghc = Nothing})
+    ("latest-local1", EnvConfig {targets = ["local1"], ghc = Nothing, managedBound = Just BoundUpper}),
+    ("latest-local2", EnvConfig {targets = ["local2"], ghc = Nothing, managedBound = Just BoundUpper}),
+    ("latest-local3", EnvConfig {targets = ["local3"], ghc = Nothing, managedBound = Just BoundUpper})
   ]
 
 bumpNativeTest :: TestHackage -> Text -> M Text
@@ -145,7 +146,7 @@ bumpNativeTest hackage hixRoot = do
   withProjectRoot root do
     handlersProject <- Project.handlersProd def
     handlers <- Build.handlersFixed handlersProject def def {hackageExtra = [hackage.repo]}
-    result <- withProjectContext handlersProject opts proto \ context -> do
+    result <- withProjectContext BoundUpper handlersProject opts proto \ context -> do
       bumpOptimizeMain handlers context
     updateProject handlers.project False result
     liftIO (Text.readFile (toFilePath (root </> [relfile|ops/managed.nix|])))

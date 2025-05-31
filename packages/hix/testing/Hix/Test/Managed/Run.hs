@@ -12,6 +12,7 @@ import Hix.Data.Options (ProjectOptions)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Versions)
+import Hix.Data.VersionBounds (Bound (..))
 import Hix.Managed.Cabal.Changes (SolverPlan)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSynthetic))
 import qualified Hix.Managed.Cabal.Data.Packages
@@ -38,7 +39,7 @@ import Hix.Test.Utils (runMLogTest, runMTestLog)
 
 data TestParams =
   TestParams {
-    envs :: [(EnvName, [LocalPackage])],
+    envs :: [(EnvName, (Maybe (Maybe Bound), [LocalPackage]))],
     cabalLog :: Bool,
     log :: Bool,
     logConfig :: LogConfig,
@@ -86,10 +87,10 @@ data Result a =
   }
 
 testProjectContext ::
-  EnvName ->
+  Bound ->
   TestParams ->
   ProjectContextProto
-testProjectContext defaultEnvName params =
+testProjectContext appBound params =
   ProjectContextProto {
     ProjectContextProto.packages = params.packages,
     state = params.state,
@@ -97,16 +98,25 @@ testProjectContext defaultEnvName params =
     hackage = []
   }
   where
-    mkEnv targets = EnvConfig {targets, ghc = Just (GhcDbSynthetic params.ghcPackages)}
+    mkEnv (bound, targets) =
+      EnvConfig {
+        targets,
+        ghc = Just (GhcDbSynthetic params.ghcPackages),
+        managedBound = fromMaybe (Just appBound) bound
+      }
 
-    defaultEnv = [(defaultEnvName, nKeys params.packages)]
+    defaultEnv = [(defaultEnvName, (Just (Just appBound), nKeys params.packages))]
+
+    defaultEnvName = case appBound of
+      BoundUpper -> "latest"
+      BoundLower -> "lower"
 
 managedTest' ::
-  EnvName ->
+  Bound ->
   TestParams ->
   (BuildHandlers -> ProjectOptions -> ProjectContextProto -> M a) ->
   TestT IO (Result a)
-managedTest' defaultEnvName params main =
+managedTest' appBound params main =
   withFrozenCallStack do
     (handlers0, stateFileRef, _) <-
       BuildHandlers.handlersUnitTest params.ghcPackages (fmap (first resultFromStatus) . params.build)
@@ -127,17 +137,17 @@ managedTest' defaultEnvName params main =
     runner | params.log = runMLogTest params.logConfig
            | otherwise = fmap ([],) . runMTestLog params.logConfig
 
-    context = testProjectContext defaultEnvName params
+    context = testProjectContext appBound params
 
 managedTest ::
-  EnvName ->
+  Bound ->
   TestParams ->
   (BuildHandlers -> ProjectContext -> M ProjectResult) ->
   TestT IO (Result ())
-managedTest defaultEnvName params main =
+managedTest appBound params main =
   withFrozenCallStack do
-    managedTest' defaultEnvName params \ handlers options context ->
-      processProjectResult =<< withProjectContext handlers.project options context (main handlers)
+    managedTest' appBound params \ handlers options context ->
+      processProjectResult =<< withProjectContext appBound handlers.project options context (main handlers)
 
 lowerTest ::
   TestParams ->
@@ -145,7 +155,7 @@ lowerTest ::
   TestT IO (Result ())
 lowerTest params main =
   withFrozenCallStack do
-    managedTest "lower" params main
+    managedTest BoundLower params main
 
 bumpTest ::
   TestParams ->
@@ -153,4 +163,4 @@ bumpTest ::
   TestT IO (Result ())
 bumpTest params main =
   withFrozenCallStack do
-    managedTest "latest" params main
+    managedTest BoundUpper params main

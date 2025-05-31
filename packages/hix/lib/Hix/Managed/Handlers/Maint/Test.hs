@@ -4,6 +4,7 @@ import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
 import qualified Hix.Data.Options
 import Hix.Data.Options (ManagedOptions)
+import Hix.Data.VersionBounds (Bound (..))
 import Hix.Http (httpManager)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForPublish))
 import Hix.Managed.Data.BuildConfig (SpecialBuildHandlers (BuildHandlersTestMaint))
@@ -28,7 +29,7 @@ bumpHandlers ::
   M (BuildHandlers, ProjectContext)
 bumpHandlers ContextHandlers {query} options envName = do
   proto <- query (ContextQuery ContextManaged)
-  project <- ProjectContextProto.validate options.project proto
+  project <- ProjectContextProto.validate BoundUpper options.project proto
   handlersProject <- Project.handlersProd options.stateFile
   handlers <-
     Build.chooseHandlers (Just BuildHandlersTestMaint) handlersProject options.project.build project.cabal

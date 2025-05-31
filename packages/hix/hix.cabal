@@ -163,6 +163,7 @@ library
       Hix.Managed.Data.StateFileConfig
       Hix.Managed.Data.Targets
       Hix.Managed.Diff
+      Hix.Managed.Env
       Hix.Managed.EnvContext
       Hix.Managed.EnvRequest
       Hix.Managed.EnvResult
@@ -216,6 +217,7 @@ library
       Hix.Managed.Maint.Package
       Hix.Managed.Maint.Prep
       Hix.Managed.Maint.RevisionPlan
+      Hix.Managed.MaintContext
       Hix.Managed.ManagedPackage
       Hix.Managed.Overrides
       Hix.Managed.Process

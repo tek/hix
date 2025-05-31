@@ -17,7 +17,7 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName)
 import Hix.Managed.Data.BuildConfig (BuildConfig, SpecialBuildHandlers)
 import Hix.Managed.Data.MaintConfig (MaintConfig)
-import Hix.Managed.Data.MaintContext (MaintContext)
+import Hix.Managed.Data.MaintContext (MaintContextProto)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import Hix.Managed.Data.Query (RawQuery)
 import Hix.Managed.Data.RevisionConfig (RevisionConfig)
@@ -212,7 +212,7 @@ data LowerCommand =
 
 data ReleaseMaintOptions =
   ReleaseMaintOptions {
-    context :: Either MaintContext (Maybe JsonContext),
+    context :: Either MaintContextProto (Maybe JsonContext),
     managed :: ManagedOptions,
     handlers :: Maybe SpecialMaintHandlers,
     config :: MaintConfig
@@ -221,7 +221,7 @@ data ReleaseMaintOptions =
 
 data RevisionOptions =
   RevisionOptions {
-    context :: Either MaintContext (Maybe JsonContext),
+    context :: Either MaintContextProto (Maybe JsonContext),
     config :: RevisionConfig,
     cabal :: CabalOptions
   }

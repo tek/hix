@@ -552,7 +552,10 @@ test_bumpMutationBasic = do
   where
     params = (testParams False packages) {
       log = True,
-      envs = [("fancy", ["local1"]), ("other", ["local2", "local3", "local4", "local5"])],
+      envs = [
+        ("fancy", (Nothing, ["local1"])),
+        ("other", (Nothing, ["local2", "local3", "local4", "local5"]))
+      ],
       ghcPackages,
       state,
       projectOptions = nosortOptions {envs = ["fancy"], readUpperBounds = True, localDeps = True},
