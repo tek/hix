@@ -13,7 +13,7 @@ import Hix.Hackage (hackagePostQuery, hackagePut)
 import Hix.Http (httpManager)
 import Hix.Integration.Hackage (withHackage)
 import Hix.Integration.Utils (UnitTest, addFile, runMTest)
-import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
+import Hix.Managed.Cabal.Data.HackageLocation (HackageAuth (..), HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (secure))
 import Hix.Managed.Cabal.HackageRepo (hackageRepo)
 import qualified Hix.Managed.Cabal.Init as Cabal
@@ -95,7 +95,7 @@ testServer ::
 testServer port = do
   manager <- httpManager
   let
-    auth = ("admin", "admin")
+    auth = (HackageAuthPassword {user = "admin", password = "admin"})
     res = HackageResources {
       description = "test",
       manager,
@@ -106,7 +106,7 @@ testServer port = do
         tls = TlsOff
       }
     }
-    userRes = res {location = res.location {auth = Just ("test", "test")}}
+    userRes = res {location = res.location {auth = Just (HackageAuthPassword {user = "test", password = "test"})}}
     client = HackageClient.handlersProd res
     userClient = HackageClient.handlersProd userRes
     repo = (hackageRepo "test" res.location) {secure = Nothing}

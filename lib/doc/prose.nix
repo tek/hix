@@ -1650,8 +1650,7 @@ in {
 
       # Default for `publish` is `true` for central Hackage
       "hackage.haskell.org" = {
-        user = "deepspace-mining-corp";
-        password = {
+        token = {
           type = "exec";
           value = "/path/to/password/script";
         };
@@ -1676,8 +1675,8 @@ in {
   }
   ```
 
-  With this config, the app will execute the configured script to obtain the password for central Hackage, and fetch
-  that for `prod` from the given environment variable.
+  With this config, the app will execute the configured script to obtain the auth token for central Hackage, and fetch
+  the password for `prod` from the given environment variable.
   For `staging`, the credentials must be specified as CLI args:
 
   ```

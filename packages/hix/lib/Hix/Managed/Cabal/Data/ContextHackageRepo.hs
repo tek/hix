@@ -7,7 +7,7 @@ import Text.PrettyPrint
 
 import Hix.Class.EncodeNix (EncodeNix (encodeNix))
 import Hix.Data.NixExpr (Expr (..), ExprAttr (..))
-import Hix.Managed.Cabal.Data.HackageLocation (HackagePassword (HackagePassword), HackageUser)
+import Hix.Managed.Cabal.Data.HackageLocation (HackageSecret (..), HackageUser)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageDescription, HackageIndexState, HackageName)
 import Hix.NixExpr (mkAttrs, single, singleOpt)
 import Hix.Pretty (field, prettyFieldsV, prettyText)
@@ -20,30 +20,30 @@ newtype ContextHackageLocation =
 instance Pretty ContextHackageLocation where
   pretty = prettyText . coerce
 
-data ContextHackagePassword =
+data ContextHackageSecret =
   -- | Password was intended to be printed, most likely in a test.
-  PasswordUnobscured HackagePassword
+  SecretUnobscured HackageSecret
   |
-  PasswordPlain HackagePassword
+  SecretPlain HackageSecret
   |
-  PasswordEnvVar Text
+  SecretEnvVar Text
   |
-  PasswordExec Text
+  SecretExec Text
   deriving stock (Eq, Show)
 
-instance Pretty ContextHackagePassword where
+instance Pretty ContextHackageSecret where
   pretty = \case
-    PasswordUnobscured (HackagePassword pw) -> prettyText pw
-    PasswordPlain _ -> "<password>"
-    PasswordEnvVar var -> prettyText var <+> brackets (text "env-var")
-    PasswordExec exe -> prettyText exe <+> brackets (text "exec")
+    SecretUnobscured (HackageSecret pw) -> prettyText pw
+    SecretPlain _ -> "<password>"
+    SecretEnvVar var -> prettyText var <+> brackets (text "env-var")
+    SecretExec exe -> prettyText exe <+> brackets (text "exec")
 
-instance EncodeNix ContextHackagePassword where
+instance EncodeNix ContextHackageSecret where
   encodeNix = \case
-    PasswordUnobscured (HackagePassword pw) -> ExprString pw
-    PasswordPlain _ -> ExprString "<password>"
-    PasswordEnvVar var -> structured "env-var" var
-    PasswordExec exe -> structured "exec" exe
+    SecretUnobscured (HackageSecret pw) -> ExprString pw
+    SecretPlain _ -> ExprString "<password>"
+    SecretEnvVar var -> structured "env-var" var
+    SecretExec exe -> structured "exec" exe
     where
       structured t value =
         ExprAttrs [
@@ -51,21 +51,31 @@ instance EncodeNix ContextHackagePassword where
           ExprAttr {name = "value", value = ExprString value}
         ]
 
-instance FromJSON ContextHackagePassword where
+instance FromJSON ContextHackageSecret where
   parseJSON v =
-    withText "ContextHackagePassword" plain v
+    withText "ContextHackageSecret" plain v
     <|>
-    withObject "ContextHackagePassword" typed v
+    withObject "ContextHackageSecret" typed v
     where
       typed o = do
         value <- o .: "value"
         o .: "type" >>= \case
           ("plain" :: Text) -> plain value
-          "env-var" -> pure (PasswordEnvVar value)
-          "exec" -> pure (PasswordExec value)
+          "env-var" -> pure (SecretEnvVar value)
+          "exec" -> pure (SecretExec value)
           t -> fail [exon|Invalid value for Hackage password type: ##{t}|]
 
-      plain = pure . PasswordPlain . HackagePassword
+      plain = pure . SecretPlain . HackageSecret
+
+newtype ContextHackagePassword =
+  ContextHackagePassword { secret :: ContextHackageSecret }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (Pretty, EncodeNix, FromJSON)
+
+newtype ContextHackageToken =
+  ContextHackageToken { secret :: ContextHackageSecret }
+  deriving stock (Eq, Show, Generic)
+  deriving newtype (Pretty, EncodeNix, FromJSON)
 
 data ContextHackageRepo =
   ContextHackageRepo {
@@ -75,6 +85,7 @@ data ContextHackageRepo =
     location :: Maybe ContextHackageLocation,
     user :: Maybe HackageUser,
     password :: Maybe ContextHackagePassword,
+    token :: Maybe ContextHackageToken,
     secure :: Maybe Bool,
     keys :: Maybe (NonEmpty Text),
     indexState :: Maybe HackageIndexState,
@@ -93,6 +104,7 @@ instance Pretty ContextHackageRepo where
       field "location" location,
       field "user" user,
       field "password" password,
+      field "token" token,
       field "secure" secure,
       field "keys" keys,
       field "indexState" indexState,
@@ -125,6 +137,7 @@ contextHackageRepo name =
     location = Nothing,
     user = Nothing,
     password = Nothing,
+    token = Nothing,
     secure = Nothing,
     keys = Nothing,
     indexState = Nothing,
