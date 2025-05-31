@@ -91,7 +91,14 @@ queryFlake key@ContextQuery {} = do
     file <- decodeUtf8 <$> runFlakeForSingleLine desc root args id
     eitherFatal . first toText =<< tryIOM (Aeson.eitherDecodeFileStrict' file)
   where
-    args = ["build", "--print-out-paths", [exon|.#{"#"}#{internalScope}.cli-context.json.#{name}|]]
+    args =
+      [
+        "build",
+        "--no-link",
+        "--show-trace",
+        "--print-out-paths",
+        [exon|.#{"#"}#{internalScope}.cli-context.json.#{name}|]
+      ]
 
     desc = [exon|Context query for #{Color.blue name}|]
 
