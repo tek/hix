@@ -13,6 +13,7 @@ import Distribution.Version (
   simplifyVersionRange,
   thisVersion,
   )
+import Exon (exon)
 
 import Hix.Class.EncodeNix (EncodeNix)
 import Hix.Data.Json (aesonParsec, jsonParsec)
@@ -30,6 +31,14 @@ instance Pretty Bound where
   pretty = \case
     BoundLower -> "lower"
     BoundUpper -> "upper"
+
+instance FromJSON Bound where
+  parseJSON v =
+    parseJSON @Text v >>= \case
+      "lower" -> pure BoundLower
+      "upper" -> pure BoundUpper
+      s ->
+        fail [exon|Invalid value for managed bound: #{toString s} (should be 'upper' or 'lower')|]
 
 data VersionBounds =
   VersionBounds {

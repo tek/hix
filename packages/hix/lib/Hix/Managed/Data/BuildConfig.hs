@@ -1,6 +1,9 @@
 module Hix.Managed.Data.BuildConfig where
 
 import Data.Aeson (FromJSON)
+import Text.PrettyPrint (Doc)
+
+import Hix.Pretty (HPretty (..), field, prettyFieldsV, prettyMapHead)
 
 newtype BuildTimeout =
   BuildTimeout Int
@@ -39,3 +42,14 @@ instance Default BuildConfig where
     timeout = Nothing,
     disableNixMonitor = False
   }
+
+hprettyFields :: BuildConfig -> Doc
+hprettyFields BuildConfig {..} =
+  prettyFieldsV [
+    field "maxIterations" maxIterations
+  ]
+
+instance HPretty BuildConfig where
+  hpretty conf = prettyMapHead "build config" (hprettyFields conf)
+
+  hprettyField = Just . hprettyFields

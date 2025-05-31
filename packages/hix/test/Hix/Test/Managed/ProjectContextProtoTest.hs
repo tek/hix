@@ -10,6 +10,7 @@ import qualified Hix.Data.Dep
 import Hix.Data.Dep (Dep (Dep), mkDep)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Version (range0)
+import Hix.Data.VersionBounds (Bound (..))
 import Hix.Managed.Cabal.Data.Config (CabalConfig (..), GhcDb (GhcDbSystem), GhcPath (GhcPath))
 import qualified Hix.Managed.Cabal.Data.ContextHackageRepo as ContextHackageRepo
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo, contextHackageRepo)
@@ -104,11 +105,17 @@ json =
     "envs": {
       "lower-main": {
         "targets": ["local1", "local2"],
-        "ghc": "/ghc"
+        "ghc": "/ghc",
+        "managedBound": "lower"
       },
       "lower-special": {
         "targets": ["local3", "local4"],
         "ghc": "/ghc"
+      },
+      "latest-main": {
+        "targets": ["local1", "local2"],
+        "ghc": "/ghc",
+        "managedBound": "upper"
       }
     },
     "hackage": {
@@ -183,8 +190,9 @@ targetProto =
       resolving = False
     },
     envs = [
-      ("lower-main", EnvConfig {targets = ["local1", "local2"], ghc}),
-      ("lower-special", EnvConfig {targets = ["local3", "local4"], ghc})
+      ("lower-main", EnvConfig {targets = ["local1", "local2"], ghc, managedBound = Just BoundLower}),
+      ("lower-special", EnvConfig {targets = ["local3", "local4"], ghc, managedBound = Nothing}),
+      ("latest-main", EnvConfig {targets = ["local1", "local2"], ghc, managedBound = Just BoundUpper})
     ],
     hackage = [("local", targetContextRepo)]
   }
@@ -194,6 +202,7 @@ targetEnvs =
   [
     Right EnvContext {
       env = "lower-main",
+      bound = BoundLower,
       ghc,
       targets = unsafeTargets ["local1", "local2"],
       deps = EnvDeps {mutable = ["direct1", "direct2", "direct3", "direct4", "direct5"]},
@@ -202,6 +211,7 @@ targetEnvs =
     },
     Right EnvContext {
       env = "lower-special",
+      bound = BoundLower,
       ghc,
       targets = unsafeTargets ["local3", "local4"],
       deps = EnvDeps {mutable = ["direct1", "direct2", "local2"]},
@@ -262,6 +272,13 @@ targetProject =
         ("local5", [("local3", ">=0"), ("local4", ">=0")])
       ],
       versions = [
+        ("latest-main", [
+          ("direct1", Nothing),
+          ("direct2", Nothing),
+          ("direct3", Nothing),
+          ("direct4", Nothing),
+          ("direct5", Nothing)
+        ]),
         ("lower-main", [
           ("direct1", Nothing),
           ("direct2", Nothing),
@@ -276,6 +293,13 @@ targetProject =
         ])
       ],
       initial = [
+        ("latest-main", [
+          ("direct1", Nothing),
+          ("direct2", Nothing),
+          ("direct3", Nothing),
+          ("direct4", Nothing),
+          ("direct5", Nothing)
+        ]),
         ("lower-main", [
           ("direct1", Nothing),
           ("direct2", Nothing),
@@ -301,5 +325,5 @@ test_parseProjectContextProto :: UnitTest
 test_parseProjectContextProto = do
   assertRight targetProto (eitherDecodeStrict' json)
   project <- toTestT do
-    runMTestDir def (ProjectContextProto.validate def targetProto)
+    runMTestDir def (ProjectContextProto.validate BoundLower def targetProto)
   targetProject === project

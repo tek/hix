@@ -15,14 +15,13 @@
     revision = cons { cmd = _: internal.managed.cmd.revision; env = null; sub = null; };
   };
 
+  appsForAllEnvs = appsWith ({cmd, env, sub}: cmd []);
+
   appsForEnvs = envs: appsWith ({cmd, env, sub}: cmd [envs.${env}]);
 
   managedCmdMulti = envSort: cmd: sets: let
     envName = name: "${envSort}-${name}";
-    envs = map (name: envName name) sets;
-  in
-  lib.genAttrs sets (name: cmd [(envName name)]) //
-  cmd envs;
+  in lib.genAttrs sets (name: cmd [(envName name)]);
 
   managedMulti = sets: appsWith ({cmd, env, ...}: managedCmdMulti env cmd sets);
 
@@ -30,15 +29,17 @@
   # TODO Add an override option that opts into removing these apps from the flake.
   mixedApps = let
     sets = config.managed.sets;
-  in
+
+    specific =
     if sets == "all"
-    then appsForEnvs { latest = "latest"; lower = "lower"; }
+    then {}
     else if sets == "each"
     then managedMulti internal.project.packageNames
     else if lib.isAttrs sets
     then managedMulti (lib.attrNames sets)
     else throw "Unexpected value for 'managed.sets': ${lib.generators.toPretty sets}"
     ;
+  in util.mergeAuto specific appsForAllEnvs;
 
   legacyApps.lower = mixedApps.lower;
 

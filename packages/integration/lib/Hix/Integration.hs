@@ -3,9 +3,9 @@ module Hix.Integration where
 import qualified Hix.Data.GlobalOptions
 import Hix.Error (printError)
 import Hix.Integration.Data.Options (Command (..), Options (..))
+import Hix.Integration.Hackage (hackageServe)
 import Hix.Integration.Options (parseCli)
 import Hix.Monad (M, runMWith)
-import Hix.Integration.Hackage (hackageServe)
 
 runCommand :: Command -> M ()
 runCommand = \case

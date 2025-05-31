@@ -7,6 +7,7 @@ import Hix.Data.EnvName (EnvName)
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (M, appRes)
 import Hix.Data.Options (ManagedOptions (..), ProjectOptions (..))
+import Hix.Data.VersionBounds (Bound (..))
 import Hix.Http (httpManager)
 import Hix.Managed.BuildOutput (depChanges)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
@@ -44,7 +45,7 @@ bumpHandlers ::
   M (BuildHandlers, ProjectContext)
 bumpHandlers contexts options envName = do
   proto <- queryContext contexts ContextManaged
-  project <- ProjectContextProto.validate options.project proto
+  project <- ProjectContextProto.validate BoundUpper options.project proto
   handlersProject <- Project.handlersProd options.stateFile
   handlers <- Build.handlersProd handlersProject options.project.build project.cabal
   bumpProject <- projectWithEnv envName project

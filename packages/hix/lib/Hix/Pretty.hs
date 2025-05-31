@@ -86,6 +86,12 @@ instance HPretty a => HPretty (Maybe a) where
   hpretty = foldMap hpretty
   hprettyField = fmap hpretty
 
+instance (
+    HPretty a,
+    HPretty b
+  ) => HPretty (Either a b) where
+    hpretty = either hpretty hpretty
+
 instance {-# overlappable #-} HPretty a => HPretty [a] where
   hpretty = showPL . fmap hpretty
 
@@ -144,8 +150,11 @@ instance HPretty (PathSpec t) where
   hpretty (PathConcrete path) = hpretty path
   hpretty (PathUser path) = hpretty path
 
+prettyMapHead :: Text -> Doc -> Doc
+prettyMapHead desc = hang (prettyText desc) 2
+
 prettyMap :: Text -> [(Text, Maybe Doc)] -> Doc
-prettyMap desc = hang (prettyText desc) 2 . prettyFieldsV
+prettyMap desc = prettyMapHead desc . prettyFieldsV
 
 field :: HPretty a => Text -> a -> (Text, Maybe Doc)
 field desc value = (desc, hprettyField value)

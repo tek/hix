@@ -437,6 +437,14 @@ in {
       default = false;
     };
 
+    managedBound = util.maybeOption (types.enum ["upper" "lower"]) {
+      description = ''
+      The bound managed by this env, if any.
+      This option is set automatically for generated managed envs, but can be specified manually for nonstandard setups.
+      If missing, the CLI will infer the bound from the name.
+      '';
+    };
+
     vm = {
 
       enable = lib.mkEnableOption "the service VM for this env";

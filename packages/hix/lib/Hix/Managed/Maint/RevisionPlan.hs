@@ -5,7 +5,7 @@ import Distribution.Client.Compat.Prelude (simpleParsec)
 import Exon (exon)
 import Path (Dir, Path, Rel)
 
-import Hix.Class.Map (nElems, nTransformMulti, (!?))
+import Hix.Class.Map (nElems, (!?))
 import qualified Hix.Color as Color
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
@@ -112,8 +112,6 @@ revisionPlan ::
   MaintContext ->
   Maybe (NonEmpty (Either PackageName BranchName)) ->
   M (Maybe (NonEmpty RevisionTarget))
-revisionPlan git MaintContext {packages, envs} specified = do
+revisionPlan git MaintContext {packages, targetEnvs} specified = do
   appContext "resolving target specifications" do
     nonEmpty <$> maybe allCandidates resolveTargets specified git targetEnvs packages
-  where
-    targetEnvs = flip nTransformMulti envs \ envName targets -> [(t, envName) | t <- targets]

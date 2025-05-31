@@ -32,7 +32,7 @@ instance Default ProjectContextProto where
 
 instance HPretty ProjectContextProto where
   hpretty ProjectContextProto {..} =
-    prettyMap "project context" [
+    prettyMap "project context proto" [
       field "packages" packages,
       field "state" state,
       field "envs" (nGet envs),

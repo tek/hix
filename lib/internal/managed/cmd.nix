@@ -42,7 +42,13 @@
 
     args = util.unwords (sharedOptions ++ general ++ envsArgs);
 
-    desc = if lib.length envs == 1 then lib.head envs else "${cmd}-multi";
+    desc =
+      if envs == []
+      then "all"
+      else if lib.length envs == 1
+      then lib.head envs
+      else "${cmd}-multi";
+
   in
   util.zscriptBin "managed-${desc}" ''
   if [[ -e "${conf.file}" ]]

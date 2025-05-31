@@ -479,9 +479,9 @@ test_lowerInitMutation = do
     params =
       (testParams False packages) {
         envs = [
-          ("lower-main", ["local1", "local2", "local3", "local4", "local6"]),
-          ("lower-special", ["local7"]),
-          ("lower-unused", ["local8"])
+          ("lower-main", (Nothing, ["local1", "local2", "local3", "local4", "local6"])),
+          ("lower-special", (Nothing, ["local7"])),
+          ("lower-unused", (Nothing, ["local8"]))
         ],
         cabalLog = True,
         log = True,

@@ -21,9 +21,13 @@
   managedEnv = env: {
     targets = internal.env.targets env;
     ghc = null;
+    inherit (env) managedBound;
   };
 
-  maintEnv = internal.env.targets;
+  maintEnv = env: {
+    targets = internal.env.targets env;
+    inherit (env) managedBound;
+  };
 
   maintPackage = name: conf: let
     comps = build.hpack.components.${name};

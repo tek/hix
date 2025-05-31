@@ -341,7 +341,7 @@ projectOptionsParser = do
   build <- buildConfigParser
   cabal <- cabalOptionsParser
   query <- RawQuery <$> many (nonOptionArgument (help "Positional arguments select individual deps for processing"))
-  envs <- many (strOption (long "env" <> short 'e' <> help "Environments whose packages should be updated"))
+  envs <- many (strOption (long "env" <> short 'e' <> help "Restrict environments whose packages should be updated"))
   readUpperBounds <- switch (long "read-upper-bounds" <> help "Use the upper bounds from the flake for the first run")
   mergeBounds <- switch (long "merge-bounds" <> help "Always add the flake bounds to the managed bounds")
   localDeps <- switch (long "local-deps" <> help "Manage bounds of local deps belonging to separate sets")

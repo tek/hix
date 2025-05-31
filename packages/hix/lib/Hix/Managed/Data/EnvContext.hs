@@ -1,21 +1,32 @@
 module Hix.Managed.Data.EnvContext where
 
+import Distribution.Pretty (Pretty (..))
+import Text.PrettyPrint (brackets, (<+>))
+
 import Hix.Data.Bounds (Ranges)
 import Hix.Data.EnvName (EnvName)
+import Hix.Data.VersionBounds (Bound)
 import Hix.Managed.Cabal.Data.Config (GhcDb)
 import Hix.Managed.Data.Mutable (MutableDep)
 import Hix.Managed.Data.Targets (Targets)
+import Hix.Pretty (hpretty)
 
 newtype EnvDeps =
   EnvDeps { mutable :: Set MutableDep }
   deriving stock (Eq, Show, Generic)
   deriving newtype (Semigroup, Monoid)
 
+instance Pretty EnvDeps where
+  pretty EnvDeps {mutable} = hpretty mutable
+
 -- | Static data defining a managed bounds job for an environment.
 data EnvContext =
   EnvContext {
     -- | The name of the Hix environment used to build this job.
     env :: EnvName,
+
+    -- | The bound managed by this environment.
+    bound :: Bound,
 
     -- | Override for the package database, which is usually obtained by context query.
     -- In tests, this can be used to supply an in-memory set of packages.
@@ -38,3 +49,6 @@ data EnvContext =
     solverBounds :: Ranges
   }
   deriving stock (Eq, Show, Generic)
+
+instance Pretty EnvContext where
+  pretty EnvContext {env, bound} = pretty env <+> brackets (pretty bound)

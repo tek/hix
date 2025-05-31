@@ -10,6 +10,7 @@ import Path.IO (createDirIfMissing, getCurrentDir)
 import qualified Hix.Data.Monad
 import Hix.Data.Monad (AppResources (AppResources), M (M))
 import Hix.Data.Options (projectOptions)
+import Hix.Data.VersionBounds (Bound (..))
 import Hix.Error (pathText)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import qualified Hix.Managed.Data.EnvConfig
@@ -225,7 +226,15 @@ lowerNativeTest = do
     stateFileConf = StateFileConfig {
       file = [relfile|ops/managed.nix|]
     }
-    envsConfig = [("lower", EnvConfig {targets = ["root"], ghc = Just (GhcDbSystem Nothing)})]
+    envsConfig =
+      [(
+        "lower",
+        EnvConfig {
+          targets = ["root"],
+          ghc = Just (GhcDbSystem Nothing),
+          managedBound = Just BoundLower
+        }
+      )]
     buildConfig = def
   handlersProject <- Project.handlersProd stateFileConf
   handlers <- Build.handlersFixed handlersProject buildConfig def
@@ -248,7 +257,7 @@ lowerNativeTest = do
       stateFileContent <- liftIO (Text.readFile (toFilePath stateFile))
       pure (result.state, stateFileContent)
 
-  context0 <- ProjectContextProto.validate opts proto0
+  context0 <- ProjectContextProto.validate BoundLower opts proto0
   (state1, stateFileContentInit) <- run context0 (lowerInitMain def)
   -- TODO the packages here aren't updated with the result from the first run
   let context1 = projectContext buildConfig state1 packages context0.envs def

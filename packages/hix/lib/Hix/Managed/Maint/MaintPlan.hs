@@ -3,7 +3,7 @@ module Hix.Managed.Maint.MaintPlan where
 import qualified Data.Set as Set
 import Exon (exon)
 
-import Hix.Class.Map (nInsert, nTransformMulti, nViaA, (!?))
+import Hix.Class.Map (nInsert, nViaA, (!?))
 import Hix.Data.Dep (Dep (..))
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
@@ -39,7 +39,7 @@ maintPlan ::
   MaintContext ->
   Maybe (NonEmpty PackageName) ->
   M MaintPlan
-maintPlan MaintContext {packages, envs} specified = do
+maintPlan MaintContext {packages, targetEnvs} specified = do
   selected <- maybe pure restrictTargets specified packages
   targets <- nViaA (traverse target) selected
   pure MaintPlan {targets}
@@ -47,5 +47,3 @@ maintPlan MaintContext {packages, envs} specified = do
     target MaintPackage {package = ManagedPackage {name, version, deps}, ..} = do
       env <- envForTarget targetEnvs name
       pure MaintTarget {package = name, version, branch = Nothing, deps = Set.fromList ((.package) <$> deps), ..}
-
-    targetEnvs = flip nTransformMulti envs \ envName targets -> [(t, envName) | t <- targets]
