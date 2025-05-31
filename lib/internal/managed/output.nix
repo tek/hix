@@ -87,9 +87,9 @@
 
       - uses: actions/checkout@v4
 
-      - uses: DeterminateSystems/nix-installer-action@v16
+      - uses: cachix/install-nix-action@v31
         with:
-          github-token: ''${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ''${{ secrets.GITHUB_TOKEN }}
 
       - id: bounds
         name: Update managed bounds
@@ -111,6 +111,9 @@
     contents: write
     pull-requests: write
 
+  env:
+    LANG: en_US.UTF-8
+
   jobs:
     maint-run:
       name: Update release bounds
@@ -119,13 +122,21 @@
         results: ''${{ steps.maint.outputs.maint }}
 
       steps:
+
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v16
         with:
-          github-token: ''${{ secrets.GITHUB_TOKEN }}
+          # This must be a PAT with workflows:write to allow pushing new release branches when the main branch has
+          # modified any workflows.
+          token: ''${{ secrets.workflow_token }}
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ''${{ secrets.GITHUB_TOKEN }}
+
       - uses: cachix/cachix-action@v15
         with:
           name: tek
+
       - id: maint
         name: Run maint
         run: |
@@ -138,16 +149,19 @@
       strategy:
         matrix:
           package: ''${{ fromJSON(needs.maint-run.outputs.results).changes }}
+
       steps:
+
       - uses: actions/checkout@v4
+
       - id: pr
         name: Create PR
-        run: |
-          gh pr create \
-            --base "''${{ matrix.package.baseBranch }}" \
-            --body "''${{ matrix.package.message }}" \
-            --title "revision for ''${{ matrix.package.package }}" \
-            --head "''${{ matrix.package.branch }}"
+        run: >
+          gh pr create
+          --base "''${{ matrix.package.baseBranch }}"
+          --body "''${{ matrix.package.message }}"
+          --title "revision for ''${{ matrix.package.package }}"
+          --head "''${{ matrix.package.branch }}"
         env:
           GH_TOKEN: ''${{ secrets.GITHUB_TOKEN }}
   '';
@@ -162,6 +176,7 @@
       branches: ['release/**']
 
   env:
+    LANG: en_US.UTF-8
     branch: ''${{ github.event_name == 'workflow_dispatch' && github.ref_name || github.base_ref }}
 
   jobs:
@@ -169,14 +184,19 @@
       name: Publish revision
       if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
       runs-on: ubuntu-latest
+
       steps:
+
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v16
+
+      - uses: cachix/install-nix-action@v31
         with:
-          github-token: ''${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ''${{ secrets.GITHUB_TOKEN }}
+
       - uses: cachix/cachix-action@v15
         with:
           name: tek
+
       - id: revision
         name: Publish revision
         run: >

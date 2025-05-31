@@ -7,6 +7,7 @@ on:
     branches: ['release/**']
 
 env:
+  LANG: en_US.UTF-8
   branch: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || github.base_ref }}
 
 jobs:
@@ -14,14 +15,19 @@ jobs:
     name: Publish revision
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+
     steps:
+
     - uses: actions/checkout@v4
-    - uses: DeterminateSystems/nix-installer-action@v16
+
+    - uses: cachix/install-nix-action@v31
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
     - uses: cachix/cachix-action@v15
       with:
         name: tek
+
     - id: revision
       name: Publish revision
       run: >
