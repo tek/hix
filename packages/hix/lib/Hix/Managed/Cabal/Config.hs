@@ -28,9 +28,18 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (
   ContextHackageLocation (..),
   ContextHackagePassword (..),
   ContextHackageRepo (..),
+  ContextHackageSecret (..),
+  ContextHackageToken (..),
   )
 import qualified Hix.Managed.Cabal.Data.HackageLocation as HackageLocation
-import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (auth), HackagePassword (HackagePassword), HackageUser)
+import Hix.Managed.Cabal.Data.HackageLocation (
+  HackageAuth (..),
+  HackageLocation (auth),
+  HackagePassword (..),
+  HackageSecret (..),
+  HackageToken (..),
+  HackageUser,
+  )
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName, HackageRepo (..), centralName)
 import Hix.Managed.Cabal.HackageLocation (parseLocation)
 import Hix.Managed.Cabal.HackageRepo (hackageDescription)
@@ -64,18 +73,18 @@ isReinstallableId package = isReinstallable package.name
 isNonReinstallableDep :: MutableDep -> Bool
 isNonReinstallableDep = isNonReinstallable . depName
 
-resolvePasswordEnvVar :: Text -> M HackagePassword
-resolvePasswordEnvVar name =
+resolveSecretEnvVar :: Text -> M HackageSecret
+resolveSecretEnvVar name =
   lookup >>= \case
     [] -> clientError (message "is empty")
-    value -> pure (HackagePassword (toText value))
+    value -> pure (HackageSecret (toText value))
   where
     lookup = noteClient (message "does not exist") =<< tryIOM (lookupEnv (toString name))
 
     message problem = [exon|The specified environment variable #{Color.cyan name} #{problem}|]
 
-resolvePasswordExec :: Text -> M HackagePassword
-resolvePasswordExec spec =
+resolveSecretExec :: Text -> M HackageSecret
+resolveSecretExec spec =
   noteClient (message "is not a valid path") (Path.parseSomeFile (toString spec)) >>= \case
     Abs path -> checkPath path
     Rel rel ->
@@ -93,7 +102,7 @@ resolvePasswordExec spec =
       liftIO (tryIOError (Process.readProcessStdout (Process.proc (toFilePath path) []))) >>= \case
         Right (ExitSuccess, output)
           | LByteString.null output -> failure "printed nothing on stdout"
-          | [pw] <- Text.lines (decodeUtf8 output) -> pure (HackagePassword pw)
+          | [secret] <- Text.lines (decodeUtf8 output) -> pure (HackageSecret secret)
           | otherwise -> failure "printed multiple lines"
         Right (ExitFailure code, _) -> failure [exon|exited with code #{show @_ @Int code}|]
         Left err -> do
@@ -104,13 +113,13 @@ resolvePasswordExec spec =
 
     message problem = [exon|The specified executable #{Color.path spec} #{problem}|]
 
-resolvePassword :: ContextHackagePassword -> M HackagePassword
-resolvePassword =
+resolveSecret :: ContextHackageSecret -> M HackageSecret
+resolveSecret =
   appContextVerbose ctx . \case
-    PasswordUnobscured pw -> pure pw
-    PasswordPlain pw -> pure pw
-    PasswordEnvVar name -> resolvePasswordEnvVar name
-    PasswordExec path -> resolvePasswordExec path
+    SecretUnobscured secret -> pure secret
+    SecretPlain secret -> pure secret
+    SecretEnvVar name -> resolveSecretEnvVar name
+    SecretExec path -> resolveSecretExec path
   where
     ctx = "resolving the password"
 
@@ -118,26 +127,34 @@ withAuth ::
   HackageLocation ->
   Maybe HackageUser ->
   Maybe ContextHackagePassword ->
+  Maybe ContextHackageToken ->
   M HackageLocation
 withAuth location = \cases
-  (Just user) Nothing ->
+  _ (Just _) (Just _) ->
+    bothSorts
+  (Just user) Nothing _ ->
     onlyOne [exon|user (##{user})|] "password"
-  Nothing (Just _) ->
+  Nothing (Just _) Nothing ->
     onlyOne "password" "user"
-  Nothing Nothing ->
+  Nothing Nothing Nothing ->
     pure location
-  (Just user) (Just passwordSpec) -> do
-    password <- resolvePassword passwordSpec
-    pure location {auth = Just (user, password)}
+  (Just user) (Just passwordSpec) Nothing -> do
+    secret <- resolveSecret passwordSpec.secret
+    pure location {auth = Just (HackageAuthPassword {user, password = HackagePassword secret})}
+  Nothing Nothing (Just tokenSpec) -> do
+    secret <- resolveSecret tokenSpec.secret
+    pure location {auth = Just (HackageAuthToken {token = HackageToken secret})}
   where
     onlyOne present absent = clientError [exon|Specified a #{present}, but no #{absent}|]
+
+    bothSorts = clientError "Specified both password and auth token"
 
 validateContextRepo :: ContextHackageRepo -> M HackageRepo
 validateContextRepo ContextHackageRepo {location = location0, ..} = do
   appContextVerbose [exon|validating the Hackage config #{Color.yellow name}|] do
     location1 <- for location0 \ (ContextHackageLocation spec) ->
       eitherClient (first toText (parseLocation (toString spec)))
-    location <- withAuth (fromMaybe HackageLocation.central location1) user password
+    location <- withAuth (fromMaybe HackageLocation.central location1) user password token
     pure HackageRepo {
       name,
       description = fromMaybe (hackageDescription location) description,

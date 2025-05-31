@@ -10,6 +10,7 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (
   ContextHackageLocation (..),
   ContextHackagePassword (..),
   ContextHackageRepo (..),
+  ContextHackageSecret (..),
   )
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff), hackageLocation)
 import Hix.Managed.Cabal.HackageLocation (noSchemeMessage, parseLocation)
@@ -49,7 +50,8 @@ contextRepo =
     enable = Just False,
     location = Just (ContextHackageLocation "http://localhost:1234"),
     user = Just "test",
-    password = Just (PasswordUnobscured "test"),
+    password = Just (ContextHackagePassword (SecretUnobscured "test")),
+    token = Nothing,
     secure = Just False,
     keys = Just ["key1", "key2"],
     indexState = Just (unsafeParsec ("2024-01-01T00:00:00Z" :: String)),

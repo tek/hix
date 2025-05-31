@@ -18,7 +18,7 @@ import Hix.Error (pathText)
 import Hix.Integration.Hackage (TestHackage (..), withHackageClient)
 import Hix.Integration.Utils (UnitTest, add, addP, libHs, local1, runMTest, withHixDir)
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
-import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
+import Hix.Managed.Cabal.Data.HackageLocation (HackageAuth (..), HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
 import Hix.Managed.Cabal.Data.Revision (Revision (..))
 import qualified Hix.Managed.Cabal.Init as Cabal
@@ -278,7 +278,7 @@ testRepo port =
     location = HackageLocation {
       host = "localhost",
       port = Just (fromIntegral port.value),
-      auth = Just ("test", "test"),
+      auth = Just (HackageAuthPassword {user = "test", password = "test"}),
       tls = TlsOff
     },
     enable = True,
