@@ -1,4 +1,3 @@
----
 name: Tag release
 
 on:
@@ -15,9 +14,10 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v17
+      - uses: cachix/install-nix-action@v31
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: download-buffer-size = 1000000000
       - uses: cachix/cachix-action@v16
         with:
           name: tek

@@ -21,13 +21,15 @@ jobs:
     outputs:
       tests: ${{ steps.ci-matrix.outputs.tests }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v17
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          extra-conf: |
-            download-buffer-size = 1000000000
-      - uses: cachix/cachix-action@v16
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: download-buffer-size = 1000000000
+      - name: Enable cachix
+        uses: cachix/cachix-action@v16
         with:
           name: tek
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
@@ -56,11 +58,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v17
+        uses: cachix/install-nix-action@v31
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          extra-conf: |
-            download-buffer-size = 1000000000
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: download-buffer-size = 1000000000
       - name: Enable cachix
         uses: cachix/cachix-action@v16
         with:
@@ -84,11 +85,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v17
+        uses: cachix/install-nix-action@v31
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          extra-conf: |
-            download-buffer-size = 1000000000
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: download-buffer-size = 1000000000
       - name: Enable cachix
         uses: cachix/cachix-action@v16
         with:
@@ -110,11 +110,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v16
+        uses: cachix/install-nix-action@v31
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          extra-conf: |
-            download-buffer-size = 1000000000
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: download-buffer-size = 1000000000
       - name: Enable cachix
         uses: cachix/cachix-action@v16
         with:
