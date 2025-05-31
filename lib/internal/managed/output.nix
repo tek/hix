@@ -156,14 +156,18 @@
   name: Publish revision for updated bounds
 
   on:
+    workflow_dispatch:
     pull_request:
       types: [closed]
       branches: ['release/**']
 
+  env:
+    branch: ''${{ github.event_name == 'workflow_dispatch' && github.ref_name || github.base_ref }}
+
   jobs:
     revision:
       name: Publish revision
-      if: github.event.pull_request.merged == true
+      if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
       runs-on: ubuntu-latest
       steps:
       - uses: actions/checkout@v4
@@ -175,10 +179,10 @@
           name: tek
       - id: revision
         name: Publish revision
-        run: |
-          nix run .#revision -- --fetch \
-            --hackage="hackage.haskell.org:password:''${{ secrets.hackage_password }}" \
-            --branch "''${{ github.base_ref }}"
+        run: >
+          nix run .#revision -- --fetch
+          --hackage='hackage.haskell.org:password:''${{ secrets.hackage_password }}'
+          --branch "$branch"
   '';
 
   genGaWorkflow = {kind, config}:
