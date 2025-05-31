@@ -130,6 +130,7 @@
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix packages/hix/lib/Hix.hs
   sed -i "s/Unreleased/$version/" changelog.md
   sed -i '/cliReleaseOverride/ s/false/true/' modules/hix-test.nix
+  sed -i "s/@since unreleased/@since $version/" packages/**/*.hs
   ${git} --no-pager diff
   ask_abort 'Versions updated. Continue?'
   ${git} add .
