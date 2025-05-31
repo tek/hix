@@ -20,7 +20,6 @@
 
   managedEnv = env: {
     targets = internal.env.targets env;
-    ghc = null;
     inherit (env) managedBound;
   };
 
