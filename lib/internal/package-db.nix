@@ -29,7 +29,7 @@
         env.internal.overridesSolver
         (internal.env.managedSolverOverrides env.name)
       ];
-  in env.toolchain.vanilla.override { overrides = (deps { inherit (env.ghc) pkgs; }).reify overrides; };
+  in env.toolchain.vanilla.override { overrides = (deps { inherit (env.toolchain) pkgs; }).reify overrides; };
 
   solver = noLocalsInDeps: env: (solverGhc env).ghcWithPackages (packageDb noLocalsInDeps env);
 
