@@ -9,6 +9,7 @@ on:
 
 env:
   hix_test_ci: 1
+  LANG: en_US.UTF-8
 
 jobs:
 
