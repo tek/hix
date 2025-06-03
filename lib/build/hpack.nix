@@ -73,7 +73,7 @@
       then intersected
       else
       # We only want managed bounds, but local packages need manual versions
-      if managedNorm == null && lib.isAttrs dep && dep.local or false
+      if lib.isAttrs dep && dep.local or false
       then norm.version
       else managedNorm
       ;
