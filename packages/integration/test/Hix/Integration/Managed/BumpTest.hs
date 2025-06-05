@@ -26,7 +26,7 @@ import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.ManagedPackage (ProjectPackages, managedPackages)
 import qualified Hix.Managed.Data.ProjectContextProto
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (ProjectContextProto))
-import Hix.Managed.Flake (runFlakeGenCabal)
+import Hix.Managed.Flake (runFlakeAt, runFlakeGenCabal)
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
 import qualified Hix.Managed.Handlers.Project.Prod as Project
@@ -129,7 +129,7 @@ setupProject repo hixRoot = do
   addFile projectRoot [relfile|packages/local1/lib/Local1.hs|] libModLocal1
   addFile projectRoot [relfile|packages/local2/lib/Local2.hs|] libModLocal2
   addFile projectRoot [relfile|packages/local3/lib/Local3.hs|] libModLocal3
-  runFlakeGenCabal projectRoot
+  runFlakeGenCabal (runFlakeAt projectRoot)
   pure projectRoot
 
 envsConfig :: Envs EnvConfig

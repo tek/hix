@@ -1,0 +1,11 @@
+cabal-version: 2.4
+name: pkg-cabal
+version: 0.1.0.0
+synopsis: Test package
+build-type: Simple
+
+library
+  exposed-modules: PkgCabal
+  hs-source-dirs: lib
+  default-language: GHC2024
+  build-depends: base

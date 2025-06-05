@@ -1,10 +1,10 @@
 module Hix.Data.PackageId where
 
-import Data.Aeson (FromJSON (..))
+import Data.Aeson (FromJSON (..), ToJSON (..))
 import Distribution.Package (PackageIdentifier (PackageIdentifier))
 import Distribution.Parsec (Parsec (..))
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Version (Version)
+import Distribution.Version (Version, nullVersion)
 import Exon (exon)
 
 import Hix.Data.Json (jsonParsec)
@@ -35,7 +35,14 @@ fromCabal (PackageIdentifier (PackageName.fromCabal -> name) version) =
   PackageId {..}
 
 instance Parsec PackageId where
-  parsec = fromCabal <$> parsec
+  parsec = do
+    pid@PackageId {version} <- fromCabal <$> parsec
+    if version == nullVersion
+    then fail "Package ID without version"
+    else pure pid
 
 instance FromJSON PackageId where
   parseJSON = fmap jsonParsec . parseJSON
+
+instance ToJSON PackageId where
+  toJSON = toJSON . showP @Text

@@ -8,6 +8,7 @@ import Hix.Data.Bounds (Bounds)
 import Hix.Data.Overrides (Overrides)
 import Hix.Managed.Data.Envs (Envs)
 import Hix.Managed.Data.Mutable (MutableVersions)
+import Hix.Managed.Data.PackageState (PackageState)
 import Hix.Managed.Data.Packages (Packages)
 
 data ProjectState =
@@ -17,6 +18,7 @@ data ProjectState =
     initial :: Envs MutableVersions,
     overrides :: Envs Overrides,
     solver :: Envs Overrides,
+    packages :: Packages PackageState,
     resolving :: Bool
   }
   deriving stock (Eq, Show, Generic)
@@ -28,7 +30,8 @@ instance Pretty ProjectState where
     hang "versions:" 2 (pretty versions) $+$
     hang "initial:" 2 (pretty initial) $+$
     hang "overrides:" 2 (pretty overrides) $+$
-    hang "solver:" 2 (pretty solver)
+    hang "solver:" 2 (pretty solver) $+$
+    hang "packages:" 2 (pretty packages)
 
 instance Default ProjectState where
   def =
@@ -38,5 +41,6 @@ instance Default ProjectState where
       initial = mempty,
       overrides = mempty,
       solver = mempty,
+      packages = mempty,
       resolving = False
     }

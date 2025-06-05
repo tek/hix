@@ -11,10 +11,13 @@ import Hix.Data.Options (Command (..), HackageCommand (..), InfoCommand (..), Lo
 import Hix.Env (printEnvRunner, runEnvCommand)
 import Hix.Error (Error, printError)
 import Hix.Ghci (printGhciCmdline, printGhcidCmdline, runGhci, runGhcid)
+import Hix.Handlers.Tui.Test (tuiTestCli)
 import Hix.Managed.Bump.App (bumpCli)
 import Hix.Managed.Lower.App (lowerAutoCli, lowerInitCli, lowerOptimizeCli, lowerStabilizeCli)
+import Hix.Managed.Release (releaseCli)
 import Hix.Managed.ReleaseMaintenance (releaseMaintenanceCli, revisionCli)
-import Hix.Monad (M, runMWith)
+import Hix.Monad (M)
+import Hix.Monad.Run (runMWith)
 import Hix.New (initProject, newProject)
 import Hix.Options (parseCli)
 import Hix.Preproc (preprocess)
@@ -44,6 +47,8 @@ runCommand = \case
   Hackage sub -> case sub of
     ReleaseMaint opts -> releaseMaintenanceCli opts
     Revision opts -> revisionCli opts
+    Release opts -> releaseCli opts
+  Tui -> tuiTestCli
 
 failure :: LogLevel -> Error -> IO ()
 failure logLevel err = do

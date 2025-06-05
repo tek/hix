@@ -35,6 +35,8 @@ hackageParser = do
 commands :: Mod CommandFields Command
 commands =
   command "hackage" (HackageServe <$> info hackageParser (progDesc "Run a hackage server"))
+  <>
+  command "tui" (info (pure TuiTest) (progDesc "TUI test"))
 
 appParser ::
   Path Abs Dir ->

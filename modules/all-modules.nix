@@ -14,6 +14,7 @@ let
     ./overrides.nix
     ./commands.nix
     ./ghci.nix
+    ./release.nix
     ./hackage.nix
     ./cli.nix
     ./managed.nix

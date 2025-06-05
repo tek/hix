@@ -1,8 +1,9 @@
 module Hix.Data.Json where
 
-import Data.Aeson (FromJSON (parseJSON), Key, Object, (.:?))
+import Data.Aeson (FromJSON (parseJSON), Key, Object, ToJSON (..), (.:?))
 import Data.Aeson.Types (Parser)
 import Distribution.Parsec (Parsec, eitherParsec)
+import Distribution.Pretty (Pretty (..))
 import Path (File)
 
 import Hix.Data.PathSpec (PathSpec)
@@ -25,6 +26,13 @@ instance Parsec a => FromJSON (JsonParsec a) where
 
 jsonParsec :: JsonParsec a -> a
 jsonParsec = coerce
+
+newtype JsonPretty a =
+  JsonPretty a
+  deriving stock (Eq, Show, Generic)
+
+instance Pretty a => ToJSON (JsonPretty a) where
+  toJSON (JsonPretty a) = toJSON (show @Text (pretty a))
 
 foldMissing ::
   Monoid a =>

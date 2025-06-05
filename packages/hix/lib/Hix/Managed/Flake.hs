@@ -8,95 +8,118 @@ import Path (Abs, Dir, Path, toFilePath)
 import System.Exit (ExitCode (ExitFailure, ExitSuccess))
 import System.Process.Typed (ProcessConfig, proc, readProcess, setWorkingDir)
 
-import Hix.Data.Monad (M)
-import qualified Hix.Log as Log
-import Hix.Monad (eitherFatal)
 import qualified Hix.Color as Color
+import qualified Hix.Data.Monad as Monad
+import Hix.Data.Monad (LogLevel (..), M, appRes)
+import qualified Hix.Log as Log
+import Hix.Maybe (fromMaybeA)
+import Hix.Monad (eitherFatal, shouldLog)
+import Hix.Error (pathText)
 
 outLines :: ([ByteString] -> a) -> ByteString -> a
 outLines f bs = f (ByteString.lines bs)
 
-runFlakeFor ::
-  ∀ a stdin stdout stderr .
-  (ByteString -> Either Text a) ->
-  (ByteString -> Either Text a) ->
+quiet3 :: [Text]
+quiet3 = ["--quiet", "--quiet", "--quiet"]
+
+data RunFlake a =
+  RunFlake {
+    processError :: ByteString -> Either Text a,
+    cwd :: Maybe (Path Abs Dir),
+    quiet :: Bool,
+    confProc :: ProcessConfig () () () -> ProcessConfig () () ()
+  }
+
+runFlakeAt :: Path Abs Dir -> RunFlake a
+runFlakeAt cwd = def {cwd = Just cwd}
+
+flakeFailure :: ByteString -> Either Text a
+flakeFailure stderr = Left [exon|stderr: #{decodeUtf8 stderr}|]
+
+instance Default (RunFlake a) where
+  def =
+    RunFlake {
+      processError = flakeFailure,
+      cwd = Nothing,
+      quiet = False,
+      confProc = id
+    }
+
+runFlakeFatal ::
+  ∀ a .
   Text ->
-  Path Abs Dir ->
   [Text] ->
-  (ProcessConfig () () () -> ProcessConfig stdin stdout stderr) ->
+  RunFlake a ->
+  (ByteString -> Either Text a) ->
   M a
-runFlakeFor processOutput processError desc cwd args confProc = do
-  Log.debug [exon|Running flake: #{Color.shellCommand (unwords args)}|]
-  readProcess conf >>= \case
+runFlakeFatal desc args RunFlake {cwd = cwdSpec, ..} processOutput = do
+  cwd <- fromMaybeA appRes.root cwdSpec
+  verbose <- shouldLog LogVerbose
+  Log.debug [exon|Running flake in #{Color.path (pathText cwd)} (#{desc}): #{Color.shellCommand (unwords args)}|]
+  readProcess (conf cwd verbose) >>= \case
     (ExitSuccess, stdout, _) ->
       eitherFatal (first decodeError (processOutput (toStrict stdout)))
     (ExitFailure {}, _, stderr) ->
       eitherFatal (first failureError (processError (toStrict stderr)))
   where
-    conf =
+    conf cwd verbose =
       confProc $
       setWorkingDir (toFilePath cwd) $
-      proc "nix" (toString <$> args)
+      proc "nix" (toString <$> (quietArgs ++ traceArg verbose ++ args))
 
-    decodeError msg = [exon|#{desc} produced invalid output: #{msg}|]
-    failureError msg = [exon|#{desc} terminated with error: #{msg}|]
+    quietArgs = if quiet then quiet3 else []
 
-flakeFailure :: ByteString -> Either Text a
-flakeFailure stderr = Left [exon|stderr: #{decodeUtf8 stderr}|]
+    traceArg = \case
+      True -> ["--show-trace"]
+      False -> []
+
+    decodeError msg = [exon|Flake command (#{desc}) produced invalid output: #{msg}|]
+    failureError msg = [exon|Flake command (#{desc}) terminated with error: #{msg}|]
 
 runFlake ::
-  ∀ a stdin stdout stderr .
+  ∀ a .
+  Text ->
+  [Text] ->
+  RunFlake a ->
+  (ByteString -> Either Text a) ->
+  M (Either Text a)
+runFlake desc args conf processOutput =
+  runFlakeFatal desc args conf {processError = pure . Left . decodeUtf8} (fmap Right . processOutput)
+
+runFlakeJson ::
+  ∀ a .
   FromJSON a =>
   Text ->
-  Path Abs Dir ->
   [Text] ->
-  (ProcessConfig () () () -> ProcessConfig stdin stdout stderr) ->
   M a
-runFlake =
-  runFlakeFor success flakeFailure
-  where
-    success stdout = first toText (Aeson.eitherDecodeStrict' stdout)
+runFlakeJson desc args =
+  runFlakeFatal desc args def \ stdout -> first toText (Aeson.eitherDecodeStrict' stdout)
 
 runFlakeForSingleLine ::
-  ∀ stdin stdout stderr .
   Text ->
-  Path Abs Dir ->
   [Text] ->
-  (ProcessConfig () () () -> ProcessConfig stdin stdout stderr) ->
   M ByteString
-runFlakeForSingleLine =
-  runFlakeFor success flakeFailure
-  where
-    success stdout = case ByteString.lines stdout of
-      [ln] -> Right ln
-      lns -> Left [exon|Expected a single line of output, got #{show (length lns)}|]
-
-runFlakeRaw ::
-  ∀ stdin stdout stderr .
-  Text ->
-  Path Abs Dir ->
-  [Text] ->
-  (ProcessConfig () () () -> ProcessConfig stdin stdout stderr) ->
-  M ByteString
-runFlakeRaw =
-  runFlakeFor Right flakeFailure
+runFlakeForSingleLine desc args =
+  runFlakeFatal desc args def \ stdout -> case ByteString.lines stdout of
+    [ln] -> Right ln
+    lns -> Left [exon|Expected a single line of output, got #{show (length lns)}|]
 
 runFlakeSimple ::
   Text ->
-  Path Abs Dir ->
   [Text] ->
+  RunFlake () ->
   M ()
-runFlakeSimple desc cwd args =
-  runFlakeFor (const unit) (const unit) desc cwd (["--quiet", "--quiet", "--quiet"] ++ args) id
+runFlakeSimple desc args conf =
+  runFlakeFatal desc args conf {quiet = True} (const unit)
 
-runFlakeLock :: Path Abs Dir -> M ()
-runFlakeLock cwd =
-  runFlakeSimple "create lock file" cwd ["flake", "lock"]
+runFlakeLock :: RunFlake () -> M ()
+runFlakeLock =
+  runFlakeSimple "Create lock file" ["flake", "lock"]
 
-runFlakeGen :: Path Abs Dir -> M ()
-runFlakeGen cwd =
-  runFlakeSimple "generate Cabal and overrides" cwd ["run", ".#gen"]
+runFlakeGen :: RunFlake () -> M ()
+runFlakeGen =
+  runFlakeSimple "Generate Cabal and overrides" ["run", ".#gen-quiet"]
 
-runFlakeGenCabal :: Path Abs Dir -> M ()
-runFlakeGenCabal cwd =
-  runFlakeSimple "generate Cabal" cwd ["run", ".#gen-cabal-quiet"]
+runFlakeGenCabal :: RunFlake () -> M ()
+runFlakeGenCabal =
+  runFlakeSimple "Generate Cabal" ["run", ".#gen-cabal-quiet"]

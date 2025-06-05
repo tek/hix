@@ -1,33 +1,26 @@
 module Hix.New where
 
-import Exon (exon)
-import Path (
-  dirname,
-  fromRelDir,
-  parseRelDir,
-  parseRelFile,
-  reldir,
-  relfile,
-  (</>),
-  )
 import qualified Data.Text as Text
+import Exon (exon)
+import Path (dirname, fromRelDir, parseRelDir, parseRelFile, reldir, relfile, (</>))
 import Text.Casing (pascal)
 
 import Hix.Bootstrap (initGitAndFlake)
 import qualified Hix.Console as Console
+import Hix.Data.Monad (AppResources (..))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   Author,
   CreateProjectConfig (CreateProjectConfig),
   HixUrl (HixUrl),
   InitProjectConfig (InitProjectConfig),
-  ProjectName (ProjectName), NewProjectConfig,
+  NewProjectConfig,
+  ProjectName (ProjectName),
   )
-import Hix.Data.Monad (AppResources (cwd))
 import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Error (pathText)
-import Hix.Monad (M, noteEnv, local)
+import Hix.Monad (M, local, noteEnv)
 import Hix.Path (PathSpecResolver (resolvePathSpec))
 
 license :: Author -> Text
@@ -79,7 +72,7 @@ flake InitProjectConfig {
   inputs.hix.url = "#{url}";
 
   outputs = {hix, ...}: hix.lib.flake {
-    hackage.versionFile = "ops/version.nix";
+    release.versionFile = "ops/version.nix";
 
     cabal = {
       license = "BSD-2-Clause-Patent";
@@ -147,6 +140,7 @@ testMainModule modName =
 import Hedgehog (property, test, withTests)
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
+
 import #{modName}.Test.NameTest (test_name)
 
 tests :: TestTree
@@ -197,6 +191,7 @@ initProject conf = do
   traverse_ createFile =<< newProjectFiles conf
   unless conf.config.noInitGitAndFlake initGitAndFlake
 
+-- TODO figure out the correct semantics of @cwd@ and @root@ and document them
 newProject :: NewProjectConfig -> M ()
 newProject conf = do
   directory <- resolvePathSpec conf.directory
@@ -204,7 +199,7 @@ newProject conf = do
         fromMaybe
           (ProjectName . Text.dropWhileEnd (== '/') . Text.pack . fromRelDir . dirname $ directory)
           conf.name
-  local (\res -> res { cwd = directory }) $
+  local (\res -> res { cwd = directory, root = directory }) $
     initProject $ InitProjectConfig {name = name, config = conf.config}
   when conf.printDirectory $ Console.out (pathText directory)
 

@@ -24,6 +24,7 @@
 * Add the options `shellTools` and `envs.*.shellTools` to take on the previous role of `envs.*.buildInputs` for packages
   that should not be made available to local package derivations.
 * Add the options `build-tools.{ghcid,hasktags}.package` to configure these tools globally.
+* Migrate the shell script-based release app to the Haskell CLI.
 
 # 0.9.0
 
@@ -106,7 +107,7 @@
 
 # 0.6.2
 
-* When releasing, the word `0.6.2` can be automatically replaced by the new version in changelogs when
+* When releasing, the word `Un released` can be automatically replaced by the new version in changelogs when
   `hackage.setChangelogVersion` is `true` (default off).
 
 # 0.6.1

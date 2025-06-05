@@ -51,17 +51,16 @@ in {
       default = null;
     };
 
-    version = mkOption {
+    version = util.maybeOption str {
       description = ''
-      The version for all packages in this option tree.
+      The version for all packages in this option tree, overriding [automatic version management](#release-version).
       '';
-      type = str;
       default = let
-        f = global.hackage.versionFile;
+        f = global.release.versionFile;
       in
         if (f != null && lib.hasSuffix ".nix" f)
         then import "${project.base}/${f}"
-        else "0.1.0.0";
+        else null;
     };
 
     author = mkOption {

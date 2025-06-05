@@ -1,5 +1,5 @@
 {util}: let
-  inherit (util) config lib internal;
+  inherit (util) config lib internal project;
 
   optionalField = name: conf: lib.optionalAttrs (lib.hasAttr name conf) { ${name} = conf.${name}; };
 
@@ -143,8 +143,9 @@
 
   packageMeta = conf: let
     cabal = conf.cabal-config;
+    projectPackage = project.packages.${conf.name};
 
-    basic = { inherit (conf) name; inherit (cabal) version; };
+    basic = { inherit (conf) name; inherit (projectPackage) version; };
 
     optAttrs = [
       "author"

@@ -11,7 +11,7 @@ import Hix.Data.NewProjectConfig (
   InitProjectConfig (InitProjectConfig),
   )
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile))
-import Hix.Monad (runM)
+import Hix.Monad.Run (runM)
 import Hix.New (license, newProjectFiles)
 import Hix.Test.Utils (UnitTest)
 
@@ -36,7 +36,7 @@ flake =
   inputs.hix.url = "#{(def :: HixUrl).unHixUrl}";
 
   outputs = {hix, ...}: hix.lib.flake {
-    hackage.versionFile = "ops/version.nix";
+    release.versionFile = "ops/version.nix";
 
     cabal = {
       license = "BSD-2-Clause-Patent";
@@ -97,6 +97,7 @@ testMainModule =
 import Hedgehog (property, test, withTests)
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
+
 import Spider.Test.NameTest (test_name)
 
 tests :: TestTree

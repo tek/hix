@@ -36,7 +36,7 @@ import Hix.Managed.Handlers.Report (ReportHandlers (ReportHandlers))
 import Hix.Pretty (showP)
 
 blankLine :: M ()
-blankLine = Log.infoPlain ""
+blankLine = Log.plain.info ""
 
 listFailed ::
   FailedMutation ->
@@ -47,14 +47,14 @@ reportFailed ::
   NonEmpty FailedMutation ->
   M ()
 reportFailed =
-  traverse_ \ mut -> Log.infoCont (listFailed mut)
+  traverse_ \ mut -> Log.cont.info (listFailed mut)
 
 reportNewVersions ::
   NonEmpty MutableId ->
   M ()
 reportNewVersions =
   traverse_ \ MutableId {name, version} ->
-    Log.infoCont [exon|📦 '##{name}': #{showP version}|]
+    Log.cont.info [exon|📦 '##{name}': #{showP version}|]
 
 printSummary :: StageSummary -> M ()
 printSummary = \case
@@ -143,7 +143,7 @@ printAligned :: [(Text, Text, Text)] -> M ()
 printAligned deps =
   traverse_ printLine deps
   where
-    printLine (p, v, b) = Log.infoCont (padded p maxP <> padded v maxV <> b)
+    printLine (p, v, b) = Log.cont.info (padded p maxP <> padded v maxV <> b)
     padded s maxlen = s <> Text.replicate (maxlen - Text.length s + 3) " "
     maxP = maxi ps
     maxV = maxi vs

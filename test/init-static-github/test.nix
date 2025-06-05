@@ -1,3 +1,4 @@
+# This doesn't actually use static linking at the moment, since it's broken in nixpkgs.
 {
   root = false;
   updateLock = false;

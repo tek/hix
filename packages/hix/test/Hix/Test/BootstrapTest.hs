@@ -11,7 +11,7 @@ import Hix.Bootstrap (bootstrapFiles)
 import qualified Hix.Data.BootstrapProjectConfig
 import Hix.Data.BootstrapProjectConfig (BootstrapProjectConfig (BootstrapProjectConfig))
 import qualified Hix.Data.ProjectFile as ProjectFile
-import Hix.Monad (runM)
+import Hix.Monad.Run (runM)
 import Hix.Test.Utils (UnitTest)
 
 cabal :: Text

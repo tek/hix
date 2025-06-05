@@ -13,6 +13,8 @@ data HackageServeOptions =
 
 data Command =
   HackageServe HackageServeOptions
+  |
+  TuiTest
   deriving stock (Show)
 
 data Options =

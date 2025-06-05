@@ -181,7 +181,7 @@ processMessage config _raw = \case
   NixResult {aid, rtype, fields} ->
     state (processResult aid rtype fields) >>= traverse_ \ message ->
       when config.buildOutput do
-        lift (Log.infoPlain message)
+        lift (Log.plain.info message)
 
   NixStartBuilds i ->
     modify' \ s -> s {builds = Just BuildsState {id = i, done = 0, failed = 0, unassigned = []}}
@@ -202,7 +202,7 @@ processMessage config _raw = \case
   NixMessage mb_msg ->
     for_ mb_msg \ msg -> do
       when config.buildOutput do
-        lift $ Log.infoPlain msg
+        lift $ Log.plain.info msg
       modify' \ s -> s {messages = msg : s.messages}
 
 outputParse ::

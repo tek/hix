@@ -1,6 +1,7 @@
 module Hix.Managed.Cabal.Data.HackageLocation where
 
 import Data.Aeson (FromJSON)
+import qualified Distribution.Client.Types.Credentials as Cabal
 import Distribution.Pretty (Pretty (pretty))
 import Exon (exon)
 
@@ -53,7 +54,7 @@ parseHackagePort :: String -> Maybe HackagePort
 parseHackagePort = fmap HackagePort . readMaybe
 
 newtype HackageUser =
-  HackageUser Text
+  HackageUser { text :: Text }
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord, FromJSON, EncodeNix)
 
@@ -61,7 +62,7 @@ instance Pretty HackageUser where
   pretty = prettyNt
 
 newtype HackagePassword =
-  HackagePassword Text
+  HackagePassword { unredactedText :: Text }
   deriving stock (Eq)
   deriving newtype (IsString, Ord, FromJSON)
 
@@ -70,6 +71,9 @@ instance Show HackagePassword where
 
 instance Pretty HackagePassword where
   pretty _ = "<password>"
+
+toCabalPassword :: HackagePassword -> Cabal.Password
+toCabalPassword (HackagePassword pw) = Cabal.Password (toString pw)
 
 data HackageLocation =
   HackageLocation {

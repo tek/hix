@@ -1,22 +1,20 @@
-{ config, lib, util, ... }:
+{lib, util, ...}:
 let
+  inherit (util) internal;
   inherit (lib) types;
 
-  isNix = file: builtins.match ".*\.nix" file != null;
+  deprecatedOption = internal.modules.deprecatedOption;
 
   repoModule = import ./hackage-repo.nix { inherit util; };
 
 in {
   options.hackage = {
 
-    packages = lib.mkOption {
-      description = ''
-        The set of packages that will be published to Hackage when the release command is run without arguments.
-        If it is `null`, all packages are published.
-        The items in the list should be Cabal package names as defined in `options.packages`.
-      '';
+    packages = deprecatedOption {
       type = types.nullOr (types.listOf util.types.localPackage);
-      default = null;
+      key = "hackage.packages";
+      replacement = "release.packages";
+      description = "Deprecated. Use release.packages instead.";
     };
 
     repos = lib.mkOption {
@@ -29,194 +27,135 @@ in {
       default = {};
     };
 
-    allPackages = lib.mkOption {
-      description = ''
-        There are two modes for versioning: Either all packages share the same version, in which case the release app
-        will publish all packages at the same time, or each package has an individual version, in which case the release
-        app expects the name of a package to be specified.
-      '';
+    allPackages = deprecatedOption {
       type = types.bool;
-      default = true;
+      key = "hackage.allPackages";
+      replacement = "--package <name>-<version>";
+      extra = "Use --package <name>-<version> to specify explicit versions, or --interactive for UI-based version selection.";
+      description = "Deprecated. Use --package or --interactive instead.";
     };
 
-    versionFile = lib.mkOption {
-      description = ''
-        If multiple packages use the same file for the version (like when using shared hpack files) this option may
-        point to that file.
-        If `hackage.allPackages` is `true` and this option is `null`, the version will not be modified by the release
-        app.
-        If the project uses the feature for hpack config synthesis from nix expressions, the version must be defined in
-        a nix file.
-        In that case, the simplest mechanism would be to use a separate file that only contains a string and is
-        integrated into the config with `version = import ./version.nix;`.
-        The default version handlers make this assumption; if a different method is used, the options
-        `hackage.versionFileExtract` and `hackage.versionFileUpdate` must be adapted.
-      '';
+    versionFile = deprecatedOption {
       type = types.nullOr types.str;
-      default = null;
+      key = "hackage.versionFile";
+      replacement = "release.versionFile";
+      description = "Deprecated. Use release.versionFile instead.";
     };
 
-    versionFileExtract = lib.mkOption {
-      description = ''
-      A function that returns a shell script fragment that extracts the current version from a version file.
-      The default assumes hpack/cabal format, like `version: 5`, unless the file has the extension
-      `.nix`, in which case it is assumed the file only contains a string.
-      '';
+    setChangelogVersion = deprecatedOption {
+      type = types.bool;
+      key = "hackage.setChangelogVersion";
+      replacement = "release.setChangelogVersion";
+      description = "Deprecated. Use release.setChangelogVersion instead.";
+    };
+
+    commit = deprecatedOption {
+      type = types.bool;
+      key = "hackage.commit";
+      replacement = "release.commit";
+      description = "Deprecated. Use release.commit instead.";
+    };
+
+    commitExtraArgs = deprecatedOption {
+      type = types.listOf types.str;
+      key = "hackage.commitExtraArgs";
+      replacement = "release.commitExtraArgs";
+      description = "Deprecated. Use release.commitExtraArgs instead.";
+    };
+
+    add = deprecatedOption {
+      type = types.bool;
+      key = "hackage.add";
+      replacement = "release.hooks";
+      extra = "Use a pre-commit hook in release.hooks with commit = false to achieve the same effect.";
+      description = "Deprecated. Use release.hooks instead.";
+    };
+
+    tag = deprecatedOption {
+      type = types.bool;
+      key = "hackage.tag";
+      replacement = "release.tag";
+      description = "Deprecated. Use release.tag instead.";
+    };
+
+    tagExtraArgs = deprecatedOption {
+      type = types.listOf types.str;
+      key = "hackage.tagExtraArgs";
+      replacement = "release.tagExtraArgs";
+      description = "Deprecated. Use release.tagExtraArgs instead.";
+    };
+
+    formatTag = deprecatedOption {
       type = types.functionTo types.str;
-      default = file:
-      if isNix file
-      then ''sed -n 's/"\(.*\)"/\1/p' ${file}''
-      else ''sed -n 's/^version:\s*\(\S\+\)/\1/p' ${file}'';
+      key = "hackage.formatTag";
+      replacement = "release.hooks";
+      extra = "Disable tagging with tag = false and create custom tags in a post-upload hook.";
+      description = "Deprecated. Use release.hooks instead.";
     };
 
-    versionFileUpdate = lib.mkOption {
-      description = ''
-      A function that returns a shell script fragment that updates the current version in a version file.
-      The new version is stored in the environment variable `$new_version` in the surrounding shell
-      script.
-      The default assumes hpack/cabal format, like `version: 5`, unless the file has the extension
-      `.nix`, in which case it is assumed the file only contains a string.
-      '';
+    uploadCommand = deprecatedOption {
       type = types.functionTo types.str;
-      default = file:
-      if isNix file
-      then ''sed -i "s/\".*\"/\"$new_version\"/" ${file}''
-      else ''sed -i "s/^version:\(\s*\).*/version:\1$new_version/" ${file}'';
+      key = "hackage.uploadCommand";
+      extra = "The release CLI now handles uploads internally using the Hackage repos configuration.";
+      description = "Deprecated. Uploads are handled internally by the release CLI.";
     };
 
-    setChangelogVersion = lib.mkOption {
-      description = "Whether to substitute the word 'Unreleased' with the new version in changelogs.";
-      type = types.bool;
-      default = false;
-    };
-
-    check = lib.mkOption {
-      description = ''
-        Whether to run `nix flake check` before the release process.
-      '';
-      type = types.bool;
-      default = true;
-    };
-
-    commit = lib.mkOption {
-      description = ''
-        After successfully uploading a new release, the changes to the version file, cabal files and changelog will be
-        committed unless this is set to `false`.
-      '';
-      type = types.bool;
-      default = true;
-    };
-
-    commitExtraArgs = lib.mkOption {
-      description = "Extra CLI options for `git commit`.";
+    cabalArgs = deprecatedOption {
       type = types.str;
-      default = "";
+      key = "hackage.cabalArgs";
+      replacement = "hermetic = false";
+      extra = "Set hermetic = false and configure Cabal via ~/.cabal/config instead.";
+      description = "Deprecated. Use hermetic = false and configure Cabal manually.";
     };
 
-    add = lib.mkOption {
-      description = ''
-      When [](#opt-hackage-hackage.add) is set to `false`, this option can be enabled to git-add the files but not
-      commit them.
-      '';
-      type = types.bool;
-      default = false;
-    };
-
-    tag = lib.mkOption {
-      description = ''
-        After successfully uploading a new release, a tag with the version name will be created unless this is set to
-        `false`.
-      '';
-      type = types.bool;
-      default = true;
-    };
-
-    tagExtraArgs = lib.mkOption {
-      description = "Extra CLI options for `git tag`.";
+    cabalUploadArgs = deprecatedOption {
       type = types.str;
-      default = "";
+      key = "hackage.cabalUploadArgs";
+      replacement = "hermetic = false";
+      extra = "Set hermetic = false and configure Cabal via ~/.cabal/config instead.";
+      description = "Deprecated. Use hermetic = false and configure Cabal manually.";
     };
 
-    formatTag = lib.mkOption {
-      description = "Function that creates a tag name from a version and an optional package name.";
-      type = types.functionTo types.str;
-      default = { name, version }:
-      if name == null then version else "${name}-${version}";
-    };
-
-    uploadCommand = lib.mkOption {
-      description = ''
-        The command used to upload a tarball, specified as a function that takes a set as a parameter with the
-        attributes:
-        ```
-        {
-          publish = "Boolean indicating whether this is a candidate or release";
-          doc = "Boolean indicating whether this is a source or doc tarball";
-          path = "The tarball's file path";
-        }
-        ```
-      '';
-      type = types.functionTo types.str;
-    };
-
-    cabalArgs = lib.mkOption {
-      description = "Extra global CLI arguments for `cabal`.";
-      type = types.types.str;
-      default = "";
-    };
-
-    cabalUploadArgs = lib.mkOption {
-      description = "Extra CLI arguments for `cabal upload` to use in [](#opt-hackage-hackage.uploadCommand).";
-      type = types.types.str;
-      default = "";
-    };
-
-    askVersion = lib.mkOption {
-      description = "Whether to interactively query the user for a new version when releasing.";
+    askVersion = deprecatedOption {
       type = types.bool;
-      default = true;
+      key = "hackage.askVersion";
+      replacement = "release.interactive";
+      extra = "Use the interactive option to enable UI-based version selection.";
+      description = "Deprecated. Use release.interactive instead.";
     };
 
-    confirm = lib.mkOption {
-      description = "Whether to ask for confirmation before uploading.";
+    confirm = deprecatedOption {
       type = types.bool;
-      default = true;
-    };
-
-    # TODO
-    hermetic = lib.mkOption {
-      description = "Whether to ignore the Cabal config in `$HOME`.";
-      type = types.bool;
-      default = false;
+      key = "hackage.confirm";
+      replacement = "release.interactive";
+      extra = "Use the interactive option to enable UI-based confirmation.";
+      description = "Deprecated. Use release.interactive instead.";
     };
 
     hooks = {
 
-      postUploadAll = lib.mkOption {
-        description = ''
-        Shell script lines (zsh) to run after uploading all packages.
-
-        Value is a function that gets the set `{source, publish}`, two booleans that indicate whether the sources (or
-        only docs) were uploaded, and whether the artifacts were published (or just candidates).
-        '';
+      postUploadAll = deprecatedOption {
         type = types.functionTo types.lines;
-        default = _: "";
+        key = "hackage.hooks";
+        replacement = "release.hooks";
+        extra = "Use release.hooks with executable files that receive context via environment variables.";
+        description = "Deprecated. Use release.hooks instead.";
       };
 
-      preCommitAll = lib.mkOption {
-        description = ''
-        Shell script lines (zsh) to run before commiting the version change after publishing all packages.
-        '';
+      preCommitAll = deprecatedOption {
         type = types.lines;
-        default = "";
+        key = "hackage.hooks";
+        replacement = "release.hooks";
+        extra = "Use release.hooks with executable files that receive context via environment variables.";
+        description = "Deprecated. Use release.hooks instead.";
       };
 
-      postCommitAll = lib.mkOption {
-        description = ''
-        Shell script lines (zsh) to run after commiting the version change after publishing all packages.
-        '';
+      postCommitAll = deprecatedOption {
         type = types.lines;
-        default = "";
+        key = "hackage.hooks";
+        replacement = "release.hooks";
+        extra = "Use release.hooks with executable files that receive context via environment variables.";
+        description = "Deprecated. Use release.hooks instead.";
       };
 
     };
@@ -224,11 +163,6 @@ in {
   };
 
   config.hackage = {
-
-    uploadCommand = lib.mkDefault (
-      { publish, doc, path }:
-      "${config.build-tools.cabal.package}/bin/cabal ${config.hackage.cabalArgs} upload ${config.hackage.cabalUploadArgs} ${if publish then "--publish " else ""}${if doc then "--documentation " else ""}${path}"
-    );
 
     repos."hackage.haskell.org" = {
       description = lib.mkDefault "central Hackage";

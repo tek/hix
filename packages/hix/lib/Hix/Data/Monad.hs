@@ -3,8 +3,12 @@ module Hix.Data.Monad (
   module Hix.Data.LogLevel,
 ) where
 
+import Control.Monad.Base (MonadBase)
 import Control.Monad.Catch (MonadCatch, MonadMask, MonadThrow)
+import Control.Monad.Error.Class (MonadError)
+import Control.Monad.Reader.Class (MonadReader)
 import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Control (MonadBaseControl)
 import Control.Monad.Trans.Except (ExceptT)
 import Control.Monad.Trans.Reader (ReaderT, asks)
 import Data.Generics.Labels ()
@@ -16,6 +20,8 @@ import Hix.Data.Error (Error)
 import Hix.Data.LogLevel (LogLevel (..))
 import Hix.Data.OutputFormat (OutputFormat)
 import Hix.Data.OutputTarget (OutputTarget)
+import Hix.Handlers.Tui (TuiHandlers)
+import Hix.Ui.Data.Theme (Theme)
 
 data AppResources =
   AppResources {
@@ -26,7 +32,8 @@ data AppResources =
     cabalVerbose :: Bool,
     output :: OutputFormat,
     target :: OutputTarget,
-    logger :: LogLevel -> Text -> M (),
+    theme :: Theme,
+    tui :: TuiHandlers M,
     context :: [AppContext]
   }
   deriving stock (Generic)
@@ -34,6 +41,7 @@ data AppResources =
 newtype M a =
   M (ReaderT AppResources (ExceptT Error IO) a)
   deriving newtype (Functor, Applicative, Monad, MonadIO, MonadThrow, MonadCatch, MonadMask)
+  deriving newtype (MonadBase IO, MonadBaseControl IO, MonadError Error, MonadReader AppResources)
 
 liftE :: ExceptT Error IO a -> M a
 liftE = M . lift

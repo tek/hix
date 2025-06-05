@@ -9,7 +9,88 @@ hls = {
 };
 integration = {
 };
+integration-exe = {
+};
 latest = {
+  ansi-terminal = {
+  meta = {
+    sha256 = "0km29930kkfc4958a9if4pz3ylqfw1l4055pnm6lvrskk3w4my58";
+    url = "https://hackage.haskell.org";
+    ver = "1.1.5";
+  };
+  drv = { mkDerivation, ansi-terminal-types, base, colour, lib }:
+mkDerivation {
+  pname = "ansi-terminal";
+  version = "1.1.5";
+  src = /nix/store/llp43fhsfv6ncglpwl10rnp7h8dxc2dw-source;
+  isLibrary = true;
+  isExecutable = true;
+  libraryHaskellDepends = [ ansi-terminal-types base colour ];
+  homepage = "https://github.com/UnkindPartition/ansi-terminal";
+  description = "Simple ANSI terminal support";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  brick = {
+  meta = {
+    sha256 = "1z4x74sxwl94kfp64f1w9hms227crhzf59khf9dkdfcf4hzyylwv";
+    url = "https://hackage.haskell.org";
+    ver = "2.10";
+  };
+  drv = { mkDerivation, base, bimap, bytestring, config-ini, containers
+, data-clist, deepseq, directory, exceptions, filepath, hashable
+, lib, microlens, microlens-mtl, microlens-th, mtl, QuickCheck, stm
+, template-haskell, text, text-zipper, time, unix-compat
+, unordered-containers, vector, vty, vty-crossplatform, word-wrap
+}:
+mkDerivation {
+  pname = "brick";
+  version = "2.10";
+  src = /nix/store/h01wxzx22r9za0zd8r1n9yzk2sf683q6-source;
+  isLibrary = true;
+  isExecutable = true;
+  libraryHaskellDepends = [
+    base bimap bytestring config-ini containers data-clist deepseq
+    directory exceptions filepath hashable microlens microlens-mtl
+    microlens-th mtl stm template-haskell text text-zipper time
+    unix-compat unordered-containers vector vty vty-crossplatform
+    word-wrap
+  ];
+  testHaskellDepends = [
+    base containers microlens QuickCheck vector vty vty-crossplatform
+  ];
+  homepage = "https://github.com/jtdaugherty/brick/";
+  description = "A declarative terminal user interface library";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  concurrent-output = {
+  meta = {
+    sha256 = "1w87rrf337s8wc4z3dkh2mk990003jsk18ry5yawv4465k4yvamw";
+    url = "https://hackage.haskell.org";
+    ver = "1.10.21";
+  };
+  drv = { mkDerivation, ansi-terminal, async, base, directory, exceptions
+, lib, process, stm, terminal-size, text, transformers, unix
+}:
+mkDerivation {
+  pname = "concurrent-output";
+  version = "1.10.21";
+  src = /nix/store/kwz3gmjbrzcw4iccsx2d0cyn85klblqy-source;
+  libraryHaskellDepends = [
+    ansi-terminal async base directory exceptions process stm
+    terminal-size text transformers unix
+  ];
+  description = "Ungarble output from several threads or commands";
+  license = lib.licenses.bsd2;
+}
+;
+}
+;
   exon = {
   meta = {
     sha256 = "0hg271cvjqm4ps75qpnirq9nvjwpwb03mcbn1a364jrysrj6bg3b";
@@ -33,6 +114,53 @@ mkDerivation {
   homepage = "https://github.com/tek/exon#readme";
   description = "Customizable quasiquote interpolation";
   license = "BSD-2-Clause-Patent";
+}
+;
+}
+;
+  extra = {
+  meta = {
+    sha256 = "0q3hyffi11dazq9n25r508spvmblx21wipfw10hfkxcazv5l1pg2";
+    url = "https://hackage.haskell.org";
+    ver = "1.8.1";
+  };
+  drv = { mkDerivation, base, clock, directory, filepath, lib, process
+, QuickCheck, quickcheck-instances, time, unix
+}:
+mkDerivation {
+  pname = "extra";
+  version = "1.8.1";
+  src = /nix/store/9zwhpi55dgbzha6m99xdkxl7531p0bl9-source;
+  libraryHaskellDepends = [
+    base clock directory filepath process time unix
+  ];
+  testHaskellDepends = [
+    base directory filepath QuickCheck quickcheck-instances unix
+  ];
+  homepage = "https://github.com/ndmitchell/extra#readme";
+  description = "Extra functions I use";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  filepattern = {
+  meta = {
+    sha256 = "1q5hdw3lq49fhl8qqn0gcp4bwqbqq34zvgrlxjpdf9sblrh3mkrl";
+    url = "https://hackage.haskell.org";
+    ver = "0.1.3";
+  };
+  drv = { mkDerivation, base, directory, extra, filepath, lib, QuickCheck
+}:
+mkDerivation {
+  pname = "filepattern";
+  version = "0.1.3";
+  src = /nix/store/n612qndp5xk4sjbqp5wnb9ql7ymsm93r-source;
+  libraryHaskellDepends = [ base directory extra filepath ];
+  testHaskellDepends = [ base directory extra filepath QuickCheck ];
+  homepage = "https://github.com/ndmitchell/filepattern#readme";
+  description = "File path glob-like matching";
+  license = lib.licenses.bsd3;
 }
 ;
 }
@@ -140,6 +268,49 @@ mkDerivation {
 ;
 }
 ;
+  lens = {
+  meta = {
+    sha256 = "17g77mqcyy83lxrhb9lnjnp6m38mgphyzkaajy8kf00c0a41lyya";
+    url = "https://hackage.haskell.org";
+    ver = "5.3.6";
+  };
+  drv = { mkDerivation, array, assoc, base, base-orphans, bifunctors
+, bytestring, call-stack, comonad, containers, contravariant
+, criterion, deepseq, distributive, exceptions, filepath, free
+, generic-deriving, hashable, indexed-traversable
+, indexed-traversable-instances, kan-extensions, lib, mtl, parallel
+, profunctors, QuickCheck, reflection, semigroupoids
+, simple-reflect, strict, tagged, tasty, tasty-hunit
+, tasty-quickcheck, template-haskell, text, th-abstraction, these
+, transformers, unordered-containers, vector
+}:
+mkDerivation {
+  pname = "lens";
+  version = "5.3.6";
+  src = /nix/store/ghi10m7md4bbhlfs1zvi93xwpsz42pjq-source;
+  libraryHaskellDepends = [
+    array assoc base base-orphans bifunctors bytestring call-stack
+    comonad containers contravariant distributive exceptions filepath
+    free hashable indexed-traversable indexed-traversable-instances
+    kan-extensions mtl parallel profunctors reflection semigroupoids
+    strict tagged template-haskell text th-abstraction these
+    transformers unordered-containers vector
+  ];
+  testHaskellDepends = [
+    base bytestring containers deepseq mtl QuickCheck simple-reflect
+    tasty tasty-hunit tasty-quickcheck text transformers
+  ];
+  benchmarkHaskellDepends = [
+    base bytestring comonad containers criterion deepseq
+    generic-deriving transformers unordered-containers vector
+  ];
+  homepage = "http://github.com/ekmett/lens/";
+  description = "Lenses, Folds and Traversals";
+  license = lib.licenses.bsd2;
+}
+;
+}
+;
   lens-regex-pcre = {
   meta = {
     sha256 = "08wp1jwq6zdhapmrw6gmksp2slycky5rzgknsixwbrqyp11sq1vk";
@@ -163,6 +334,56 @@ mkDerivation {
   ];
   homepage = "https://github.com/ChrisPenner/lens-regex-pcre#readme";
   description = "A lensy interface to regular expressions";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  lifted-async = {
+  meta = {
+    sha256 = "0c0njy8k70swqnp16wyrrkd1bxjsf3pxi34hxka1y1ifp3haccap";
+    url = "https://hackage.haskell.org";
+    ver = "0.11.0";
+  };
+  drv = { mkDerivation, async, base, constraints, lib, lifted-base
+, monad-control, mtl, tasty, tasty-bench, tasty-expected-failure
+, tasty-hunit, tasty-th, transformers-base
+}:
+mkDerivation {
+  pname = "lifted-async";
+  version = "0.11.0";
+  src = /nix/store/ygfc0qbnk7zcjk3fd6i8q4kd6wb9cc6y-source;
+  libraryHaskellDepends = [
+    async base constraints lifted-base monad-control transformers-base
+  ];
+  testHaskellDepends = [
+    base lifted-base mtl tasty tasty-expected-failure tasty-hunit
+    tasty-th
+  ];
+  benchmarkHaskellDepends = [ async base tasty-bench ];
+  homepage = "https://github.com/maoe/lifted-async";
+  description = "Run lifted IO operations asynchronously and wait for their results";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  mmorph = {
+  meta = {
+    sha256 = "0985lw1wx5wnr3xgn59k2pd152kvmmspg4kbla5w1lp7x4gcnxqr";
+    url = "https://hackage.haskell.org";
+    ver = "1.2.2";
+  };
+  drv = { mkDerivation, base, lib, mtl, transformers, transformers-compat
+}:
+mkDerivation {
+  pname = "mmorph";
+  version = "1.2.2";
+  src = /nix/store/diji799l9dm32dpz6676hxilj9c2j21r-source;
+  libraryHaskellDepends = [
+    base mtl transformers transformers-compat
+  ];
+  description = "Monad morphisms";
   license = lib.licenses.bsd3;
 }
 ;
@@ -215,6 +436,83 @@ mkDerivation {
   homepage = "https://codeberg.org/valpackett/pcre-heavy";
   description = "A regexp (regex) library on top of pcre-light you can actually use";
   license = lib.licenses.publicDomain;
+}
+;
+}
+;
+  prettyprinter-ansi-terminal = {
+  meta = {
+    sha256 = "09m8knzfvms12576pp2nrdn7j0wikylwjfr9r3z4swgipz1r3nki";
+    url = "https://hackage.haskell.org";
+    ver = "1.1.3";
+  };
+  drv = { mkDerivation, ansi-terminal, base, base-compat, containers
+, deepseq, doctest, gauge, lib, prettyprinter, QuickCheck, text
+}:
+mkDerivation {
+  pname = "prettyprinter-ansi-terminal";
+  version = "1.1.3";
+  src = /nix/store/myazyhlvjsjzmqmlx3bwyy8jg7wzl2qz-source;
+  libraryHaskellDepends = [ ansi-terminal base prettyprinter text ];
+  testHaskellDepends = [ base doctest ];
+  benchmarkHaskellDepends = [
+    base base-compat containers deepseq gauge prettyprinter QuickCheck
+    text
+  ];
+  homepage = "http://github.com/quchen/prettyprinter";
+  description = "ANSI terminal backend for the »prettyprinter« package";
+  license = lib.licenses.bsd2;
+}
+;
+}
+;
+  rainbow = {
+  meta = {
+    sha256 = "0yilda327zg70a3mvmjc71kjsfswwgydkiigiwl3b4rndqlffh6z";
+    url = "https://hackage.haskell.org";
+    ver = "0.34.2.2";
+  };
+  drv = { mkDerivation, base, bytestring, lens, lib, QuickCheck, terminfo
+, text
+}:
+mkDerivation {
+  pname = "rainbow";
+  version = "0.34.2.2";
+  src = /nix/store/ksl6wzmvvz2d6n6mrmsxl2s6l5ngrxr8-source;
+  libraryHaskellDepends = [ base bytestring lens terminfo text ];
+  testHaskellDepends = [
+    base bytestring lens QuickCheck terminfo text
+  ];
+  homepage = "https://www.github.com/massysett/rainbow";
+  description = "Print text to terminal with colors and effects";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  rainbox = {
+  meta = {
+    sha256 = "10x2apcvn26rcynlh24ajwchgshnazj5nn7jz2w5m4qxl734sk7c";
+    url = "https://hackage.haskell.org";
+    ver = "0.26.0.0";
+  };
+  drv = { mkDerivation, base, bytestring, containers, lens, lib, QuickCheck
+, rainbow, tasty, tasty-quickcheck, text
+}:
+mkDerivation {
+  pname = "rainbox";
+  version = "0.26.0.0";
+  src = /nix/store/z7jq3fmgz8vknmqfwzrkz8vy77b2025l-source;
+  libraryHaskellDepends = [
+    base bytestring containers lens rainbow text
+  ];
+  testHaskellDepends = [
+    base bytestring containers lens QuickCheck rainbow tasty
+    tasty-quickcheck text
+  ];
+  homepage = "https://www.github.com/massysett/rainbox";
+  description = "Two-dimensional box pretty printing, with colors";
+  license = lib.licenses.bsd3;
 }
 ;
 }
@@ -289,6 +587,81 @@ mkDerivation {
   homepage = "https://github.com/UnkindPartition/tasty";
   description = "QuickCheck support for the Tasty test framework";
   license = lib.licenses.mit;
+}
+;
+}
+;
+  vty = {
+  meta = {
+    sha256 = "0wvwgrcwx3hy52ij1b5qlbsgww0qaw1y0mvxbsrspav10vj8sm88";
+    url = "https://hackage.haskell.org";
+    ver = "6.5";
+  };
+  drv = { mkDerivation, base, binary, blaze-builder, bytestring, deepseq
+, directory, filepath, lib, microlens, microlens-mtl, mtl, parsec
+, stm, text, utf8-string, vector
+}:
+mkDerivation {
+  pname = "vty";
+  version = "6.5";
+  src = /nix/store/c27n7vcg65k46gvn1m390i8n7z8jsrk8-source;
+  libraryHaskellDepends = [
+    base binary blaze-builder bytestring deepseq directory filepath
+    microlens microlens-mtl mtl parsec stm text utf8-string vector
+  ];
+  homepage = "https://github.com/jtdaugherty/vty";
+  description = "A simple terminal UI library";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  vty-crossplatform = {
+  meta = {
+    sha256 = "18yxg8x4msr2ka23liss4fbdbm1xb3a12x54qaz8ka7s777cxrma";
+    url = "https://hackage.haskell.org";
+    ver = "0.5.0.0";
+  };
+  drv = { mkDerivation, base, lib, vty, vty-unix }:
+mkDerivation {
+  pname = "vty-crossplatform";
+  version = "0.5.0.0";
+  src = /nix/store/rpgci086f3skk68wsh3j3sip07qbh9ri-source;
+  isLibrary = true;
+  isExecutable = true;
+  libraryHaskellDepends = [ base vty vty-unix ];
+  description = "Cross-platform support for Vty";
+  license = lib.licenses.bsd3;
+}
+;
+}
+;
+  vty-unix = {
+  meta = {
+    sha256 = "09m9kj93rqfsjp0k87kbqm3dd774sa7bhdmb79g0xxx839gk2fmh";
+    url = "https://hackage.haskell.org";
+    ver = "0.2.0.0";
+  };
+  drv = { mkDerivation, ansi-terminal, base, blaze-builder, bytestring
+, containers, deepseq, lib, microlens, microlens-mtl, microlens-th
+, mtl, parsec, stm, terminfo, transformers, unix, utf8-string
+, vector, vty
+}:
+mkDerivation {
+  pname = "vty-unix";
+  version = "0.2.0.0";
+  src = /nix/store/rmf86x0l7afkgxii87fap6aiylps1iiq-source;
+  isLibrary = true;
+  isExecutable = true;
+  libraryHaskellDepends = [
+    base blaze-builder bytestring containers deepseq microlens
+    microlens-mtl microlens-th mtl parsec stm terminfo transformers
+    unix utf8-string vector vty
+  ];
+  executableHaskellDepends = [ ansi-terminal base vty ];
+  description = "Unix backend for Vty";
+  license = lib.licenses.bsd3;
+  mainProgram = "vty-unix-build-width-table";
 }
 ;
 }

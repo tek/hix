@@ -77,6 +77,7 @@ state =
       ])
     ],
     solver = [],
+    packages = [],
     resolving = False
   }
 
@@ -137,6 +138,7 @@ stateFileTarget =
   solver = {
     lower = {};
   };
+  packages = {};
   resolving = false;
 }
 |]

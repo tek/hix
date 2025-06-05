@@ -1271,46 +1271,177 @@ in {
   ```
   '';
 
-  upload = ''
-  ## Hackage upload {#upload}
+  release = ''
+  ## Releasing to Hackage {#release}
 
-  Hix provides flake apps that run the flake checks and upload package candidates, releases or docs to Hackage:
-
-  ```
-  $ nix run .#candidates
-  $ nix run .#release
-  $ nix run .#docs
-  ```
-
-  If `versionFile` is set, the script will substitute the `version:` line in that Cabal file after asking for
-  the next version.
-  If you use `nix run .#gen-cabal` to maintain the Cabal files, this should be a `.nix` file containing a string that's
-  also used for [](#opt-cabal-version):
+  The `release` app uploads packages to Hackage, manages version bumps, and creates git commits and tags for releases.
+  It provides fine-grained control over the release process, allowing you to specify version increments and select which
+  stages to execute:
 
   ```
+  $ nix run .#release -- --version minor --check --candidates
+  $ nix run .#release -- --package api-2.3.1 --package core-2.3.0 --candidates=none --publish --commit --tag --push
+  $ nix run .#release -- --interactive
+  ```
+
+  The app follows an opt-in pattern – without any flags, the default behavior is safe: uploading candidates
+  without git operations.
+  Running `nix run .#release` without `--interactive` requires specifying a version, since identical versions are
+  rejected by default.
+
+  ### Version specification {#release-version}
+
+  The `--version` option accepts a PVP increment (`supermajor`, `major`, `minor`, `patch`) or a literal version
+  (`2.5.0.1`).
+  When using an increment, the app bumps the current version accordingly.
+
+  Unless [](#opt-package-versionFile) is configured, the new versions are persisted in the
+  [managed state file](#opt-managed-managed.file).
+
+  By default, all packages are released.
+  To restrict the release to specific packages, or to assign individual versions, use the `--package` option, which
+  accepts a package name optionally followed by a version: `--package api-1.2.0`.
+  When `--version` is given without explicit per-package versions, it applies as a shared version to all packages.
+
+  ### Upload stages {#release-stages}
+
+  Releases can be split into two phases for safer CI workflows:
+
+  - *Candidates* (`--candidates`): Upload candidate tarballs and docs, intended for review before publishing
+  - *Publish* (`--publish`): Upload permanent release artifacts
+
+  Both `--candidates` and `--publish` accept an optional argument to select what to upload: `all`, `sources`,
+  or `docs`; and `auto` for `--candidates` to match `--publish`.
+  When the argument is omitted, the default is `auto` for `--candidates` and `all` for `--publish`.
+
+  The `--check` flag runs the flake checks before uploading.
+
+  For convenience, the apps `nix run .#candidates` and `nix run .#docs` are available as aliases for
+  `nix run .#release -- --candidates` and `nix run .#release -- --publish=docs`.
+
+  ### Git integration {#release-git}
+
+  The app can manage git operations as part of the release:
+
+  - `--commit`: Create a git commit with version file updates
+  - `--tag`: Create git tags for each released package
+  - `--push`: Push commits and tags to the remote
+  - `--merge`: Merge the release branch back into the initial branch after uploads
+
+  The release process creates a temporary branch for the version changes.
+  When `--merge` is specified, this branch is merged back into the initial branch after successful uploads.
+
+  Tags follow the naming convention `<package>-<version>` (or just `<version>` for single-package projects).
+
+  ### Version files {#release-version-files}
+
+  When a package has [](#opt-package-versionFile) configured, the app updates it with the new version.
+  This option supports both `.nix` files (containing a quoted string) and `.cabal` files.
+  The global [](#opt-release-release.versionFile) can be used when all packages share a single version file:
+
+  ```nix
   {
     packages.parser = {
-      cabal.version = import ./parser-version.nix;
-      versionFile = ./parser-version.nix;
+      versionFile = "parser-version.nix";
+      cabal.version = import ./parser-version.nix; # The default when `versionFile` is set to a `.nix` file
     };
   }
   ```
 
-  The options [](#opt-hackage-hackage.versionFileExtract) and [](#opt-hackage-hackage.versionFileUpdate) can be
-  customized to allow for arbitrary other formats.
+  ### Hackage credentials {#release-credentials}
 
-  The command line option `--version`/`-v` may be used to specify the version noninteractively.
-  Furthermore, if a package name is specified as a positional argument, only that package will be uploaded.
+  By default, the app does not read the global Cabal configuration file; repository config and credentials must be
+  provided via [](#opt-hackage-hackage.repos) or the CLI option `--hackage`.
+  The option `--global-cabal-config` disables this hermeticity and lets Cabal read from default config locations like
+  `~/.cabal/config`.
 
-  For example, to publish `parser` at version `2.5.0.1`:
+  The app will upload to all Hackage repos for which [](#opt-hackage-hackage.repos._name_.publish) is `true`, so you'll
+  need to provide credentials for each of them.
+
+  While passwords _can_ be specified in clear text in the option [](#opt-hackage-hackage.repos._name_.password), safer
+  mechanisms are supported as well.
+
+  Consider this example:
+
+  ```nix
+  {
+    hackage.repos = {
+
+      # Default for `publish` is `true` for central Hackage
+      "hackage.haskell.org" = {
+        user = "deepspace-mining-corp";
+        password = {
+          type = "exec";
+          value = "/path/to/password/script";
+        };
+      };
+
+      prod = {
+        location = "https://hackage.deepspace-mining.com:8080";
+        publish = true;
+        user = "ci";
+        password = {
+          type = "env-var";
+          value = "hackage_password_prod";
+        };
+      };
+
+      staging = {
+        location = "http://hackage.staging:80";
+        publish = true;
+      };
+
+    };
+  }
+  ```
+
+  With this config, the app will execute the configured script to obtain the password for central Hackage, and fetch
+  that for `prod` from the given environment variable.
+  For `staging`, the credentials must be specified as CLI args:
 
   ```
-  $ nix run .#release -- parser -v 2.5.0.1
+  $ nix run .#release -- --package api --version 0.5 --publish \
+    --hackage="staging:user:ci-staging" \
+    --hackage="staging:password:''${{ secrets.hackage_password }}"
   ```
 
-  The upload command will use your global Cabal config to obtain credentials, please consult the Cabal docs for more.
+  This example assumes a Github Actions environment and resembles the method used by the generated workflow described in
+  the next section.
 
-  The options module `hackage.hooks` provides a way to execute scripts at certain points in the release process.
+  When this command line is executed, the app will publish to all three configured Hackage repos.
+
+  ### Example workflows {#release-examples}
+
+  A typical two-phase CI workflow might look like:
+
+  ```
+  # Phase 1: Run checks, upload candidates, commit and push to release branch
+  $ nix run .#release -- --version minor --check --candidates --commit --push
+
+  # Phase 2: After approval, publish and tag
+  $ nix run .#release -- --version keep --publish --tag --push
+  ```
+
+  The flake apps `managed.gen.ga.releaseCandidates` and `managed.gen.ga.releasePublish` generate GitHub Actions
+  workflow files that implement this two-phase pattern.
+  The candidates workflow creates a PR from the release branch, and the publish workflow runs when the PR is merged.
+
+  For a quick single-package release on the main branch with all operations:
+
+  ```
+  $ nix run .#release -- --package parser --version 2.5.0.1 --check --publish --commit --tag --merge
+  ```
+
+  The option [](#opt-release-release.hooks) provides a way to execute scripts at certain points in the release process.
+
+  ### Migration from the old upload apps {#release-migration}
+
+  The previous interface exposed separate flake apps (`nix run .#candidates`, `nix run .#release`, `nix run .#docs`)
+  implemented as shell scripts.
+  This has been integrated into the Haskell CLI with explicit flags for finer control.
+  The old apps remain available as convenience shortcuts.
+  Where you previously ran `nix run .#release -- parser -v 2.5.0.1`, use
+  `nix run .#release -- --package parser --version 2.5.0.1 --publish` instead.
   '';
 
   tags = ''
@@ -1386,7 +1517,6 @@ in {
   >>> AppImage bundle for <exename> created at:
   /nix/store/bxbcp9mk9rf0sjg88hxsjqzpql5is280-<exename>-0.1.0.0-x86_64.AppImage
   ```
-
   '';
 
   managed = ''
@@ -1629,67 +1759,17 @@ in {
 
   ### Hackage credentials {#managed-hackage}
 
-  Revision uploads naturally require authentication, so you need to specify your hackage password somehow.
-  The simplest way is to use [](#opt-hackage-hackage.repos._name_.password), but it can also be passed on the command
-  line:
+  Revision uploads naturally require authentication.
+  See [](#release-credentials) for details on configuring Hackage credentials via [](#opt-hackage-hackage.repos) or the
+  `--hackage` CLI option.
 
-  ```
-  $ nix run .#revision -- --branch 'release/api/0.5' --hackage="hackage.haskell.org:password:$hackage_password"
-  ```
-
-  The app will upload to all Hackage repos for which [](#opt-hackage-hackage.repos._name_.publish) is `true`, so you'll
-  need to provide credentials for each of them.
-
-  The user name can be specified in the same manner.
-
-  Consider this more elaborate example:
-
-  ```nix
-  {
-    hackage.repos = {
-
-      # Default for `publish` is `true` for central Hackage
-      "hackage.haskell.org" = {
-        user = "deepspace-mining-corp";
-        password = {
-          type = "exec";
-          value = "/path/to/password/script";
-        };
-      };
-
-      prod = {
-        location = "https://hackage.deepspace-mining.com:8080";
-        publish = true;
-        user = "ci";
-        password = {
-          type = "env-var";
-          value = "hackage_password_prod";
-        };
-      };
-
-      staging = {
-        location = "http://hackage.staging:80";
-        publish = true;
-      };
-
-    };
-  }
-  ```
-
-  With this config, the app will execute the configured script to obtain the password for central Hackage, and fetch
-  that for `prod` from the given environment variable.
-  For `staging`, the credentials must be specified as CLI args:
+  For example, to pass credentials in a Github Actions workflow:
 
   ```
   $ nix run .#revision -- --branch 'release/api/0.5' \
     --hackage="staging:user:ci-staging" \
     --hackage="staging:password:''${{ secrets.hackage_password }}"
   ```
-
-  This example assumes a Github Actions environment and resembles the method used by the generated workflow described in
-  the previous section.
-
-  When this command line is executed, the app will publish revisions to all three configured Hackage repos.
   '';
 
   misc = ''

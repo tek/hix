@@ -35,6 +35,7 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (
   )
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (..))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
+import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (ArtifactSources))
 import qualified Hix.Managed.Cabal.Init as Cabal
 import Hix.Managed.Cabal.Init (remoteRepo)
 import Hix.Managed.Cabal.Resources (cabalVerbosity)
@@ -238,7 +239,7 @@ withHackageIds ids use =
     use hackage
   where
     publish repo = do
-      flags <- Cabal.solveFlags [remoteRepo repo] def
+      flags <- Cabal.globalFlagsWithDefaultCacheDir False [remoteRepo repo]
       verbosity <- cabalVerbosity
       tmp <- appRes.tmp
       let uploadConfig = UploadConfig {verbosity, user = "test", password = "test"}
@@ -248,7 +249,7 @@ withHackageIds ids use =
         appContextDebug [exon|publishing test package #{showP package}|] do
           packageDir <- createPackageDir root hid
           targz <- sourceDistribution packageDir package
-          publishPackage uploadConfig flags targz
+          publishPackage ArtifactSources uploadConfig flags targz
 
 writePortFile :: Port -> Path Abs File -> M ()
 writePortFile port path = do

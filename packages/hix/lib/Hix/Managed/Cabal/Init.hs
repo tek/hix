@@ -50,11 +50,15 @@ remoteRepo HackageRepo {name, location, secure, keys} =
     remoteRepoShouldTryHttps = hackageTlsBool location.tls
   }
 
-globalFlags :: NonEmpty RemoteRepo -> FilePath -> GlobalFlags
-globalFlags repos cacheDir =
+globalFlags ::
+  Bool ->
+  NonEmpty RemoteRepo ->
+  FilePath ->
+  GlobalFlags
+globalFlags useGlobalConfig repos cacheDir =
   defaultGlobalFlags {
     -- Cabal *always* reads ~/.cabal/config if no file is specified, and crashes if the file doesn't exist
-    globalConfigFile = toFlag "/dev/null",
+    globalConfigFile = if useGlobalConfig then mempty else toFlag "/dev/null",
     globalCacheDir = toFlag cacheDir,
     globalRemoteRepos = toNubList (toList repos)
   }
@@ -98,13 +102,17 @@ mainFlags conf =
 
     ghcPath exe (GhcPath dir) = toFilePath (dir </> [reldir|bin|] </> exe)
 
+globalFlagsWithDefaultCacheDir :: Bool -> NonEmpty RemoteRepo -> M GlobalFlags
+globalFlagsWithDefaultCacheDir useGlobalConfig repos = do
+  cacheDir <- tryIOMWith badCacheDir defaultCacheDir
+  pure (globalFlags useGlobalConfig repos cacheDir)
+
 solveFlags ::
   NonEmpty RemoteRepo ->
   SolveConfig ->
   M SolveFlags
 solveFlags repos conf = do
-  cacheDir <- tryIOMWith badCacheDir defaultCacheDir
-  let global = globalFlags repos cacheDir
+  global <- globalFlagsWithDefaultCacheDir False repos
   let main = mainFlags conf
   pure SolveFlags {global, main}
 

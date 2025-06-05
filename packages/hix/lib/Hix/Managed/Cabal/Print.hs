@@ -33,4 +33,4 @@ printPlan :: SolverInstallPlan -> M ()
 printPlan plan = do
   Log.info "Plan:"
   for_ (SolverInstallPlan.toList plan) \ pkg ->
-    Log.infoCont [exon|📦 #{toText (showPackage pkg)}|]
+    Log.cont.info [exon|📦 #{toText (showPackage pkg)}|]

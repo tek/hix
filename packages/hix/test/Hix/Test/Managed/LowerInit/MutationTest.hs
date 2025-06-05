@@ -117,6 +117,7 @@ state =
       ("lower-main", [("direct3", "direct3-1.0.1")])
     ],
     solver = [],
+    packages = [],
     resolving = False
   }
 
@@ -415,6 +416,7 @@ stateFileTarget =
     lower-main = {};
     lower-special = {};
   };
+  packages = {};
   resolving = false;
 }
 |]

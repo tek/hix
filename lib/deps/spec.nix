@@ -18,6 +18,7 @@ let
 
   composeOC = cur: prev: {
     multi = listOC cur ++ listOC prev;
+    __functor = composeOC;
     __hix_oc = true;
   };
 

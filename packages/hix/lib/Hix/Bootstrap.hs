@@ -289,14 +289,14 @@ bootstrapFiles conf = do
 
 initGitAndFlake :: M ()
 initGitAndFlake = do
-  AppResources { cwd } <- M ask
+  AppResources {cwd} <- M ask
   runGitNative cwd "init new project" \ git -> do
     statusResult <- git.cmd' ["status"]
     when (isLeft statusResult) $ git.cmd_ ["init"]
     git.cmd_ ["add", "."]
-    runFlakeLock cwd
+    runFlakeLock def
     git.cmd_ ["add", "flake.lock"]
-    runFlakeGenCabal cwd
+    runFlakeGenCabal def
     git.cmd_ ["add", "*.cabal"]
 
 bootstrapProject :: BootstrapProjectConfig -> M ()

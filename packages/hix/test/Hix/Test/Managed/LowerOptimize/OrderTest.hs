@@ -72,6 +72,7 @@ state =
     ],
     overrides = [("lower", [])],
     solver = [],
+    packages = [],
     resolving = False
   }
 

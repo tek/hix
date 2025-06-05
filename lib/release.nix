@@ -253,4 +253,17 @@
   ${updateCliVersion}
   '';
 
-in { inherit nix all updateCliVersion updateCliVersionScript; }
+  # Hook for release workflow that updates CLI version after publishing sources
+  hookUpdateCliVersion =
+    util.hixScript "release-hook-update-cli-version" { path = pkgs: [pkgs.jq]; } ''
+    if [[ -n $version ]] && [[ -n $context ]]
+    then
+      publish_sources=$(echo "$context" | jq -r '.publish.sources // false')
+      if [[ $publish_sources == "true" ]]
+      then
+        ${updateCliVersion}
+      fi
+    fi
+    '';
+
+in { inherit nix all updateCliVersion updateCliVersionScript hookUpdateCliVersion; }

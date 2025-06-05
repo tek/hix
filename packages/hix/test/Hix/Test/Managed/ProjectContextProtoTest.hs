@@ -187,6 +187,7 @@ targetProto =
       initial = mempty,
       overrides = mempty,
       solver = mempty,
+      packages = [],
       resolving = False
     },
     envs = [
@@ -315,6 +316,7 @@ targetProject =
       ],
       overrides = [],
       solver = [],
+      packages = [],
       resolving = False
     },
     envs = targetEnvs,

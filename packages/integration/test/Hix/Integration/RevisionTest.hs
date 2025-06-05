@@ -17,12 +17,12 @@ import Hix.Data.VersionBounds (Bound (BoundUpper), unsafeVersionBoundsFromRange)
 import Hix.Error (pathText)
 import Hix.Integration.Hackage (TestHackage (..), withHackageClient)
 import Hix.Integration.Utils (UnitTest, add, addP, libHs, local1, runMTest, withHixDir)
+import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (ArtifactSources))
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
 import Hix.Managed.Cabal.Data.Revision (Revision (..))
-import qualified Hix.Managed.Cabal.Init as Cabal
-import Hix.Managed.Cabal.Init (remoteRepo)
+import Hix.Managed.Cabal.Init (globalFlagsWithDefaultCacheDir, remoteRepo)
 import Hix.Managed.Cabal.Resources (cabalVerbosity)
 import Hix.Managed.Cabal.Sdist (sourceDistribution)
 import Hix.Managed.Cabal.Upload (UploadConfig (..), publishPackage, revisionCabalFile)
@@ -34,7 +34,7 @@ import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto (..))
 import Hix.Managed.Data.ProjectStateProto (ProjectStateProto (..))
 import Hix.Managed.Data.RevisionConfig (RevisionConfig)
-import Hix.Managed.Flake (runFlakeGen, runFlakeLock)
+import Hix.Managed.Flake (runFlakeAt, runFlakeGen, runFlakeLock)
 import qualified Hix.Managed.Git as Git
 import Hix.Managed.Git (GitNative, runGitNativeHermetic)
 import Hix.Managed.Handlers.Context (ContextKey (..), ContextQuery (ContextQuery))
@@ -181,9 +181,9 @@ setupProject hixRoot git = do
   git.cmd_ ["commit", "-m", "1"]
   git.cmd_ ["tag", "--no-sign", "0.1.0"]
   addP git [relfile|lib/Lib.hs|] libHs
-  runFlakeLock git.repo
+  runFlakeLock (runFlakeAt git.repo)
   git.cmd_ ["add", "flake.lock"]
-  runFlakeGen git.repo
+  runFlakeGen (runFlakeAt git.repo)
   git.cmd_ ["add", pathText (local1 </> [relfile|local1.cabal|])]
   git.cmd_ ["commit", "-m", "2"]
   git.cmd_ ["tag", "--no-sign", "0.2.0"]
@@ -194,7 +194,7 @@ bumpDeps git = do
   git.cmd_ ["switch", "--create", "release/local1/0.2.0"]
   git.cmd_ ["switch", "master"]
   add git [relfile|ops/managed.nix|] bumpedStateFile
-  runFlakeGen git.repo
+  runFlakeGen (runFlakeAt git.repo)
   git.cmd_ ["add", pathText (local1 </> [relfile|local1.cabal|])]
   git.cmd_ ["commit", "-m", "3"]
 
@@ -335,14 +335,14 @@ test_revision :: UnitTest
 test_revision =
   withHixDir \ hixRoot -> do
     revisedCabalContents <- runMTest False do
-      withTempRoot "test-maint" \ root ->
+      withTempRoot "test-revision" \ root ->
         withHackageClient \ hackage -> do
           packageDir <- runGitNativeHermetic root "test: project setup" (setupProject hixRoot)
           appContextDebug "publishing test package" do
-            flags <- Cabal.solveFlags [remoteRepo hackage.repo] def
+            flags <- globalFlagsWithDefaultCacheDir False [remoteRepo hackage.repo]
             targz <- sourceDistribution packageDir initialPackage
             verbosity <- cabalVerbosity
-            publishPackage UploadConfig {verbosity, user = "test", password = "test"} flags targz
+            publishPackage ArtifactSources UploadConfig {verbosity, user = "test", password = "test"} flags targz
           runGitNativeHermetic root "test: bump deps" bumpDeps
           handlers <- revisionHandlers hackage.client
           publishRevisions handlers revisionConfig maintContext
