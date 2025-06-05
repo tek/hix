@@ -51,10 +51,13 @@ releaseBranchName :: MaintBranch -> BranchName
 releaseBranchName = BranchName . formatReleaseBranch
 
 -- TODO make switching back to main configurable
-cleanup :: GitNative -> Bool -> Maybe Text -> Maybe Text -> M ()
-cleanup git push initialBranch mainRemote = do
+cleanup :: GitNative -> Maybe Text -> M ()
+cleanup git initialBranch = do
   git.cmd_ ["reset", "--hard"]
   for_ initialBranch \ branch -> git.cmd_ ["switch", "-f", branch]
+
+success :: GitNative -> Bool -> Maybe Text -> M ()
+success git push mainRemote =
   when push do
     for_ mainRemote \ remote -> git.cmd_ ["push", "--all", remote]
 
@@ -78,26 +81,27 @@ switchBranch git branch = do
   git.cmd_ ["switch", showP branchName]
   pure branchName
 
+gitBracket :: GitNative -> Bool -> Bool -> M a -> M a
+gitBracket git push fetch ma = do
+  git.cmd' ["diff", "--exit-code"] >>= leftA \ (out, err) ->
+    clientError [exon|Git tree is dirty:
+stdout: #{Text.unlines out}
+stderr: #{Text.unlines err}|]
+  when fetch do
+    git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
+  initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
+  mainRemote <- traverse (branchRemote git) initialBranch
+  finally (ma <* success git push (join mainRemote)) (cleanup git initialBranch)
+
 gitMaintNative :: MaintConfig -> GitNative -> GitMaint
 gitMaintNative MaintConfig {push, fetch, pr} git =
   GitMaint {
+    bracket = gitBracket git push fetch,
     listTargetBranches = listTargetBranches git,
     switchBranch = switchBranch git,
     ..
   }
   where
-    bracket :: ∀ a . M a -> M a
-    bracket ma = do
-      git.cmd' ["diff", "--exit-code"] >>= leftA \ (out, err) ->
-        clientError [exon|Git tree is dirty:
-stdout: #{Text.unlines out}
-stderr: #{Text.unlines err}|]
-      when fetch do
-        git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
-      initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
-      mainRemote <- traverse (branchRemote git) initialBranch
-      finally ma (cleanup git push initialBranch (join mainRemote))
-
     readTags = mapMaybe (simpleParsec . toString) <$> git.cmd ["tag", "--list", "--format=%(refname:short)"]
 
     branchOffTag branch tag = do
@@ -131,22 +135,11 @@ gitApiMaintHermetic config = gitApiHermetic (gitMaintNative config)
 gitRevisionNative :: RevisionConfig -> GitNative -> GitRevision
 gitRevisionNative RevisionConfig {fetch} git =
   GitRevision {
+    bracket = gitBracket git False fetch,
     listTargetBranches = listTargetBranches git,
     switchBranch = switchBranch git,
     ..
   }
-  where
-    bracket :: ∀ a . M a -> M a
-    bracket ma = do
-      git.cmd' ["diff", "--exit-code"] >>= leftA \ (out, err) ->
-        clientError [exon|Git tree is dirty:
-stdout: #{Text.unlines out}
-stderr: #{Text.unlines err}|]
-      when fetch do
-        git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
-      initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
-      mainRemote <- traverse (branchRemote git) initialBranch
-      finally ma (cleanup git False initialBranch (join mainRemote))
 
 gitApiRevisionProd :: RevisionConfig -> GitApi GitRevision
 gitApiRevisionProd config = gitApi (gitRevisionNative config)
