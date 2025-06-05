@@ -144,7 +144,6 @@ in {
           outputs.internals.legacyPackages
           outputs.envs.legacyPackages
           outputs.packages.legacyPackages
-          outputs.hackage.legacyPackages
           outputs.commands.legacyPackages
           outputs.managed.legacyPackages
           outputs.hpack.deprecatedApps
@@ -178,7 +177,7 @@ in {
           util.mergeAll [
             outputs.commands.apps
             (util.removeApp outputs.packages.apps.dev or {})
-            outputs.hackage.apps
+            outputs.release.apps
           ];
       };
 

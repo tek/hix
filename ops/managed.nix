@@ -9,9 +9,21 @@
         lower = "2.2.3.0";
         upper = "2.3";
       };
+      ansi-terminal = {
+        lower = null;
+        upper = "1.2";
+      };
       base = {
         lower = "4.19.2.0";
         upper = "4.22";
+      };
+      blaze-builder = {
+        lower = null;
+        upper = "0.5";
+      };
+      brick = {
+        lower = null;
+        upper = "2.11";
       };
       bytestring = {
         lower = "0.12.1.0";
@@ -81,6 +93,10 @@
         lower = "0.6.0.0";
         upper = "0.7";
       };
+      indexed-traversable = {
+        lower = null;
+        upper = "0.2";
+      };
       lens = {
         lower = "5.3.2";
         upper = "5.4";
@@ -89,9 +105,21 @@
         lower = "1.1.0.0";
         upper = "1.2";
       };
+      lifted-async = {
+        lower = null;
+        upper = "0.12";
+      };
+      mmorph = {
+        lower = null;
+        upper = "1.3";
+      };
       monad-control = {
         lower = "1.0.3.1";
         upper = "1.1";
+      };
+      mtl = {
+        lower = null;
+        upper = "2.4";
       };
       network = {
         lower = "3.2.8.0";
@@ -113,13 +141,33 @@
         lower = "1.8.0";
         upper = "1.9";
       };
+      pcre-light = {
+        lower = null;
+        upper = "0.5";
+      };
+      posix-pty = {
+        lower = null;
+        upper = "0.3";
+      };
       pretty = {
         lower = "1.1.3.6";
         upper = "1.2";
       };
+      rainbow = {
+        lower = null;
+        upper = "0.35";
+      };
+      rainbox = {
+        lower = null;
+        upper = "0.27";
+      };
       random = {
         lower = "1.2.1.3";
         upper = "1.3";
+      };
+      semialign = {
+        lower = null;
+        upper = "1.4";
       };
       tasty = {
         lower = "1.5.2";
@@ -133,6 +181,14 @@
         lower = "2.21.0.0";
         upper = "2.24";
       };
+      terminal-size = {
+        lower = null;
+        upper = "0.4";
+      };
+      terminfo = {
+        lower = null;
+        upper = "0.5";
+      };
       these = {
         lower = "1.2.1";
         upper = "1.3";
@@ -145,6 +201,10 @@
         lower = "0.6.1.0";
         upper = "0.7";
       };
+      transformers-base = {
+        lower = null;
+        upper = "0.5";
+      };
       typed-process = {
         lower = "0.2.5.0";
         upper = "0.3";
@@ -152,6 +212,18 @@
       unix = {
         lower = "2.8.6.0";
         upper = "2.9";
+      };
+      vector = {
+        lower = null;
+        upper = "0.14";
+      };
+      vty = {
+        lower = null;
+        upper = "6.6";
+      };
+      vty-unix = {
+        lower = null;
+        upper = "0.3";
       };
     };
     integration = {
@@ -207,6 +279,10 @@
         lower = null;
         upper = null;
       };
+      lifted-async = {
+        lower = null;
+        upper = null;
+      };
       network-uri = {
         lower = null;
         upper = null;
@@ -235,13 +311,20 @@
         lower = null;
         upper = null;
       };
+      vty = {
+        lower = null;
+        upper = null;
+      };
     };
   };
   versions = {
     latest = {
       Cabal = "3.16.0.0";
       aeson = "2.2.3.0";
+      ansi-terminal = "1.1.5";
       base = "4.21.0.0";
+      blaze-builder = "0.4.4.1";
+      brick = "2.10";
       bytestring = "0.12.2.0";
       cabal-install = "3.16.0.0";
       cabal-install-solver = "3.16.0.0";
@@ -249,7 +332,7 @@
       containers = "0.7";
       exceptions = "0.10.9";
       exon = "1.7.2.0";
-      extra = "1.8";
+      extra = "1.8.1";
       filepattern = "0.1.3";
       generic-lens = "2.3.0.0";
       generics-sop = "0.5.1.4";
@@ -258,24 +341,39 @@
       http-client-tls = "0.3.6.4";
       http-types = "0.12.4";
       incipit-base = "0.6.1.1";
-      lens = "5.3.5";
+      indexed-traversable = "0.1.4";
+      lens = "5.3.6";
       lens-regex-pcre = "1.1.2.0";
+      lifted-async = "0.11.0";
+      mmorph = "1.2.2";
       monad-control = "1.0.3.1";
+      mtl = "2.3.1";
       network = "3.2.8.0";
       network-uri = "2.6.4.2";
       optparse-applicative = "0.19.0.0";
       path = "0.9.6";
       path-io = "1.8.2";
+      pcre-light = "0.4.1.3";
+      posix-pty = "0.2.2";
       pretty = "1.1.3.6";
+      rainbow = "0.34.2.2";
+      rainbox = "0.26.0.0";
       random = "1.2.1.3";
+      semialign = "1.3.1";
       tasty = "1.5.3";
       tasty-hedgehog = "1.4.0.2";
       template-haskell = "2.23.0.0";
+      terminal-size = "0.3.4";
+      terminfo = "0.4.1.7";
       these = "1.2.1";
       time = "1.14";
       transformers = "0.6.1.2";
+      transformers-base = "0.4.6";
       typed-process = "0.2.13.0";
       unix = "2.8.6.0";
+      vector = "0.13.2.0";
+      vty = "6.5";
+      vty-unix = "0.2.0.0";
     };
     lower = {
       Cabal = "3.16.0.0";
@@ -359,9 +457,34 @@
   };
   overrides = {
     latest = {
+      ansi-terminal = {
+        version = "1.1.5";
+        hash = "0km29930kkfc4958a9if4pz3ylqfw1l4055pnm6lvrskk3w4my58";
+        repo = "hackage.haskell.org";
+      };
+      brick = {
+        version = "2.10";
+        hash = "1z4x74sxwl94kfp64f1w9hms227crhzf59khf9dkdfcf4hzyylwv";
+        repo = "hackage.haskell.org";
+      };
+      concurrent-output = {
+        version = "1.10.21";
+        hash = "1w87rrf337s8wc4z3dkh2mk990003jsk18ry5yawv4465k4yvamw";
+        repo = "hackage.haskell.org";
+      };
       exon = {
         version = "1.7.2.0";
         hash = "0hg271cvjqm4ps75qpnirq9nvjwpwb03mcbn1a364jrysrj6bg3b";
+        repo = "hackage.haskell.org";
+      };
+      extra = {
+        version = "1.8.1";
+        hash = "0q3hyffi11dazq9n25r508spvmblx21wipfw10hfkxcazv5l1pg2";
+        repo = "hackage.haskell.org";
+      };
+      filepattern = {
+        version = "0.1.3";
+        hash = "1q5hdw3lq49fhl8qqn0gcp4bwqbqq34zvgrlxjpdf9sblrh3mkrl";
         repo = "hackage.haskell.org";
       };
       generic-lens = {
@@ -384,9 +507,24 @@
         hash = "04cjnz4i1qs3v9bza8a3ry1czapwqgxazhywkjzq2rg1544gjmby";
         repo = "hackage.haskell.org";
       };
+      lens = {
+        version = "5.3.6";
+        hash = "17g77mqcyy83lxrhb9lnjnp6m38mgphyzkaajy8kf00c0a41lyya";
+        repo = "hackage.haskell.org";
+      };
       lens-regex-pcre = {
         version = "1.1.2.0";
         hash = "08wp1jwq6zdhapmrw6gmksp2slycky5rzgknsixwbrqyp11sq1vk";
+        repo = "hackage.haskell.org";
+      };
+      lifted-async = {
+        version = "0.11.0";
+        hash = "0c0njy8k70swqnp16wyrrkd1bxjsf3pxi34hxka1y1ifp3haccap";
+        repo = "hackage.haskell.org";
+      };
+      mmorph = {
+        version = "1.2.2";
+        hash = "0985lw1wx5wnr3xgn59k2pd152kvmmspg4kbla5w1lp7x4gcnxqr";
         repo = "hackage.haskell.org";
       };
       optparse-applicative = {
@@ -397,6 +535,21 @@
       pcre-heavy = {
         version = "1.0.0.3";
         hash = "0k1c0j69cpyzxyfq4q92p74rlzak6za4n0xv5b7npapml4m7kb1j";
+        repo = "hackage.haskell.org";
+      };
+      prettyprinter-ansi-terminal = {
+        version = "1.1.3";
+        hash = "09m8knzfvms12576pp2nrdn7j0wikylwjfr9r3z4swgipz1r3nki";
+        repo = "hackage.haskell.org";
+      };
+      rainbow = {
+        version = "0.34.2.2";
+        hash = "0yilda327zg70a3mvmjc71kjsfswwgydkiigiwl3b4rndqlffh6z";
+        repo = "hackage.haskell.org";
+      };
+      rainbox = {
+        version = "0.26.0.0";
+        hash = "10x2apcvn26rcynlh24ajwchgshnazj5nn7jz2w5m4qxl734sk7c";
         repo = "hackage.haskell.org";
       };
       tasty = {
@@ -412,6 +565,21 @@
       tasty-quickcheck = {
         version = "0.11";
         hash = "1sb16pchr52kaw8vpzczjf2j4kjp05x0qkx3619djaywzcsnfpgx";
+        repo = "hackage.haskell.org";
+      };
+      vty = {
+        version = "6.5";
+        hash = "0wvwgrcwx3hy52ij1b5qlbsgww0qaw1y0mvxbsrspav10vj8sm88";
+        repo = "hackage.haskell.org";
+      };
+      vty-crossplatform = {
+        version = "0.5.0.0";
+        hash = "18yxg8x4msr2ka23liss4fbdbm1xb3a12x54qaz8ka7s777cxrma";
+        repo = "hackage.haskell.org";
+      };
+      vty-unix = {
+        version = "0.2.0.0";
+        hash = "09m9kj93rqfsjp0k87kbqm3dd774sa7bhdmb79g0xxx839gk2fmh";
         repo = "hackage.haskell.org";
       };
     };

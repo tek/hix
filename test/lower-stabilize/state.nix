@@ -46,5 +46,6 @@
   solver = {
     lower = {};
   };
+  packages = {};
   resolving = false;
 }

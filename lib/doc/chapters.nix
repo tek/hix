@@ -80,10 +80,9 @@
   ];
   mod-service = options.moduleWithout serviceExclude "service" { inherit util; };
 
-  hackageExclude = [
-    { type = "sub"; path = ["output"]; }
-  ];
-  mod-hackage = options.moduleWithout hackageExclude "hackage" { inherit config lib util; };
+  mod-hackage = options.module "hackage" { inherit config lib util; };
+
+  mod-release = options.module "release" { inherit config lib util; };
 
   mod-managed = options.moduleWithout [] "managed" { inherit config lib util; };
 
@@ -164,10 +163,11 @@
       fragments = [
         (text prose.hls)
         (text prose.compat)
-        (text prose.upload)
-        (opt "hackage" "Hackage" mod-hackage)
         (text prose.tags)
         (text prose.cross)
+        (text prose.release)
+        (opt "release" "Release" mod-release)
+        (opt "hackage" "Hackage" mod-hackage)
         (text prose.managed)
         (opt "managed" "Managed dependencies" mod-managed)
         (text prose.misc)

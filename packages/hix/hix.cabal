@@ -69,6 +69,10 @@ library
       Hix.Hackage
       Hix.Hackage.Hash
       Hix.Hackage.Versions
+      Hix.Handlers.Tui
+      Hix.Handlers.Tui.InMemory
+      Hix.Handlers.Tui.Prod
+      Hix.Handlers.Tui.Test
       Hix.Http
       Hix.Json
       Hix.Log
@@ -104,6 +108,7 @@ library
       Hix.Managed.Cabal.Data.SolverState
       Hix.Managed.Cabal.Data.SolveTarget
       Hix.Managed.Cabal.Data.SourcePackage
+      Hix.Managed.Cabal.Data.UploadStage
       Hix.Managed.Cabal.HackageLocation
       Hix.Managed.Cabal.HackageRepo
       Hix.Managed.Cabal.Init
@@ -126,6 +131,7 @@ library
       Hix.Managed.Data.BuildOutput
       Hix.Managed.Data.Bump
       Hix.Managed.Data.Constraints
+      Hix.Managed.Data.CreatedRefs
       Hix.Managed.Data.CurrentBuild
       Hix.Managed.Data.Diff
       Hix.Managed.Data.EnvConfig
@@ -147,6 +153,7 @@ library
       Hix.Managed.Data.MutationState
       Hix.Managed.Data.NixOutput
       Hix.Managed.Data.Packages
+      Hix.Managed.Data.PackageState
       Hix.Managed.Data.ProcessState
       Hix.Managed.Data.ProjectContext
       Hix.Managed.Data.ProjectContextProto
@@ -155,13 +162,18 @@ library
       Hix.Managed.Data.ProjectStateProto
       Hix.Managed.Data.Query
       Hix.Managed.Data.QueryDep
+      Hix.Managed.Data.ReleaseConfig
+      Hix.Managed.Data.ReleaseContext
       Hix.Managed.Data.RevisionConfig
       Hix.Managed.Data.SpecialMaintHandlers
       Hix.Managed.Data.StageContext
       Hix.Managed.Data.StageResult
       Hix.Managed.Data.StageState
       Hix.Managed.Data.StateFileConfig
+      Hix.Managed.Data.StateVersionsContext
       Hix.Managed.Data.Targets
+      Hix.Managed.Data.UploadResult
+      Hix.Managed.Data.VersionIncrement
       Hix.Managed.Diff
       Hix.Managed.Env
       Hix.Managed.EnvContext
@@ -170,6 +182,7 @@ library
       Hix.Managed.Flake
       Hix.Managed.Flow
       Hix.Managed.Git
+      Hix.Managed.Git.Native
       Hix.Managed.Handlers.AvailableVersions
       Hix.Managed.Handlers.AvailableVersions.Prod
       Hix.Managed.Handlers.AvailableVersions.Test
@@ -189,6 +202,36 @@ library
       Hix.Managed.Handlers.Mutation.Lower
       Hix.Managed.Handlers.Project
       Hix.Managed.Handlers.Project.Prod
+      Hix.Managed.Handlers.Release
+      Hix.Managed.Handlers.Release.Prod
+      Hix.Managed.Handlers.Release.Test
+      Hix.Managed.Handlers.ReleaseUi
+      Hix.Managed.Handlers.ReleaseUi.Batch
+      Hix.Managed.Handlers.ReleaseUi.DistTargets.Context
+      Hix.Managed.Handlers.ReleaseUi.DistTargets.Event
+      Hix.Managed.Handlers.ReleaseUi.DistTargets.KeyEvent
+      Hix.Managed.Handlers.ReleaseUi.DistTargets.Render
+      Hix.Managed.Handlers.ReleaseUi.DistTargets.Run
+      Hix.Managed.Handlers.ReleaseUi.DistTargets.State
+      Hix.Managed.Handlers.ReleaseUi.Prod
+      Hix.Managed.Handlers.ReleaseUi.UploadTargets.Context
+      Hix.Managed.Handlers.ReleaseUi.UploadTargets.Event
+      Hix.Managed.Handlers.ReleaseUi.UploadTargets.KeyEvent
+      Hix.Managed.Handlers.ReleaseUi.UploadTargets.Render
+      Hix.Managed.Handlers.ReleaseUi.UploadTargets.Run
+      Hix.Managed.Handlers.ReleaseUi.UploadTargets.State
+      Hix.Managed.Handlers.ReleaseUi.VersionProblems.Context
+      Hix.Managed.Handlers.ReleaseUi.VersionProblems.Event
+      Hix.Managed.Handlers.ReleaseUi.VersionProblems.KeyEvent
+      Hix.Managed.Handlers.ReleaseUi.VersionProblems.Render
+      Hix.Managed.Handlers.ReleaseUi.VersionProblems.Run
+      Hix.Managed.Handlers.ReleaseUi.VersionProblems.State
+      Hix.Managed.Handlers.ReleaseUi.Versions.Context
+      Hix.Managed.Handlers.ReleaseUi.Versions.Event
+      Hix.Managed.Handlers.ReleaseUi.Versions.KeyEvent
+      Hix.Managed.Handlers.ReleaseUi.Versions.Render
+      Hix.Managed.Handlers.ReleaseUi.Versions.Run
+      Hix.Managed.Handlers.ReleaseUi.Versions.State
       Hix.Managed.Handlers.Report
       Hix.Managed.Handlers.Report.Prod
       Hix.Managed.Handlers.Report.Test
@@ -199,6 +242,8 @@ library
       Hix.Managed.Handlers.StateFile
       Hix.Managed.Handlers.StateFile.Prod
       Hix.Managed.Handlers.StateFile.Test
+      Hix.Managed.Handlers.Upload
+      Hix.Managed.Handlers.Upload.Prod
       Hix.Managed.Lower.App
       Hix.Managed.Lower.Auto
       Hix.Managed.Lower.Candidates
@@ -226,6 +271,29 @@ library
       Hix.Managed.ProjectResult
       Hix.Managed.ProjectStateProto
       Hix.Managed.QueryDep
+      Hix.Managed.Release
+      Hix.Managed.Release.Compat
+      Hix.Managed.Release.Context
+      Hix.Managed.Release.Data.ReleasePlan
+      Hix.Managed.Release.Data.ReleaseResult
+      Hix.Managed.Release.Data.ReleaseTarget
+      Hix.Managed.Release.Data.SelectedVersion
+      Hix.Managed.Release.Data.Staged
+      Hix.Managed.Release.Data.TargetSpec
+      Hix.Managed.Release.Data.TerminateFlow
+      Hix.Managed.Release.Data.UploadResult
+      Hix.Managed.Release.Data.VersionChoice
+      Hix.Managed.Release.Flow
+      Hix.Managed.Release.Git
+      Hix.Managed.Release.Hook
+      Hix.Managed.Release.Package
+      Hix.Managed.Release.ReleasePlan
+      Hix.Managed.Release.ReleaseResult
+      Hix.Managed.Release.Report
+      Hix.Managed.Release.Staged
+      Hix.Managed.Release.StateVersions
+      Hix.Managed.Release.Validation
+      Hix.Managed.Release.VersionFile
       Hix.Managed.ReleaseMaintenance
       Hix.Managed.Report
       Hix.Managed.StageContext
@@ -234,8 +302,10 @@ library
       Hix.Managed.StateFile
       Hix.Managed.Targets
       Hix.Managed.UpdateState
+      Hix.Managed.VersionIncrement
       Hix.Maybe
       Hix.Monad
+      Hix.Monad.Run
       Hix.Network
       Hix.New
       Hix.NixCode
@@ -248,8 +318,23 @@ library
       Hix.Prelude
       Hix.Preproc
       Hix.Pretty
+      Hix.Regex
+      Hix.Terminal.Geometry
+      Hix.Terminal.State
+      Hix.Terminal.Vty
       Hix.These
       Hix.Trace
+      Hix.Tui
+      Hix.Ui
+      Hix.Ui.Data.Attr
+      Hix.Ui.Data.KeyBinding
+      Hix.Ui.Data.Nav
+      Hix.Ui.Data.Theme
+      Hix.Ui.Debug
+      Hix.Ui.Event
+      Hix.Ui.KeyMappings
+      Hix.Ui.Nav
+      Hix.Ui.Render
       Hix.Version
       Hix.Zip
   hs-source-dirs:
@@ -295,7 +380,10 @@ library
   build-depends:
       Cabal >=3.16.0.0 && <3.17
     , aeson >=2.2.3.0 && <2.3
+    , ansi-terminal <1.2
     , base >=4.19.2.0 && <4.22
+    , blaze-builder <0.5
+    , brick <2.11
     , bytestring >=0.12.1.0 && <0.13
     , cabal-install >=3.16.0.0 && <3.17
     , cabal-install-solver >=3.16.0.0 && <3.17
@@ -311,22 +399,31 @@ library
     , http-client-tls >=0.3.0 && <0.4
     , http-types ==0.12.*
     , incipit-base >=0.6.0.0 && <0.7
+    , indexed-traversable <0.2
     , lens >=5.3.2 && <5.4
     , lens-regex-pcre >=1.1.0.0 && <1.2
+    , lifted-async <0.12
     , monad-control >=1.0.3.1 && <1.1
+    , mtl <2.4
     , network >=3.2.8.0 && <3.3
     , network-uri >=2.6.4.2 && <2.7
     , optparse-applicative >=0.18.1.0 && <0.20
     , path >=0.9.6 && <0.10
     , path-io >=1.8.0 && <1.9
+    , pcre-light <0.5
     , pretty >=1.1.3.6 && <1.2
     , random >=1.2.1.3 && <1.3
     , template-haskell >=2.21.0.0 && <2.24
+    , terminfo <0.5
     , these >=1.2.1 && <1.3
     , time >=1.12.2 && <1.15
     , transformers >=0.6.1.0 && <0.7
+    , transformers-base <0.5
     , typed-process >=0.2.5.0 && <0.3
     , unix >=2.8.6.0 && <2.9
+    , vector <0.14
+    , vty <6.6
+    , vty-unix <0.3
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -384,15 +481,18 @@ library testing
   build-depends:
       Cabal >=3.16.0.0 && <3.17
     , base >=4.19.2.0 && <4.22
+    , exceptions >=0.10.7 && <0.11
     , exon >=1.7.0.0 && <1.8
     , extra ==1.8.*
     , hedgehog >=1.4 && <1.8
     , hix:hix ==0.9.1
     , incipit-base >=0.6.0.0 && <0.7
+    , mmorph <1.3
     , path >=0.9.6 && <0.10
     , path-io >=1.8.0 && <1.9
     , tasty >=1.5.2 && <1.6
     , tasty-hedgehog >=1.4.0.2 && <1.5
+    , transformers >=0.6.1.0 && <0.7
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -477,10 +577,14 @@ test-suite hix-test
       Hix.Test.Managed.LowerStabilize.MutationTest
       Hix.Test.Managed.Maint.Handlers
       Hix.Test.Managed.ProjectContextProtoTest
+      Hix.Test.Managed.Release.ValidationTest
       Hix.Test.Managed.ReleaseMaintenance.Case
       Hix.Test.Managed.ReleaseMaintenance.Gen
       Hix.Test.Managed.ReleaseMaintenanceTest
+      Hix.Test.Managed.ReleaseTest
+      Hix.Test.Managed.ReleaseUiTest
       Hix.Test.Managed.TagTest
+      Hix.Test.Managed.TargetSpecTest
       Hix.Test.ManagedTest
       Hix.Test.NewTest
       Hix.Test.PreprocTest
@@ -535,6 +639,7 @@ test-suite hix-test
     , hix
     , hix:testing ==0.9.1
     , incipit-base >=0.6.0.0 && <0.7
+    , lens >=5.3.2 && <5.4
     , path >=0.9.6 && <0.10
     , path-io >=1.8.0 && <1.9
     , pretty >=1.1.3.6 && <1.2
@@ -543,6 +648,7 @@ test-suite hix-test
     , these >=1.2.1 && <1.3
     , time >=1.12.2 && <1.15
     , transformers >=0.6.1.0 && <0.7
+    , vector <0.14
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)

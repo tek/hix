@@ -30,5 +30,5 @@ test_appContext = do
             appContextVerbose "in context4" do
               fatalError "error"
     err <- noteFatal "no error" caught
-    printErrorWith Log.infoPlain LogVerbose err
+    printErrorWith Log.plain.info LogVerbose err
   target_appContext === reverse log

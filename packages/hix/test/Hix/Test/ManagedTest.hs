@@ -17,9 +17,13 @@ import Hix.Test.Managed.LowerOptimize.MutationTest (test_lowerOptimizeMutation)
 import Hix.Test.Managed.LowerOptimize.OrderTest (test_mutationOrder)
 import Hix.Test.Managed.LowerStabilize.MutationTest (test_lowerStabilizeMutation)
 import Hix.Test.Managed.ProjectContextProtoTest (test_parseProjectContextProto)
+import Hix.Test.Managed.Release.ValidationTest (test_validation)
 import Hix.Test.Managed.ReleaseMaintenanceTest (test_maint)
+import Hix.Test.Managed.ReleaseTest (test_release, test_releaseReport, test_versionValidation)
 import Hix.Test.Managed.TagTest (test_tag)
+import Hix.Test.Managed.TargetSpecTest (test_targetSpec)
 import Hix.Test.Utils (unitTest)
+import Hix.Test.Managed.ReleaseUiTest (test_nav)
 
 test_managed :: TestTree
 test_managed =
@@ -43,5 +47,13 @@ test_managed =
       test_maint,
       test_tag,
       test_hackageData,
-      test_analysis
+      test_analysis,
+      testGroup "release" [
+        test_validation,
+        test_release,
+        test_releaseReport,
+        test_versionValidation,
+        unitTest "UI navigation" test_nav,
+        test_targetSpec
+      ]
     ]

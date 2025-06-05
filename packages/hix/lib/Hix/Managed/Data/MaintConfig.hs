@@ -14,7 +14,7 @@ data MaintConfig =
     revision :: Bool,
     -- | Fetch tags and branches.
     fetch :: Bool,
-    -- | Use the global git config rather than a synthetic committer ID (hix@tryp.io).
+    -- | Use the global git config rather than a synthetic committer ID (hix-bot@github.com).
     globalGit :: Bool
   }
   deriving stock (Eq, Show)

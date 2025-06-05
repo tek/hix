@@ -71,5 +71,6 @@
     lower-local1 = {};
     lower-local2 = {};
   };
+  packages = {};
   resolving = false;
 }

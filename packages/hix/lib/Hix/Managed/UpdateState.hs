@@ -45,6 +45,7 @@ projectStateWithEnv context new old =
     initial = nAdjust context.env old.initial (nAmend applyVersionChange new.initial),
     overrides = nInsert context.env new.overrides old.overrides,
     solver = nInsert context.env new.solver old.solver,
+    packages = old.packages,
     resolving = old.resolving
   }
   where
@@ -61,6 +62,7 @@ envStateForBuild env overrides =
     initial = [],
     overrides = [(env, overrides)],
     solver = [],
+    packages = [],
     resolving = True
   }
 
@@ -75,6 +77,7 @@ envStateForSolver env overrides =
     initial = [],
     overrides = [],
     solver = [(env, overrides)],
+    packages = [],
     resolving = True
   }
 

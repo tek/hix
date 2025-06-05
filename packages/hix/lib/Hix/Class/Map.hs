@@ -1,5 +1,6 @@
 module Hix.Class.Map where
 
+import Data.Generics.Labels ()
 import qualified Data.Map.Merge.Strict as Map
 import Data.Map.Merge.Strict (
   SimpleWhenMatched,
@@ -13,12 +14,8 @@ import Data.Map.Merge.Strict (
   )
 import qualified Data.Map.Strict as Map
 import Distribution.Pretty (Pretty (pretty))
-import Exon (exon)
 import qualified Text.PrettyPrint as PrettyPrint
 import Text.PrettyPrint (Doc, comma, hang, punctuate, sep, vcat, (<+>))
-
-import Hix.Data.Monad (M)
-import Hix.Monad (noteFatal)
 
 data LookupMonoid
 data LookupMaybe
@@ -30,27 +27,6 @@ class (Ord k, Coercible map (Map k v)) => NMap map k v sort | map -> k v sort wh
   nGet = coerce
 
 instance Ord k => NMap (Map k v) k v LookupMaybe where
-
-lookupError ::
-  ∀ k v .
-  Show k =>
-  Text ->
-  k ->
-  Maybe v ->
-  M v
-lookupError thing k =
-  noteFatal [exon|No such #{thing}: #{show k}|]
-
-nFatal ::
-  ∀ map k v sort .
-  Show k =>
-  NMap map k v sort =>
-  Text ->
-  k ->
-  map ->
-  M v
-nFatal thing k m =
-  lookupError thing k (nGet m Map.!? k)
 
 type NLookup :: Type -> Type -> Type -> Type -> Constraint
 class NLookup sort k v l | sort v -> l where
@@ -83,6 +59,14 @@ infixl !?
 
 infixl !!
 
+nSize ::
+  ∀ map k v sort .
+  NMap map k v sort =>
+  map ->
+  Int
+nSize =
+  Map.size . nGet
+
 nInsert ::
   ∀ map k v sort .
   NMap map k v sort =>
@@ -92,6 +76,17 @@ nInsert ::
   map
 nInsert k v m =
   coerce (Map.insert k v (nGet m))
+
+nInsertWith ::
+  ∀ map k v sort .
+  NMap map k v sort =>
+  (v -> v -> v) ->
+  k ->
+  v ->
+  map ->
+  map
+nInsertWith f k v m =
+  coerce (Map.insertWith f k v (nGet m))
 
 nUpdate ::
   ∀ map k v sort l .
@@ -124,6 +119,15 @@ nAdjust ::
   map
 nAdjust k m f =
   nVia (Map.adjust f k) m
+
+nDelete ::
+  ∀ map k v sort .
+  NMap map k v sort =>
+  k ->
+  map ->
+  map
+nDelete k =
+  nVia (Map.delete k)
 
 nVia ::
   NMap map1 k1 v1 s1 =>
@@ -204,6 +208,15 @@ nOver ::
 nOver =
   flip nMap
 
+nOverWithKey ::
+  NMap map1 k v1 sort1 =>
+  NMap map2 k v2 sort2 =>
+  map1 ->
+  (k -> v1 -> v2) ->
+  map2
+nOverWithKey m f =
+  coerce (Map.mapWithKey f (nGet m))
+
 nViaList ::
   NMap map1 k1 v1 sort1 =>
   NMap map2 k2 v2 sort2 =>
@@ -245,6 +258,7 @@ nTransformMulti f =
   nViaList (>>= (uncurry f))
 
 nMapMaybe ::
+  ∀ map1 map2 k v1 v2 sort1 sort2 .
   NMap map1 k v1 sort1 =>
   NMap map2 k v2 sort2 =>
   (v1 -> Maybe v2) ->
@@ -288,6 +302,16 @@ nMapMaybeWithKey1 ::
 nMapMaybeWithKey1 =
   nMap . nMapMaybeWithKey
 
+nOverMaybe ::
+  ∀ map1 map2 k v1 v2 sort1 sort2 .
+  NMap map1 k v1 sort1 =>
+  NMap map2 k v2 sort2 =>
+  map1 ->
+  (v1 -> Maybe v2) ->
+  map2
+nOverMaybe m f =
+  nMapMaybe f m
+
 nCatMaybes ::
   NMap map1 k (Maybe v) sort1 =>
   NMap map2 k v sort2 =>
@@ -323,6 +347,90 @@ nFilterWithKey ::
   map
 nFilterWithKey =
   nVia . Map.filterWithKey
+
+nTraverse ::
+  ∀ map1 map2 k v1 v2 sort m .
+  Applicative m =>
+  NMap map1 k v1 sort =>
+  NMap map2 k v2 sort =>
+  (v1 -> m v2) ->
+  map1 ->
+  m map2
+nTraverse f =
+  nViaA (traverse f)
+
+nTraverse_ ::
+  ∀ map k v a sort m .
+  Applicative m =>
+  NMap map k v sort =>
+  (v -> m a) ->
+  map ->
+  m ()
+nTraverse_ f =
+  traverse_ f . nGet
+
+nTraverseWithKey ::
+  ∀ map1 map2 k v1 v2 sort m .
+  Applicative m =>
+  NMap map1 k v1 sort =>
+  NMap map2 k v2 sort =>
+  (k -> v1 -> m v2) ->
+  map1 ->
+  m map2
+nTraverseWithKey f =
+  nViaA (Map.traverseWithKey f)
+
+nTraverseWithKey_ ::
+  ∀ map1 k v a sort m .
+  Applicative m =>
+  NMap map1 k v sort =>
+  (k -> v -> m a) ->
+  map1 ->
+  m ()
+nTraverseWithKey_ f =
+  void . Map.traverseWithKey f . nGet
+
+nFor ::
+  ∀ map1 map2 k v1 v2 sort m .
+  Applicative m =>
+  NMap map1 k v1 sort =>
+  NMap map2 k v2 sort =>
+  map1 ->
+  (v1 -> m v2) ->
+  m map2
+nFor =
+  flip nTraverse
+
+nFor_ ::
+  ∀ map k v a sort m .
+  Applicative m =>
+  NMap map k v sort =>
+  map ->
+  (v -> m a) ->
+  m ()
+nFor_ =
+  flip nTraverse_
+
+nForWithKey ::
+  ∀ map1 map2 k v1 v2 sort m .
+  Applicative m =>
+  NMap map1 k v1 sort =>
+  NMap map2 k v2 sort =>
+  map1 ->
+  (k -> v1 -> m v2) ->
+  m map2
+nForWithKey =
+  flip nTraverseWithKey
+
+nForWithKey_ ::
+  ∀ map1 k v a sort m .
+  Applicative m =>
+  NMap map1 k v sort =>
+  map1 ->
+  (k -> v -> m a) ->
+  m ()
+nForWithKey_ =
+  flip nTraverseWithKey_
 
 nPrettyWith ::
   Pretty k =>
@@ -490,6 +598,8 @@ nPadKeep1 ::
 nPadKeep1 =
   nPad1 \ _ v2 -> v2
 
+-- | Map f over each key in @map2@, providing the value from @map1@ as 'Just' if it exists, or 'Nothing' if not.
+-- Drop entries only present in @map1@.
 nZipWithKeyR ::
   ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
   NMap map1 k v1 s1 =>
@@ -516,6 +626,8 @@ nZipR ::
   map3
 nZipR f = nZipWithKeyR (const f)
 
+-- | Map f over each key present in both @map1@ and @map2@.
+-- Drop entries only present in one of them.
 nZipWithKey ::
   ∀ map1 map2 map3 k v1 v2 v3 s1 s2 s3 .
   NMap map1 k v1 s1 =>
@@ -717,13 +829,13 @@ nForKeys ::
 nForKeys keys f =
   nFromList <$> for keys \ k -> (k,) <$> f k
 
-nFor ::
+nForValues ::
   Applicative m =>
   NMap map k v sort =>
   [v] ->
   (v -> m k) ->
   m map
-nFor values f =
+nForValues values f =
   nFromList <$> for values \ v -> (,v) <$> f v
 
 nForAssoc ::
@@ -808,3 +920,19 @@ nNull ::
   Bool
 nNull =
   null . nGet
+
+nAny ::
+  NMap map k v sort =>
+  (v -> Bool) ->
+  map ->
+  Bool
+nAny f =
+  any f . nGet
+
+nAll ::
+  NMap map k v sort =>
+  (v -> Bool) ->
+  map ->
+  Bool
+nAll f =
+  all f . nGet

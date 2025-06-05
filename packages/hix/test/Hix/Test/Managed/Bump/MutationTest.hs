@@ -302,8 +302,9 @@ state =
     overrides = [
       ("fancy", [("direct5", "direct5-1.1.1")])
     ],
-    solver = [],
     initial = [],
+    solver = [],
+    packages = [],
     resolving = False
   }
 
@@ -452,6 +453,7 @@ stateFileTarget =
   solver = {
     fancy = {};
   };
+  packages = {};
   resolving = false;
 }
 |]
@@ -585,6 +587,7 @@ state_upToDate =
     initial = [],
     overrides = [("latest", [("direct1", "direct1-1.0.1")])],
     solver = [],
+    packages = [],
     resolving = False
   }
 
@@ -623,6 +626,7 @@ stateFileTarget_upToDate =
   solver = {
     latest = {};
   };
+  packages = {};
   resolving = false;
 }
 |]

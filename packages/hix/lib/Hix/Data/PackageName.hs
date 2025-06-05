@@ -11,7 +11,7 @@ import Hix.Class.EncodeNix (EncodeNixKey)
 import Hix.Pretty (prettyText)
 
 newtype PackageName =
-  PackageName Text
+  PackageName { text :: Text }
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, ToString, Ord, FromJSON, FromJSONKey, ToJSON, ToJSONKey, EncodeNixKey)
 

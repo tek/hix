@@ -16,11 +16,13 @@ import qualified Hix.Color as Color
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.GhciConfig (CommandEnvContext, GhciConfig)
 import Hix.Data.Json (JsonContext)
-import Hix.Data.Monad (AppResources (..), M, appRes)
+import Hix.Data.Monad (M)
 import Hix.Json (jsonContext)
 import qualified Hix.Log as Log
 import Hix.Managed.Data.MaintContext (MaintContextProto)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
+import Hix.Managed.Data.ReleaseContext (ReleaseContextProto)
+import Hix.Managed.Data.StateVersionsContext (StateVersionsContext)
 import Hix.Managed.Flake (runFlakeForSingleLine)
 import Hix.Monad (appContext, eitherFatal, noteFatal, tryIOM)
 import Hix.Pretty (HPretty (hpretty), showP)
@@ -28,7 +30,9 @@ import Hix.Pretty (HPretty (hpretty), showP)
 type ContextKey :: Symbol -> Type -> Type
 data ContextKey name a where
   ContextMaint :: ContextKey "maint" MaintContextProto
+  ContextRelease :: ContextKey "release" ReleaseContextProto
   ContextManaged :: ContextKey "managed" ProjectContextProto
+  ContextStateVersions :: ContextKey "state-versions" StateVersionsContext
   ContextCommandEnv :: EnvName -> ContextKey "command-env" CommandEnvContext
   ContextGhci :: EnvName -> ContextKey "ghci" GhciConfig
 
@@ -87,8 +91,7 @@ internalScope = "__hix-internal__"
 queryFlake :: ContextQuery a -> M a
 queryFlake key@ContextQuery {} = do
   appContext [exon|querying the flake for the context #{Color.cyan name}|] do
-    root <- appRes.root
-    file <- decodeUtf8 <$> runFlakeForSingleLine desc root args id
+    file <- decodeUtf8 <$> runFlakeForSingleLine desc args
     eitherFatal . first toText =<< tryIOM (Aeson.eitherDecodeFileStrict' file)
   where
     args =

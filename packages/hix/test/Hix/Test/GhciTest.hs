@@ -41,7 +41,7 @@ import Hix.Error (pathText)
 import Hix.Ghci (argsGhciRun, assemble, ghciCmdlineFromOptions, ghcidCmdlineFromOptions)
 import qualified Hix.Managed.Handlers.Context as Context
 import Hix.Managed.Handlers.Context (ContextHandlers, ContextKey (..), ContextQuery (..))
-import Hix.Monad (runM)
+import Hix.Monad.Run (runM)
 import Hix.Test.Utils (UnitTest, unitTest)
 
 root :: Path Abs Dir

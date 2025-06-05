@@ -1,6 +1,5 @@
 module Hix.Managed.Maint.Git where
 
-import Control.Monad.Catch (finally)
 import qualified Data.Text as Text
 import Distribution.Parsec (simpleParsec)
 import Exon (exon)
@@ -10,20 +9,11 @@ import Hix.Data.Monad (M)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Managed.BuildOutput.CommitMsg (commitModified)
 import Hix.Managed.Data.BuildOutput (ModifiedId)
+import Hix.Managed.Data.CreatedRefs (newRefsRef)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
-import Hix.Managed.Git (
-  BranchName (..),
-  GitApi,
-  GitNative (..),
-  GitResult (..),
-  MaintBranch (..),
-  Tag,
-  gitApi,
-  gitApiHermetic,
-  gitError,
-  )
-import Hix.Monad (clientError, fatalError)
+import Hix.Managed.Git (BranchName (..), GitApi, GitNative (..), MaintBranch (..), Tag, gitApiHermeticM, gitApiM)
+import Hix.Managed.Git.Native (GitBracketConfig (..), createBranch, wrapBracketWithRefs)
 import Hix.Pretty (showP)
 
 data GitMaint =
@@ -50,26 +40,6 @@ formatReleaseBranch MaintBranch {..} =
 releaseBranchName :: MaintBranch -> BranchName
 releaseBranchName = BranchName . formatReleaseBranch
 
--- TODO make switching back to main configurable
-cleanup :: GitNative -> Maybe Text -> M ()
-cleanup git initialBranch = do
-  git.cmd_ ["reset", "--hard"]
-  for_ initialBranch \ branch -> git.cmd_ ["switch", "-f", branch]
-
-success :: GitNative -> Bool -> Maybe Text -> M ()
-success git push mainRemote =
-  when push do
-    for_ mainRemote \ remote -> git.cmd_ ["push", "--all", remote]
-
-branchRemote :: GitNative -> Text -> M (Maybe Text)
-branchRemote git branch =
-  git.cmdResult args >>= \case
-    GitSuccess remotes -> pure (head remotes)
-    GitFailure {code = 1} -> pure Nothing
-    GitFailure {..} -> fatalError (gitError args stdout stderr)
-  where
-    args = ["config", [exon|branch.#{branch}.remote|]]
-
 listTargetBranches :: GitNative -> LocalPackage -> M [MaintBranch]
 listTargetBranches git target = do
   allBranches <- git.cmd ["branch", "--list", "--format=%(refname:short)", [exon|release/##{target}/*|]]
@@ -81,68 +51,57 @@ switchBranch git branch = do
   git.cmd_ ["switch", showP branchName]
   pure branchName
 
-gitBracket :: GitNative -> Bool -> Bool -> M a -> M a
-gitBracket git push fetch ma = do
-  git.cmd' ["diff", "--exit-code"] >>= leftA \ (out, err) ->
-    clientError [exon|Git tree is dirty:
-stdout: #{Text.unlines out}
-stderr: #{Text.unlines err}|]
-  when fetch do
-    git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
-  initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
-  mainRemote <- traverse (branchRemote git) initialBranch
-  finally (ma <* success git push (join mainRemote)) (cleanup git initialBranch)
-
-gitMaintNative :: MaintConfig -> GitNative -> GitMaint
-gitMaintNative MaintConfig {push, fetch, pr} git =
-  GitMaint {
-    bracket = gitBracket git push fetch,
+gitMaintNative :: MaintConfig -> GitNative -> M GitMaint
+gitMaintNative MaintConfig {push, fetch, pr} git = do
+  refsRef <- newRefsRef
+  let bracketConfig = GitBracketConfig {push, fetch, merge = False}
+  pure GitMaint {
+    bracket = wrapBracketWithRefs git bracketConfig refsRef,
+    readTags = mapMaybe (simpleParsec . toString) <$> git.cmd ["tag", "--list", "--format=%(refname:short)"],
     listTargetBranches = listTargetBranches git,
     switchBranch = switchBranch git,
-    ..
+    branchOffTag = branchOffTagImpl refsRef,
+    commitBump = commitBumpImpl refsRef
   }
   where
-    readTags = mapMaybe (simpleParsec . toString) <$> git.cmd ["tag", "--list", "--format=%(refname:short)"]
+    branchOffTagImpl refsRef branch tag = do
+      let branchName = BranchName (formatReleaseBranch branch)
+      createBranch git refsRef branchName (Just (showP tag))
 
-    branchOffTag branch tag = do
-      let branchName = formatReleaseBranch branch
-      git.cmd_ ["switch", "--create", branchName, showP tag]
-
-    commitBump branch package modified = do
-      prBranch <- ensurePrBranch branch
+    commitBumpImpl refsRef branch package modified = do
+      prBranch <- ensurePrBranch refsRef branch
       let (message, body) = commitModified [[exon|Maintenance for '##{package}'|]] modified
       git.cmd_ ["add", "--all"]
       git.cmd_ ["commit", "-m", message, "-m", Text.unlines body]
       pure prBranch
 
-    ensurePrBranch branch
+    ensurePrBranch refsRef branch
       | pr = do
         date <- liftIO epochTime
-        let prBranch = [exon|#{releaseBranch}-#{show date}|]
-        git.cmd_ ["switch", "--create", coerce prBranch]
+        let prBranch = BranchName [exon|#{formatReleaseBranch branch}-#{show date}|]
+        createBranch git refsRef prBranch Nothing
         pure prBranch
       | otherwise
-      = pure releaseBranch
-      where
-        releaseBranch = releaseBranchName branch
+      = pure (releaseBranchName branch)
 
 gitApiMaintProd :: MaintConfig -> GitApi GitMaint
-gitApiMaintProd config = gitApi (gitMaintNative config)
+gitApiMaintProd config = gitApiM (gitMaintNative config)
 
 gitApiMaintHermetic :: MaintConfig -> GitApi GitMaint
-gitApiMaintHermetic config = gitApiHermetic (gitMaintNative config)
+gitApiMaintHermetic config = gitApiHermeticM (gitMaintNative config)
 
-gitRevisionNative :: RevisionConfig -> GitNative -> GitRevision
-gitRevisionNative RevisionConfig {fetch} git =
-  GitRevision {
-    bracket = gitBracket git False fetch,
+gitRevisionNative :: RevisionConfig -> GitNative -> M GitRevision
+gitRevisionNative RevisionConfig {fetch} git = do
+  refsRef <- newRefsRef
+  let bracketConfig = GitBracketConfig {push = False, fetch, merge = False}
+  pure GitRevision {
+    bracket = wrapBracketWithRefs git bracketConfig refsRef,
     listTargetBranches = listTargetBranches git,
-    switchBranch = switchBranch git,
-    ..
+    switchBranch = switchBranch git
   }
 
 gitApiRevisionProd :: RevisionConfig -> GitApi GitRevision
-gitApiRevisionProd config = gitApi (gitRevisionNative config)
+gitApiRevisionProd config = gitApiM (gitRevisionNative config)
 
 gitApiRevisionHermetic :: RevisionConfig -> GitApi GitRevision
-gitApiRevisionHermetic config = gitApiHermetic (gitRevisionNative config)
+gitApiRevisionHermetic config = gitApiHermeticM (gitRevisionNative config)

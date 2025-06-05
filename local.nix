@@ -17,8 +17,11 @@ in {
     library = {
       enable = true;
       dependencies = [
+        "ansi-terminal"
         "Cabal"
         "aeson"
+        "blaze-builder"
+        "brick"
         "bytestring"
         "cabal-install"
         "cabal-install-solver"
@@ -35,22 +38,34 @@ in {
         "http-types"
         "generic-lens"
         "generics-sop"
+        "indexed-traversable"
         "lens"
         "lens-regex-pcre"
+        "lifted-async"
         "monad-control"
+        "mtl"
         "network"
         "network-uri"
         "optparse-applicative"
         "path"
         "path-io"
         "pretty"
+        "pcre-light"
+        "pretty"
         "random"
         "template-haskell"
+        "terminfo"
+        "these"
+        "these"
         "these"
         "time"
         "transformers"
+        "transformers-base"
         "typed-process"
         "unix"
+        "vector"
+        "vty"
+        "vty-unix"
       ];
     };
 
@@ -58,13 +73,16 @@ in {
       public = true;
       dependencies = [
         "Cabal"
+        "exceptions"
         "exon"
         "extra"
         "hedgehog"
+        "mmorph"
         "path"
         "path-io"
         "tasty"
         "tasty-hedgehog"
+        "transformers"
         config.library.dep.exact
       ];
     };
@@ -74,24 +92,29 @@ in {
     test = {
       enable = true;
       dependencies = [
-        "Cabal"
         "aeson"
+        "Cabal"
         "exon"
         "extra"
         "hedgehog"
+        "lens"
         "path"
         "path-io"
         "pretty"
         "tasty"
         "tasty-hedgehog"
-        config.libraries.testing.dep.exact
         "these"
         "time"
         "transformers"
+        "vector"
+        config.libraries.testing.dep.exact
       ];
     };
 
-    override = {nodoc, ...}: nodoc;
+    override = {nodoc, noshared, notest, pkgs, ...}:
+      if pkgs.stdenv.hostPlatform.isMusl
+      then notest (noshared nodoc)
+      else nodoc;
 
   });
 
@@ -106,12 +129,23 @@ in {
         "casing"
         "exon"
         "exceptions"
+        "extra"
         "hackage-server"
+        "hedgehog"
+        "mmorph"
+        "monad-control"
+        "mtl"
         "network-uri"
         "optparse-applicative"
         "path"
         "path-io"
+        "posix-pty"
+        "transformers-base"
+        "transformers"
+        "typed-process"
+        "unix"
         config.packages.hix.dep.exact
+        config.packages.hix.libraries.testing.dep.exact
       ];
     };
 
@@ -123,11 +157,13 @@ in {
         "exon"
         "hedgehog"
         "lens"
+        "lifted-async"
         "path"
         "path-io"
         "tasty"
         "time"
         "transformers"
+        "vty"
         config.packages.hix.dep.exact
         config.packages.hix.libraries.testing.dep.exact
       ];
@@ -137,6 +173,8 @@ in {
     executable.enable = true;
 
     expose = false;
+
+    buildInputs = pkgs: [pkgs.tmux];
 
   };
 
@@ -161,17 +199,13 @@ in {
     };
   };
 
-  hackage = {
+  release = {
     versionFile = "ops/version.nix";
     packages = ["hix"];
     tag = false;
     setChangelogVersion = lib.mkForce false;
     commit = false;
-    add = true;
-    hooks.postUploadAll = {source, publish}:
-    if source && publish
-    then release.updateCliVersion
-    else "";
+    hooks = [release.hookUpdateCliVersion];
   };
 
   managed = {
@@ -184,7 +218,7 @@ in {
   commands.integration-hackage = {
     env = "integration";
     command = ''
-    ${build.packages.integration.integration.package}/bin/integration hackage $@
+    ${build.packages.integration-exe.integration.package}/bin/integration hackage $@
     '';
     expose = true;
   };
@@ -201,9 +235,18 @@ in {
       rev = "02b91400b55671be79926def26646f7c72388566";
     };
 
-  in {
+    hackageServerOverrides = ({hackage, fast, source, force, minimal, notest, overrideAttrs, ...}: {
+      Cabal = hackage "3.16.0.0" "1pr9k8hi27qd9cliwn2fa0kg0v9b61bblba9m7la2prbxibzb8z9";
+      Cabal-syntax = hackage "3.16.0.0" "09c987i6mn4j8ib894wfvh397rqxcw0ylid8bgn3xfqpwiwar58j";
+      hix = minimal;
+      integration = fast (overrideAttrs (old: { hackage_data_dir = "${hackageServer}/datafiles"; }));
+      hackage-server = force (source.root hackageServer);
+      unicode-data = notest;
+    });
 
-    integration = {
+    integrationWith = extra: {
+      overrides = [hackageServerOverrides] ++ extra;
+
       expose = false;
       packages = ["hix" "integration"];
       env = {
@@ -211,18 +254,14 @@ in {
         hix_dir = "${inputs.self}";
       };
 
-      overrides = {hackage, fast, source, force, self, minimal, notest, overrideAttrs, ...}: {
-        Cabal = hackage "3.16.0.0" "1pr9k8hi27qd9cliwn2fa0kg0v9b61bblba9m7la2prbxibzb8z9";
-        Cabal-syntax = hackage "3.16.0.0" "09c987i6mn4j8ib894wfvh397rqxcw0ylid8bgn3xfqpwiwar58j";
-        hix = minimal;
-        integration = fast (overrideAttrs (old: { hackage_data_dir = "${hackageServer}/datafiles"; }));
-        hackage-server = force (source.root hackageServer);
-        unicode-data = notest;
-      };
-
       package-set.gen-overrides = false;
 
     };
+
+  in {
+
+    integration = integrationWith [];
+    integration-exe = integrationWith [({notest, ...}: { integration = notest; })];
 
     latest.packages = lib.mkForce ["hix"];
     lower.packages = lib.mkForce ["hix"];
@@ -232,9 +271,8 @@ in {
   internal.cabal-extra.default-extensions = ["StrictData"];
 
   internal.hixCli = {
-    dev = true;
-    # commit = "8d92716141f252642a45b0ff0d5468e28a0701c7";
-    # sha256 = "05wp05hdls051xjavnkzppk494zigr9bp6pqhhlbydkrfc455fbz";
+    commit = "7ef10998a82ad254de51a44d16a8f118c6b92324";
+    sha256 = "16phb02gwa5vcas07ww4zp927y43lndd1xdnbx0p3ghsy9j27c8w";
   };
 
   outputs = let

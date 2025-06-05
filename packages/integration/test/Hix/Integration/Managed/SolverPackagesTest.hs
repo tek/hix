@@ -56,7 +56,7 @@ setupProject hixRoot = do
   root <- appRes.root
   addFile root [relfile|flake.nix|] (flake hixRoot)
   addFile root [relfile|packages/local1/lib/Lib.hs|] libHs
-  runFlakeLock root
+  runFlakeLock def
 
 targetResult :: BuildResult
 targetResult =

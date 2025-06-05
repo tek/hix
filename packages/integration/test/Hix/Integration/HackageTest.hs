@@ -12,18 +12,18 @@ import Hix.Data.PackageId (PackageId (..))
 import Hix.Hackage (hackagePostQuery, hackagePut)
 import Hix.Http (httpManager)
 import Hix.Integration.Hackage (withHackage)
-import Hix.Integration.Utils (UnitTest, addFile, runMTest)
+import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (ArtifactSources))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (secure))
 import Hix.Managed.Cabal.HackageRepo (hackageRepo)
-import qualified Hix.Managed.Cabal.Init as Cabal
-import Hix.Managed.Cabal.Init (remoteRepo)
+import Hix.Managed.Cabal.Init (globalFlagsWithDefaultCacheDir, remoteRepo)
 import Hix.Managed.Cabal.Sdist (sourceDistribution)
 import Hix.Managed.Cabal.Upload (UploadConfig (..), publishPackage, publishRevision)
 import Hix.Managed.Handlers.HackageClient (HackageResponse (HackageNoResponse))
 import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
 import Hix.Managed.Handlers.HackageClient.Prod (HackageResources (..))
 import Hix.Network (Port (..))
+import Hix.Test.Utils (UnitTest, addFile, runMTest)
 
 testUser :: NonEmpty (Text, Text)
 testUser =
@@ -112,12 +112,11 @@ testServer port = do
     repo = (hackageRepo "test" res.location) {secure = Nothing}
   _ <- hackagePostQuery Right client "users/" testUser HackageNoResponse
   _ <- hackagePut @Value Right client "packages/uploaders/user/test"
-  let rrepo = remoteRepo repo
-  flags <- Cabal.solveFlags [rrepo] def
+  flags <- globalFlagsWithDefaultCacheDir False (remoteRepo <$> [repo])
   root <- appRes.root
   projectDir <- createProject root
   targz <- sourceDistribution projectDir package
-  publishPackage uploadConfig flags targz
+  publishPackage ArtifactSources uploadConfig flags targz
   addFile projectDir cabalName revisedCabalContents
   void $ publishRevision [userClient] package (projectDir </> cabalName)
   where

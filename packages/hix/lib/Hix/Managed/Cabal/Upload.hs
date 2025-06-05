@@ -7,7 +7,8 @@ import Control.Lens.Regex.Text (Match, groups, regex)
 import Data.List.Extra (unescapeHTML)
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
-import Distribution.Client.Setup (IsCandidate (IsPublished), RepoContext)
+import Distribution.Client.GlobalFlags (GlobalFlags)
+import Distribution.Client.Setup (IsCandidate (..), RepoContext)
 import qualified Distribution.Client.Types.Credentials as Cabal
 import qualified Distribution.Client.Upload as Upload
 import Distribution.PackageDescription (GenericPackageDescription)
@@ -24,8 +25,10 @@ import Hix.Data.PackageId (PackageId (..))
 import Hix.Error (pathText)
 import Hix.Hackage (fatalHackageRequest, hackageGet, hackagePostForm)
 import qualified Hix.Log as Log
+import Hix.Managed.Cabal.Data.HackageLocation (HackagePassword (..), HackageUser (..), toCabalPassword)
 import Hix.Managed.Cabal.Data.Revision (Revision (..))
-import Hix.Managed.Cabal.Init (SolveFlags (..))
+import qualified Hix.Managed.Cabal.Data.UploadStage as UploadStage
+import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (..), UploadMutability (..), UploadStage (..))
 import Hix.Managed.Cabal.PackageDescription (parseCabalFile)
 import Hix.Managed.Cabal.Repo (withRepoContextM)
 import Hix.Managed.Handlers.HackageClient (HackageClient (..), HackageError (..), HackageResponse (..))
@@ -39,16 +42,11 @@ newtype User =
   deriving stock (Eq, Show, Generic)
   deriving newtype (IsString, Ord)
 
-newtype Password =
-  Password { value :: Text }
-  deriving stock (Eq, Show, Generic)
-  deriving newtype (IsString, Ord)
-
 data UploadConfig =
   UploadConfig {
     verbosity :: Verbosity,
-    user :: User,
-    password :: Password
+    user :: HackageUser,
+    password :: HackagePassword
   }
   deriving stock (Eq, Show, Generic)
 
@@ -67,26 +65,55 @@ upload conf ctx =
     Upload.upload conf.verbosity ctx
 #endif
 
+uploadDoc ::
+  UploadConfig ->
+  RepoContext ->
+  Maybe Cabal.Username ->
+  Maybe Cabal.Password ->
+  IsCandidate ->
+  FilePath ->
+  IO ()
+uploadDoc conf ctx =
+#if MIN_VERSION_cabal_install(3,12,0)
+    Upload.uploadDoc conf.verbosity ctx Nothing
+#else
+    Upload.uploadDoc conf.verbosity ctx
+#endif
+
+uploadPackage ::
+  UploadStage ->
+  UploadConfig ->
+  GlobalFlags ->
+  Path Abs File ->
+  M ()
+uploadPackage UploadStage {mutability, artifact} conf flags sourceTar =
+  withRepoContextM conf.verbosity flags \ ctx ->
+    catchExitCodeM "Upload failed" do
+      case artifact of
+        ArtifactSources ->
+          upload conf ctx (Just user) (Just password) isCandidate [toFilePath sourceTar]
+        ArtifactDocs ->
+          uploadDoc conf ctx (Just user) (Just password) isCandidate (toFilePath sourceTar)
+  where
+    user = Cabal.Username (toString conf.user.text)
+
+    password = toCabalPassword conf.password
+
+    isCandidate = UploadStage.isCandidate mutability
+
 -- TODO When candidates are uploaded, versions don't have to be written to the repo.
 -- Since we're gonna add automatic semver incrementing, we can do that in memory and manipulate the cabal files in a
 -- temp dir somewhere, even without asking the user for a version, since there's no danger in publishing candidates.
 --
 -- TODO Allow token authentication
 publishPackage ::
+  ArtifactSort ->
   UploadConfig ->
-  SolveFlags ->
+  GlobalFlags ->
   Path Abs File ->
   M ()
-publishPackage conf flags sourceTar =
-  withRepoContextM conf.verbosity flags.global \ ctx ->
-    catchExitCodeM "Upload failed" do
-      upload conf ctx (Just user) (Just password) candidate [toFilePath sourceTar]
-  where
-    user = Cabal.Username (toString conf.user.value)
-
-    password = Cabal.Password (toString conf.password.value)
-
-    candidate = IsPublished
+publishPackage artifact =
+  uploadPackage UploadStage {artifact, mutability = UploadPublish}
 
 revisions ::
   HackageClient ->

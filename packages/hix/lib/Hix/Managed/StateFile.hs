@@ -1,45 +1,39 @@
-module Hix.Managed.StateFile where
+module Hix.Managed.StateFile (
+  writeProjectState,
+  writeReleaseVersions,
+  writeBuildStateFor,
+  writeSolverStateFor,
+  writeInitialEnvState,
+) where
 
-import qualified Data.Map.Strict as Map
 import Exon (exon)
 import Path (Abs, Dir, Path)
 
-import Hix.Class.EncodeNix (encodeNix)
+import Hix.Class.EncodeNix (EncodeNix, encodeNix)
 import Hix.Data.EnvName (EnvName)
 import Hix.Data.Monad (M)
-import Hix.Data.NixExpr (Expr (..), ExprAttr (..), ExprKey (..))
 import Hix.Data.Overrides (Overrides)
-import qualified Hix.Log as Log
 import qualified Hix.Managed.Data.EnvState
 import Hix.Managed.Data.EnvState (EnvState)
 import Hix.Managed.Data.Initial (Initial (Initial))
 import Hix.Managed.Data.ProjectState (ProjectState)
+import Hix.Managed.Data.ProjectStateProto (ProjectStateProto)
 import qualified Hix.Managed.Handlers.StateFile
 import Hix.Managed.Handlers.StateFile (StateFileHandlers)
 import Hix.Managed.UpdateState (envStateForBuild, envStateForSolver)
+import Hix.Monad (appContextDebug)
 import Hix.NixExpr (renderRootExpr)
 
-renderMap ::
-  Coercible k Text =>
-  (v -> Expr) ->
-  Map k v ->
-  Expr
-renderMap v =
-  ExprAttrs . fmap (uncurry ExprAttr . bimap coerce v) . Map.toList
-
-renderManaged' :: ProjectState -> Expr
-renderManaged' =
-  encodeNix
-
 writeStateFile ::
+  EncodeNix state =>
   Text ->
   StateFileHandlers ->
   Maybe (Path Abs Dir) ->
-  ProjectState ->
+  state ->
   M ()
 writeStateFile purpose handlers tmpRoot state = do
-  Log.trace [exon|writing managed state file for #{purpose}: #{renderRootExpr expr}|]
-  handlers.writeFile tmpRoot expr
+  appContextDebug [exon|writing managed state file for #{purpose}: #{renderRootExpr expr}|] do
+    handlers.writeFile tmpRoot expr
   where
     expr = encodeNix state
 
@@ -49,6 +43,13 @@ writeProjectState ::
   M ()
 writeProjectState handlers newState =
   writeStateFile "final result persistence" handlers Nothing newState
+
+writeReleaseVersions ::
+  StateFileHandlers ->
+  ProjectStateProto ->
+  M ()
+writeReleaseVersions handlers newState =
+  writeStateFile "release versions" handlers Nothing newState
 
 writeBuildStateFor ::
   Text ->

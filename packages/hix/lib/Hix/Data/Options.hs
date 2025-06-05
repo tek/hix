@@ -20,9 +20,12 @@ import Hix.Managed.Data.MaintConfig (MaintConfig)
 import Hix.Managed.Data.MaintContext (MaintContextProto)
 import Hix.Managed.Data.ProjectContextProto (ProjectContextProto)
 import Hix.Managed.Data.Query (RawQuery)
+import Hix.Managed.Data.ReleaseConfig (ReleaseConfig)
+import Hix.Managed.Data.ReleaseContext (ReleaseContextProto)
 import Hix.Managed.Data.RevisionConfig (RevisionConfig)
 import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers)
 import Hix.Managed.Data.StateFileConfig (StateFileConfig)
+import Hix.Ui.Debug (BrickDebug)
 
 data InfoCommand =
   InfoVersion
@@ -227,10 +230,26 @@ data RevisionOptions =
   }
   deriving stock (Show)
 
+data ReleaseOptions =
+  ReleaseOptions {
+    context :: Either ReleaseContextProto (Maybe JsonContext),
+    config :: ReleaseConfig,
+    stateFile :: StateFileConfig,
+    cabal :: CabalOptions,
+    uiDebug :: Maybe BrickDebug,
+    -- | Old-style version argument (@-v@) detected, suggesting old interface usage.
+    oldStyleVersion :: Maybe Text,
+    -- | Old-style positional package arguments detected, suggesting old interface usage.
+    oldStylePackages :: [Text]
+  }
+  deriving stock (Show)
+
 data HackageCommand =
   ReleaseMaint ReleaseMaintOptions
   |
   Revision RevisionOptions
+  |
+  Release ReleaseOptions
   deriving stock (Show)
 
 data Command =
@@ -261,6 +280,8 @@ data Command =
   Lower LowerCommand
   |
   Hackage HackageCommand
+  |
+  Tui
   deriving stock (Show)
 
 data Options =

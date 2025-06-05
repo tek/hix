@@ -5,10 +5,13 @@
 
   outputs = {hix, ...}: hix.lib._hix_test {
 
+    release = {
+      check = false;
+    };
+
     hackage = {
       askVersion = false;
       confirm = false;
-      check = false;
 
       repos = {
 

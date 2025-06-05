@@ -13,6 +13,7 @@
   package-sets = import ./package-sets.nix { inherit util; };
   path = import ./path.nix { inherit util; };
   project = import ./project.nix { inherit util; };
+  release = import ./release.nix { inherit util; };
   warn = import ./warn.nix { inherit util; };
   vm = import ./vm.nix { inherit util; };
 

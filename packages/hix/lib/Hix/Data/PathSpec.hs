@@ -1,6 +1,7 @@
 module Hix.Data.PathSpec where
 
 import Control.Monad.Trans.Except (ExceptT)
+import Data.Aeson (FromJSON (..), withText)
 import Path (Abs, Dir, Path, Rel, SomeBase (Abs, Rel), (</>))
 import Path.IO (AnyPath (AbsPath, makeAbsolute))
 
@@ -12,6 +13,10 @@ data PathSpec t = PathConcrete (SomeBase t) | PathUser Text
 
 instance IsString (PathSpec t) where
   fromString str = PathUser (fromString str)
+
+instance FromJSON (PathSpec t) where
+  parseJSON =
+    withText "PathSpec" (pure . PathUser)
 
 resolvePathSpec ::
   (Path Abs Dir -> FilePath -> IO (Path Abs t)) ->

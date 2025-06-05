@@ -69,5 +69,6 @@
   solver = {
     latest-main = {};
   };
+  packages = {};
   resolving = false;
 }

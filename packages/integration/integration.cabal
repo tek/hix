@@ -28,6 +28,8 @@ library
       Hix.Integration.Data.Options
       Hix.Integration.Hackage
       Hix.Integration.Options
+      Hix.Integration.Pty
+      Hix.Integration.TuiTest
   hs-source-dirs:
       lib
   default-extensions:
@@ -75,13 +77,24 @@ library
     , casing
     , exceptions
     , exon
+    , extra
     , hackage-server
+    , hedgehog
     , hix ==0.9.1
+    , hix:testing ==0.9.1
     , incipit-base
+    , mmorph
+    , monad-control
+    , mtl
     , network-uri
     , optparse-applicative
     , path
     , path-io
+    , posix-pty
+    , transformers
+    , transformers-base
+    , typed-process
+    , unix
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)
@@ -149,6 +162,8 @@ test-suite integration-test
       Hix.Integration.Managed.SolverPackagesTest
       Hix.Integration.Managed.SolveTest
       Hix.Integration.ReleaseMaintenanceTest
+      Hix.Integration.ReleaseTest
+      Hix.Integration.ReleaseUiTest
       Hix.Integration.RevisionTest
       Hix.Integration.Utils
   hs-source-dirs:
@@ -202,11 +217,13 @@ test-suite integration-test
     , incipit-base
     , integration
     , lens
+    , lifted-async
     , path
     , path-io
     , tasty
     , time
     , transformers
+    , vty
   mixins:
       base hiding (Prelude)
     , incipit-base (IncipitBase as Prelude)

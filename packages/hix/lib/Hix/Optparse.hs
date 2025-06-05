@@ -2,7 +2,7 @@
 module Hix.Optparse where
 
 import Data.List.Extra (stripInfix)
-import Distribution.Parsec (Parsec, eitherParsec)
+import Distribution.Parsec (Parsec, eitherParsec, simpleParsec)
 import Exon (exon)
 import Options.Applicative (ReadM, eitherReader)
 import Path (File, Path, Rel, parseAbsFile, parseRelFile)
@@ -13,7 +13,11 @@ import Hix.Managed.Cabal.ContextHackageRepo (fieldUpdater)
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageIndexState, HackageName)
 import Hix.Managed.Data.BuildConfig (SpecialBuildHandlers (..))
+import Hix.Managed.Data.ReleaseConfig (ArtifactConfig (..), CandidatesSpec (..), ReleaseVersion (..))
 import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers (..))
+import Hix.Managed.Data.VersionIncrement (VersionIncrement (..))
+import qualified Hix.Ui.Data.Theme as Theme
+import Hix.Ui.Data.Theme (Theme)
 
 pathOption ::
   String ->
@@ -59,6 +63,13 @@ outputTargetOption =
   where
     badFile f = Left [exon|Argument for --output is neither an absolute filepath nor 'default' or 'stdout': #{f}|]
 
+themeOption :: ReadM Theme
+themeOption =
+  eitherReader \case
+    "default" -> Right Theme.Default
+    "native" -> Right Theme.Native
+    other -> Left [exon|Invalid theme name: #{other}|]
+
 parsecOption :: Parsec a => Text -> ReadM a
 parsecOption desc =
   eitherReader \ raw -> first (err raw) (eitherParsec raw)
@@ -87,3 +98,55 @@ nonOption =
 deprecatedOption :: String -> ReadM a
 deprecatedOption new =
   eitherReader \ _ -> Left [exon|Deprecated in favor of #{new}|]
+
+releaseVersionOption :: ReadM ReleaseVersion
+releaseVersionOption =
+  eitherReader \ spec ->
+    maybeToRight invalid (
+      (ConcreteVersion <$> simpleParsec spec)
+      <|>
+      (VersionIncrement <$> increment spec)
+      <|>
+      (keep spec)
+    )
+  where
+    increment = \case
+      "super" -> Just Supermajor
+      "s" -> Just Supermajor
+      "major" -> Just Major
+      "m" -> Just Major
+      "minor" -> Just Minor
+      "n" -> Just Minor
+      "patch" -> Just Patch
+      "p" -> Just Patch
+      _ -> Nothing
+
+    keep = \case
+      "keep" -> Just KeepVersion
+      "k" -> Just KeepVersion
+      _ -> Nothing
+
+    invalid = "Invalid release version: must be a valid version or super|major|minor|patch|keep"
+
+publishOption :: ReadM ArtifactConfig
+publishOption =
+  eitherReader \case
+    "all" -> conf True True
+    "sources" -> conf True False
+    "docs" -> conf False True
+    "none" -> conf False False
+    value -> Left [exon|Invalid value for --publish: '#{value}' [all|sources|docs|none]|]
+  where
+    conf sources docs = Right ArtifactConfig {..}
+
+candidatesOption :: ReadM CandidatesSpec
+candidatesOption =
+  eitherReader \case
+    "auto" -> Right CandidatesAuto
+    "all" -> conf True True
+    "sources" -> conf True False
+    "docs" -> conf False True
+    "none" -> conf False False
+    value -> Left [exon|Invalid value for --candidates: '#{value}' [all|auto|sources|docs|none]|]
+  where
+    conf sources docs = Right CandidatesSelected {..}

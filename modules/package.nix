@@ -6,6 +6,7 @@ let
 
   pkgConfig = config;
   pkgName = name;
+  projectPackage = project.packages.${pkgName};
 
   cabalOptionsModule = import ./cabal-options.nix { inherit global util; };
   cabalComponentModule = import ./cabal-component.nix { inherit global util; };
@@ -66,13 +67,13 @@ let
 
       minor = {
         name = "${pkgConfig.name}:${config.name}";
-        version = "^>= ${pkgConfig.cabal-config.version}";
+        version = "^>= ${projectPackage.version}";
         local = true;
       };
 
       exact = {
         name = "${pkgConfig.name}:${config.name}";
-        version = "== ${pkgConfig.cabal-config.version}";
+        version = "== ${projectPackage.version}";
         local = true;
       };
 
@@ -127,7 +128,7 @@ let
 
   versionFromFile = let
     f = config.versionFile;
-  in lib.optionalAttrs (f != null && lib.hasSuffix ".nix" f) { version = import "${project.base}/${f}"; };
+  in lib.mkIf (f != null && lib.hasSuffix ".nix" f) { version = import "${project.base}/${f}"; };
 
 in {
 
@@ -154,7 +155,7 @@ in {
       description = ''
       A string representation of [](#opt-package-src) relative to the project root.
       Its value is inferred if possible, but if [](#opt-package-src) is not a plain path, it must be set explicitly.
-      A common reason for this is when the path is constructed with a source filter, causing the creation a separate
+      A common reason for this is when the path is constructed with a source filter, causing the creation of a separate
       store path for the subdirectory.
       In the basic case, Hix infers the root directory (for [](#opt-general-base)) by taking the prefix `/nix/store/*/`
       from one of the package paths, and stripping it from each package's [](#opt-package-src).
@@ -277,7 +278,12 @@ in {
 
     versionFile = mkOption {
       description = ''
-      The version file for this package, defaulting to the global [](#opt-hackage-hackage.versionFile) if `null`.
+      Path to a version file for this package, defaulting to the global [](#opt-release-release.versionFile) if `null`.
+
+      Supported formats:
+      - `.nix` files: Must contain only a quoted string, e.g., `"1.2.3"`
+      - `.cabal` files: Version is updated in the `version:` field
+
       When generating Cabal files, the version field will be set to the content of this file, unless
       [](#opt-cabal-version) is set explicitly.
       When bumping the version of a package with `nix run .#release`, this file is updated.
@@ -418,13 +424,13 @@ in {
 
       minor = {
         name = config.name;
-        version = "^>= ${config.cabal-config.version}";
+        version = "^>= ${projectPackage.version}";
         local = true;
       };
 
       exact = {
         name = config.name;
-        version = "== ${config.cabal-config.version}";
+        version = "== ${projectPackage.version}";
         local = true;
       };
 

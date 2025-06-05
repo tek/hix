@@ -5,9 +5,11 @@ import Exon (exon)
 import Options.Applicative (
   ArgumentFields,
   CommandFields,
+  HasName,
   Mod,
   OptionFields,
   Parser,
+  ReadM,
   argument,
   auto,
   command,
@@ -18,8 +20,10 @@ import Options.Applicative (
   header,
   help,
   helper,
+  hidden,
   hsubparser,
   info,
+  internal,
   long,
   metavar,
   option,
@@ -31,6 +35,7 @@ import Options.Applicative (
   showHelpOnError,
   strArgument,
   strOption,
+  style,
   subparserInline,
   switch,
   value,
@@ -49,6 +54,7 @@ import Hix.Data.LogLevel (LogLevel (..))
 import qualified Hix.Data.NewProjectConfig
 import Hix.Data.NewProjectConfig (
   CreateProjectConfig (CreateProjectConfig),
+  HixUrl,
   InitProjectConfig (InitProjectConfig),
   NewProjectConfig (NewProjectConfig),
   ProjectName,
@@ -77,6 +83,7 @@ import Hix.Data.Options (
   PreprocOptions (PreprocOptions),
   ProjectOptions (ProjectOptions),
   ReleaseMaintOptions (..),
+  ReleaseOptions (..),
   RevisionOptions (..),
   RunCommandOptions (..),
   TargetSpec (..),
@@ -90,27 +97,44 @@ import qualified Hix.Managed.Data.BuildConfig
 import Hix.Managed.Data.BuildConfig (BuildConfig (BuildConfig), BuildTimeout (..))
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.Query (RawQuery (RawQuery))
+import Hix.Managed.Data.ReleaseConfig (ArtifactConfig (..), CandidatesSpec (..), ReleaseConfig (..))
 import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import qualified Hix.Managed.Data.StateFileConfig
 import Hix.Managed.Data.StateFileConfig (StateFileConfig (StateFileConfig))
 import Hix.Optparse (
   buildHandlersOption,
+  candidatesOption,
   deprecatedOption,
   hackageRepoFieldOption,
   maintHandlersOption,
   nonOption,
   outputFormatOption,
   outputTargetOption,
+  publishOption,
   relFileOption,
+  releaseVersionOption,
+  themeOption,
   )
+import qualified Hix.Ui.Data.Theme as Theme
 
 infoParser :: Parser Command
 infoParser = do
-  cmd <- flag' InfoVersion (long "version" <> short 'V' <> help "Print the app's version")
+  cmd <- flag' InfoVersion (long "version" <> help "Print the app's version")
   pure (Info cmd)
 
 nonOptionArgument :: IsString a => Mod ArgumentFields a -> Parser a
 nonOptionArgument = argument nonOption
+
+optionalArgument ::
+  (∀ f . HasName f => Mod f a) ->
+  String ->
+  a ->
+  ReadM a ->
+  Parser a
+optionalArgument mods alts omitted reader =
+  flag' omitted (mods <> style (<> [exon|[=(#{fromString alts})]|]))
+  <|>
+  option reader (mods <> internal)
 
 rootParser :: Parser (Maybe (PathSpec Dir))
 rootParser =
@@ -268,13 +292,20 @@ ghcidParser = do
 noInitGitAndFlakeParser :: Parser Bool
 noInitGitAndFlakeParser = switch (long "basic" <> short 'b' <> help "Skip git repo initialisation and nix flake lock")
 
+hixUrlParser :: Parser HixUrl
+hixUrlParser = strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
+
+devCliParser :: Parser Bool
+devCliParser =
+  switch (long "dev-cli" <> help "Build the CLI tool from the flake input commit, for testing")
+
 initCommonParser :: Parser CreateProjectConfig
 initCommonParser = do
   packages <- switch (long "packages" <> short 'p' <> help "Store packages in the 'packages/' subdirectory")
-  hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
+  hixUrl <- hixUrlParser
   author <- strOption (long "author" <> short 'a' <> help "Your name" <> value "Author")
   noInitGitAndFlake <- noInitGitAndFlakeParser
-  devCli <- switch (long "dev-cli" <> help "Build the CLI tool from the flake input commit, for testing")
+  devCli <- devCliParser
   pure CreateProjectConfig {..}
 
 projectNameParser :: Parser ProjectName
@@ -296,9 +327,9 @@ newParser = do
 
 bootstrapParser :: Parser BootstrapOptions
 bootstrapParser = do
-  hixUrl <- strOption (long "hix-url" <> help "The URL to the Hix repository" <> value def)
+  hixUrl <- hixUrlParser
   noInitGitAndFlake <- noInitGitAndFlakeParser
-  devCli <- switch (long "dev-cli" <> help "Build the CLI tool from the flake input commit, for testing")
+  devCli <- devCliParser
   pure BootstrapOptions {config = BootstrapProjectConfig {..}}
 
 stateFileConfigParser :: Parser StateFileConfig
@@ -382,6 +413,10 @@ lowerCommand :: Parser LowerCommand
 lowerCommand =
   hsubparser lowerCommands <|> (LowerAuto <$> lowerParser)
 
+globalGitParser :: Parser Bool
+globalGitParser =
+  switch (long "global-git" <> help "Use the global git ID rather than hix-bot@github.com")
+
 maintConfigParser :: Parser MaintConfig
 maintConfigParser = do
   targets <- nonEmpty <$> many (strOption (long "package" <> help "Packages that should be processed"))
@@ -390,7 +425,7 @@ maintConfigParser = do
   push <- switch (long "push" <> help "Commit and push dependency updates")
   pr <- switch (long "pr" <> help "Don't publish revisions and create branches with timestamps for PRs")
   revision <- switch (long "revision" <> help "Publish a revision to Hackage")
-  globalGit <- switch (long "global-git" <> help "Use the global git ID rather than hix@tryp.io")
+  globalGit <- globalGitParser
   fetch <- switch (long "fetch" <> help "Fetch tags and branches, useful in CI")
   pure MaintConfig {commit = commit || push || pr, push = push || pr, ..}
 
@@ -408,7 +443,7 @@ revisionConfigParser :: Parser RevisionConfig
 revisionConfigParser = do
   packages <- fmap Left <$> many (strOption (long "package" <> help "Packages that should be processed"))
   branches <- fmap Right <$> many (strOption (long "branch" <> help "Release branches that should be processed"))
-  globalGit <- switch (long "global-git" <> help "Use the global git ID rather than hix@tryp.io")
+  globalGit <- globalGitParser
   fetch <- switch (long "fetch" <> help "Fetch tags and branches, useful in CI")
   pure RevisionConfig {targets = nonEmpty (packages ++ branches), ..}
 
@@ -419,11 +454,84 @@ revisionParser = do
   cabal <- cabalOptionsParser
   pure RevisionOptions {..}
 
+publishParser :: Parser ArtifactConfig
+publishParser =
+  fmap (fromMaybe omittedOption) $
+  optional $
+  optionalArgument (long "publish" <> help publishHelp) alts omittedArg publishOption
+  where
+    omittedOption = ArtifactConfig {sources = False, docs = False}
+
+    omittedArg = ArtifactConfig {sources = True, docs = True}
+
+    publishHelp =
+      "Publish the selected artifacts. If the argument is omitted, publish all." <>
+      " If --publish isn't specified, candidates can still be uploaded, depending on --candidates."
+
+    alts = "all|sources|docs|none"
+
+candidatesParser :: Parser CandidatesSpec
+candidatesParser =
+  fmap (fromMaybe CandidatesAuto) $
+  optional $
+  optionalArgument (long "candidates" <> help candidatesHelp) alts omittedArg candidatesOption
+  where
+    candidatesHelp =
+      "Upload the selected candidates. If the argument is omitted, upload all." <>
+      " 'auto' selects the artifacts specified for --publish." <>
+      " The default is 'auto'."
+
+    -- When --candidates is specified without an argument, upload all artifacts
+    omittedArg = CandidatesSelected {sources = True, docs = True}
+
+    alts = "all|auto|sources|docs|none"
+
+selectCandidates :: ArtifactConfig -> CandidatesSpec -> ArtifactConfig
+selectCandidates publish = \case
+  CandidatesAuto -> publish
+  CandidatesSelected {..} -> ArtifactConfig {..}
+
+releaseConfigParser :: Parser ReleaseConfig
+releaseConfigParser = do
+  targets <- nonEmpty <$> many (strOption (long "package" <> help "Packages to release (name or name-version)"))
+  version <- optional (option releaseVersionOption (long "version" <> help versionHelp))
+  publish <- publishParser
+  candidatesSpec <- candidatesParser
+  commit <- switch (long "commit" <> help "Commit version updates")
+  tag <- switch (long "tag" <> help "Create git tags for releases")
+  push <- switch (long "push" <> help "Push new commits created during release")
+  globalGit <- globalGitParser
+  -- TODO implement or remove
+  fatalDocs <- switch (long "fatal-docs" <> help "Terminate immediately if uploading documentation fails (not implemented)")
+  partial <- switch (long "partial" <> help "Continue with successful packages if some fail (non-interactive)")
+  interactive <- switch (long "interactive" <> short 'i' <> help "Query new versions and upload steps interactively")
+  forceVersion <- switch (long "force-version" <> help forceVersionHelp)
+  check <- switch (long "check" <> help "Run flake checks before uploading")
+  merge <- switch (long "merge" <> help "Merge the release branch back into the initial branch after successful uploads")
+  globalCabalConfig <- switch (long "global-cabal-config" <> help "Use the global Cabal config for Hackage servers in addition to the flake config")
+  pure ReleaseConfig {candidates = selectCandidates publish candidatesSpec, ..}
+  where
+    versionHelp = "New version or increment (super|major|minor|patch)"
+
+    forceVersionHelp = "Skip version validation (allows releasing current versions, versions smaller than current, etc.)"
+
+releaseParser :: Parser ReleaseOptions
+releaseParser = do
+  context <- Right <$> optional jsonConfigParser
+  config <- releaseConfigParser
+  stateFile <- stateFileConfigParser
+  cabal <- cabalOptionsParser
+  oldStyleVersion <- optional (strOption (short 'v' <> hidden <> internal))
+  oldStylePackages <- many (strArgument (hidden <> internal))
+  pure ReleaseOptions {uiDebug = Nothing, ..}
+
 hackageCommands :: Mod CommandFields HackageCommand
 hackageCommands =
   command "maint" (ReleaseMaint <$> info maintParser (progDesc maintDesc))
   <>
   command "revision" (Revision <$> info revisionParser (progDesc "Publish revisions of previous releases"))
+  <>
+  command "release" (Release <$> info releaseParser (progDesc "Publish new versions of packages to Hackage"))
   where
     maintDesc = "Maintain dependency bounds of previous releases"
 
@@ -477,7 +585,7 @@ globalParser ::
   Path Abs Dir ->
   Parser GlobalOptions
 globalParser realCwd = do
-  verbose <- switch (long "verbose" <> short 'v' <> help "Verbose output")
+  verbose <- switch (long "verbose" <> help "Verbose output")
   debug <- switch (long "debug" <> help "Debug output")
   trace <- switch (long "trace" <> help "Trace debug output")
   quiet <- switch (long "quiet" <> help "Suppress info output")
@@ -486,10 +594,12 @@ globalParser realCwd = do
   rootOverride <- rootParser
   output <- option outputFormatOption (long "output" <> help formatHelp <> value OutputNone <> metavar "format")
   target <- option outputTargetOption (long "target" <> help targetHelp <> value OutputDefault <> metavar "target")
+  theme <- option themeOption (long "theme" <> help themeHelp <> value Theme.Default <> metavar "theme")
   pure GlobalOptions {root = fromMaybe cwd rootOverride, logLevel = cliLogLevel verbose debug trace quiet, ..}
   where
     formatHelp = "Result output format, if commands support it"
     targetHelp = "Force output to a file or stdout"
+    themeHelp = "Color theme for the interactive UI: 'default' or 'native'"
 
 appParser ::
   Path Abs Dir ->

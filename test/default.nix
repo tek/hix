@@ -5,7 +5,7 @@ let
   framework = import ./internal/framework.nix { inherit self util; };
 
   testlib = {
-    hackage = import ./internal/hackage.nix { inherit pkgs; };
+    hackage = import ./internal/hackage.nix { inherit util; };
   };
 
   testConf = name: let
@@ -26,9 +26,6 @@ let
       "gen-cabal"
       "ghc-build"
       "ghci"
-      "hackage"
-      "hackage-legacy"
-      "hackage-local"
       "lazy-ifd"
       "lazy-env"
       "local-prelude"
@@ -53,12 +50,13 @@ let
   tests-basic-3 =
     testsNamed [
       "bootstrap"
-      "new"
-      "new-with-name"
-      "new-parent-dir"
       "init"
-      "init-static"
       "init-static-github"
+      "new"
+      "new-parent-dir"
+      "new-with-name"
+      # "init-static"
+      # This is the same as `init` as long as we can't build the CLI statically.
     ];
 
   tests-vm =
@@ -77,6 +75,9 @@ let
       "maint"
       "maint-workflows"
       "managed-nom"
+      "release"
+      "release-version-file"
+      "release-workflows"
     ];
 
   tests-examples =

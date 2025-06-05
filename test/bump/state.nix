@@ -78,5 +78,6 @@
     latest-main = {};
     latest-other = {};
   };
+  packages = {};
   resolving = false;
 }

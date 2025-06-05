@@ -58,6 +58,7 @@ initialState =
       ("lower", nGen @[] [1 .. 2] override)
     ],
     solver = [],
+    packages = [],
     resolving = False
   }
   where
@@ -186,6 +187,7 @@ stateFileTargetBasic =
   solver = {
     lower = {};
   };
+  packages = {};
   resolving = false;
 }
 |]
@@ -322,6 +324,7 @@ stateFileTargetReset =
   solver = {
     lower = {};
   };
+  packages = {};
   resolving = false;
 }
 |]

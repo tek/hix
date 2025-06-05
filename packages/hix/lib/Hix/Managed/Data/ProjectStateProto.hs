@@ -10,6 +10,7 @@ import Hix.Data.Json (foldMissing)
 import Hix.Data.Overrides (Overrides)
 import Hix.Data.Version (Versions)
 import Hix.Managed.Data.Envs (Envs)
+import Hix.Managed.Data.PackageState (PackageState)
 import Hix.Managed.Data.Packages (Packages)
 
 data ProjectStateProto =
@@ -19,6 +20,7 @@ data ProjectStateProto =
     initial :: Envs Versions,
     overrides :: Envs Overrides,
     solver :: Envs Overrides,
+    packages :: Packages PackageState,
     resolving :: Bool
   }
   deriving stock (Eq, Show, Generic)
@@ -30,7 +32,8 @@ instance Pretty ProjectStateProto where
     hang "versions:" 2 (pretty versions) $+$
     hang "initial:" 2 (pretty initial) $+$
     hang "overrides:" 2 (pretty overrides) $+$
-    hang "solver:" 2 (pretty solver)
+    hang "solver:" 2 (pretty solver) $+$
+    hang "packages:" 2 (pretty packages)
 
 instance FromJSON ProjectStateProto where
   parseJSON = withObject "ProjectStateProto" \ o -> do
@@ -39,6 +42,7 @@ instance FromJSON ProjectStateProto where
     initial <- foldMissing o "initial"
     overrides <- foldMissing o "overrides"
     solver <- foldMissing o "solver"
+    packages <- foldMissing o "packages"
     resolving <- fromMaybe False <$> o .:? "resolving"
     pure ProjectStateProto {..}
 
@@ -50,5 +54,6 @@ instance Default ProjectStateProto where
       initial = mempty,
       overrides = mempty,
       solver = mempty,
+      packages = mempty,
       resolving = False
     }

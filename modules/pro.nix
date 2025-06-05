@@ -56,6 +56,6 @@
 
   ghci.ghcOptions = ["-Werror"] ++ lib.optional (util.minGhcDev "9.8") "-fno-show-error-context";
 
-  hackage.setChangelogVersion = true;
+  release.setChangelogVersion = true;
 
 }

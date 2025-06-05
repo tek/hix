@@ -6,6 +6,8 @@ import Hix.Data.LogLevel (LogLevel (LogInfo))
 import Hix.Data.OutputFormat (OutputFormat (OutputNone))
 import Hix.Data.OutputTarget (OutputTarget (OutputDefault))
 import Hix.Data.PathSpec (PathSpec (PathConcrete))
+import qualified Hix.Ui.Data.Theme as Theme
+import Hix.Ui.Data.Theme (Theme)
 
 data GlobalOptions =
   GlobalOptions {
@@ -14,7 +16,8 @@ data GlobalOptions =
     cwd :: PathSpec Dir,
     root :: PathSpec Dir,
     output :: OutputFormat,
-    target :: OutputTarget
+    target :: OutputTarget,
+    theme :: Theme
   }
   deriving stock (Eq, Show, Generic)
 
@@ -26,7 +29,8 @@ defaultGlobalOptions cwd =
     cwd = cwdSpec,
     root = cwdSpec,
     output = OutputNone,
-    target = OutputDefault
+    target = OutputDefault,
+    theme = Theme.Default
   }
   where
     cwdSpec :: PathSpec Dir

@@ -40,6 +40,14 @@
     path = project.packages.${name}.path;
   };
 
+  releasePackage = name: conf: let
+    meta = build.hpack.meta.${name};
+  in {
+    inherit name;
+    inherit (meta) version;
+    path = project.packages.${name}.path;
+  };
+
   componentConf = comp: let
     conf = comp.__conf;
   in {
@@ -91,6 +99,11 @@
 
   ghcis = util.mapValues ghci config.envs;
 
+  ensureHookScript = value:
+  if lib.isString value
+  then util.script "release-hook" value
+  else value;
+
   json = k: v: util.jsonFile "context-${k}" v;
 
   data = {
@@ -108,6 +121,21 @@
       packages = lib.mapAttrs maintPackage config.packages;
       hackage = config.hackage.repos;
       envs = util.mapValues maintEnv internal.managed.env.envs;
+    };
+
+    release = {
+      packages = lib.mapAttrs releasePackage config.packages;
+      hackage = config.hackage.repos;
+      hooks = map ensureHookScript config.release.hooks;
+      inherit (config.release) commitExtraArgs tagExtraArgs;
+    };
+
+    state-versions = {
+      state = internal.managed.state.current;
+      inherit (config.release) versionFile;
+      packages = util.mapValues (conf: {
+        inherit (conf) versionFile;
+      }) config.packages;
     };
 
     preproc = {

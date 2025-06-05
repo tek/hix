@@ -49,6 +49,10 @@ color :: Int -> Text -> Text
 color n =
   sgis [show (30 + n)]
 
+bgColor :: Int -> Text -> Text
+bgColor n =
+  sgis [show (40 + n)]
+
 bold :: Text -> Text
 bold = sgis ["1"]
 

@@ -5,7 +5,19 @@
   # Probably best to add a third package so that one can be separate.
   #
   # TODO make --commit --revision into module options
-  testlib.hackage.withServer ''
+  testlib.hackage.withServer {} ''
+  run_release()
+  {
+    step_run release \
+    --hackage local:location:$_hackage_url \
+    --candidates=none \
+    --publish=sources \
+    --commit \
+    --tag \
+    --merge \
+    "$@"
+  }
+
   step git commit --quiet --amend -C HEAD
   step git tag local1-1.0.0
   step git tag local2-1.0.0
@@ -14,9 +26,8 @@
   step git add .
   step git commit -m "file1" --quiet
 
-  # This uses the local $CABAL_CONFIG to upload to the test hackage.
-  output_match 'Release local1 1.1.0'
-  step_run release local1 -v 1.1.0
+  error_match 'local1.*1\.1\.0'
+  run_release --package local1-1.1.0
 
   step git tag local2-1.1.0
 
@@ -24,8 +35,8 @@
   step git add .
   step git commit -m "file1" --quiet
 
-  output_match 'Release local2 1.2.0'
-  step_run release local2 -v 1.2.0
+  error_match 'local2.*1\.2\.0'
+  run_release --package local2-1.2.0
 
   step_run maint --quiet --commit --revision --hackage local:location:$_hackage_url --maint-handlers=test-maint --build-handlers=test-maint
 

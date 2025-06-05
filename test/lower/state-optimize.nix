@@ -118,5 +118,6 @@
   solver = {
     lower-main = {};
   };
+  packages = {};
   resolving = false;
 }

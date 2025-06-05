@@ -4,8 +4,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import Exon (exon)
 
 import Hix.Data.EnvName (EnvName)
-import qualified Hix.Data.Monad
-import Hix.Data.Monad (M, appRes)
+import Hix.Data.Monad (M)
 import Hix.Data.Options (ManagedOptions (..), ProjectOptions (..))
 import Hix.Data.VersionBounds (Bound (..))
 import Hix.Http (httpManager)
@@ -16,7 +15,7 @@ import Hix.Managed.Data.BuildOutput (DepChanges)
 import qualified Hix.Managed.Data.EnvContext
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.ProjectContext (ProjectContext (..))
-import Hix.Managed.Flake (flakeFailure, runFlakeFor)
+import Hix.Managed.Flake (runFlakeGen)
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
@@ -58,10 +57,9 @@ runBump ::
 runBump handlers project = do
   result <- bumpOptimizeMain handlers project
   updateProject handlers.project False result
-  root <- appRes.root
   -- TODO maybe the called app should be aware of managed, and check the config to ensure that the right steps are
   -- taken.
-  runFlakeFor (const unit) flakeFailure "Generate Cabal" root ["--quiet", "--quiet", "--quiet", "run", ".#gen-quiet"] id
+  runFlakeGen def
   pure (depChanges result)
 
 runBumpProd ::

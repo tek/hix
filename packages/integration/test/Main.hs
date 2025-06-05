@@ -5,8 +5,10 @@ import Hix.Integration.HackageTest (test_hackage)
 import Hix.Integration.Managed.BumpTest (test_bump)
 import Hix.Integration.Managed.SolverPackagesTest (test_solverPackages)
 import Hix.Integration.ReleaseMaintenanceTest (test_releaseMaintenance)
+import Hix.Integration.ReleaseTest (test_release)
+import Hix.Integration.ReleaseUiTest (test_releaseUi, test_releaseUi_distTargets, test_releaseUi_colors, test_releaseUi_versionProblems_accept, test_releaseUi_versionProblems_reject)
 import Hix.Integration.RevisionTest (test_revision)
-import Hix.Integration.Utils (unitTest)
+import Hix.Test.Utils (unitTest)
 import Test.Tasty (TestTree, defaultMain, testGroup)
 
 tests :: TestTree
@@ -15,8 +17,14 @@ tests =
     unitTest "hackage" test_hackage,
     unitTest "release maint" test_releaseMaintenance,
     unitTest "revision" test_revision,
+    test_release,
     unitTest "solver packages" test_solverPackages,
-    unitTest "bump" test_bump
+    unitTest "bump" test_bump,
+    unitTest "release ui" test_releaseUi,
+    unitTest "release ui colors" test_releaseUi_colors,
+    unitTest "release ui dist targets" test_releaseUi_distTargets,
+    unitTest "release ui version problems accept" test_releaseUi_versionProblems_accept,
+    unitTest "release ui version problems reject" test_releaseUi_versionProblems_reject
   ]
 
 main :: IO ()

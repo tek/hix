@@ -178,6 +178,12 @@ gitApi :: (GitNative -> api) -> GitApi api
 gitApi api =
   GitApi \ repo f -> f (api (gitNative GitEnv {backend = GitBackend {exec = gitExec mempty}, repo}))
 
+gitApiM :: (GitNative -> M api) -> GitApi api
+gitApiM mkApi =
+  GitApi \ repo f -> do
+    api <- mkApi (gitNative GitEnv {backend = GitBackend {exec = gitExec mempty}, repo})
+    f api
+
 gitApiNative :: GitApi GitNative
 gitApiNative = gitApi id
 
@@ -191,9 +197,9 @@ gitEnvHermetic home repo =
         ("HOME", coerce (pathText home)),
         ("GIT_CONFIG_NOSYSTEM", "1"),
         ("GIT_AUTHOR_NAME", "hix"),
-        ("GIT_AUTHOR_EMAIL", "hix@tryp.io"),
+        ("GIT_AUTHOR_EMAIL", "hix-bot@github.com"),
         ("GIT_COMMITTER_NAME", "hix"),
-        ("GIT_COMMITTER_EMAIL", "hix@tryp.io")
+        ("GIT_COMMITTER_EMAIL", "hix-bot@github.com")
       ]
 
 gitHermetic :: Path Abs Dir -> Path Abs Dir -> GitNative
@@ -204,6 +210,13 @@ gitApiHermetic consApi =
   GitApi \ repo f ->
     withTempDir "git-home" \ home ->
       f (consApi (gitNative (gitEnvHermetic home repo)))
+
+gitApiHermeticM :: (GitNative -> M api) -> GitApi api
+gitApiHermeticM mkApi =
+  GitApi \ repo f ->
+    withTempDir "git-home" \ home -> do
+      api <- mkApi (gitNative (gitEnvHermetic home repo))
+      f api
 
 gitApiNativeHermetic :: GitApi GitNative
 gitApiNativeHermetic = gitApiHermetic id

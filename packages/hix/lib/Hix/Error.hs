@@ -112,6 +112,10 @@ tryIOContext context =
 tryIO :: IO a -> ExceptT Error IO a
 tryIO = tryIOContext []
 
+tryIOError_ :: MonadIO m => IO a -> m ()
+tryIOError_ =
+  void . liftIO . tryIOError
+
 errorLevel ::
   LogLevel ->
   ExceptT Error IO a ->
