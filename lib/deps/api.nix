@@ -24,6 +24,12 @@ let
 
   concatGhcOptions = opts: lib.concatMapStringsSep " " ghcOption (lib.toList opts);
 
+  applyBuildInputs = inputs:
+  if lib.isFunction inputs
+  then inputs pkgs
+  else inputs
+  ;
+
   transformers = {
     transformDrv = transform_ "transform-drv";
     modify = transform_ "modify";
@@ -38,7 +44,7 @@ let
     override = conf: transform_ "override" (hsLibC.overrideCabal conf);
     overrideAttrs = f: transform_ "overrideAttrs" (overrideAttrsCabal f);
     buildInputs = inputs: transform_ "buildInputs" (
-      hsLibC.overrideCabal ({buildDepends ? [], ...}: { buildDepends = buildDepends ++ inputs; })
+      hsLibC.overrideCabal ({buildDepends ? [], ...}: { buildDepends = buildDepends ++ applyBuildInputs inputs; })
     );
     minimal = transform_ "minimal" modifiers.minimal;
     profiling = transform_ "profiling" modifiers.profiling;
