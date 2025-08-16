@@ -18,6 +18,7 @@ import Network.HTTP.Client.MultipartFormData (formDataBody, partBS)
 import Network.HTTP.Types (
   Status (statusCode, statusMessage),
   hAccept,
+  hAuthorization,
   hContentType,
   statusIsClientError,
   statusIsServerError,
@@ -31,10 +32,13 @@ import Hix.Http (httpManager)
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose, hackagesFor)
 import Hix.Managed.Cabal.Data.HackageLocation (
+  HackageAuth (..),
   HackageHost (..),
   HackageLocation (..),
-  HackagePassword (HackagePassword),
+  HackagePassword (..),
+  HackageSecret (..),
   HackageTls (..),
+  HackageToken (..),
   HackageUser (..),
   hackageTlsBool,
   )
@@ -101,8 +105,11 @@ nativeRequest location request@HackageRequest {..} = do
       Left fields -> formDataBody [partBS key (encodeUtf8 value) | (key, value) <- toList fields]
 
     addAuth =
-      maybe id \ (HackageUser user, HackagePassword password) ->
-        applyBasicAuth (encodeUtf8 user) (encodeUtf8 password)
+      maybe id \case
+        HackageAuthPassword {user = HackageUser user, password = HackagePassword (HackageSecret password)} ->
+          applyBasicAuth (encodeUtf8 user) (encodeUtf8 password)
+        HackageAuthToken {token = HackageToken (HackageSecret token)} ->
+           \ req -> req {requestHeaders = (hAuthorization, (encodeUtf8 token)) : req.requestHeaders}
 
     addQuery = maybe id \ q -> setQueryString (second Just <$> toList q)
 
@@ -178,8 +185,8 @@ handlersMock manager port = do
         host = "localhost",
         tls = TlsOff,
         port = Just (fromIntegral port),
-        auth = Just ("admin", "admin")
+        auth = Just (HackageAuthPassword {user = "admin", password = "admin"})
       }
     }
-    userRes = res {location = res.location {auth = Just ("test", "test")}}
+    userRes = res {location = res.location {auth = Just (HackageAuthPassword {user = "test", password = "test"})}}
     adminClient = handlersProd res
