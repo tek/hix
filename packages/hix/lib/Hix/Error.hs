@@ -125,18 +125,26 @@ formatError = \case
   FatalExternal msg -> [exon|Fatal: #{msg}|]
   Client msg -> msg
 
-printError ::
-  MonadIO m =>
+printErrorWith ::
+  Monad m =>
+  (Text -> m ()) ->
   LogLevel ->
   Error ->
   m ()
-printError logLevel Error {..}
+printErrorWith printer logLevel Error {..}
   | Just messageLevel <- level
   , messageLevel < logLevel
   = unit
   | ErrorContext ctxLines <- context
   = do
     for_ (reverse ctxLines) \ ctx ->
-      when (ctx.level >= logLevel) do
-        Console.err (withErrorChevrons [exon|While #{ctx.description}|])
-    Console.err (errorMessage (formatError message))
+      when (logLevel >= ctx.level) do
+        printer (withErrorChevrons [exon|While #{ctx.description}|])
+    printer (errorMessage (formatError message))
+
+printError ::
+  MonadIO m =>
+  LogLevel ->
+  Error ->
+  m ()
+printError = printErrorWith Console.err

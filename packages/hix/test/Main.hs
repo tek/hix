@@ -1,6 +1,7 @@
 module Main where
 
 import Hix ()
+import Hix.Test.AppContextTest (test_appContext)
 import Hix.Test.BootstrapTest (test_bootstrap)
 import Hix.Test.BoundsTest (test_bounds)
 import Hix.Test.CabalTest (test_cabal)
@@ -38,7 +39,8 @@ tests =
     ],
     test_version,
     test_bounds,
-    test_managed
+    test_managed,
+    unitTest "print app context on error" test_appContext
   ]
 
 main :: IO ()
