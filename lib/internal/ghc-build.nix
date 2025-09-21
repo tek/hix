@@ -36,7 +36,7 @@
   noHash = ''
   The configuration for the custom build of the GHC named '${configName}' does not specify a hash for the source tree.
   If this is the first evaluation, copy the hash that Nix will print below and assign it to the option:
-    ${optionPrefix}.build.hash
+    ${optionPrefix}.source.build.hash
   '';
 
   warnHash =
