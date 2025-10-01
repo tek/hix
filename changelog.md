@@ -19,6 +19,7 @@
 * Add the options `envs.*.ghci{,d}.args` as env-specific extra arguments to those commands, based on env selection.
 * Add the options `ghci{,d}.args` as unconditional extra arguments to those commands.
 * Add the CLI option `--env` to override env selection for commands.
+* Add support for token authentication for Hackage.
 
 # 0.9.0
 

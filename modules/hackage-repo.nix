@@ -48,6 +48,12 @@ in {
       default = null;
     };
 
+    token = util.maybeOption types.str {
+      description = ''
+      Authentication token for uploading.
+      '';
+    };
+
     secure = lib.mkOption {
       description = "Use the newer Cabal client that verifies index signatures via `hackage-security`.";
       type = types.nullOr types.bool;

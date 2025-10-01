@@ -60,23 +60,39 @@ newtype HackageUser =
 instance Pretty HackageUser where
   pretty = prettyNt
 
-newtype HackagePassword =
-  HackagePassword Text
+newtype HackageSecret =
+  HackageSecret { text :: Text }
   deriving stock (Eq)
   deriving newtype (IsString, Ord, FromJSON)
 
-instance Show HackagePassword where
+instance Show HackageSecret where
   showsPrec d _ = showParen (d > 10) (showString "HackagePassword <password>")
 
-instance Pretty HackagePassword where
+instance Pretty HackageSecret where
   pretty _ = "<password>"
+
+newtype HackagePassword =
+  HackagePassword { secret :: HackageSecret }
+  deriving stock (Eq, Show)
+  deriving newtype (IsString, Ord, FromJSON)
+
+newtype HackageToken =
+  HackageToken { secret :: HackageSecret }
+  deriving stock (Eq, Show)
+  deriving newtype (IsString, Ord, FromJSON)
+
+data HackageAuth =
+  HackageAuthPassword { user :: HackageUser, password :: HackagePassword }
+  |
+  HackageAuthToken { token :: HackageToken }
+  deriving stock (Eq, Show)
 
 data HackageLocation =
   HackageLocation {
     host :: HackageHost,
     tls :: HackageTls,
     port :: Maybe HackagePort,
-    auth :: Maybe (HackageUser, HackagePassword)
+    auth :: Maybe HackageAuth
   }
   deriving stock (Eq, Show, Generic)
 

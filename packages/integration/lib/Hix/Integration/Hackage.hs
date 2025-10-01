@@ -31,9 +31,10 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (
   ContextHackageLocation (..),
   ContextHackagePassword (..),
   ContextHackageRepo (..),
+  ContextHackageSecret (..),
   contextHackageRepo,
   )
-import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (..))
+import Hix.Managed.Cabal.Data.HackageLocation (HackageAuth (..), HackageLocation (..), HackageTls (..))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
 import qualified Hix.Managed.Cabal.Init as Cabal
 import Hix.Managed.Cabal.Init (remoteRepo)
@@ -105,7 +106,7 @@ testRepo port =
     location = HackageLocation {
       host = "localhost",
       port = Just (fromIntegral port.value),
-      auth = Just ("test", "test"),
+      auth = Just (HackageAuthPassword {user = "test", password = "test"}),
       tls = TlsOff
     },
     enable = True,
@@ -129,7 +130,7 @@ testContextRepo port =
     description = Just "test",
     location = Just (ContextHackageLocation [exon|http://localhost:#{show port.value}|]),
     user = Just "test",
-    password = Just (PasswordUnobscured "test"),
+    password = Just (ContextHackagePassword (SecretUnobscured "test")),
     solver = Just True,
     publish = Just True
   }
@@ -160,7 +161,9 @@ testClient location = do
       location
     }
 
-    adminRes = res {HackageResources.location = location {auth = Just ("admin", "admin")}}
+    adminRes = res {HackageResources.location = location {
+      auth = Just (HackageAuthPassword {user = "admin", password = "admin"})}
+    }
 
     adminClient = HackageClient.handlersProd adminRes
 
