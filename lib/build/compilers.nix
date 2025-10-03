@@ -71,7 +71,10 @@
 
   defaultOrError = conf: pkgs: attr: let
     target = pkgs.haskell.${attr} or null;
-    value = target.${conf.source} or null;
+    value =
+      if lib.isList conf.source
+      then lib.attrByPath conf.source null target
+      else target.${conf.source} or null;
   in
   if target == null
   then throw (noSetError conf attr)

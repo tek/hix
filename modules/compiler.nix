@@ -73,12 +73,13 @@
 
     # TODO since the default is the global compiler name, it would be more useful if the example was for a custom build.
     source = lib.mkOption {
-      type = types.either types.str (types.attrTag sources);
+      type = types.either (types.listOf types.str) (types.either types.str (types.attrTag sources));
       description = ''
       Instructions for obtaining a GHC and its base package set.
 
       May be specified in three different ways:
       - The name of an attribute in nixpkgs' `haskell.packages`, like `"ghc910"`
+      - The path to an attribute in nixpkgs' `haskell.packages`, like `["native-bignum" "ghc910"]`
       - A [submodule config](#options-ghc-build) for a fully customized build (`build`)
       - A nixpkgs overlay that inserts the compiler and its base package set (`overlay`)
       - An overlay function that returns the compiler and its base package set (`manual`)
