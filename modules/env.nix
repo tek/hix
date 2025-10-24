@@ -623,7 +623,7 @@ in {
 
     code = internal.env.scripts.setup { env = config; };
 
-    ghcid.package = lib.mkDefault (ghcidMod built.toolchain.vanilla.ghcid);
+    ghcid.package = lib.mkDefault (ghcidMod global.build-tools.ghcid.package);
 
     hls.package = lib.mkDefault built.toolchain.vanilla.haskell-language-server;
 

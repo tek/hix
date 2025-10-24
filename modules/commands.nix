@@ -37,7 +37,6 @@ in {
       expose = true;
     };
 
-    # TODO The executable could probably be moved to `hix-build-tools`.
     ghcid = {
       ghci.enable = true;
       ghci.ghcid = true;
