@@ -227,4 +227,22 @@ in {
 
   password = types.either types.str (submodule passwordModule);
 
+  listOrFunction = elemType: let
+
+    listType = types.listOf elemType;
+    functionType = types.functionTo listType;
+    eitherType = types.either listType functionType;
+
+  in mkOptionType {
+    name = "listOrFunction";
+    description = "list of ${
+      types.optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
+    } or function returning such a list";
+    descriptionClass = "composite";
+    inherit (eitherType) check;
+
+    merge = loc: defs:
+    functionType.merge loc (map (def: if lib.isFunction def.value then def else (def // { value = _: def.value; })) defs);
+  };
+
 }

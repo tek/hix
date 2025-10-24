@@ -37,8 +37,11 @@ in {
     };
 
     buildInputs = lib.mkOption {
-      description = "Packages that should be in `$PATH` for this command.";
-      type = types.either (types.functionTo (types.listOf types.package)) (types.listOf types.package);
+      description = ''
+      Additional packages that should be included in this command's `$PATH`.
+      The argument passed to the function is the nixpkgs set of the environment in which the command is run.
+      '';
+      type = util.types.listOrFunction types.package;
       default = [];
     };
 

@@ -509,7 +509,7 @@ in {
 
         compiler = "ghc94";
 
-        buildInputs = [config.pkgs.socat];
+        shellTools = pkgs: [pkgs.socat];
 
         services.postgres = {
           enable = true;

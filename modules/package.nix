@@ -289,7 +289,7 @@ in {
 
     buildInputs = mkOption {
       description = "Additional non-Haskell dependencies required by this package.";
-      type = types.either (types.functionTo (types.listOf types.package)) (types.listOf types.package);
+      type = util.types.listOrFunction types.package;
       default = [];
     };
 

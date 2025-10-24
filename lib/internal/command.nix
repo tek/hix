@@ -1,7 +1,7 @@
 {util}:
 let
 
-  inherit (util) lib internal outputs;
+  inherit (util) lib outputs;
 
   cli = util.config.internal.hixCli.exe;
 
@@ -52,7 +52,7 @@ let
 
     path = util.script "hix-command-${env.name}-${command.name}" ''
     set -u
-    export PATH="${lib.makeBinPath (internal.env.mkBuildInputs env command.buildInputs)}:$PATH"
+    export PATH="${lib.makeBinPath (command.buildInputs env.toolchain.pkgs)}:$PATH"
     ${self.script}
     '';
 

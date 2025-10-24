@@ -12,7 +12,7 @@
   in {
 
     envs.dev = {
-      buildInputs = [(dummy "env-input")];
+      buildInputs = _: [(dummy "env-input")];
     };
 
     commands.inputs = {

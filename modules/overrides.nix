@@ -22,8 +22,11 @@ in {
     };
 
     buildInputs = mkOption {
-      description = "Additional non-Haskell dependencies provided to all packages and environments.";
-      type = types.either (types.functionTo (types.listOf types.package)) (types.listOf types.package);
+      description = ''
+      Additional non-Haskell dependencies provided to all packages and environments.
+      The argument is the active environment's nixpkgs set.
+      '';
+      type = util.types.listOrFunction types.package;
       default = [];
     };
 

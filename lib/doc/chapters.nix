@@ -97,6 +97,7 @@
     (options.importMod "commands" { inherit config lib util; })
     (options.importMod "overrides" { inherit config lib util; })
     (options.importMod "output" { inherit config lib util; inherit (util) outputs; })
+    (options.importMod "build-tools" { inherit config lib util; })
   ];
   generalExclude = [
     { type = "sub"; path = ["envs"]; }
