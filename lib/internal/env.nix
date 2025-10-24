@@ -87,16 +87,15 @@
     os = internal.managed.state.current.solver.${envName} or {};
   in lib.mapAttrs (managedOverride api) os;
 
-  mkBuildInputs = env: spec:
-  if lib.isFunction spec
-  then spec env.toolchain.pkgs
-  else spec;
-
-  buildInputs = env:
-  mkBuildInputs env env.buildInputs ++
-  mkBuildInputs env config.buildInputs ++
-  env.haskellTools env.toolchain.vanilla ++
-  config.haskellTools env.toolchain.vanilla ++
+  buildInputs = env: let
+    inherit (env.toolchain) pkgs vanilla;
+  in
+  env.buildInputs pkgs ++
+  config.buildInputs pkgs ++
+  env.shellTools pkgs ++
+  config.shellTools pkgs ++
+  env.haskellTools vanilla ++
+  config.haskellTools vanilla ++
   lib.optional env.hls.enable env.hls.package ++
   lib.optional env.ghcid.enable env.ghcid.package ++
   [env.ghcWithPackages]
@@ -172,7 +171,6 @@ in {
   isTarget
   managedOverrides
   managedSolverOverrides
-  mkBuildInputs
   buildInputs
   validate
   mapValidatedOutputs

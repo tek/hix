@@ -19,6 +19,10 @@
 * Add the options `envs.*.ghci{,d}.args` as env-specific extra arguments to those commands, based on env selection.
 * Add the options `ghci{,d}.args` as unconditional extra arguments to those commands.
 * Add the CLI option `--env` to override env selection for commands.
+* The packages defined by the option `envs.*.buildInputs` are now provided to local package derivations as well, for
+  consistency with other options of that name.
+* Add the options `shellTools` and `envs.*.shellTools` to take on the previous role of `envs.*.buildInputs` for packages
+  that should not be made available to local package derivations.
 
 # 0.9.0
 

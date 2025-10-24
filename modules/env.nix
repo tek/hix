@@ -172,12 +172,10 @@ in {
 
     buildInputs = lib.mkOption {
       description = ''
-      Additional system package dependencies for this environment.
-      ::: {.note}
-      These are only made available to shells and commands, not added to packages, like when they are set in overrides.
-      :::
+      Additional non-Haskell dependencies provided to all packages in this environment.
+      The argument is the this environment's nixpkgs set.
       '';
-      type = either (functionTo (listOf package)) (listOf package);
+      type = util.types.listOrFunction package;
       default = [];
     };
 
@@ -191,10 +189,19 @@ in {
       default = [];
     };
 
+    shellTools = lib.mkOption {
+      description = ''
+      Packages that should be included in the environment's `$PATH`.
+      The argument passed to the function is the environment's nixpkgs set.
+      '';
+      type = types.functionTo (types.listOf types.package);
+      default = _: [];
+    };
+
     haskellTools = lib.mkOption {
       description = ''
-      Function returning a list of names of Haskell packages that should be included in the environment's `$PATH`.
-      This is a convenience variant of [](#opt-env-buildInputs) that provides the environment's GHC package set (without
+      Haskell packages that should be included in the environment's `$PATH`.
+      This is a convenience variant of [](#opt-env-shellTools) that provides the environment's GHC package set (without
       overrides) as a function argument.
       This is intended for tooling like `fourmolu`.
       '';
@@ -643,8 +650,8 @@ in {
 
         overridesLocal = import ../lib/deps/local.nix {
           inherit util;
-          inherit (config) ifd localPackage libraryProfiling profiling;
-          env = config.name;
+          inherit (config) ifd localPackage libraryProfiling profiling buildInputs;
+          envName = config.name;
           packages =
             if config.localOverrides == "targets"
             then util.restrictKeys (internal.env.targets config) global.packages

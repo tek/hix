@@ -1,4 +1,4 @@
-{config, lib, env}:
+{config, lib, envName}:
 let
 
   hpackFile = conf:
@@ -45,7 +45,7 @@ let
     if lib.hasAttr n self
     then self.${n}
     else
-    throw "The Cabal config for '${pname}' in the env '${env}' has a dependency on the nonexistent package '${n}'.";
+    throw "The Cabal config for '${pname}' in the env '${envName}' has a dependency on the nonexistent package '${n}'.";
 
     depspec = spec: let
       name = depPkg spec;

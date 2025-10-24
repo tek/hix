@@ -194,18 +194,33 @@ in {
       '';
     };
 
+    shellTools = mkOption {
+      description = ''
+      Packages that should be included in every environment's `$PATH`.
+      The argument passed to the function is the environment's nixpkgs set.
+
+      If you want to include a tool that's not specific to the environment, you can also ignore the argument and use the
+      [global pkgs](opt-general-pkgs) or any other source of packages.
+
+      The default consists of `cabal-install` (from [](#opt-general-build-tools.cabal.package)), since that's a crucial
+      tool most users would expect to be available.
+      If you want to provide a custom `cabal-install` package for environments only (rather than overriding
+      [](#opt-general-build-tools.cabal.package)), you'll have to set `shellTools = lib.mkForce (...)`, since the
+      built-in definition doesn't use `mkDefault` to ensure that adding tools in your project won't mysteriously remove
+      `cabal-install` from all shells.
+      '';
+      type = types.functionTo (types.listOf types.package);
+    };
+
     haskellTools = mkOption {
       description = ''
-      Function returning a list of names of Haskell packages that should be included in every environment's `$PATH`.
+      Haskell packages that should be included in every environment's `$PATH`.
       This is a convenience variant of [](#opt-env-buildInputs) that provides the environment's GHC package set (without
       overrides) as a function argument.
       This is intended for tooling like `fourmolu`.
-      The default consists of `cabal-install`, since that's a crucial tool most users would expect to be available.
-      If you want to provide a custom `cabal-install` package, you'll have to set `haskellTools = lib.mkForce (...)`,
-      since the built-in definition doesn't use `mkDefault` to ensure that adding tools in your project won't
-      mysteriously remove `cabal-install` from all shells.
       '';
       type = types.functionTo (types.listOf types.package);
+      default = _: [];
       example = literalExpression ''ghc: [ghc.fourmolu]'';
     };
 
@@ -318,7 +333,7 @@ in {
 
     pkgs = lib.mkDefault util.pkgs;
 
-    haskellTools = ghc: [ghc.cabal-install];
+    shellTools = _: [config.build-tools.cabal.package];
 
     internal = {
 
