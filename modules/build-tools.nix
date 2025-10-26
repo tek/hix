@@ -23,6 +23,11 @@ in {
       type = types.package;
     };
 
+    hasktags.package = lib.mkOption {
+      description = "A package containing the hasktags executable at `bin/hasktags`.";
+      type = types.package;
+    };
+
   };
 
   config.build-tools = {
@@ -32,6 +37,8 @@ in {
     hpack.package = lib.mkDefault ghc.hpack;
 
     ghcid.package = lib.mkDefault ghc.ghcid;
+
+    hasktags.package = lib.mkDefault ghc.hasktags;
 
   };
 
