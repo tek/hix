@@ -37,7 +37,7 @@ jobs:
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Flake checks
-        run: nix --show-trace flake check
+        run: nix --show-trace -L flake check
       - id: ci-matrix
         name: Output CI matrix
         run: |
