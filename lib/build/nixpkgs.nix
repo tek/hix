@@ -19,7 +19,7 @@
 
   resolveSource = conf: let
     fetcher = setupFetcher conf;
-  in 
+  in
   if isPkgs conf
   then reimport conf
   else if builtins.isPath conf || lib.isDerivation conf || lib.isStorePath conf
@@ -29,6 +29,8 @@
   compileArgs = conf: overlays: { config = conf.config; inherit overlays; } // conf.args;
 
   create = conf: lib.makeExtensible (final: {
+
+    nixpkgsRev = conf.source.rev or null;
 
     construct = resolveSource conf.source;
 

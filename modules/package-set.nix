@@ -18,9 +18,14 @@
       type = util.types.cabalOverrides;
       description = ''
       The overrides used for this package set – see [](#ghc) for an explanation.
+      '';
+      default = [];
+    };
 
-      This option is set by environments (see [](#envs)), but package set modules can be used outside of environments,
-      so this may be configured directly.
+    extraOverrides = lib.mkOption {
+      type = util.types.cabalOverrides;
+      description = ''
+      Like [](#opt-package-set-overrides), but intended to be set from environments or other consumers of package sets.
       '';
       default = [];
     };

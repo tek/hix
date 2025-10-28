@@ -587,7 +587,7 @@ in {
         else { source = config.compiler; }
       ));
 
-      overrides = internal.modules.envDefault (util.concatOverrides overrideSources);
+      extraOverrides = internal.modules.envDefault (util.concatOverrides overrideSources);
 
       gen-overrides = internal.modules.envDefault true;
 
