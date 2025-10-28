@@ -95,7 +95,8 @@ in {
       hls = {
         hls.enable = true;
         hls.package = internal.modules.envDefault build.envs.hls.toolchain.packages.haskell-language-server;
-        package-set.overrides = config.envs.hls.overrides;
+        package-set.overrides = lib.mkForce [];
+        package-set.extraOverrides = config.envs.hls.overrides;
         localOverrides = false;
         inheritOverrides = false;
         localDeps = false;

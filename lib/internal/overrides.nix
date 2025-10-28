@@ -44,11 +44,13 @@
 
     name = packageSet.name;
 
-    directOverrides = deps.reify packageSet.overrides;
+    allOverrides = packageSet.overrides ++ packageSet.extraOverrides;
+
+    directOverrides = deps.reify allOverrides;
 
     restoreOverrides = let
       fromFile = readOverrides name;
-    in deps.replace fromFile.error name fromFile.stored packageSet.overrides;
+    in deps.replace fromFile.error name fromFile.stored allOverrides;
 
   in
     if gen.enable && packageSet.gen-overrides && !internal.managed.state.current.resolving

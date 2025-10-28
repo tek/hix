@@ -15,14 +15,15 @@
   in compiler.extend (final: prev: {
 
     inherit conf;
-    inherit (conf) overrides;
+
+    overrides = conf.overrides ++ conf.extraOverrides;
 
     overlay = pkgsFinal: pkgsPrev: let
 
       overlayPrev = prev.overlay pkgsFinal pkgsPrev;
 
       hixMetadata = {
-        hix-nixpkgs-rev = final.pkgs.rev;
+        hix-nixpkgs-rev = final.nixpkgsRev;
         hix-name = conf.name;
       };
 
