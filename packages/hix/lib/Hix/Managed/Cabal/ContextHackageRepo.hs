@@ -14,9 +14,11 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (
   ContextHackageLocation (..),
   ContextHackagePassword (..),
   ContextHackageRepo (..),
+  ContextHackageSecret (..),
+  ContextHackageToken (..),
   contextHackageRepo,
   )
-import Hix.Managed.Cabal.Data.HackageLocation (HackagePassword (..), HackageUser (..))
+import Hix.Managed.Cabal.Data.HackageLocation (HackageSecret (..), HackageUser (..))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName, centralName)
 
 update' ::
@@ -57,7 +59,8 @@ fields =
     ("enable", update #enable bool),
     ("location", update #location (text ContextHackageLocation)),
     ("user", update #user (text HackageUser)),
-    ("password", update' True #password (text (PasswordPlain . HackagePassword))),
+    ("password", update' True #password (text (ContextHackagePassword . SecretPlain . HackageSecret))),
+    ("token", update' True #token (text (ContextHackageToken . SecretPlain . HackageSecret))),
     ("secure", update #secure bool),
     ("keys", update #keys (nonEmpty . Text.splitOn "," . toText)),
     ("indexState", update #indexState simpleParsec),
