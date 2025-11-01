@@ -23,6 +23,7 @@
   consistency with other options of that name.
 * Add the options `shellTools` and `envs.*.shellTools` to take on the previous role of `envs.*.buildInputs` for packages
   that should not be made available to local package derivations.
+* Add the options `build-tools.{ghcid,hasktags}.package` to configure these tools globally.
 
 # 0.9.0
 
