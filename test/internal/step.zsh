@@ -52,6 +52,15 @@ _step_show_description()
   fi
 }
 
+_step_show_diagnostics()
+{
+  if [[ -n ${_step_diagnostics:-} ]]
+  then
+    message_hang 'Additional diagnostics:'
+    $_step_diagnostics
+  fi
+}
+
 # Step failure
 
 _step_failed()
@@ -59,6 +68,7 @@ _step_failed()
   error_message "Step $(cyan $step_number) failed:"
   error_message_hang "$(bold $(color_shell_cmd $(_step_unclutter_cmd)))"
   _step_show_description
+  _step_show_diagnostics
 }
 
 _step_should_retry()
@@ -612,7 +622,8 @@ step()
     _step_diff_ignore_trailing_space \
     _step_validated_out \
     _step_validated_err \
-    _step_description
+    _step_description \
+    _step_diagnostics
   return $result
 }
 
@@ -683,15 +694,6 @@ error_rg()
   typeset -ga _step_rg_err
   _step_rg_err=($@)
 }
-
-# output_match()
-# {
-#   if (( ${+_step_regex_out} == 0 ))
-#   then
-#     typeset -ga _step_regex_out
-#   fi
-#   _step_regex_out+=($*)
-# }
 
 output_match()
 {
@@ -806,4 +808,9 @@ drop()
 drop_end()
 {
   head -n-$*
+}
+
+diagnostics()
+{
+  _step_diagnostics=$*
 }

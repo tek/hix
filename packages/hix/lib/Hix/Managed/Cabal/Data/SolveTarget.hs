@@ -1,13 +1,25 @@
+{-# language CPP #-}
+
 module Hix.Managed.Cabal.Data.SolveTarget where
 
 import Distribution.Client.Dependency (PackagePreference (..), PackageSpecifier (NamedPackage, SpecificSourcePackage))
 import Distribution.Client.Types (UnresolvedSourcePackage)
 import Distribution.Pretty (Pretty (pretty))
-import Distribution.Solver.Types.PackageConstraint (dispPackageProperty)
 import Distribution.Version (simplifyVersionRange)
 import Text.PrettyPrint (Doc, (<+>))
 
 import Hix.Pretty (prettyL)
+
+#if MIN_VERSION_cabal_install(3,16,0)
+
+dispPackageProperty :: a -> a
+dispPackageProperty = id
+
+#else
+
+import Distribution.Solver.Types.PackageConstraint (dispPackageProperty)
+
+#endif
 
 data SolveTarget =
   SolveTarget {

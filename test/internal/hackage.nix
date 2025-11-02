@@ -15,6 +15,17 @@
       return $1
     }
 
+    _hackage_port_discovered()
+    {
+      [[ -n $port ]]
+    }
+
+    _hackage_unit_status()
+    {
+        message 'Unit status:'
+        _hix_redirect systemctl --user status $unit
+    }
+
     hackage_scope()
     {
       setopt local_options local_traps err_return
@@ -38,11 +49,10 @@
         fi
         sleep 0.5
       done
-      if [[ -z $port ]]
-      then
-        fail "Port file didn't appear. Unit status:"
-        _hix_redirect systemctl --user status $unit
-      fi
+
+      describe 'Validate Hackage port'
+      diagnostics _hackage_unit_status
+      step _hackage_port_discovered
 
       local _hackage_url="http://localhost:$port"
       local _hackage_user_url="http://test@localhost:$port"

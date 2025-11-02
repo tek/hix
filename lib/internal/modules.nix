@@ -158,12 +158,14 @@
   else api spec;
 
   deprecatedOptionDefined = {loc, extra ? null, replacement ? null}: let
-    replacementMessage = lib.optionalString (replacement != null)
-    "\nIt is superseded by '${replacement}', possibly with changed semantics.";
-  in ''
-  The option '${lib.showOption loc}' is deprecated.${replacementMessage}
-  ${util.fromMaybeNull "" extra}
-  '';
+    replacementMessage = "It is superseded by '${replacement}', possibly with changed semantics.";
+  in util.unlines (
+    ["The option '${lib.showOption loc}' is deprecated."]
+    ++
+    lib.optional (replacement != null) replacementMessage
+    ++
+    lib.optional (extra != null) extra
+  );
 
   deprecated = {type, key, replacement ? null, definitionReplacement ? null, extra ? null}: type // {
     name = "deprecated ${type.name}";

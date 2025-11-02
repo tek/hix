@@ -66,7 +66,6 @@
   # find :: (a -> Bool) -> [a] -> Maybe a
   find = pred: as: justNonNull (lib.findFirst pred null as);
 
-
 in {
 
   inherit

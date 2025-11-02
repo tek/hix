@@ -10,7 +10,7 @@
       dep = {
         src = ./dep;
         cabal = {
-          dependencies = ["aeson >= 2" "extra ^>= 1.7"];
+          dependencies = ["aeson >= 2" "extra ^>= 1.8"];
         };
         library = {
           enable = true;
