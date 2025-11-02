@@ -66,7 +66,13 @@
         repo = "hackage.haskell.org";
       };
     };
-    latest-other = {};
+    latest-other = {
+      path = {
+        version = "0.9.5";
+        hash = "05b84rizmrii847pq2fbvlpna796bwxha1vc01c3vxb2rhrknrf7";
+        repo = "hackage.haskell.org";
+      };
+    };
   };
   solver = {
     latest-main = {};

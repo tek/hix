@@ -4,8 +4,8 @@
   release = import ./lib/release.nix { inherit config util; };
 
 in {
-  compiler = "ghc98";
-  ghcVersions = ["ghc96" "ghc98"];
+  compiler = "ghc912";
+  ghcVersions = ["ghc912"];
   main = "hix";
   gen-overrides.enable = true;
 
@@ -121,13 +121,11 @@ in {
         "aeson"
         "Cabal"
         "exon"
-        "extra"
         "hedgehog"
         "lens"
         "path"
         "path-io"
         "tasty"
-        "tasty-hedgehog"
         "time"
         "transformers"
         config.packages.hix.dep.exact
@@ -179,8 +177,8 @@ in {
   managed = {
     enable = true;
     lower.enable = true;
-    latest.compiler = "ghc910";
-    lower.compiler = "ghc96";
+    latest.compiler = "ghc912";
+    lower.compiler = "ghc98";
   };
 
   commands.integration-hackage = {
@@ -195,20 +193,12 @@ in {
 
   envs = let
 
-    cabalInstallFix = {
-      overrides = {super, ...}: {
-        cabal-install = super.cabal-install.overrideScope (cself: csuper: {
-          semaphore-compat = null;
-        });
-      };
-    };
-
     hackageServer = config.pkgs.fetchFromGitea {
       domain = "git.tryp.io";
       owner = "tek";
       repo = "hackage-server";
-      sha256 = "sha256-bm9jpskrYM4QKbP5tjdBy3BemSZnMH/Tx2yUuvuhr8c=";
-      rev = "9cb8231bd034d4e57116ba752bdf8a1830a1ee99";
+      sha256 = "sha256-3eZ+rLpDYwPufTr32mO8qXOGfTzOjHAJY9A6Mhhdxpw=";
+      rev = "02b91400b55671be79926def26646f7c72388566";
     };
 
   in {
@@ -221,22 +211,18 @@ in {
         hix_dir = "${inputs.self}";
       };
 
-      overrides = api@{hackage, fast, source, force, self, minimal, overrideAttrs, ...}:
-      cabalInstallFix.overrides api // {
+      overrides = {hackage, fast, source, force, self, minimal, notest, overrideAttrs, ...}: {
+        Cabal = hackage "3.16.0.0" "1pr9k8hi27qd9cliwn2fa0kg0v9b61bblba9m7la2prbxibzb8z9";
+        Cabal-syntax = hackage "3.16.0.0" "09c987i6mn4j8ib894wfvh397rqxcw0ylid8bgn3xfqpwiwar58j";
         hix = minimal;
         integration = fast (overrideAttrs (old: { hackage_data_dir = "${hackageServer}/datafiles"; }));
-        hackage-security = self.hackage-security_0_6_2_6;
         hackage-server = force (source.root hackageServer);
-        tar = hackage "0.6.3.0" "02nq0l9bsnkk5w8lbp493anc01fyf45l7zbcahhzji02agjwxkqm";
+        unicode-data = notest;
       };
 
       package-set.gen-overrides = false;
 
     };
-
-    dev = cabalInstallFix;
-
-    ghc98 = cabalInstallFix;
 
     latest.packages = lib.mkForce ["hix"];
     lower.packages = lib.mkForce ["hix"];
@@ -246,8 +232,9 @@ in {
   internal.cabal-extra.default-extensions = ["StrictData"];
 
   internal.hixCli = {
-    commit = "8d92716141f252642a45b0ff0d5468e28a0701c7";
-    sha256 = "05wp05hdls051xjavnkzppk494zigr9bp6pqhhlbydkrfc455fbz";
+    dev = true;
+    # commit = "8d92716141f252642a45b0ff0d5468e28a0701c7";
+    # sha256 = "05wp05hdls051xjavnkzppk494zigr9bp6pqhhlbydkrfc455fbz";
   };
 
   outputs = let

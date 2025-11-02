@@ -4,8 +4,8 @@ let
   inherit (util) build;
 
   cliNixpkgs = builtins.fetchTarball {
-    url = "https://github.com/nixos/nixpkgs/archive/b2243f41e860ac85c0b446eadc6930359b294e79.tar.gz";
-    sha256 = "0bhibarcx56j1szd40ygv1nm78kap3yr4s24p5cv1kdiy4hsb21k";
+    url = "https://github.com/nixos/nixpkgs/archive/a7fc11be66bdfb5cdde611ee5ce381c183da8386.tar.gz";
+    sha256 = "0h3gvjbrlkvxhbxpy01n603ixv0pjy19n9kf73rdkchdvqcn70j2";
   };
 
   package-set = build.package-sets config.internal.hixCli.ghc;
@@ -94,12 +94,7 @@ in {
 
       hix = if useDev then devHix else prodHix;
 
-    in {
-      hix = minimal hix;
-      cabal-install = super.cabal-install.overrideScope (cself: csuper: { semaphore-compat = null; });
-    } // lib.optionalAttrs (!useDev) {
-      exon = hackage "1.6.0.1" "0wnjywsxsmfqhyymzxlk8zzc5k4jr15y8rgl3lcdw48jl80i6ix9";
-    };
+    in { hix = minimal hix; };
 
     ghc = {
       name = "hix";
@@ -108,7 +103,7 @@ in {
           source = cliNixpkgs;
           extends = null;
         };
-        source = "ghc98";
+        source = "ghc912";
         extends = null;
       };
       overrides = lib.mkForce config.internal.hixCli.overrides;

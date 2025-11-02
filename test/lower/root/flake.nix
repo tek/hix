@@ -9,7 +9,7 @@
       enable = true;
       lower = {
         enable = true;
-        compiler = "ghc90";
+        compiler = "ghc94";
       };
       verbose = false;
       debug = false;

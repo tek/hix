@@ -6,11 +6,11 @@
         upper = null;
       };
       microlens = {
-        lower = "0.4.0.1";
+        lower = "0.3.5.1";
         upper = "0.5";
       };
       semigroups = {
-        lower = "0.19.1";
+        lower = "0.18.4";
         upper = "0.21";
       };
     };
@@ -19,8 +19,8 @@
     latest = {};
     lower = {
       base = "4.15.1.0";
-      microlens = "0.4.0.1";
-      semigroups = "0.19.1";
+      microlens = "0.3.5.1";
+      semigroups = "0.18.4";
     };
   };
   initial = {
@@ -34,14 +34,12 @@
   overrides = {
     lower = {
       microlens = {
-        version = "0.4.0.1";
-        hash = "0fib31m9fbj9a3kn1vqnq52glipc2fzxsjg6kj62ycx09wbdrrrb";
-        repo = "hackage.haskell.org";
+        version = "0.3.5.1";
+        hash = "sha256-OGQWAtYinJc4A32yVU+3wP9HJZRicveVy0JFQd35Xjc=";
       };
       semigroups = {
-        version = "0.19.1";
-        hash = "0ng4j78di5p2yqx3m4bnfcz9cplp5px7d95374w2qxi20spjabpi";
-        repo = "hackage.haskell.org";
+        version = "0.18.4";
+        hash = "sha256-4L7sKaf9a7dvRhawwwJZ1ZEKHe/owFv8lpZ9gh68p4o=";
       };
     };
   };

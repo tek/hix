@@ -2,17 +2,17 @@
   bounds = {
     local1 = {
       base = {
-        lower = "4.15.1.0";
+        lower = "4.17.2.1";
         upper = null;
       };
       containers = {
-        lower = "0.5.7.0";
+        lower = "0.6.3.1";
         upper = null;
       };
     };
     local2 = {
       base = {
-        lower = "4.15.1.0";
+        lower = "4.17.2.1";
         upper = null;
       };
       local1 = {
@@ -29,11 +29,11 @@
     latest-local1 = {};
     latest-local2 = {};
     lower-local1 = {
-      base = "4.15.1.0";
-      containers = "0.5.7.0";
+      base = "4.17.2.1";
+      containers = "0.6.3.1";
     };
     lower-local2 = {
-      base = "4.15.1.0";
+      base = "4.17.2.1";
       local1 = "0.1.0.0";
       semigroups = "0.18.1";
     };
@@ -51,8 +51,8 @@
   overrides = {
     lower-local1 = {
       containers = {
-        version = "0.5.7.0";
-        hash = "0hwknfbrv1yimsf79n309gnj093cac877s0w2rnp039z61lln4j4";
+        version = "0.6.3.1";
+        hash = "0jmfk2za4d8fjsl9qilzfpk7idann4w1wr3zri0apnqb7g9bd2q7";
         repo = "hackage.haskell.org";
       };
     };

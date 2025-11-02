@@ -2,7 +2,7 @@
   bounds = {
     local1 = {
       base = {
-        lower = "4.15.1.0";
+        lower = "4.17.2.1";
         upper = null;
       };
       containers = {
@@ -12,7 +12,7 @@
     };
     local2 = {
       base = {
-        lower = "4.15.1.0";
+        lower = "4.17.2.1";
         upper = null;
       };
       local1 = {
@@ -29,11 +29,11 @@
     latest-local1 = {};
     latest-local2 = {};
     lower-local1 = {
-      base = "4.15.1.0";
+      base = "4.17.2.1";
       containers = "0.8";
     };
     lower-local2 = {
-      base = "4.15.1.0";
+      base = "4.17.2.1";
       local1 = "0.1.0.0";
       semigroups = "0.20";
     };

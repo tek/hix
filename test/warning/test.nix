@@ -2,7 +2,7 @@
 
   warningTest = line1: lines: let
 
-    new = util.unlines (["evaluation warning: ${line1}"] ++ map (l: "                    ${l}") (util.lines lines));
+    new = util.unlines (["evaluation warning: ${line1}"] ++ map (l: if l == "" then "" else "                    ${l}") (util.lines lines));
 
   in ''
     error_exact "\
@@ -14,8 +14,7 @@
   ''The option 'packages.*.subpath' is deprecated in favor of 'project.packages.*.path'.''
   ''
   For instructions on how to access 'project', see [https://hix.how#intermediate-outputs].
-  Disable this warning by setting 'ui.warnings.keys.\\\"deprecated.option.packages.subpath\\\" = false;'\
-  ''}
+  Disable this warning by setting 'ui.warnings.keys.\\\"deprecated.option.packages.subpath\\\" = false;${"'"}''}
 
   output_exact '"."'
   diff_ignore_trailing_space
@@ -25,10 +24,9 @@
   ''The option 'envs.dev.ghc.version' is deprecated in favor of 'envs.*.toolchain.version'.''
   ''
   You can find more information about customizing compilers and package sets at [https://hix.how#ghc].
-  Disable this warning by setting 'ui.warnings.keys.\\\"deprecated.option.env.ghc\\\" = false;'\
-  ''}
+  Disable this warning by setting 'ui.warnings.keys.\\\"deprecated.option.env.ghc\\\" = false;${"'"}''}
 
-  output_exact '"9.8.4"'
+  output_exact '"9.10.3"'
   diff_ignore_trailing_space
   step_eval ghc-version
 
@@ -37,8 +35,7 @@
   ''
   The former will be ignored.
 
-  Disable this warning by setting 'ui.warnings.keys.\\\"env.duplicate-compiler\\\" = false;'\
-  ''}
+  Disable this warning by setting 'ui.warnings.keys.\\\"env.duplicate-compiler\\\" = false;${"'"}''}
 
   output_exact '"9.8.4"'
   diff_ignore_trailing_space
@@ -50,7 +47,7 @@
 
          You can find more information about customizing compilers and package sets at [https://hix.how#ghc]."
   exit_code 1
-  preproc_error 'take_end 4'
+  preproc_error "take_end 5 | sed '$ { /^$/ d }' | sed '1 { /^$/ d }'"
   step_eval ghc-overrides
   '';
 

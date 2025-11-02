@@ -1,6 +1,6 @@
 cabal-version: 3.0
 
--- This file has been generated from package.yaml by hpack version 0.36.1.
+-- This file has been generated from package.yaml by hpack version 0.38.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -196,7 +196,6 @@ test-suite integration-test
     , aeson
     , base <5
     , exon
-    , extra
     , hedgehog
     , hix ==0.9.1
     , hix:testing ==0.9.1
@@ -206,7 +205,6 @@ test-suite integration-test
     , path
     , path-io
     , tasty
-    , tasty-hedgehog
     , time
     , transformers
   mixins:

@@ -13,7 +13,7 @@
       sets = "each";
       lower = {
         enable = true;
-        compiler = "ghc90";
+        compiler = "ghc94";
       };
     };
 

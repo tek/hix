@@ -16,8 +16,8 @@
     output_exact 'string'
     step result/bin/root
 
-    output_exact 'fourmolu 0.15.0.0
-    using ghc-lib-parser 9.8.4.20241130'
+    output_exact 'fourmolu 0.19.0.0
+    using ghc-lib-parser 9.12.2.20250421'
     step_develop fourmolu --version
   '';
 }

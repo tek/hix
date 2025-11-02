@@ -61,9 +61,9 @@ flake =
       test = {
         enable = true;
         dependencies = [
-          "hedgehog >= 1.1 && < 1.5"
-          "tasty ^>= 1.4"
-          "tasty-hedgehog >= 1.3 && < 1.5"
+          "hedgehog >=1.1 && <1.6"
+          "tasty >=1.4 && <1.6"
+          "tasty-hedgehog >=1.3 && <1.5"
         ];
       };
 
