@@ -210,6 +210,7 @@ in {
       `cabal-install` from all shells.
       '';
       type = types.functionTo (types.listOf types.package);
+      default = _: [];
     };
 
     haskellTools = mkOption {
