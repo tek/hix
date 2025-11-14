@@ -28,7 +28,7 @@ let
   lib.makeExtensible (self: {
 
     exe =
-      if lib.isPath command.command
+      if (lib.isPath command.command || lib.isDerivation command.command)
       then command.command
       else util.scriptErr "command-${command.name}" command.command;
 
