@@ -3,41 +3,15 @@
   inherit (lib) types;
   inherit (util) internal;
 
-  # TODO generalize with ghc-build
-  nixpkgsSource.options = {
-
-    url = lib.mkOption {
-      description = "URL of a nixpkgs source archive or Git repo.";
-      type = types.str;
-      default = "https://github.com/nixos/nixpkgs";
-    };
-
-    rev = lib.mkOption {
-      description = "Commit hash or ref name for the nixpkgs repo.";
-      type = types.nullOr types.str;
-      default = null;
-    };
-
-    hash = lib.mkOption {
-      description = "Hash of the nixpkgs source tree.";
-      type = types.str;
-      default = "";
-    };
-
-    args = lib.mkOption {
-      description = "Extra arguments for the fetcher (either `fetchurl` or `fetchgit` if `rev` is specified)";
-      type = types.attrsOf types.anything;
-      default = {};
-    };
-
-  };
+  nixpkgsSource = import ./nixpkgs-source.nix { inherit util; };
 
   options = {
 
     source = lib.mkOption {
       type = types.oneOf [types.path types.package types.pkgs (types.submodule nixpkgsSource)];
       description = ''
-      The path to a nixpkgs source tree, a fully imported nixpkgs set, or a set specifying arguments for a fetcher.
+      The path to a nixpkgs source tree, a fully imported nixpkgs set, or a set specifying
+      [arguments for a fetcher](#options-nixpkgs-source).
 
       This can be a flake input or any regular path.
 
@@ -52,6 +26,19 @@
       If a fully imported nixpkgs set is specified, it will be reimported.
       Its original `config` and `overlays` will be merged manually, but the rest of the import arguments will be
       overridden by what's specified in [](#opt-nixpkgs-args).
+      :::
+
+      ::: {.note}
+      If you specify both [](#opt-nixpkgs-source-url) and [](#opt-nixpkgs-source-rev), the given repo will be cloned,
+      which is expensive for Nixpkgs.
+      Specifying only [](#opt-nixpkgs-source-rev) will fetch a tarball from the default Github repo instead.
+      If you want to fetch a tarball from custom repo, you need to specify a fetcher call manually, like:
+
+      ```
+      {
+        nixpkgs.default.source = config.pkgs.fetchzip { url = "..."; rev = "..."; hash = "..."; };
+      }
+      ```
       :::
       '';
     };

@@ -3,7 +3,7 @@ let
   inherit (lib) types;
   inherit (util) build;
 
-  cliNixpkgs = builtins.fetchTarball {
+  cliNixpkgs = config.pkgs.fetchzip {
     url = "https://github.com/nixos/nixpkgs/archive/a7fc11be66bdfb5cdde611ee5ce381c183da8386.tar.gz";
     sha256 = "0h3gvjbrlkvxhbxpy01n603ixv0pjy19n9kf73rdkchdvqcn70j2";
   };

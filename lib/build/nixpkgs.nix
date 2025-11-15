@@ -11,11 +11,21 @@
     config = (old.config or {}) // (args.config or {});
   };
 
-  setupFetcher = conf:
-    if conf.rev == null
-    then { fetch = pkgs.fetchurl; args = {}; }
-    else { fetch = pkgs.fetchgit; args = { inherit (conf) rev; }; }
-    ;
+  setupFetcher = conf: let
+
+    tryUrl =
+      if conf.url == null
+      then throw "The nixpkgs configuration named '${conf.name}' must specify either 'url' or 'rev'."
+      else { fetch = pkgs.fetchzip; args = { inherit (conf) url; }; }
+      ;
+
+    tryRev =
+      if conf.url == null
+      then { fetch = pkgs.fetchzip; args = { url = "https://github.com/nixos/nixpkgs/archive/${conf.rev}.tar.gz"; }; }
+      else { fetch = pkgs.fetchgit; args = { inherit (conf) url rev; }; }
+      ;
+
+  in if conf.rev == null then tryUrl else tryRev;
 
   resolveSource = conf: let
     fetcher = setupFetcher conf;
@@ -24,7 +34,7 @@
   then reimport conf
   else if builtins.isPath conf || lib.isDerivation conf || lib.isStorePath conf
   then import conf
-  else import (fetcher.fetch ({ inherit (conf) url hash; } // fetcher.args // conf.args));
+  else import (fetcher.fetch ({ inherit (conf) hash; } // fetcher.args // conf.args));
 
   compileArgs = conf: overlays: { config = conf.config; inherit overlays; } // conf.args;
 
