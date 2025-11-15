@@ -57,6 +57,8 @@
 
   mod-nixpkgs = options.module "nixpkgs" { inherit util; };
 
+  mod-nixpkgs-source = options.module "nixpkgs-source" { inherit util; };
+
   mod-compiler = options.module "compiler" { inherit util; };
 
   mod-ghc-build = options.module "ghc-build" { inherit util; };
@@ -142,9 +144,11 @@
       heading = "Environments and commands";
       fragments = [
         (text prose.environments)
+        (text "## Options {#options-env-cmd}")
         (opt "env" "Environment" mod-env)
         (opt "env-expose" "Environment exposure" mod-envExpose)
         (opt "nixpkgs" "Nixpkgs" mod-nixpkgs)
+        (opt "nixpkgs-source" "Nixpkgs source" mod-nixpkgs-source)
         (opt "compiler" "Compiler" mod-compiler)
         (opt "ghc-build" "GHC build" mod-ghc-build)
         (opt "package-set" "Package set" mod-package-set)
