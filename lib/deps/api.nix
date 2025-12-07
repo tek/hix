@@ -30,15 +30,18 @@ let
   else inputs
   ;
 
+  applyFlags = f: flags: drv:
+  lib.foldl (lib.flip f) drv (lib.toList flags);
+
   transformers = {
     transformDrv = transform_ "transform-drv";
     modify = transform_ "modify";
     id = transform_ "id" lib.id;
     jailbreak = transform_ "jailbreak" modifiers.jailbreak;
-    configure = flag: transform_ "configure" (hsLibC.appendConfigureFlag flag);
+    configure = flag: transform_ "configure" (applyFlags hsLibC.appendConfigureFlag flag);
     configures = flags: transform_ "configures" (hsLibC.appendConfigureFlags flags);
-    enable = flag: transform_ "enable" (hsLibC.enableCabalFlag flag);
-    disable = flag: transform_ "disable" (hsLibC.disableCabalFlag flag);
+    enable = flag: transform_ "enable" (applyFlags hsLibC.enableCabalFlag flag);
+    disable = flag: transform_ "disable" (applyFlags hsLibC.disableCabalFlag flag);
     ghcOption = opt: transform_ "ghcOption" (hsLibC.appendConfigureFlag (ghcOption opt));
     ghcOptions = opts: transform_ "ghcOptions" (hsLibC.appendConfigureFlag (concatGhcOptions opts));
     override = conf: transform_ "override" (hsLibC.overrideCabal conf);
