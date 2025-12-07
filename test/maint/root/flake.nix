@@ -14,7 +14,7 @@
 
         "hackage.haskell.org" = {
           publish = false;
-          indexState = "2024-11-01T00:00:00Z";
+          indexState = "2025-11-01T00:00:00Z";
         };
 
         local = {
@@ -52,7 +52,7 @@
         versionFile = "ops/version-local1.nix";
         library = {
           enable = true;
-          dependencies = ["extra"];
+          dependencies = ["microlens"];
         };
       };
       local2 = {

@@ -5,9 +5,9 @@
         lower = null;
         upper = "5";
       };
-      extra = {
-        lower = "1.7";
-        upper = "1.8";
+      microlens = {
+        lower = "0.4";
+        upper = "0.5";
       };
     };
     local2 = {
@@ -23,9 +23,9 @@
   };
   overrides = {
     latest-main = {
-      extra = {
-        version = "1.7.16";
-        hash = "0y27q0zas66qbgvjga0w8dmfjcs0kcn9nwps17iyd60ij3yqivhj";
+      microlens = {
+        version = "0.4.14.0";
+        hash = "sha256-mmoJty93PXFOaF/vBGL5ezAg7bXTqiTkswFyu53BeCI=";
       };
     };
     latest-other = {
@@ -37,7 +37,7 @@
   };
   versions.latest-main = {
     base = "4.19.0.0";
-    extra = "1.7.16";
+    microlens = "0.4.14.0";
   };
   versions.latest-other = {
     base = "4.19.0.0";
