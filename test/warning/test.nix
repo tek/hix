@@ -59,7 +59,8 @@ in {
   [1m[35m>>>[0m[0m [31mThe environment [33munexposed[0m[31m is configured not to be exposed at this \
   flake output.[0m
   [1m[35m>>>[0m[0m [31mYou can enable it by setting [34menvs.unexposed.expose.shell = \
-  true;[0m[31m[0m"
+  true;[0m[31m[0m
+  [1m[35m>>>[0m[0m [31mYou can use this shell anyway with [34mnix develop .#env.unexposed.shell[0m[31m[0m"
   exit_code 1
   step_develop_in unexposed echo 'do not execute'
 

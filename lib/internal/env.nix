@@ -133,10 +133,17 @@
     '';
   in errorStub text name;
 
+  notExposedSpecial = purpose: name:
+  if purpose == "shell"
+  then ''
+
+  error_message "You can use this shell anyway with $(blue "nix develop .#env.${name}.shell")"''
+  else "";
+
   notExposed = purpose: name: let
     text = ''
     error_message "The environment $(color_env ${name}) is configured not to be exposed at this flake output."
-    error_message "You can enable it by setting $(blue "envs.${name}.expose.${purpose} = true;")"
+    error_message "You can enable it by setting $(blue "envs.${name}.expose.${purpose} = true;")"${notExposedSpecial purpose name}
     '';
   in errorStub text name;
 
