@@ -6,4 +6,5 @@ cradle:
     config:
       cradle:
         cabal:
-          cabalProject: "./ops/hls.cabal.project"
+          component: all
+          cabalProject: "./hls.cabal.project"
