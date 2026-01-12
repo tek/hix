@@ -19,11 +19,10 @@
 
   appsForEnvs = envs: appsWith ({cmd, env, sub}: cmd [envs.${env}]);
 
-  managedCmdMulti = envSort: cmd: sets: let
-    envName = name: "${envSort}-${name}";
-  in lib.genAttrs sets (name: cmd [(envName name)]);
+  managedCmdMulti = sets: {cmd, env, ...}:
+  lib.genAttrs sets (name: cmd ["${env}-${name}"]);
 
-  managedMulti = sets: appsWith ({cmd, env, ...}: managedCmdMulti env cmd sets);
+  managedMulti = sets: appsWith (managedCmdMulti sets);
 
   # We're not guarding this with a `optionalAttrs` so that we can print an error when the user executes an app.
   # TODO Add an override option that opts into removing these apps from the flake.
@@ -41,11 +40,13 @@
     ;
   in util.mergeAuto specific appsForAllEnvs;
 
-  legacyApps.lower = mixedApps.lower;
+  legacyApps = {
+    inherit (mixedApps) bump lower;
+  };
 
   apps = util.mapValues util.app {
-    inherit (mixedApps) bump maint revision;
-    lower = mixedApps.lower.auto;
+    inherit (appsForAllEnvs) bump maint revision;
+    lower = appsForAllEnvs.lower.auto;
   };
 
   scopedAppsForEnvs = envs: let
