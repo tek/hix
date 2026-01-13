@@ -352,7 +352,7 @@ managedOptionsParser = do
   context <- Right <$> optional jsonConfigParser
   project <- projectOptionsParser
   stateFile <- stateFileConfigParser
-  handlers <- optional (option buildHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  handlers <- optional (option buildHandlersOption (long "build-handlers" <> help "Internal: Handlers for tests"))
   pure ManagedOptions {..}
 
 bumpParser :: Parser BumpOptions
@@ -400,7 +400,7 @@ maintParser :: Parser ReleaseMaintOptions
 maintParser = do
   context <- Right <$> optional jsonConfigParser
   managed <- managedOptionsParser
-  handlers <- optional (option maintHandlersOption (long "handlers" <> help "Internal: Handlers for tests"))
+  handlers <- optional (option maintHandlersOption (long "maint-handlers" <> help "Internal: Handlers for tests"))
   config <- maintConfigParser
   pure ReleaseMaintOptions {..}
 

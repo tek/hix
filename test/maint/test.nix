@@ -27,7 +27,7 @@
   output_match 'Release local2 1.2.0'
   step_run release local2 -v 1.2.0
 
-  step_run maint --quiet --commit --revision --hackage local:location:$_hackage_url --handlers=test-maint
+  step_run maint --quiet --commit --revision --hackage local:location:$_hackage_url --maint-handlers=test-maint --build-handlers=test-maint
 
   output_match 'microlens >=0\.4 && <0\.6'
   step xh get --follow --auth test:test $_hackage_url/package/local1-1.1.0/revision/1.cabal
