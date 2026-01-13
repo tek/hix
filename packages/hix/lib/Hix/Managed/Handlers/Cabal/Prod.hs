@@ -95,7 +95,8 @@ testPackagesMaint =
   Map.fromList $ zipApplyL (.name) [
     PackageId {name = "base", version = [4, 19, 0, 0]},
     PackageId {name = "extra", version = [1, 8]},
-    PackageId {name = "semigroups", version = [0, 20]}
+    PackageId {name = "semigroups", version = [0, 20]},
+    PackageId {name = "microlens", version = [0, 5, 0, 0]}
   ]
 
 removeLaterVersions ::

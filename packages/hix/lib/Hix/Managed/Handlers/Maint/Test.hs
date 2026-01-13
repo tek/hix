@@ -19,7 +19,7 @@ import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
 import Hix.Managed.Handlers.Maint (MaintHandlers (..))
 import Hix.Managed.Handlers.Maint.Prod (projectWithEnv, runBump)
 import qualified Hix.Managed.Handlers.Project.Prod as Project
-import Hix.Managed.Maint.Git (gitApiMaintProd)
+import Hix.Managed.Maint.Git (gitApiMaintHermetic, gitApiMaintProd)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 
 bumpHandlers ::
@@ -54,7 +54,7 @@ handlersTest options config cabal = do
   manager <- httpManager
   publishHackages <- HackageClient.handlersProdFor (Just manager) ForPublish cabal
   pure MaintHandlers {
-    git = gitApiMaintProd config,
+    git = (if config.globalGit then gitApiMaintProd else gitApiMaintHermetic) config,
     context,
     runBump = runBumpTest context options,
     publishHackages

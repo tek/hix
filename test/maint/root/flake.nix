@@ -63,5 +63,7 @@
       };
     };
 
+    internal.hixCli.dev = true;
+
   };
 }
