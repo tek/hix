@@ -542,7 +542,7 @@ step()
   then
     step_number=0
   fi
-  (( step_number ++ ))
+  (( ++ step_number ))
 
   # Global parameters, because the test might want to inspect them after the step.
   step_dir="$test_base/step-${step_number}"
