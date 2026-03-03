@@ -12,15 +12,21 @@ let
 
     pregen = import ./deps/pregen.nix { inherit config; } { pkgs = toolchain.pkgs; };
 
+    name = env.package-set.name;
+
     enable = env.enable && env.package-set.gen-overrides;
 
     attrs = lib.mapAttrsToList drvAttr (pregen.overrides toolchain.vanilla toolchain.overrides);
 
-    lines = ["${env.name} = {"] ++ lib.optionals enable attrs ++ ["};"];
+    lines = ["${name} = {"] ++ lib.optionals enable attrs ++ ["};"]
+    ;
+  in { inherit name lines; };
 
-  in lines;
+  envResults = map genEnv (lib.attrValues config.envs);
 
-  expr = util.unlines (["{"] ++ lib.concatMap genEnv (lib.attrValues config.envs) ++ ["}"]);
+  uniqueByName = lib.attrValues (lib.listToAttrs (map (r: { name = r.name; value = r; }) envResults));
+
+  expr = util.unlines (["{"] ++ lib.concatMap (r: r.lines) uniqueByName ++ ["}"]);
 
   file = pkgs.writeText "overrides.nix" expr;
 
