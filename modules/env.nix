@@ -173,9 +173,19 @@ in {
     buildInputs = lib.mkOption {
       description = ''
       Additional non-Haskell dependencies provided to all packages in this environment.
-      The argument is the this environment's nixpkgs set.
+      The argument is this environment's nixpkgs set.
       '';
       type = util.types.listOrFunction package;
+      default = [];
+    };
+
+    libraryPath = lib.mkOption {
+      description = ''
+      Additional packages whose shared libraries should be included in this env's `$LD_LIBRARY_PATH`, making them
+      available for loading by other programs and linking in non-Nix builds.
+      The argument is this environment's nixpkgs set.
+      '';
+      type = util.types.listOrFunction types.package;
       default = [];
     };
 

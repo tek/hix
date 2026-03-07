@@ -25,6 +25,8 @@
   that should not be made available to local package derivations.
 * Add the options `build-tools.{ghcid,hasktags}.package` to configure these tools globally.
 * Migrate the shell script-based release app to the Haskell CLI.
+* Add the options `envs.*.libraryPath` and `commands.*.libraryPath` that add the `lib` directories of specified packages
+  to `$LD_LIBRARY_PATH`.
 
 # 0.9.0
 

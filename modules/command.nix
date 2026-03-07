@@ -45,6 +45,16 @@ in {
       default = [];
     };
 
+    libraryPath = lib.mkOption {
+      description = ''
+      Additional packages whose shared libraries should be included in this command's `$LD_LIBRARY_PATH`, making them
+      available for loading by other programs and linking in non-Nix builds.
+      The argument passed to the function is the nixpkgs set of the environment in which the command is run.
+      '';
+      type = util.types.listOrFunction types.package;
+      default = [];
+    };
+
     component = lib.mkOption {
       description = ''
       Whether this command should determine its default environment based on a target component specified by command

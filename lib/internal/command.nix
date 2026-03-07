@@ -52,7 +52,8 @@ let
 
     path = util.script "hix-command-${env.name}-${command.name}" ''
     set -u
-    export PATH="${lib.makeBinPath (command.buildInputs env.toolchain.pkgs)}:$PATH"
+    export PATH="${lib.makeBinPath (command.buildInputs env.toolchain.pkgs)}:''${PATH-}"
+    export LD_LIBRARY_PATH="${lib.makeLibraryPath (command.libraryPath env.toolchain.pkgs)}:''${LD_LIBRARY_PATH-}"
     ${self.script}
     '';
 

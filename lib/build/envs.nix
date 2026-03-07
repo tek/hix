@@ -16,6 +16,8 @@
 
     buildInputs = internal.env.buildInputs env;
 
+    libraryPath = env.libraryPath toolchain.pkgs;
+
     resolvedServices =
       lib.filter (conf: conf.enable) (lib.mapAttrsToList (_: s: s.resolve) env.internal.resolvedServices);
 

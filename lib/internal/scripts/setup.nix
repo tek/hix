@@ -49,7 +49,8 @@ then
   trap quit EXIT
 fi
 ${exportShellVars env.env}
-export PATH="${lib.makeBinPath built.buildInputs}:$PATH"
+export PATH="${lib.makeBinPath built.buildInputs}:''${PATH-}"
+export LD_LIBRARY_PATH="${lib.makeLibraryPath built.libraryPath}:''${LD_LIBRARY_PATH-}"
 export env_args
 if _hix_unrestricted
 then
