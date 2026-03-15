@@ -7,7 +7,7 @@
     mkdir root
     cd ./root
 
-    step_nix run "github:tek/hix#init" -- --name 'red-panda'
+    step_nix run "github:tek/hix#cli" -- init --hix-url 'github:tek/hix' --name 'red-panda' --dev-cli
 
     step_run gen-cabal-quiet
 
