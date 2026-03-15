@@ -73,6 +73,10 @@
     executables = executables outputs.exists outputs.package outputs.musl outputs.static cabal pkg;
   };
 
+  noPackage = name: util.hixScriptBin "no-package-${name}" {} ''
+  echo "The package $(blue ${name}) has no primary derivation."
+  '';
+
   # Assemble all the different derivation variants for a package, consisting of various cross compilations and the
   # release derivation.
   #
@@ -89,14 +93,16 @@
 
     ghc = tc.packages;
 
-    package = ghc.${pkgName} or null;
+    dummy = noPackage pkgName;
+
+    package = ghc.${pkgName} or dummy;
 
     exists = ghc ? ${pkgName};
 
     general = {
       inherit exists ghc package;
-      static = (packageSet tc.pkgs.pkgsStatic).${pkgName} or null;
-      musl = (packageSet tc.pkgs.pkgsMusl).${pkgName} or null;
+      static = (packageSet tc.pkgs.pkgsStatic).${pkgName} or dummy;
+      musl = (packageSet tc.pkgs.pkgsMusl).${pkgName} or dummy;
       cross = cross tc pkgName;
       release = lib.mapNullable release package;
     };

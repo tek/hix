@@ -135,6 +135,11 @@ let
   ${main}
   '';
 
+  hixScriptBin = name: conf: main: zscriptBin name ''
+  source ${setupScriptFile conf}
+  ${main}
+  '';
+
   downloadStaticCli = ''
   tmp=$(mktemp -d)
   quit()
@@ -226,6 +231,7 @@ let
     exportPathOptional
     setupScript
     hixScript
+    hixScriptBin
     downloadStaticCli
     nixC
     bootstrapWithStaticCli
