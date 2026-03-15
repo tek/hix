@@ -46,14 +46,16 @@
       appimage = appimageDerivation musl;
     };
 
-    mainExe = main: let
-      exe = executable main.name null;
-    in { ${pkg.name} = lib.optionalAttrs exists exe; };
+    exeIfExists = name: _:
+    lib.optionalAttrs exists (executable name null);
+
+    mainExe = main:
+    { ${pkg.name} = exeIfExists main.name null; };
 
   in
   internal.package.setWithExe mainExe pkg
   //
-  lib.mapAttrs executable cabal.executables or {};
+  lib.mapAttrs exeIfExists cabal.executables or {};
 
   nonlocal = {
     cabal = {};
@@ -89,7 +91,7 @@
 
     package = ghc.${pkgName} or null;
 
-    exists = package != null;
+    exists = ghc ? ${pkgName};
 
     general = {
       inherit exists ghc package;

@@ -151,6 +151,6 @@ in {
 
   apps = build.bimapTargetsFor "apps" appsEnv envApps;
 
-  checks = internal.env.prefixed (build.targetsFor "checks" (_: _: outputs: outputs.package));
+  checks = internal.env.prefixed (build.targetsMaybeFor "checks" (_: _: outputs: util.justIf outputs.exists outputs.package));
 
 }
