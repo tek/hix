@@ -15,17 +15,11 @@ parseVersion :: String -> Either (String, String) Version
 parseVersion s = first (s,) (eitherParsec s)
 
 parseVersions :: HackageVersions -> Either Text (Set Version)
-parseVersions (HackageVersions versions)
-  -- | null versions
-  -- = Left "No versions on Hackage"
-  -- | otherwise
-  = bimap parseError Set.fromList (traverse parseVersion versions)
+parseVersions (HackageVersions versions) =
+  bimap parseError Set.fromList (traverse parseVersion versions)
   where
     parseError (v, err) = toText [exon|Version '#{v}' has invalid format (#{err})|]
 
--- TODO @fold@ here suppresses errors – it should probably only filter out NotFound and fail (or warn?) on server errors
---
--- TODO parseVersions fails when there are no versions – it should be executed on the aggregated results.
 allClientVersions :: NonEmpty HackageClient -> PackageName -> M (Set Version)
 allClientVersions clients pkg = do
   results <- for clients \ client -> hackageGet parseVersions client path HackageResponseJson

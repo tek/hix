@@ -2,9 +2,11 @@
 
 module Hix.Managed.Handlers.HackageClient.Prod where
 
+import Control.Monad.Catch (catch)
 import Data.Aeson (Value, eitherDecodeStrict')
 import Exon (exon)
 import Network.HTTP.Client (
+  HttpException (..),
   Manager,
   Request (..),
   RequestBody (RequestBodyLBS),
@@ -106,6 +108,34 @@ nativeRequest location request@HackageRequest {..} = do
 
     addQuery = maybe id \ q -> setQueryString (second Just <$> toList q)
 
+handleNativeResponse ::
+  HackageResponse a ->
+  Response LByteString ->
+  Either HackageError a
+handleNativeResponse request response =
+  if
+    | statusIsSuccessful status -> parseResult (responseBody response) request
+    | statusCode status == 404 -> Left HackageNotFound
+    | statusIsClientError status -> errorStatus "Client error"
+    | statusIsServerError status -> errorStatus "Server error"
+    | otherwise -> errorStatus "Weird error"
+  where
+    status = responseStatus response
+
+    errorStatus category = Left (HackageFatal [exon|#{category} (#{decodeUtf8 (statusMessage status)})|])
+
+executeNativeRequest ::
+  Manager ->
+  HackageResponse a ->
+  Request ->
+  M (Either HackageError a)
+executeNativeRequest manager hresponse nrequest =
+  catch (handleNativeResponse hresponse <$> liftIO (httpLbs nrequest manager)) (pure . Left . HackageFatal . details)
+  where
+    details = \case
+      InvalidUrlException _ reason -> toText reason
+      HttpExceptionRequest _ content -> show content
+
 makeNativeRequest ::
   ∀ a .
   HackageResources ->
@@ -114,25 +144,11 @@ makeNativeRequest ::
 makeNativeRequest HackageResources {manager, location} request = do
   appContextDebug [exon|sending request to Hackage at #{Color.url location.host} (#{request.path})|] do
     nrequest <- nativeRequest location request
-    response <- liftIO (httpLbs nrequest manager)
-    let
-      status = responseStatus response
-
-      errorStatus category = requestFailed [exon|#{category} (#{decodeUtf8 (statusMessage status)})|]
-
-      result = if
-        | statusIsSuccessful status -> parseResult (responseBody response) request.accept
-        | statusCode status == 404 -> Left HackageNotFound
-        | statusIsClientError status -> errorStatus "Client error"
-        | statusIsServerError status -> errorStatus "Server error"
-        | otherwise -> errorStatus "Weird error"
-
-    checkResult result
+    result <- executeNativeRequest manager request.accept nrequest
+    logFatal result
     pure result
   where
-    requestFailed = Left . HackageFatal
-
-    checkResult = \case
+    logFatal = \case
       Left (HackageFatal msg) ->
         Log.error [exon|Hackage request for #{Color.path request.path} at #{Color.green location.host} failed: #{msg}|]
       _ -> unit
