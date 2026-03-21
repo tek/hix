@@ -72,6 +72,7 @@ in {
         };
       };
 
+      # Build packages with lean derivations, disabling profiling, tests, haddocks, etc.
       min = {
         packages = mkDefault config.envs.dev.packages;
         internal.overridesInherited =
