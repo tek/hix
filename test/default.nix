@@ -33,6 +33,7 @@ let
       "multi-exe"
       "package-default"
       "packages"
+      "prelude-dep"
       "show-config"
       "subdir"
       "update-cli-version"

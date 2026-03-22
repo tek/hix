@@ -14,7 +14,10 @@
         "hiding (${mod})"
       ];
     };
-  in [preludePackage] ++ lib.optional (base != null && preludePackage.name != "base") base;
+  in {
+    prelude = preludePackage;
+    base = lib.optional (base != null && preludePackage.name != "base") base;
+  };
 
   mkPathsBlocker = name:
   { when = { condition = false; generated-other-modules = "Paths_${lib.replaceStrings ["-"] ["_"] name}"; }; };
@@ -91,19 +94,67 @@
   componentWithManaged = name: hconf:
   hconf // managedBounds name hconf;
 
+  # When the prelude package is also listed in `dependencies`, merge the two specs by keeping the prelude's mixin
+  # configuration and intersecting the version bounds.
+  # Throws if both the prelude config and the dependency specify non-trivial bounds.
+  deduplicatePreludeDep = preludePkg: deps: let
+    preludeNorm = util.version.normalize preludePkg;
+    preludeName = util.version.mainLibName preludeNorm.name;
+
+    isPreludeDep = dep: let
+      norm = util.version.normalize dep;
+    in util.version.mainLibName norm.name == preludeName;
+
+    partitioned = lib.partition isPreludeDep deps;
+
+    matching = partitioned.right;
+    rest = partitioned.wrong;
+
+    merged =
+      if matching == []
+      then preludePkg
+      else let
+        depNorm = util.version.normalize (lib.head matching);
+        pv = preludeNorm.version;
+        dv = depNorm.version;
+      in
+        if util.version.nontrivial pv && util.version.nontrivial dv
+        then throw ''
+        Package '${preludeName}' is configured as the custom prelude with version bounds '${pv}' and is also listed in 'dependencies' with version bounds '${dv}'.
+        Please specify bounds in only one place.
+        ''
+        else preludeNorm // {
+          version = if util.version.nontrivial dv then dv else pv;
+        };
+
+  in { inherit merged rest; };
+
   componentGeneral = pkg: name: conf: let
 
     prelude = conf.prelude;
     base = conf.base;
 
-    basic = { inherit (conf) ghc-options dependencies default-extensions language source-dirs; };
+    preludeResult =
+      if prelude.enable
+      then let
+        preludePkgs = mkPrelude prelude conf.baseHide;
+        deduped = deduplicatePreludeDep preludePkgs.prelude conf.dependencies;
+      in {
+        preludeDeps = [deduped.merged] ++ preludePkgs.base;
+        filteredDeps = deduped.rest;
+      }
+      else {
+        preludeDeps = lib.optional (base != null) base;
+        filteredDeps = conf.dependencies;
+      };
 
-    # TODO omit base dep if it's already in conf.dependencies
+    basic = {
+      inherit (conf) ghc-options default-extensions language source-dirs;
+      dependencies = preludeResult.filteredDeps;
+    };
+
     preludeDeps = {
-      dependencies =
-        if prelude.enable
-        then mkPrelude prelude conf.baseHide
-        else lib.optional (base != null) base;
+      dependencies = preludeResult.preludeDeps;
     };
 
     paths = if conf.paths then {} else mkPathsBlocker pkg.name;
