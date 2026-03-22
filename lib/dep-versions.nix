@@ -32,7 +32,14 @@ let
   componentDeps = name: conf: let
     head = colors.yellow name;
     prelude = lib.optionals conf.prelude.enable (dep conf.prelude.package);
-  in ["" head] ++ indent (prelude ++ lib.concatMap dep conf.dependencies);
+    preludeName =
+      if conf.prelude.enable
+      then util.version.mainLibName (util.version.normalize conf.prelude.package).name
+      else null;
+    filteredDeps = builtins.filter (d: let
+      n = util.version.mainLibName (util.version.normalize d).name;
+    in n != preludeName) conf.dependencies;
+  in ["" head] ++ indent (prelude ++ lib.concatMap dep filteredDeps);
 
   packageDeps = name: conf: let
     head = colors.blue name;
