@@ -29,7 +29,10 @@ let
   then f config.main
   else alt;
 
-  withMainOr = alt: f: withMainNameOr alt (pkgName: f config.packages.${pkgName});
+  withMainOr = alt: f:
+  if projectHasPackages
+  then f util.internal.packages.mainPackage
+  else alt;
 
   attrsetMainName = withMainNameOr {};
 

@@ -2,7 +2,7 @@
 
   inherit (util) config internal;
 
-  specifiedBase = 
+  specifiedBase =
     if config.base != null
     then config.base
     else config.self

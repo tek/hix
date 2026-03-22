@@ -24,7 +24,7 @@
 
   withMain = alt: f:
   if util.projectHasPackages
-  then f config.packages.${config.main}
+  then f mainPackage
   else alt;
 
   setWithMain = withMain {};
@@ -58,6 +58,16 @@
   lib.concatMap (c: lib.map util.cabalDepPackage c.dependencies) (lib.attrValues (normalized pkg));
 
   pkgsDeps = util.mapValues (pkg: { inherit (pkg) name; deps = pkgDeps pkg; }) config.packages;
+
+  nonexistentMain = ''
+  The option 'main' is set to '${config.main}', but no such package is defined.
+  The available packages are: ${lib.concatStringsSep ", " (lib.attrNames config.packages)}
+  '';
+
+  mainPackage =
+  if config.packages ? ${config.main}
+  then config.packages.${config.main}
+  else throw nonexistentMain;
 
   selectMain = pkgNames: let
 
@@ -122,6 +132,7 @@
 in {
   inherit
   packageApps
+  mainPackage
   withMain
   setWithMain
   withExe

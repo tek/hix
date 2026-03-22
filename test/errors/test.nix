@@ -47,6 +47,13 @@
     };"
   step_nix eval "path:./no-src-no-base#project.config.packages.foo.src"
 
+  exit_code 1
+  preproc_error "nix_error | strip_indent 7"
+  error_exact "\
+  error: The option 'main' is set to 'nonexistent', but no such package is defined.
+  The available packages are: foo"
+  step_nix eval "path:./nonexistent-main#project.config.name"
+
   # --- project.nix errors ---
 
   exit_code 1
