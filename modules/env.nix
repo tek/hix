@@ -130,6 +130,7 @@ in {
       attr = "package-sets";
       desc = "that provides the packages for this environment";
       extender = config.name;
+      parentId = "env '${config.name}'";
     };
 
     toolchain = lib.mkOption {
@@ -604,10 +605,24 @@ in {
     };
 
     toolchain = let
+      # The compiler shortcut sets package-set.compiler via envDefault.
+      # A genuine conflict is when the user also explicitly configures
+      # package-set.compiler(.source) to something different.
+      # We compare the resolved source rather than the entire submodule,
+      # since the submodule contains generated fields like `name` that
+      # never match the shortcut's simple string or {source = ...} form.
+      compilerSource =
+        if builtins.isString config.package-set.compiler
+        then config.package-set.compiler
+        else config.package-set.compiler.source or null;
+      shortcutSource =
+        if global.compilers ? ${config.compiler or ""}
+        then (util.config.compilers.${config.compiler}).source
+        else config.compiler;
       duplicateCompiler =
         config.compiler != null &&
-        config.package-set.compiler != config.compiler &&
-        config.package-set.compiler != { source = config.compiler; };
+        compilerSource != null &&
+        compilerSource != shortcutSource;
 
       message = ''
       The configuration for 'envs.${name}' specifies both 'compiler' and 'package-set.compiler.source'.

@@ -76,6 +76,17 @@
 
   in lib.mkIf (name != null || extender != null) (lib.mkDefault actual);
 
+  extensibleLabel = {id, attr, name, extends, extender, parentId}:
+    if extender != null
+    then
+      "the ${id} of ${parentId}" +
+      (if extends != null && extends != "default"
+       then ", extending '${extends}'"
+       else "")
+    else
+      "${id} '${attr}.${name}'"
+    ;
+
   extensibleModule = {
     id,
     attr ? "${id}s",
@@ -107,6 +118,20 @@
         '';
       };
 
+      parentId = util.maybeOption types.str {
+        description = ''
+        The kind of the containing module, like "package-set" or "env", for use in error messages.
+        '';
+      };
+
+      label = lib.mkOption {
+        description = ''
+        Human-readable description of this module for use in error and warning messages.
+        '';
+        type = types.str;
+        readOnly = true;
+      };
+
     };
 
     config =
@@ -114,15 +139,19 @@
         (extendsConfig { inherit attr options remove pushDefault; target = config.extends; })
         {
           name = extensibleName { inherit name; inherit (config) extends extender; };
+          label = extensibleLabel {
+            inherit id attr name;
+            inherit (config) extends extender parentId;
+          };
         }
         extraConfig
       ];
 
   };
 
-  extensibleOption = {module, type, attr, desc, extender, ref ? true}: let
+  extensibleOption = {module, type, attr, desc, extender, parentId ? null, ref ? true}: let
 
-    moduleType = types.submoduleWith { modules = [module { inherit extender; }]; };
+    moduleType = types.submoduleWith { modules = [module { inherit extender parentId; }]; };
 
     entryDesc = "an entry in [](#opt-general-${attr}) ${desc}";
 

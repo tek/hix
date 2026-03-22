@@ -54,7 +54,12 @@
   # Select compiler
 
 
-  noSetError = conf: attr: "The nixpkgs set of the compiler '${conf.name}' does not contain the set 'haskell.${attr}'.";
+  capitalize = s:
+    let first = builtins.substring 0 1 s;
+        rest = builtins.substring 1 (builtins.stringLength s - 1) s;
+    in lib.toUpper first + rest;
+
+  noSetError = conf: attr: "The nixpkgs set of ${conf.label} does not contain the set 'haskell.${attr}'.";
 
   noSuchCompilerError = conf: pkgs: attr: let
     allAttrs = lib.attrNames pkgs.haskell.${attr};
@@ -64,7 +69,7 @@
       then "${render (lib.take 40 allAttrs)} ..."
       else render allAttrs;
   in ''
-  The compiler '${conf.name}' is configured to use the nixpkgs GHC '${conf.source}', but there is no such attribute in 'pkgs.haskell.${attr}'.
+  ${capitalize conf.label} is configured to use the nixpkgs GHC '${conf.source}', but there is no such attribute in 'pkgs.haskell.${attr}'.
   Existing attributes:
   ${attrs}
   '';
@@ -92,6 +97,8 @@
   customCompiler = conf: tag: finalPkgs: prevPkgs:
   finalPkgs.callPackage (internal.ghc.build {
     configName = conf.name;
+    label = conf.label;
+    extendsName = conf.extends;
     conf = conf.source.build;
     inherit tag;
   }) {};

@@ -93,7 +93,7 @@
   exit_code 1
   preproc_error "nix_error | take 1 | strip_indent 7"
   error_exact "\
-  error: The compiler 'bad' is configured to use the nixpkgs GHC 'ghc999', but there is no such attribute in 'pkgs.haskell.packages'."
+  error: The compiler of the package-set of env 'bad' is configured to use the nixpkgs GHC 'ghc999', but there is no such attribute in 'pkgs.haskell.packages'."
   step_nix eval "path:./bad-ghc-version#project.config.envs.bad.toolchain.version"
 
   # --- ghc-build.nix errors ---

@@ -69,6 +69,7 @@
       attr = "nixpkgs";
       desc = "from which this GHC will be instantiated";
       extender = config.name;
+      parentId = config.label;
     };
 
     # TODO since the default is the global compiler name, it would be more useful if the example was for a custom build.

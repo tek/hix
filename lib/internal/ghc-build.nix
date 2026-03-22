@@ -1,5 +1,5 @@
 {util}:
-{configName, conf, tag}:
+{configName, label ? configName, extendsName ? null, conf, tag}:
 {
   pkgs,
   buildPackages,
@@ -33,11 +33,16 @@
 
   optionPrefix = "compilers.${configName}";
 
+  extendsHint =
+    if extendsName != null
+    then ''\nNote: This compiler extends '${extendsName}'. The hash may need to be set on the base compiler at:\n  compilers.${extendsName}.source.build.hash\n''
+    else "";
+
   noHash = ''
-  The configuration for the custom build of the GHC named '${configName}' does not specify a hash for the source tree.
+  The configuration for the custom build of ${label} does not specify a hash for the source tree.
   If this is the first evaluation, copy the hash that Nix will print below and assign it to the option:
     ${optionPrefix}.source.build.hash
-  '';
+  ${extendsHint}'';
 
   warnHash =
     internal.warn.warnEval (conf.hash == "" && conf.src == null) "compiler.build.source-hash" noHash;
@@ -76,7 +81,7 @@
     ;
 
   cannotInferConfig = ''
-  Nixpkgs doesn't contain a compiler configuration file for GHC ${version} (Hix name "${configName}").
+  Nixpkgs doesn't contain a compiler configuration file for GHC ${version} (${label}).
   The inferred path is:
   ${defaultConfigPath}${explainBump}
   Please specify the configuration manually in the option '${optionPrefix}build.compilerConfig'.

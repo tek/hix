@@ -55,24 +55,24 @@
   # The hash warning should mention build-base, but it uses extending-build's name.
   # This is a known infelicity: the warning config path is misleading.
 
-  describe 'hash-warning-path: warning mentions extending compiler name (known issue)'
+  describe 'hash-warning-path: warning mentions extending compiler name'
   combined_output
   output_match 'extending-build'
   step_nix eval 'path:./hash-warning-path#version'
 
-  # ─── Scenario 5: False positive duplicate compiler warning ───
+  describe 'hash-warning-path: warning hints at base compiler'
+  combined_output
+  output_match 'compilers.build-base.source.build.hash'
+  step_nix eval 'path:./hash-warning-path#version'
+
+  # ─── Scenario 5: No false positive duplicate compiler warning ───
   # envs.custom.compiler = "ghc9101" — valid in nixpkgs but not in compilers.*.
-  # The env wraps it as {source = "ghc9101"}, triggering a spurious
-  # "duplicate compiler" warning because the package-set also has a default source.
-  # Despite the warning saying "the former will be ignored", the shortcut IS used.
+  # The env wraps it as {source = "ghc9101"}, setting the package-set compiler.
+  # Previously this triggered a spurious "duplicate compiler" warning.
+  # After the fix, no warning should fire since the shortcut and the resolved
+  # source agree.
 
-  describe 'false-positive-warning: duplicate warning fires but shortcut is used'
-  combined_output
-  output_match 'specifies both'
-  step_nix eval 'path:./false-positive-warning#version'
-
-  describe 'false-positive-warning: shortcut is actually used (version is 9.10.1)'
-  combined_output
+  describe 'no-false-positive: shortcut to non-compilers GHC works without warning'
   output_match '"9\.10\.1"'
   step_nix eval 'path:./false-positive-warning#version'
 

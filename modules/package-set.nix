@@ -12,6 +12,7 @@
       attr = "compilers";
       desc = "that provides the GHC used to build this package set";
       extender = config.name;
+      parentId = config.label;
     };
 
     overrides = lib.mkOption {
