@@ -42,12 +42,12 @@
   step_eval project.config.envs.duplicate.toolchain.version
 
   error_exact "\
-         error: The option 'envs.ghc-overrides.ghc.overrides' is deprecated.
-         It is superseded by 'package-sets.*.overrides', possibly with changed semantics.
+  error: The option 'envs.ghc-overrides.ghc.overrides' is deprecated.
+  It is superseded by 'package-sets.*.overrides', possibly with changed semantics.
 
-         You can find more information about customizing compilers and package sets at [https://hix.how#ghc]."
+  You can find more information about customizing compilers and package sets at [https://hix.how#ghc]."
   exit_code 1
-  preproc_error "take_end 5 | sed '$ { /^$/ d }' | sed '1 { /^$/ d }'"
+  preproc_error "nix_error | strip_indent 7"
   step_eval ghc-overrides
   '';
 

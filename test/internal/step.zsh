@@ -810,6 +810,25 @@ drop_end()
   head -n-$*
 }
 
+# Strip a fixed number of characters from the start of each non-blank line.
+strip_indent()
+{
+  sed "/^$/!s/^.\{$*\}//"
+}
+
+# Extract the last block starting with a line matching the given regex.
+# Trailing blank lines are removed.
+last_match()
+{
+  tac | sed "/$1/q" | tac | sed '$ { /^$/ d }'
+}
+
+# Extract the Nix error message from `--show-trace` stderr.
+nix_error()
+{
+  last_match '^       error:'
+}
+
 diagnostics()
 {
   _step_diagnostics=$*

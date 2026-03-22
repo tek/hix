@@ -23,6 +23,7 @@ let
       "dep-versions"
       "deps"
       "direnv"
+      "errors"
       "gen-cabal"
       "ghc-build"
       "ghci"

@@ -53,7 +53,7 @@
   # --------------------------------------------------------------------------------------------------------------------
   # Select compiler
 
-  # TODO add test for errors
+
   noSetError = conf: attr: "The nixpkgs set of the compiler '${conf.name}' does not contain the set 'haskell.${attr}'.";
 
   noSuchCompilerError = conf: pkgs: attr: let

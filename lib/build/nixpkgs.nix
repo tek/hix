@@ -11,11 +11,11 @@
     config = (old.config or {}) // (args.config or {});
   };
 
-  setupFetcher = conf: let
+  setupFetcher = name: conf: let
 
     tryUrl =
       if conf.url == null
-      then throw "The nixpkgs configuration named '${conf.name}' must specify either 'url' or 'rev'."
+      then throw "The nixpkgs configuration named '${name}' must specify either 'url' or 'rev'."
       else { fetch = pkgs.fetchzip; args = { inherit (conf) url; }; }
       ;
 
@@ -27,8 +27,8 @@
 
   in if conf.rev == null then tryUrl else tryRev;
 
-  resolveSource = conf: let
-    fetcher = setupFetcher conf;
+  resolveSource = name: conf: let
+    fetcher = setupFetcher name conf;
   in
   if isPkgs conf
   then reimport conf
@@ -42,7 +42,7 @@
 
     nixpkgsRev = conf.source.rev or null;
 
-    construct = resolveSource conf.source;
+    construct = resolveSource conf.name conf.source;
 
     overlays = conf.overlays;
 
