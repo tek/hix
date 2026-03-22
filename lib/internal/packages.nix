@@ -1,6 +1,6 @@
 {util}: let
 
-  inherit (util) lib config internal;
+  inherit (util) lib config internal project;
 
   maybeDefaultApp = name: a:
   if name == config.defaultApp
@@ -71,6 +71,40 @@
 
   in util.find isNoDep pkgNames;
 
+  noSrcGeneral = pkgName: ''
+  The package '${pkgName}' does not define the option 'src' in 'flake.nix'.
+  This option should point to the root directory for this package, for example:
+
+    packages = {
+      ${pkgName}.src = ./packages/${pkgName};
+      api.src = ./.;
+    };
+  '';
+
+  noSrcMultiPackage = pkgName: ''
+  ${noSrcGeneral pkgName}
+  In projects with a single package, Hix uses the project root as the default for 'src', but this project defines multiple packages.
+  '';
+
+  noSrcNoBase = pkgName: ''
+  ${noSrcGeneral pkgName}
+  In projects with a single package, Hix uses the project root as the default for 'src'.
+  This requires setting either of the options 'base' or 'self':
+
+    outputs = {self, hix}: hix {
+      inherit self;
+      base = ./.;
+      packages.${pkgName} = {};
+    };
+  '';
+
+  srcDefault = pkgName:
+    if !internal.project.singlePackage
+    then throw (noSrcMultiPackage pkgName)
+    else if project.specifiedBase == null
+    then throw (noSrcNoBase pkgName)
+    else project.specifiedBase;
+
   mapPkg = f: pkgName: a: f (util.justAttr pkgName config.packages) a;
 
   # map ::
@@ -94,6 +128,7 @@ in {
   setWithExe
   normalized
   selectMain
+  srcDefault
   map
   mapMaybe
   ;

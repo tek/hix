@@ -12,7 +12,7 @@ in {
     inherit (types) str bool;
   in {
 
-    base = mkOption {
+    base = util.maybeOption types.path {
       description = ''
       The project's base directory.
 
@@ -21,8 +21,14 @@ in {
       be set to `./.` explicitly.
       '';
       example = literalExpression "./.";
-      type = types.nullOr types.path;
-      default = null;
+    };
+
+    self = util.maybeOption types.path {
+      description = ''
+      The `self` argument of the project flake's `outputs` function.
+      This can optionally be specified in order to infer [](#opt-general-base) as well as the source directory of a
+      singular package.
+      '';
     };
 
     packages = mkOption {

@@ -400,6 +400,8 @@ in {
 
   config = {
 
+    src = lib.mkDefault (internal.packages.srcDefault config.name);
+
     rootModule = lib.mkDefault (lib.concatMapStringsSep "." util.toTitle (lib.splitString "-" config.name));
 
     hackageLink = lib.mkDefault "https://hackage.haskell.org/package/${config.name}";

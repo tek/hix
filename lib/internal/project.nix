@@ -1,12 +1,22 @@
 {util}: let
 
-  inherit (util) config lib internal;
+  inherit (util) config lib internal project;
 
   noDirs = ''
   The project does not configure any packages. Try adding this to 'flake.nix':
+
     packages.app.src = ./.;
-  Or:
+
+  Or specify the project root to let Hix define a default package:
+
     base = ./.;
+
+  Or use 'self' instead of 'base':
+
+    outputs = {self, hix}: hix {
+      inherit self;
+    };
+
   Due to the hermeticity of Nix flakes, the directory cannot be inferred.
   '';
 
@@ -14,9 +24,9 @@
     {
       app = {
         src =
-          if config.base == null
+          if project.specifiedBase == null
           then throw noDirs
-          else config.base;
+          else project.specifiedBase;
         executable.source-dirs = ".";
       };
     };
@@ -51,6 +61,8 @@
 
   packagePaths = util.mapValues (p: p.src) config.packages;
 
+  singlePackage = lib.length (lib.attrNames config.packages) == 1;
+
 in {
 
   inherit
@@ -58,6 +70,7 @@ in {
   packageNames
   defaultMain
   packagePaths
+  singlePackage
   ;
 
 }
