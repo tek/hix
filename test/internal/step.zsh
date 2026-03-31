@@ -38,7 +38,7 @@ _step_unclutter_cmd()
   )
   if [[ $step_cmd[1] == 'nix' ]]
   then
-    sed -e 's/ --show-trace -L//' -e 's/ --\s*$//' -e 's/path:\.#/.#/' <<< $general
+    sed -e 's/ --show-trace -L//' -e 's/ --show-trace//' -e 's/ --\s*$//' -e 's/path:\.#/.#/' <<< $general
   else
     print $general
   fi
