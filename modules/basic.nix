@@ -145,7 +145,7 @@ in {
     compiler = mkOption {
       description = ''
       The GHC version used for internal tasks and for the default environment.
-      This is an attribute name in the nixpkgs set `haskell.packages`, which is usually in the format `ghc96`.
+      This is an attribute name in the nixpkgs set `haskell.packages`, which is usually in the format `ghc98`, `ghc912`.
       '';
       type = str;
       default = "ghc910";

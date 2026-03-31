@@ -2,16 +2,16 @@
   genCabal = true;
 
   source = ''
-    output_exact '[ "dev-dep" "dev-root" "ghc910-dep" "ghc910-root" "ghc94-dep" "ghc94-root" "ghc96-dep" "ghc96-root" "ghc98-dep" "ghc98-root" ]'
+    output_exact '[ "dev-dep" "dev-root" "ghc910-dep" "ghc910-root" "ghc912-dep" "ghc912-root" "ghc98-dep" "ghc98-root" ]'
     step_eval checks.x86_64-linux --apply builtins.attrNames
 
     output_exact '[ "default" "dep" "min" "musl" "profiled" "root" "static" ]'
     step_eval packages.x86_64-linux --apply builtins.attrNames
 
-    output_exact 'The Glorious Glasgow Haskell Compilation System, version 9.8.4'
-    step_develop_in ghc98 ghc --version
+    output_exact 'The Glorious Glasgow Haskell Compilation System, version 9.10.3'
+    step_develop_in ghc910 ghc --version
 
-    step_build ghc96.root
+    step_build ghc98.root
 
     output_exact 'string'
     step result/bin/root
