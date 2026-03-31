@@ -117,6 +117,12 @@ in {
 
       latest = {
 
+        enable = mkOption {
+          description = "Create an environment for testing upper bounds.";
+          type = types.bool;
+          default = true;
+        };
+
         compiler = mkOption {
           description = ''
           The GHC version (as the attribute name in `haskell.packages`) that should be used for latest versions
@@ -150,7 +156,7 @@ in {
       lower = {
 
         enable = mkOption {
-          description = "Enable an environment for testing lower bounds.";
+          description = "Create an environment for testing lower bounds.";
           type = types.bool;
           default = false;
         };

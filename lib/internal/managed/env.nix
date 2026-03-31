@@ -24,9 +24,12 @@
     special.envs.verbatim
   ];
 
-  envsFor = suf: packages: {
+  envsFor = suf: packages:
+  lib.optionalAttrs conf.latest.enable {
     ${"latest${suf}"} = envFor "upper" packages config.managed.latest;
-  } // lib.optionalAttrs conf.lower.enable {
+  }
+  //
+  lib.optionalAttrs conf.lower.enable {
     ${"lower${suf}"} = envFor "lower" packages config.managed.lower;
   };
 
