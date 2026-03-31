@@ -345,7 +345,8 @@ context hackage =
     hackage = [unsafeCentralHackageContextFixed, ("test", hackage.context)],
     hooks = [],
     commitExtraArgs = [],
-    tagExtraArgs = []
+    tagExtraArgs = [],
+    managed = True
   }
 
 -- | Mock Hackage context for unit tests that allows publishing without a server
@@ -391,7 +392,8 @@ contextMockVersions [v1, v2] =
     hackage = [unsafeCentralHackageContextFixed, ("test", mockPublishHackageContext)],
     hooks = [],
     commitExtraArgs = [],
-    tagExtraArgs = []
+    tagExtraArgs = [],
+    managed = True
   }
 contextMockVersions _ = error "contextMockVersions: expected two versions"
 

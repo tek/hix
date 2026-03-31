@@ -78,6 +78,7 @@ let
       "maint-workflows"
       "managed-nom"
       "release"
+      "release-unmanaged"
       "release-version-file"
       "release-workflows"
     ];

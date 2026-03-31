@@ -128,6 +128,7 @@
       hackage = config.hackage.repos;
       hooks = map ensureHookScript config.release.hooks;
       inherit (config.release) commitExtraArgs tagExtraArgs;
+      managed = config.managed.enable;
     };
 
     state-versions = {

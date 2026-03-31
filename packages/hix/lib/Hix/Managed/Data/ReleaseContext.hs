@@ -42,7 +42,8 @@ data ReleaseContextProto =
     hackage :: Map HackageName ContextHackageRepo,
     hooks :: [PathSpec File],
     commitExtraArgs :: [Text],
-    tagExtraArgs :: [Text]
+    tagExtraArgs :: [Text],
+    managed :: Bool
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -62,7 +63,8 @@ data ReleaseContext =
     hackage :: Map HackageName ContextHackageRepo,
     hooks :: [Path Abs File],
     commitExtraArgs :: [Text],
-    tagExtraArgs :: [Text]
+    tagExtraArgs :: [Text],
+    managed :: Bool
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

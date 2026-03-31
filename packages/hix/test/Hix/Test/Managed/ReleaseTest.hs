@@ -3,10 +3,10 @@ module Hix.Test.Managed.ReleaseTest where
 import Data.IORef (readIORef)
 import Exon (exon)
 import GHC.Exts (fromList)
-import Hedgehog (Gen, Property, forAll, property, test, (===))
+import Hedgehog (Gen, Property, assert, forAll, property, test, (===))
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
-import Path (Dir, Path, Rel, reldir)
+import Path (Dir, Path, Rel, SomeBase (..), reldir, relfile)
 import Test.Tasty (TestTree, testGroup)
 import Test.Tasty.Hedgehog (testProperty)
 
@@ -19,6 +19,9 @@ import Hix.Managed.Cabal.Data.UploadStage (candidateDocs, candidateSources, publ
 import qualified Hix.Managed.Data.ReleaseConfig as ReleaseConfig
 import Hix.Managed.Data.ReleaseConfig (ArtifactConfig (..), ReleaseConfig, ReleaseVersion (..), noArtifacts)
 import Hix.Managed.Data.ReleaseContext (ReleaseContextProto (..), ReleasePackage (..))
+import Hix.Data.PathSpec (PathSpec (..))
+import Hix.Managed.Data.Packages (Packages)
+import Hix.Managed.Data.StateVersionsContext (StateVersionsContext (..), StateVersionsPackage (..))
 import Hix.Managed.Data.UploadResult (RepoResult (..))
 import qualified Hix.Managed.Data.VersionIncrement as VersionIncrement
 import Hix.Managed.Handlers.Context (ContextKey (ContextRelease), jsonOrQueryProd)
@@ -27,10 +30,13 @@ import Hix.Managed.Handlers.Release.Test (ReleaseTestConfig (..))
 import Hix.Managed.Release (release)
 import Hix.Managed.Release.Data.ReleaseResult (PackageStatus (..), ReleasedPackage (..))
 import Hix.Managed.Release.Data.SelectedVersion (explicitVersion, implicitVersion, keepVersion)
+import Hix.Managed.Release.Data.Staged (SelectedTargetView (..))
 import Hix.Managed.Release.Data.TargetSpec (TargetSpec (..))
 import Hix.Managed.Release.ReleaseResult (releaseMessage)
+import Hix.Managed.Release.StateVersions (checkVersionPersistence)
 import Hix.Managed.Release.Validation (VersionProblem (..), validateVersion)
 import Hix.Test.Hedgehog (assertContains, eqLines)
+import Hix.Test.Run (runMTestDir)
 import Hix.Test.Utils (UnitTest, runMLogTest, runMTest, unitTest)
 
 -- Test project structure helpers (only for contextBase)
@@ -94,7 +100,8 @@ mkContext TestConfig {packages} =
     hackage = [],
     hooks = [],
     commitExtraArgs = [],
-    tagExtraArgs = []
+    tagExtraArgs = [],
+    managed = True
   }
 
 -- | Create a ReleaseConfig from test config
@@ -128,7 +135,8 @@ context =
     hackage = [],
     hooks = [],
     commitExtraArgs = [],
-    tagExtraArgs = []
+    tagExtraArgs = [],
+    managed = True
   }
 
 -- | Run the release CLI with given options and return test data
@@ -382,6 +390,109 @@ test_release =
     unitTest "partial-success" releaseTestPartialSuccess,
     unitTest "upload-failures" releaseTestUploadFailures,
     unitTest "branch-created" releaseTestBranchCreated
+  ]
+
+------------------------------------------------------------------------------------------------
+-- Version persistence check tests
+------------------------------------------------------------------------------------------------
+
+-- | Minimal StateVersionsContext for checkVersionPersistence tests.
+-- When @globalVersionFile@ is 'True', a global version file is configured.
+-- Package-level version files are set in the targets.
+persistenceContext :: Bool -> StateVersionsContext
+persistenceContext globalVersionFile =
+  StateVersionsContext {
+    state = def,
+    versionFile = if globalVersionFile then Just (PathConcrete (Rel [relfile|version.nix|])) else Nothing,
+    packages = [
+      ("local1", StateVersionsPackage {versionFile = Nothing}),
+      ("local2", StateVersionsPackage {versionFile = Nothing})
+    ]
+  }
+
+-- | Test targets: two packages selected for release.
+persistenceTargets :: Packages SelectedTargetView
+persistenceTargets =
+  [
+    ("local1", SelectedTargetView {
+      package = "local1",
+      current = [1, 0, 0],
+      releaseVersion = [1, 1, 0],
+      explicit = True,
+      keep = False
+    }),
+    ("local2", SelectedTargetView {
+      package = "local2",
+      current = [2, 0, 0],
+      releaseVersion = [2, 1, 0],
+      explicit = True,
+      keep = False
+    })
+  ]
+
+-- | When managed is disabled and no version files configured, should fail.
+test_checkVersionPersistence_noManagedNoFiles :: UnitTest
+test_checkVersionPersistence_noManagedNoFiles = do
+  result <- liftIO $ runMTestDir def (checkVersionPersistence False False (persistenceContext False) persistenceTargets)
+  assert (isLeft result)
+
+-- | When managed is enabled, should succeed regardless of version files.
+test_checkVersionPersistence_managedEnabled :: UnitTest
+test_checkVersionPersistence_managedEnabled = do
+  result <- liftIO $ runMTestDir def (checkVersionPersistence True False (persistenceContext False) persistenceTargets)
+  assert (isRight result)
+
+-- | When global version file is configured, should succeed for all packages.
+test_checkVersionPersistence_hasGlobalVersionFile :: UnitTest
+test_checkVersionPersistence_hasGlobalVersionFile = do
+  result <- liftIO $ runMTestDir def (checkVersionPersistence False False (persistenceContext True) persistenceTargets)
+  assert (isRight result)
+
+-- | When force-version is set, should succeed regardless of config.
+test_checkVersionPersistence_forceVersion :: UnitTest
+test_checkVersionPersistence_forceVersion = do
+  result <- liftIO $ runMTestDir def (checkVersionPersistence False True (persistenceContext False) persistenceTargets)
+  assert (isRight result)
+
+-- | When only some packages have version files, should fail listing missing ones.
+test_checkVersionPersistence_partialVersionFiles :: UnitTest
+test_checkVersionPersistence_partialVersionFiles = do
+  let
+    svContext = StateVersionsContext {
+      state = def,
+      versionFile = Nothing,
+      packages = [
+        ("local1", StateVersionsPackage {versionFile = Just (PathConcrete (Rel [relfile|version.nix|]))}),
+        ("local2", StateVersionsPackage {versionFile = Nothing})
+      ]
+    }
+  result <- liftIO $ runMTestDir def (checkVersionPersistence False False svContext persistenceTargets)
+  assert (isLeft result)
+
+-- | When all packages have individual version files, should succeed.
+test_checkVersionPersistence_allPackageVersionFiles :: UnitTest
+test_checkVersionPersistence_allPackageVersionFiles = do
+  let
+    svContext = StateVersionsContext {
+      state = def,
+      versionFile = Nothing,
+      packages = [
+        ("local1", StateVersionsPackage {versionFile = Just (PathConcrete (Rel [relfile|version.nix|]))}),
+        ("local2", StateVersionsPackage {versionFile = Just (PathConcrete (Rel [relfile|packages/local2/version.nix|]))})
+      ]
+    }
+  result <- liftIO $ runMTestDir def (checkVersionPersistence False False svContext persistenceTargets)
+  assert (isRight result)
+
+test_checkVersionPersistence :: TestTree
+test_checkVersionPersistence =
+  testGroup "check-version-persistence" [
+    unitTest "no-managed-no-files" test_checkVersionPersistence_noManagedNoFiles,
+    unitTest "managed-enabled" test_checkVersionPersistence_managedEnabled,
+    unitTest "has-global-version-file" test_checkVersionPersistence_hasGlobalVersionFile,
+    unitTest "force-version" test_checkVersionPersistence_forceVersion,
+    unitTest "partial-version-files" test_checkVersionPersistence_partialVersionFiles,
+    unitTest "all-package-version-files" test_checkVersionPersistence_allPackageVersionFiles
   ]
 
 ------------------------------------------------------------------------------------------------

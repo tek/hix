@@ -6,7 +6,7 @@ import Path (Abs, File, Path)
 import Hix.Class.Map (nMap, nNull, nSize)
 import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Data.Options (ReleaseOptions (..))
-import Hix.Data.PackageName (LocalPackage (..))
+import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Version)
 import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Config (cabalConfig)
@@ -138,7 +138,7 @@ releaseFlow handlers@ReleaseHandlers {ui} git context config = do
   (shared, configured) <- ReleaseFlow.lift (configuredReleaseVersions context config)
   ReleaseFlow.initTargets (ui.chooseVersions shared) configured
   validateFlowVersions config ui
-  withTargetsAndShared (updateStateVersions handlers)
+  withTargetsAndShared (updateStateVersions handlers context.managed config.forceVersion)
   checksPassed <- ReleaseFlow.checksStage (runChecksIfEnabled config handlers)
   ReleaseFlow.initDists checksPassed ui.chooseDistTargets handlers.releaseDist
   ReleaseFlow.initUploading
