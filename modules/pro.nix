@@ -1,7 +1,5 @@
 {util, lib, ...}:
 {
-  ghcVersions = util.lib.mkOverride 500 ["ghc92" "ghc94" "ghc96"];
-
   internal.cabal-extra = {
 
     default-extensions = [
