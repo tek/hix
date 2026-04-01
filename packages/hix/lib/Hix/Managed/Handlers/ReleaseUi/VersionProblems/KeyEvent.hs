@@ -78,5 +78,6 @@ versionProblemsHelpEvents :: [(VersionProblemsKeyEvent, Text)]
 versionProblemsHelpEvents =
   [
     (Specific AcceptProblems, "accept"),
-    (Specific RejectProblems, "reject")
+    (Specific RejectProblems, "reject"),
+    (Quit, "quit")
   ]

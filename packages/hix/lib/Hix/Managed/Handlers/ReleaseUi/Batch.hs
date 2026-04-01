@@ -22,15 +22,15 @@ import Hix.Managed.Release.Validation (ProblematicVersion)
 chooseVersions ::
   Maybe SelectedVersion ->
   Packages ConfiguredTarget ->
-  M VersionChoice
+  M (Either TerminateFlow VersionChoice)
 chooseVersions sharedVersion targets =
   case sharedVersion of
     Just sv -> do
       let selected = nMapWithKey (toSharedTarget sv.version) selectedTargets
-      pure SharedVersion {version = sv, sharedTargets = selected, sharedExcluded = excludedTargets}
+      pure (Right SharedVersion {version = sv, sharedTargets = selected, sharedExcluded = excludedTargets})
     Nothing -> do
       individual <- nTraverseWithKey toIndividualTarget selectedTargets
-      pure IndividualVersions {individualTargets = individual, individualExcluded = excludedTargets}
+      pure (Right IndividualVersions {individualTargets = individual, individualExcluded = excludedTargets})
   where
     selectedTargets = nFilter (.selected) targets
     excludedTargets = nFilter (not . (.selected)) targets

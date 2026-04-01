@@ -72,5 +72,6 @@ distTargetsHelpEvents :: [(DistTargetsKeyEvent, Text)]
 distTargetsHelpEvents =
   [
     (Specific TogglePackage, "toggle"),
+    (Quit, "quit"),
     (ShowHelp, "help")
   ]

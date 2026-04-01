@@ -26,8 +26,9 @@ chooseDistTargetsNe ::
   NonEmpty (LocalPackage, SelectedTargetView) ->
   M (Either TerminateFlow (Set LocalPackage))
 chooseDistTargetsNe debug checksPassed packages = do
-  result <- runScreenWithHelp screenConfig
-  pure (Right (chosenPackages result))
+  runScreenWithHelp screenConfig <&> \case
+    Nothing -> Left "User quit"
+    Just result -> Right (chosenPackages result)
   where
     screenConfig = ScreenConfig {
       name = "distTargets",

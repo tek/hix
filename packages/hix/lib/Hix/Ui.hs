@@ -160,9 +160,12 @@ handlers ::
   [KeyHandlerSpec (UiKeyEvent e) UiName (NavContext s r t)] ->
   [KeyHandlerSpec (UiKeyEvent e) UiName (AppState (NavContext s r t))]
 handlers screenHandlers =
+  quitSpec :
   showHelpSpec :
   (liftHandlerSpec <$> (commonHandlerSpecs commonActions ++ screenHandlers))
   where
+    quitSpec = KeyHandlerSpec Quit "Quit" (#quit .= True >> halt)
+
     showHelpSpec = KeyHandlerSpec ShowHelp "Toggle help" (#showingHelp %= not)
 
     liftHandlerSpec KeyHandlerSpec {..} =
@@ -172,18 +175,19 @@ handlers screenHandlers =
 -- Wraps the render function with a help screen toggle.
 -- Uses Brick extents to track content height for key mappings positioning.
 -- Lifts the screen's handlers to AppState and adds a 'ShowHelp' handler.
+-- Returns @Nothing@ when the user quits (ctrl-c or q), @Just a@ when confirmed.
 runScreenWithHelp ::
   ∀ e a r t m .
   Ord (UiKeyEvent e) =>
   Show (UiKeyEvent e) =>
   ScreenConfig (UiKeyEvent e) m a r t ->
-  M a
+  M (Maybe a)
 runScreenWithHelp ScreenConfig {name, help, instructions, handlerSpecs, render, startEvent, debug, initialContext} = do
   dispatcher <- either bindingConflict pure (makeKeyDispatcher help.keyConfig appHandlerSpecs)
   result <- runUiApp renderWithHelp appStartEvent (handleEventWithExtent dispatcher) debug initialState
-  pure result.context.state
+  pure if result.quit then Nothing else Just result.context.state
   where
-    initialState = AppState {context = initialContext, showingHelp = False, contentHeight = 0}
+    initialState = AppState {context = initialContext, showingHelp = False, contentHeight = 0, quit = False}
 
     appHandlerSpecs = handlers handlerSpecs
 

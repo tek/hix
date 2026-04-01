@@ -2,8 +2,9 @@
 module Hix.Ui.Data.KeyBinding where
 
 import Brick (EventM)
-import Brick.Keybindings (Binding, KeyConfig, KeyDispatcher, KeyEventHandler, KeyHandler, bind, keyDispatcher, onEvent)
-import Graphics.Vty (Key (..))
+import Brick.Keybindings (Binding (..), KeyConfig, KeyDispatcher, KeyEventHandler, KeyHandler, bind, keyDispatcher, onEvent)
+import qualified Data.Set as Set
+import Graphics.Vty (Key (..), Modifier (..))
 
 -- | Conflicting bindings error type.
 type BindingConflicts e m = [(Binding, [KeyHandler e m])]
@@ -45,7 +46,8 @@ data AppState ctx =
   AppState {
     context :: ctx,
     showingHelp :: Bool,
-    contentHeight :: Int
+    contentHeight :: Int,
+    quit :: Bool
   }
   deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)
 
@@ -56,6 +58,7 @@ data UiKeyEvent a =
   | NavigateRight
   | NavigateLeft
   | Confirm
+  | Quit
   | ShowHelp
   | Specific a
   deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable)
@@ -100,13 +103,15 @@ commonEventMappings =
 commonKeyEventDefs :: ∀ a . [(Text, UiKeyEvent a)]
 commonKeyEventDefs =
   fmap (\ CommonEventMapping {..} -> (name, event)) commonEventMappings ++
-  [("show-help", ShowHelp)]
+  [("quit", Quit),
+   ("show-help", ShowHelp)]
 
 -- | Extract default bindings from common mappings (including 'ShowHelp').
 commonBindings :: ∀ a . [(UiKeyEvent a, [Binding])]
 commonBindings =
   fmap (\ CommonEventMapping {..} -> (event, [binding])) commonEventMappings ++
-  [(ShowHelp, [bind (KChar '?')])]
+  [(Quit, [bind (KChar 'q'), Binding {kbKey = KChar 'c', kbMods = Set.singleton MCtrl}]),
+   (ShowHelp, [bind (KChar '?')])]
 
 -- | Create handler specs from common mappings and actions.
 commonHandlerSpecs :: ∀ e n a s .
@@ -120,5 +125,6 @@ commonHandlerSpecs actions =
 -- | Create help specs (dummy actions) from common mappings (including ShowHelp).
 commonHelpSpecs :: ∀ a n s . [KeyHandlerSpec (UiKeyEvent a) n s]
 commonHelpSpecs =
-  fmap (\ CommonEventMapping {..} -> KeyHandlerSpec event description unit) commonEventMappings ++
-  [KeyHandlerSpec ShowHelp "Toggle help" unit]
+  fmap (\  CommonEventMapping {..} -> KeyHandlerSpec event description unit) commonEventMappings ++
+  [KeyHandlerSpec Quit "Quit" unit,
+   KeyHandlerSpec ShowHelp "Toggle help" unit]

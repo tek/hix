@@ -19,7 +19,7 @@ data ReleaseUi =
     chooseVersions ::
       Maybe SelectedVersion ->
       Packages ConfiguredTarget ->
-      M VersionChoice
+      M (Either TerminateFlow VersionChoice)
     ,
 
     -- | Present the results of an upload stage, prompting the selection of the packages with which to continue.

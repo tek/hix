@@ -105,5 +105,6 @@ versionsHelpEvents =
   [
     (Specific BumpVersion, "bump"),
     (Specific ToggleShared, "shared"),
+    (Quit, "quit"),
     (ShowHelp, "help")
   ]

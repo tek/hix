@@ -14,6 +14,7 @@ import Hix.Managed.Handlers.ReleaseUi.Versions.Render (render)
 import Hix.Managed.Release.Data.ReleasePlan (ConfiguredTarget)
 import Hix.Managed.Release.Data.SelectedVersion (SelectedVersion)
 import Hix.Managed.Release.Data.VersionChoice (VersionChoice)
+import Hix.Managed.Release.Data.TerminateFlow (TerminateFlow (..))
 import Hix.Ui (ScreenConfig (..), runScreenWithHelp)
 import Hix.Ui.Debug (BrickDebug)
 import Hix.Ui.KeyMappings (HelpConfig (..))
@@ -22,10 +23,11 @@ chooseVersions ::
   Maybe BrickDebug ->
   Maybe SelectedVersion ->
   Packages ConfiguredTarget ->
-  M VersionChoice
+  M (Either TerminateFlow VersionChoice)
 chooseVersions debug sharedVersion targets = do
-  result <- runScreenWithHelp screenConfig
-  pure (chosenVersions result)
+  runScreenWithHelp screenConfig <&> \case
+    Nothing -> Left "User quit"
+    Just result -> Right (chosenVersions result)
   where
     screenConfig = ScreenConfig {
       name = "versions",

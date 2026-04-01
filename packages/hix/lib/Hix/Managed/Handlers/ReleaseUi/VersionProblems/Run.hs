@@ -22,8 +22,9 @@ chooseVersionProblems ::
   Packages ProblematicVersion ->
   M (Either TerminateFlow Bool)
 chooseVersionProblems debug problems = do
-  result <- runScreenWithHelp screenConfig
-  pure (Right (isAccepted result))
+  runScreenWithHelp screenConfig <&> \case
+    Nothing -> Left "User quit"
+    Just result -> Right (isAccepted result)
   where
     screenConfig = ScreenConfig {
       name = "versionProblems",

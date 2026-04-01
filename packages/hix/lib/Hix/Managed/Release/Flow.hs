@@ -110,13 +110,15 @@ viewStage target fallback f =
 
 -- | Initialize the release targets from a 'VersionChoice'.
 -- This stores the initial 'ReleaseState' in the 'Selecting' stage.
+-- If the chooser returns 'Left', the flow is terminated.
 initTargets ::
-  (Packages ConfiguredTarget -> M VersionChoice) ->
+  (Packages ConfiguredTarget -> M (Either TerminateFlow VersionChoice)) ->
   Packages ConfiguredTarget ->
   ReleaseFlow ()
-initTargets choose targets = do
-  choice <- lift $ choose targets
-  modify \ _ -> pure (Staged.fromVersionChoice choice)
+initTargets choose targets =
+  lift (choose targets) >>= \case
+    Left reason -> terminate reason
+    Right choice -> modify \ _ -> pure (Staged.fromVersionChoice choice)
 
 -- | Get selected targets at the 'Selecting' stage (as views).
 chosen :: ReleaseFlow (Packages SelectedTargetView)

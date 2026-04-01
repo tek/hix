@@ -28,8 +28,9 @@ chooseUploadTargetsNe ::
   NonEmpty (LocalPackage, PreparedTargetView) ->
   M (Either TerminateFlow (Set LocalPackage))
 chooseUploadTargetsNe debug stage packages = do
-  result <- runScreenWithHelp screenConfig
-  pure (Right (chosenPackages result))
+  runScreenWithHelp screenConfig <&> \case
+    Nothing -> Left "User quit"
+    Just result -> Right (chosenPackages result)
   where
     screenConfig = ScreenConfig {
       name = "uploadTargets",
