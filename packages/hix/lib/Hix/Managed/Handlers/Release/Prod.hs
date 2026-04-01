@@ -2,16 +2,14 @@ module Hix.Managed.Handlers.Release.Prod where
 
 import Data.List.Extra (takeEnd)
 import qualified Data.Text as Text
-import Exon (exon)
 
-import qualified Hix.Color as Color
-import Hix.Data.Monad (LogLevel (..), M)
+import Hix.Data.Monad (M)
 import Hix.Data.Options (ReleaseOptions (..))
 import Hix.Http (httpManager)
-import qualified Hix.Log as Log
 import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForPublish))
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
 import Hix.Managed.Flake (runFlake)
+import Hix.Managed.Git (GitApi)
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
 import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
 import qualified Hix.Managed.Handlers.Project.Prod as Project
@@ -19,27 +17,14 @@ import Hix.Managed.Handlers.Release (ReleaseHandlers (..))
 import qualified Hix.Managed.Handlers.ReleaseUi.Batch as ReleaseUi
 import qualified Hix.Managed.Handlers.ReleaseUi.Prod as ReleaseUi
 import qualified Hix.Managed.Handlers.Upload.Prod as Upload
-import Hix.Managed.Git (GitApi)
 import Hix.Managed.Release.Git (GitExtraArgs, GitRelease, gitApiReleaseHermetic, gitApiReleaseProd)
 import Hix.Managed.Release.Package (releaseDist, uploadArtifact)
-import Hix.Monad (shouldLog)
 
-checksFailed :: Text -> M Bool
-checksFailed output = do
-  Log.error "The flake checks failed."
-  ifM (shouldLog LogVerbose)
-    do
-      Log.verbose "Last 100 lines of output:"
-      traverse_ Log.cont.verbose (takeEnd 100 (Text.lines output))
-    do
-      Log.error [exon|Run #{col "nix -L flake check"} manually or re-run this command with #{col "--verbose"}|]
-  pure False
-  where
-    col = Color.shellCommand @Text
-
-runChecksProd :: M Bool
+runChecksProd :: M (Maybe [Text])
 runChecksProd =
-  either checksFailed (const (pure True)) =<< runFlake "Checks" ["-L", "flake", "check"] def (const unit)
+  fmap truncateLog . leftToMaybe <$> runFlake "Checks" ["-L", "flake", "check"] def (const unit)
+  where
+    truncateLog = takeEnd 100 . Text.lines
 
 handlersProd ::
   ReleaseOptions ->
@@ -53,7 +38,7 @@ handlersProd options cabal = do
   pure ReleaseHandlers {
     runChecks = runChecksProd,
     releaseDist,
-    uploadArtifact = \desc stage package dist -> uploadArtifact desc stage upload package dist,
+    uploadArtifact = \ desc stage -> uploadArtifact desc stage upload,
     git = gitApi options.config,
     context = ContextHandlers.handlersProd,
     project,

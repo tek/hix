@@ -14,12 +14,17 @@ module Hix.Managed.Release.Flow where
 import qualified Control.Monad.Trans.Class as MonadTrans
 import Control.Monad.Trans.State.Strict (StateT (..), gets, modifyM)
 import qualified Data.Set as Set
+import Exon (exon)
 
-import Hix.Class.Map (nAny, nMap, nMapMaybe, nTraverse, nTraverseWithKey, (!?))
+import Hix.Class.Map (nAny, nMap, nMapMaybe, nTraverseWithKey, (!?))
+import qualified Hix.Color as Color
 import Hix.Data.Error (Error)
-import Hix.Data.Monad (M)
+import Hix.Data.Monad (LogLevel (..), M)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Version)
+import qualified Hix.Log as Log
+import Hix.Monad (shouldLog)
+import Hix.Pretty (showP)
 import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (..), UploadMutability (..), UploadStage (..))
 import Hix.Managed.Data.Packages (Packages (..))
 import Hix.Managed.Data.ReleaseConfig (ArtifactConfig (..), ReleaseConfig (..))
@@ -136,13 +141,18 @@ initDists checksPassed chooseTargets buildDist =
     let targets = Staged.selectedTargetViews selecting
     chooseTargets checksPassed targets >>= traverse \ selected -> do
       let selecting' = excludeUnselected selected selecting
-      stageResults <- nTraverse @_ @(Packages _) buildDist (Staged.selectedTargetViews selecting')
+      let selectedViews = Staged.selectedTargetViews selecting'
+      stageResults <- nTraverseWithKey buildAndLog selectedViews
       pure (Staged.toPrepared stageResults selecting')
   where
     excludeUnselected selected =
       Staged.excludeByPackage (shouldExclude selected)
 
     shouldExclude selected pkg = not (Set.member pkg selected)
+
+    buildAndLog pkg target = do
+      Log.info [exon|Building release distributions for #{showP pkg}|]
+      buildDist target
 
 -- | Transition from 'Prepared' to 'Uploading'.
 initUploading :: ReleaseFlow ()
@@ -230,14 +240,31 @@ uploadStage config tag chooseTargets uploadArtifact = do
       | Set.member name requested = uploadArtifact name dist
       | otherwise = pure mempty
 
--- | Run the checks handler and return whether checks passed.
+-- | Run the checks handler and log failures.
 -- Only runs if the flow is in the 'Selecting' stage; returns @True@ (skip) otherwise.
 checksStage ::
-  M Bool ->
+  M (Maybe [Text]) ->
   ReleaseFlow Bool
 checksStage runChecks = do
   active <- viewStage SSelecting False (const True)
-  if active then lift runChecks else pure True
+  if active
+  then lift runChecks >>= \case
+    Nothing -> pure True
+    Just buildLog -> do
+      lift (checksFailed buildLog)
+      pure False
+  else pure True
+
+checksFailed :: [Text] -> M ()
+checksFailed buildLog = do
+  Log.error "The flake checks failed."
+  ifM (shouldLog LogVerbose)
+    do
+      Log.verbose "Last 100 lines of output:"
+      traverse_ Log.cont.verbose buildLog
+    do
+      let col = Color.shellCommand @Text
+      Log.error [exon|Run #{col "nix -L flake check"} manually or re-run this command with #{col "--verbose"}|]
 
 -- | Get the shared version if the user chose shared version mode.
 getSharedVersion :: ReleaseFlow (Maybe Version)

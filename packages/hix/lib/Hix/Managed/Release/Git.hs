@@ -16,7 +16,14 @@ import Hix.Managed.Data.Packages (Packages (..))
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
 import qualified Hix.Managed.Git as Git
 import Hix.Managed.Git (BranchName (..), GitApi (..), GitNative (..), gitApiHermeticM, gitApiM)
-import Hix.Managed.Git.Native (GitBracketConfig (..), createBranch, wrapBracketWithRefs)
+import Hix.Managed.Git.Native (
+  BracketResult (..),
+  GitBracketConfig (..),
+  createBranch,
+  noBracketResult,
+  wrapBracketWithRefs,
+  )
+import Hix.Maybe (justIf)
 import Hix.Pretty (showP)
 
 data CommitOrTag =
@@ -41,10 +48,23 @@ data GitExtraArgs =
 defaultGitExtraArgs :: GitExtraArgs
 defaultGitExtraArgs = GitExtraArgs {commitArgs = [], tagArgs = []}
 
+-- | Result of the commit step, containing info about what was created.
+data CommitResult =
+  CommitResult {
+    -- | Description of the commit (package names or shared version).
+    names :: Maybe Text,
+    -- | Tags that were created.
+    tags :: Set Git.Tag
+  }
+  deriving stock (Eq, Show, Generic)
+
+noCommitResult :: CommitResult
+noCommitResult = CommitResult {names = Nothing, tags = Set.empty}
+
 data GitRelease =
   GitRelease {
-    bracket :: ∀ a . M a -> M (Maybe BranchName, a),
-    commit :: Packages Version -> CommitStyle -> M ()
+    bracket :: forall a . M a -> M (BracketResult, Maybe BranchName, a),
+    commit :: Packages Version -> CommitStyle -> M CommitResult
   }
 
 messageComponents :: Packages Version -> CommitStyle -> (Text, Packages Text)
@@ -136,20 +156,22 @@ branchCreated refsRef branch = do
 
 -- | Bracket a release action with git operations.
 -- Branch creation is deferred until a commit is made.
--- Returns 'Nothing' if no branch was created (only tags).
+-- Returns a 'BracketResult' and the release branch name (if created).
 withReleaseBranch ::
-  ∀ a .
+  forall a .
   ReleaseConfig ->
   GitNative ->
   IORef CreatedRefs ->
   BranchName ->
   M a ->
-  M (Maybe BranchName, a)
+  M (BracketResult, Maybe BranchName, a)
 withReleaseBranch config git refs branch action = do
-  wrapBracketWithRefs git bracketConfig refs do
-    result <- action
-    created <- branchCreated refs branch
-    pure (if created then Just branch else Nothing, result)
+  (bracketResult, (releaseBranch, result)) <-
+    wrapBracketWithRefs git bracketConfig refs do
+      result <- action
+      created <- branchCreated refs branch
+      pure (justIf created branch, result)
+  pure (bracketResult, releaseBranch, result)
   where
     bracketConfig = GitBracketConfig {
       push = config.push,
@@ -169,13 +191,20 @@ gitReleaseNative config extraArgs git = do
   where
     commitImpl refsRef branch packages style = do
       let (names, trailers) = messageComponents packages style
-      when config.commit do
-        ensureReleaseBranch git refsRef branch
-        git.cmd_ ["add", "--all"]
-        commitOrTag git CommitCmd extraArgs.commitArgs ["--allow-empty"] names (nElems trailers)
-      when config.tag do
-        refs <- createTags git extraArgs.tagArgs packages trailers style
-        accumulateRefs refsRef refs
+      committedNames <- if config.commit
+        then do
+          ensureReleaseBranch git refsRef branch
+          git.cmd_ ["add", "--all"]
+          commitOrTag git CommitCmd extraArgs.commitArgs ["--allow-empty"] names (nElems trailers)
+          pure (Just names)
+        else pure Nothing
+      tagRefs <- if config.tag
+        then do
+          refs <- createTags git extraArgs.tagArgs packages trailers style
+          accumulateRefs refsRef refs
+          pure refs.tags
+        else pure Set.empty
+      pure CommitResult {names = committedNames, tags = tagRefs}
 
 gitApiReleaseProd :: ReleaseConfig -> GitExtraArgs -> GitApi GitRelease
 gitApiReleaseProd config extraArgs = gitApiM (gitReleaseNative config extraArgs)
@@ -188,10 +217,11 @@ gitReleaseUnitTest =
   GitRelease {
     bracket = \ action -> do
       result <- action
-      pure (Just "release", result)
+      pure (noBracketResult, Just "release", result)
     ,
-    commit = \ _ _ -> pure ()
+    commit = \ _ _ -> pure noCommitResult
   }
 
 gitApiReleaseUnitTest :: GitApi GitRelease
 gitApiReleaseUnitTest = GitApi (\_ use -> use gitReleaseUnitTest)
+

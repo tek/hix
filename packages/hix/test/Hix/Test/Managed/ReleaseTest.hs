@@ -609,7 +609,10 @@ test_releaseMessageUrls = do
     message = releaseMessage [StatusReleased candidatePkg, StatusReleased publishedPkg]
 
 target_releaseFlowMixedResults :: Text
-target_releaseFlowMixedResults = [exon|[35m[1m>>>[0m Skipping flake checks
+target_releaseFlowMixedResults = [exon|[35m[1m>>>[0m Writing new versions to managed state
+[35m[1m>>>[0m Skipping flake checks
+[35m[1m>>>[0m Building release distributions for local1
+[35m[1m>>>[0m Building release distributions for local2
 [35m[1m>>>[0m Uploading candidate sources
 [35m[1m>>>[0m Uploading candidate docs
 [35m[1m>>>[0m Release completed successfully:
@@ -658,7 +661,10 @@ test_releaseFlowMixedResults = do
   eqLines target_releaseFlowMixedResults (unlines (reverse logMessages))
 
 target_releaseFlowTerminated :: Text
-target_releaseFlowTerminated = [exon|[35m[1m>>>[0m Skipping flake checks
+target_releaseFlowTerminated = [exon|[35m[1m>>>[0m Writing new versions to managed state
+[35m[1m>>>[0m Skipping flake checks
+[35m[1m>>>[0m Building release distributions for local1
+[35m[1m>>>[0m Building release distributions for local2
 [35m[1m>>>[0m Uploading candidate docs
 [35m[1m>>>[0m Release terminated with errors:
 [35m[1m>>>[0m Upload failed. Use --partial to continue with successful packages.

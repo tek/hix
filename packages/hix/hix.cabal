@@ -274,6 +274,7 @@ library
       Hix.Managed.Release
       Hix.Managed.Release.Compat
       Hix.Managed.Release.Context
+      Hix.Managed.Release.Data.GitResult
       Hix.Managed.Release.Data.ReleasePlan
       Hix.Managed.Release.Data.ReleaseResult
       Hix.Managed.Release.Data.ReleaseTarget

@@ -7,7 +7,7 @@ import Exon (exon)
 import Path (Abs, File, Path, fileExtension, toFilePath)
 import Path.IO (doesFileExist)
 
-import Hix.Class.Map (nFor_, nZip)
+import Hix.Class.Map (nAny, nZip, nFor)
 import Hix.Data.Monad (M)
 import Hix.Data.PathSpec (PathSpec)
 import Hix.Data.Version (Version)
@@ -79,20 +79,23 @@ updateCabalVersionFile path version =
 -- | Write versions to all configured version files.
 -- Uses the shared version for the global version file (if configured).
 -- Per-package version files are updated with each package's release version.
+-- Returns whether any files were written.
 writeVersionFiles ::
   Maybe Version ->
   StateVersionsContext ->
   Packages SelectedTargetView ->
-  M ()
+  M Bool
 writeVersionFiles sharedVersion context targets = do
-  writeGlobalVersionFile
-  writePackageVersionFiles
+  wroteGlobal <- writeGlobalVersionFile
+  wrotePackage <- writePackageVersionFiles
+  pure (wroteGlobal || wrotePackage)
   where
     writeGlobalVersionFile =
-      sequence_ (writeVersionFile <$> context.versionFile <*> sharedVersion)
+      isJust <$> sequence (writeVersionFile <$> context.versionFile <*> sharedVersion)
 
-    writePackageVersionFiles =
-      nFor_ @(Packages _) (nZip (,) targets context.packages) \ (target, package) ->
-        for_ package.versionFile \ pathSpec ->
+    writePackageVersionFiles = do
+      let zipped = nZip (,) targets context.packages
+      results <- nFor @(Packages _) zipped \ (target, package) ->
+        isJust <$> for package.versionFile \ pathSpec ->
           writeVersionFile pathSpec target.releaseVersion
-
+      pure (nAny @(Packages _) id results)

@@ -13,7 +13,7 @@ import Hix.Managed.Data.CreatedRefs (newRefsRef)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import Hix.Managed.Git (BranchName (..), GitApi, GitNative (..), MaintBranch (..), Tag, gitApiHermeticM, gitApiM)
-import Hix.Managed.Git.Native (GitBracketConfig (..), createBranch, wrapBracketWithRefs)
+import Hix.Managed.Git.Native (GitBracketConfig (..), createBranch, wrapBracketWithRefs_)
 import Hix.Pretty (showP)
 
 data GitMaint =
@@ -56,7 +56,7 @@ gitMaintNative MaintConfig {push, fetch, pr} git = do
   refsRef <- newRefsRef
   let bracketConfig = GitBracketConfig {push, fetch, merge = False}
   pure GitMaint {
-    bracket = wrapBracketWithRefs git bracketConfig refsRef,
+    bracket = wrapBracketWithRefs_ git bracketConfig refsRef,
     readTags = mapMaybe (simpleParsec . toString) <$> git.cmd ["tag", "--list", "--format=%(refname:short)"],
     listTargetBranches = listTargetBranches git,
     switchBranch = switchBranch git,
@@ -95,7 +95,7 @@ gitRevisionNative RevisionConfig {fetch} git = do
   refsRef <- newRefsRef
   let bracketConfig = GitBracketConfig {push = False, fetch, merge = False}
   pure GitRevision {
-    bracket = wrapBracketWithRefs git bracketConfig refsRef,
+    bracket = wrapBracketWithRefs_ git bracketConfig refsRef,
     listTargetBranches = listTargetBranches git,
     switchBranch = switchBranch git
   }

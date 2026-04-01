@@ -17,7 +17,8 @@ import Hix.Managed.Release.Git (GitExtraArgs, GitRelease)
 
 data ReleaseHandlers =
   ReleaseHandlers {
-    runChecks :: M Bool,
+    -- | Run flake checks. Returns 'Nothing' on success, 'Just reasons' on failure.
+    runChecks :: M (Maybe [Text]),
     releaseDist :: SelectedTargetView -> M (Either Error ReleaseDist),
     uploadArtifact :: Text -> UploadStage -> LocalPackage -> ReleaseDist -> M ArtifactResult,
     git :: GitExtraArgs -> GitApi GitRelease,

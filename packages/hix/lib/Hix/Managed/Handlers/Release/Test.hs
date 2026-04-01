@@ -2,7 +2,6 @@ module Hix.Managed.Handlers.Release.Test where
 
 import Data.IORef (IORef, atomicModifyIORef', atomicWriteIORef, newIORef)
 import GHC.IsList (fromList)
-
 import Path (absfile)
 
 import Hix.Data.Error (Error)
@@ -28,6 +27,7 @@ import qualified Hix.Managed.Handlers.Upload.Prod as Upload
 import Hix.Managed.Release.Data.ReleaseTarget (ReleaseDist (..))
 import Hix.Managed.Release.Data.Staged (SelectedTargetView)
 import Hix.Managed.Release.Git (gitApiReleaseHermetic, gitApiReleaseUnitTest)
+import Hix.Maybe (justIf)
 
 -- | Data tracked by unit test handlers
 data ReleaseTestData =
@@ -57,10 +57,10 @@ mkReleaseTestData = do
   pure ReleaseTestData {checksRun, uploadedArtifacts}
 
 -- | Unit test implementation of runChecks that records execution without running actual checks
-runChecksUnitTest :: IORef Bool -> Bool -> M Bool
+runChecksUnitTest :: IORef Bool -> Bool -> M (Maybe [Text])
 runChecksUnitTest checksRunRef result = do
   liftIO $ atomicWriteIORef checksRunRef True
-  pure result
+  pure (justIf (not result) ["Checks failed"])
 
 -- | Unit test implementation of uploadArtifact that records calls without performing actual upload.
 --   Returns configured failures only for packages in failPackages (or all packages if failPackages is empty).

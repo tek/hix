@@ -11,6 +11,7 @@ import Hix.Data.Monad (M)
 import Hix.Data.PackageName (LocalPackage (..))
 import Hix.Data.Version (Version)
 import qualified Hix.Data.VersionBounds as VersionBounds
+import qualified Hix.Log as Log
 import Hix.Managed.Data.PackageState (PackageState (..))
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.StateVersionsContext (StateVersionsContext (..), StateVersionsPackage (..))
@@ -73,8 +74,11 @@ updateStateVersions handlers managed forceVersion sharedVersion targets =
     context <- queryContext handlers.context ContextStateVersions
     checkVersionPersistence managed forceVersion context targets
     when managed do
+      Log.info "Writing new versions to managed state"
       writeReleaseVersions handlers.project.stateFile (update context.state)
-    writeVersionFiles sharedVersion context targets
+    wroteVersionFiles <- writeVersionFiles sharedVersion context targets
+    when wroteVersionFiles do
+      Log.info "Writing version files"
   where
     update =
       (#packages %~ nPad updateVersion newPackageState targets)

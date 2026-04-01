@@ -15,18 +15,20 @@ import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
 import Hix.Managed.Data.ReleaseContext (ReleaseContext (..), ReleaseContextProto (..))
 import Hix.Managed.Data.UploadResult (ArtifactResult)
-import Hix.Managed.Git (runGitApi)
+import Hix.Managed.Git (BranchName, runGitApi)
+import Hix.Managed.Git.Native (BracketResult (..))
 import Hix.Managed.Handlers.Context (ContextKey (ContextRelease), jsonOrQueryProd)
 import Hix.Managed.Handlers.Release (ReleaseHandlers (..))
 import qualified Hix.Managed.Handlers.Release.Prod as Release
 import Hix.Managed.Handlers.ReleaseUi (ReleaseUi (..))
 import Hix.Managed.Release.Compat (cliCompat)
 import qualified Hix.Managed.Release.Context as ReleaseContext
+import Hix.Managed.Release.Data.GitResult (GitResult (..))
 import Hix.Managed.Release.Data.ReleaseTarget (ReleaseDist)
 import Hix.Managed.Release.Data.Staged (ReleaseState (..), Termination (..), UploadingTargetView (..))
 import qualified Hix.Managed.Release.Flow as ReleaseFlow
 import Hix.Managed.Release.Flow (ReleaseFlow, runReleaseFlow, withTargetsAndShared)
-import Hix.Managed.Release.Git (CommitStyle (..), GitExtraArgs (..), GitRelease (..))
+import Hix.Managed.Release.Git (CommitResult (..), CommitStyle (..), GitExtraArgs (..), GitRelease (..))
 import Hix.Managed.Release.Hook (withHooks)
 import Hix.Managed.Release.ReleasePlan (configuredReleaseVersions)
 import Hix.Managed.Release.ReleaseResult (outputResults)
@@ -48,7 +50,7 @@ postUpload ::
   Int ->
   Maybe Version ->
   Packages UploadingTargetView ->
-  M ()
+  M CommitResult
 postUpload config hooks git totalPackages sharedVersion uploading =
   withHooks config hooks uploading sharedVersion do
     git.commit (nMap extractVersion uploading) style
@@ -90,7 +92,7 @@ handleProblemsInteractive ui problems =
 runChecksIfEnabled ::
   ReleaseConfig ->
   ReleaseHandlers ->
-  M Bool
+  M (Maybe [Text])
 runChecksIfEnabled config handlers =
   if config.check
   then do
@@ -98,7 +100,7 @@ runChecksIfEnabled config handlers =
     handlers.runChecks
   else do
     Log.info "Skipping flake checks"
-    pure True
+    pure Nothing
 
 -- | Upload a single stage with logging.
 uploadFlowStage ::
@@ -133,7 +135,7 @@ releaseFlow ::
   GitRelease ->
   ReleaseContext ->
   ReleaseConfig ->
-  ReleaseFlow (Maybe Version)
+  ReleaseFlow (Maybe Version, CommitResult)
 releaseFlow handlers@ReleaseHandlers {ui} git context config = do
   (shared, configured) <- ReleaseFlow.lift (configuredReleaseVersions context config)
   ReleaseFlow.initTargets (ui.chooseVersions shared) configured
@@ -143,8 +145,9 @@ releaseFlow handlers@ReleaseHandlers {ui} git context config = do
   ReleaseFlow.initDists checksPassed ui.chooseDistTargets handlers.releaseDist
   ReleaseFlow.initUploading
   traverse_ @[] (uploadFlowStage config ui handlers.uploadArtifact) [minBound .. maxBound]
-  ReleaseFlow.withUploading (postUpload config context.hooks git (nSize context.packages))
-  ReleaseFlow.getSharedVersion
+  commitResult <- ReleaseFlow.withUploading (postUpload config context.hooks git (nSize context.packages))
+  sharedVer <- ReleaseFlow.getSharedVersion
+  pure (sharedVer, commitResult)
 
 release ::
   ReleaseHandlers ->
@@ -156,13 +159,25 @@ release handlers config proto =
     root <- appRes.root
     context <- ReleaseContext.validate proto
     let extraArgs = GitExtraArgs {commitArgs = context.commitExtraArgs, tagArgs = context.tagExtraArgs}
-    (branch, (sharedVer, stage)) <- runGitApi (handlers.git extraArgs) root "release" \ git@GitRelease {bracket} ->
-      bracket do
-        runReleaseFlow (releaseFlow handlers git context config)
+    (bracketResult, releaseBranch, ((sharedVer, commitResult), stage)) <-
+      runGitApi (handlers.git extraArgs) root "release" \ git@GitRelease {bracket} ->
+        bracket do
+          runReleaseFlow (releaseFlow handlers git context config)
+    let gitResult = assembleGitResult bracketResult releaseBranch commitResult
     AppResources {output = format, target} <- ask
-    Report.report stage
-    outputResults target format sharedVer branch stage
+    Report.report gitResult stage
+    outputResults target format sharedVer releaseBranch stage
     pure stage
+
+assembleGitResult :: BracketResult -> Maybe BranchName -> CommitResult -> GitResult
+assembleGitResult BracketResult {initialBranch, merged, pushed} releaseBranch CommitResult {names, tags} =
+  GitResult {
+    committed = (,) <$> releaseBranch <*> names,
+    tagged = tags,
+    initialBranch,
+    merged,
+    pushed
+  }
 
 releaseCli :: ReleaseOptions -> M ()
 releaseCli options = do

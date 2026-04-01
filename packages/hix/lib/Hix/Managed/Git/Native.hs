@@ -63,51 +63,67 @@ reset git initialBranch = do
   git.cmd_ ["reset", "--hard"]
   for_ initialBranch \ branch -> git.cmd_ ["switch", "-f", branch]
 
-pushOnSuccess :: GitNative -> GitBracketConfig -> Maybe Text -> Maybe Text -> CreatedRefs -> M ()
+-- | Summary of what the git bracket did in the push/merge phase.
+data BracketResult =
+  BracketResult {
+    -- | The branch that was active before the release bracket started.
+    initialBranch :: Maybe BranchName,
+    -- | The initial branch, if the release branch was merged into it.
+    merged :: Maybe BranchName,
+    -- | The remote name, if refs were pushed.
+    pushed :: Maybe Text
+  }
+  deriving stock (Eq, Show, Generic)
+
+noBracketResult :: BracketResult
+noBracketResult = BracketResult {initialBranch = Nothing, merged = Nothing, pushed = Nothing}
+
+pushOnSuccess :: GitNative -> GitBracketConfig -> Maybe Text -> Maybe Text -> CreatedRefs -> M BracketResult
 pushOnSuccess git config initialBranch mainRemote refs = do
   branch <-
     if config.merge && hasRefs
     then mergeBranch
     else pure Nothing
-  when (config.push && hasRefs) do
-    push branch
+  pushedRemote <-
+    if config.push && hasRefs
+    then traverse (push branch) mainRemote
+    else pure Nothing
+  pure BracketResult {initialBranch = BranchName <$> initialBranch, merged = branch, pushed = pushedRemote}
   where
-    mergeBranch = do
-      for_ initialBranch \ branch -> do
+    push branch remote =
+      appContext [exon|pushing to git remote #{remote}|] do
+        pushBranches remote branch
+        pushTags remote
+        pure remote
+
+    mergeBranch =
+      for initialBranch \ branch -> do
         appContext [exon|merging into initial branch #{branch}|] do
           git.cmd_ ["switch", branch]
           -- Previous HEAD (the release branch)
           git.cmd_ ["merge", "--ff-only", "HEAD@{1}"]
-      pure (BranchName <$> initialBranch)
-
-    CreatedRefs {branches, tags} = refs
+        pure (BranchName branch)
 
     hasRefs = not (Set.null branches && Set.null tags)
-
-    push branch = do
-      for_ mainRemote \ remote ->
-        appContext [exon|pushing to git remote #{remote}|] do
-          pushBranches remote branch
-          pushTags remote
 
     pushBranches remote mergedBranch =
       unless (Set.null branchesToPush) do
         git.cmd_ $ ["push", remote] ++ [showP b | b <- Set.toList branchesToPush]
       where
         -- Include initial branch in push if we merged into it
-        branchesToPush = case mergedBranch of
-          Just branch -> Set.insert branch branches
-          Nothing -> branches
+        branchesToPush = foldr Set.insert branches mergedBranch
 
     pushTags remote =
       unless (Set.null tags) do
         git.cmd_ $ ["push", remote] ++ [[exon|refs/tags/#{showP t}|] | t <- Set.toList tags]
 
+    CreatedRefs {branches, tags} = refs
+
 gitBracket ::
   GitNative ->
   GitBracketConfig ->
   M (a, CreatedRefs) ->
-  M a
+  M (BracketResult, a)
 gitBracket git config ma = do
   git.cmd' ["diff", "--exit-code"] >>= leftA \ (out, err) ->
     clientError [exon|Git tree is dirty:
@@ -121,8 +137,8 @@ stderr: #{Text.unlines err}|]
   where
     runAndPush initialBranch mainRemote = do
       (result, refs) <- ma
-      pushOnSuccess git config initialBranch (join mainRemote) refs
-      pure result
+      bracketResult <- pushOnSuccess git config initialBranch (join mainRemote) refs
+      pure (bracketResult, result)
 
 -- | Wrap an action to collect created refs from an 'IORef' and pass them to 'gitBracket'
 --
@@ -132,8 +148,15 @@ wrapBracketWithRefs ::
   GitNative ->
   GitBracketConfig ->
   IORef CreatedRefs ->
-  (∀ a . M a -> M a)
+  M a ->
+  M (BracketResult, a)
 wrapBracketWithRefs git config refsRef action = gitBracket git config do
   result <- action
   refs <- collectRefs refsRef
   pure (result, refs)
+
+-- | Like 'wrapBracketWithRefs', but discards the 'BracketResult'.
+-- Suitable for callers that don't need git operation feedback.
+wrapBracketWithRefs_ :: GitNative -> GitBracketConfig -> IORef CreatedRefs -> M a -> M a
+wrapBracketWithRefs_ git bracketConf refsRef action =
+  snd <$> wrapBracketWithRefs git bracketConf refsRef action

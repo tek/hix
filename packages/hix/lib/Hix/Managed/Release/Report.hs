@@ -7,11 +7,12 @@ module Hix.Managed.Release.Report (
 ) where
 
 
+import qualified Data.Set as Set
 import Exon (exon)
 import Text.PrettyPrint (Doc)
 
 import Hix.Class.Map (nConcat, nNull, nTo)
-import Hix.Color (blue, cyan, green, red, yellow)
+import Hix.Color (blue, cyan, green, magenta, red, yellow)
 import Hix.Data.Monad (M)
 import Hix.Data.PackageId (PackageId (..))
 import Hix.Data.PackageName (LocalPackage, PackageName (..), localPackageName)
@@ -22,6 +23,7 @@ import Hix.Managed.Cabal.Data.UploadStage (UploadStage)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.UploadResult (ArtifactResult, HackageUrl (..), RepoResult (..))
 import Hix.Managed.Handlers.Report.Prod (blankLine)
+import Hix.Managed.Release.Data.GitResult (GitResult (..))
 import Hix.Managed.Release.Data.ReleasePlan (ConfiguredTarget)
 import Hix.Managed.Release.Data.ReleaseResult (
   FailedPackage (..),
@@ -45,6 +47,7 @@ import Hix.Managed.Release.Data.Staged (
   )
 import Hix.Managed.Release.ReleaseResult (errorMessage, releaseStatusesFrom)
 import Hix.Managed.Release.Staged (ReleaseStage (..))
+import Hix.Managed.Report (plural)
 
 indent :: [Text] -> [Text]
 indent = fmap ("  " <>)
@@ -180,8 +183,39 @@ reportFlowStatus = \case
   SInProgress SPrepared -> reportEarlyTermination "during preparation" SPrepared
   SInProgress SUploading -> reportSuccess
 
+-- | Report git operations performed during the release.
+reportGit :: GitResult -> M ()
+reportGit GitResult {committed, tagged, initialBranch, merged, pushed} = do
+  for_ committed reportCommitted
+  reportSwitchBack
+  reportTags
+  for_ pushed reportPushed
+  where
+    reportCommitted (_, desc) =
+      Log.info [exon|Created release commit on branch #{magenta branch} for #{desc}|]
+
+    reportSwitchBack = case committed of
+      Just _
+        | Nothing <- merged
+        , Just target <- initialBranch
+        -> Log.info [exon|Switching back to #{yellow target} because #{blue ("--merge" :: Text)} wasn't specified|]
+      _ -> unit
+
+    reportTags =
+      unless (Set.null tagged) do
+        Log.info [exon|Created #{show numTags} release tag#{plural numTags}|]
+
+    reportPushed remote =
+      Log.info [exon|Pushed release refs to #{remote}|]
+
+    branch = fromMaybe "unknown" (merged <|> (fst <$> committed))
+
+    numTags = Set.size tagged
+
 -- | Print a summary report of all release results.
 -- If the release was terminated early, the termination reason is shown.
 -- Uses the stage-specific reporters to display per-package details even when the flow was aborted.
-report :: ReleaseStage -> M ()
-report ReleaseStage {tag, state} = reportFlowStatus tag state
+report :: GitResult -> ReleaseStage -> M ()
+report gitResult ReleaseStage {tag, state} = do
+  reportFlowStatus tag state
+  reportGit gitResult
