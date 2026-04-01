@@ -15,7 +15,8 @@ renderPackage DistTarget {..} =
     parts =
       [
         padRight (Pad 1) (renderToggleBullet enabled.state enabled.focused),
-        txt (showP package)
+        padRight (Pad 1) (txt (showP package)),
+        withAttr (attrName "muted") (txt (showP version))
       ]
 
 checksStatus :: Bool -> Text

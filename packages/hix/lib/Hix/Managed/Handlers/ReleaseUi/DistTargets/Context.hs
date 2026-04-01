@@ -13,7 +13,7 @@ import Hix.Managed.Handlers.ReleaseUi.DistTargets.State (
   DistTargetContext,
   DistTargetScreen (..),
   )
-import Hix.Managed.Release.Data.Staged (SelectedTargetView)
+import Hix.Managed.Release.Data.Staged (SelectedTargetView (..))
 import Hix.Ui.Data.Nav (
   ActiveRow (..),
   Focusable (..),
@@ -51,8 +51,8 @@ uiDistTargets passed packages =
     packageMeta index =
       NavMeta {index, lens = #packages . ix index . #enabled}
 
-    packageState (package, _target) =
-      DistTarget {enabled = focusable True, package}
+    packageState (package, SelectedTargetView {releaseVersion}) =
+      DistTarget {enabled = focusable True, package, version = releaseVersion}
 
 chosenPackages :: DistTargetScreen -> Set LocalPackage
 chosenPackages DistTargetScreen {packages} =

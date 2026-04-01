@@ -1,6 +1,6 @@
 module Hix.Managed.Handlers.ReleaseUi.UploadTargets.Render where
 
-import Brick (Padding (..), Widget, hBox, padRight, txt, vBox)
+import Brick (Padding (..), Widget, attrName, hBox, padRight, txt, vBox, withAttr)
 
 import Hix.Managed.Handlers.ReleaseUi.UploadTargets.State (UploadTarget (..), UploadTargetScreen (..))
 import Hix.Pretty (showP)
@@ -15,7 +15,8 @@ renderPackage UploadTarget {..} =
     parts =
       [
         padRight (Pad 1) (renderToggleBullet enabled.state enabled.focused),
-        txt (showP package)
+        padRight (Pad 1) (txt (showP package)),
+        withAttr (attrName "muted") (txt (showP version))
       ]
 
 render :: UploadTargetScreen -> Widget UiName

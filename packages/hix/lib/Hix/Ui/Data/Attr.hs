@@ -75,7 +75,8 @@ defaultAttrMap =
         ("instruction" <> "indicator", withForeColor defAttr (linearColor @Int 55 60 150)),
         ("chevrons", bolded (withForeColor defAttr sol.magenta)),
         ("help-desc", withForeColor defAttr sol.base01),
-        ("help-key", withForeColor defAttr sol.yellow)
+        ("help-key", withForeColor defAttr sol.yellow),
+        ("muted", withForeColor defAttr sol.base01)
       ]
 
     bolded = flip withStyle bold

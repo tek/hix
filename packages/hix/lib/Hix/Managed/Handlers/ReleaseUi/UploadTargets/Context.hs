@@ -52,8 +52,8 @@ uiUploadTargets stage packages =
     packageMeta index =
       NavMeta {index, lens = #packages . ix index . #enabled}
 
-    packageState (package, PreparedTargetView {}) =
-      UploadTarget {enabled = focusable True, package}
+    packageState (package, PreparedTargetView {releaseVersion}) =
+      UploadTarget {enabled = focusable True, package, version = releaseVersion}
 
 chosenPackages :: UploadTargetScreen -> Set LocalPackage
 chosenPackages UploadTargetScreen {packages} =

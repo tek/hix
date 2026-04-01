@@ -1,6 +1,7 @@
 module Hix.Managed.Handlers.ReleaseUi.DistTargets.State where
 
 import Data.Vector (Vector)
+import Distribution.Version (Version)
 
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Ui.Data.Nav (Focusable, NavContext)
@@ -10,7 +11,8 @@ import Hix.Ui.Data.Nav (Focusable, NavContext)
 data DistTarget =
   DistTarget {
     enabled :: Focusable Bool,
-    package :: LocalPackage
+    package :: LocalPackage,
+    version :: Version
   }
   deriving stock (Eq, Show, Generic)
 
