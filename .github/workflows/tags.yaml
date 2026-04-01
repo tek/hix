@@ -18,7 +18,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: download-buffer-size = 1000000000
-      - uses: cachix/cachix-action@v16
+      - uses: cachix/cachix-action@v17
         with:
           name: tek
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
