@@ -3,7 +3,6 @@ module Hix.Managed.Git.Native where
 import Control.Monad.Catch (finally)
 import Data.IORef (IORef)
 import qualified Data.Set as Set
-import qualified Data.Text as Text
 import Exon (exon)
 
 import Hix.Data.Monad (M)
@@ -125,10 +124,8 @@ gitBracket ::
   M (a, CreatedRefs) ->
   M (BracketResult, a)
 gitBracket git config ma = do
-  git.cmd' ["diff", "--exit-code"] >>= leftA \ (out, err) ->
-    clientError [exon|Git tree is dirty:
-stdout: #{Text.unlines out}
-stderr: #{Text.unlines err}|]
+  git.cmd' ["diff", "--exit-code"] >>= leftA \ _ ->
+    clientError "Git tree is dirty"
   when config.fetch do
     git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
   initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
