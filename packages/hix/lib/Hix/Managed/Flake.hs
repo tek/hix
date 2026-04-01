@@ -1,9 +1,11 @@
 module Hix.Managed.Flake where
 
+import Control.Exception (displayException, fromException, throwIO, try)
 import qualified Data.Aeson as Aeson
 import Data.Aeson (FromJSON)
 import qualified Data.ByteString.Char8 as ByteString
 import Exon (exon)
+import GHC.IO.Exception (AsyncException (UserInterrupt))
 import Path (Abs, Dir, Path, toFilePath)
 import System.Exit (ExitCode (ExitFailure, ExitSuccess))
 import System.Process.Typed (ProcessConfig, proc, readProcess, setWorkingDir)
@@ -11,10 +13,9 @@ import System.Process.Typed (ProcessConfig, proc, readProcess, setWorkingDir)
 import qualified Hix.Color as Color
 import qualified Hix.Data.Monad as Monad
 import Hix.Data.Monad (LogLevel (..), M, appRes)
-import qualified Hix.Log as Log
-import Hix.Maybe (fromMaybeA)
-import Hix.Monad (eitherFatal, shouldLog)
 import Hix.Error (pathText)
+import Hix.Maybe (fromMaybeA)
+import Hix.Monad (appContext, eitherFatal, fatalError, shouldLog)
 
 outLines :: ([ByteString] -> a) -> ByteString -> a
 outLines f bs = f (ByteString.lines bs)
@@ -55,12 +56,19 @@ runFlakeFatal ::
 runFlakeFatal desc args RunFlake {cwd = cwdSpec, ..} processOutput = do
   cwd <- fromMaybeA appRes.root cwdSpec
   verbose <- shouldLog LogVerbose
-  Log.debug [exon|Running flake in #{Color.path (pathText cwd)} (#{desc}): #{Color.shellCommand (unwords args)}|]
-  readProcess (conf cwd verbose) >>= \case
-    (ExitSuccess, stdout, _) ->
-      eitherFatal (first decodeError (processOutput (toStrict stdout)))
-    (ExitFailure {}, _, stderr) ->
-      eitherFatal (first failureError (processError (toStrict stderr)))
+  appContext [exon|running flake in #{Color.path (pathText cwd)} (#{desc}): #{Color.shellCommand (unwords args)}|] do
+    liftIO (try (readProcess (conf cwd verbose))) >>= \case
+      Left err
+        | Just asyncExc <- fromException @AsyncException err
+        -> case asyncExc of
+            UserInterrupt -> fatalError "Keyboard interrupt"
+            _ -> liftIO (throwIO err)
+        | otherwise
+        -> fatalError (toText (displayException err))
+      Right (ExitSuccess, stdout, _) ->
+        eitherFatal (first decodeError (processOutput (toStrict stdout)))
+      Right (ExitFailure {}, _, stderr) ->
+        eitherFatal (first failureError (processError (toStrict stderr)))
   where
     conf cwd verbose =
       confProc $
