@@ -42,7 +42,7 @@ uiUploadTargets stage packages =
         post = Seq.fromList (packageRow <$> toList metas)
       }
 
-    (meta0 :| metas, states) = Functor.unzip (NonEmpty.zipWith packageData [1 ..] packages)
+    (meta0 :| metas, states) = Functor.unzip (NonEmpty.zipWith packageData [0 ..] packages)
 
     packageRow meta = RowFocusable FocusableRow {meta, row = []}
 

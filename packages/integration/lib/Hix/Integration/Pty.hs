@@ -11,6 +11,7 @@ import Control.Monad.Reader (MonadReader)
 import Control.Monad.Trans.Class (MonadTrans, lift)
 import Control.Monad.Trans.Control (MonadBaseControl)
 import Control.Monad.Trans.Reader (ReaderT (runReaderT), ask)
+import Data.List (dropWhileEnd)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import Exon (exon)
@@ -57,7 +58,7 @@ import qualified Hix.Handlers.Tui.Test as Tui
 import qualified Hix.Log as Log
 import Hix.Monad (appContextVerbose, appContextVerboseIO, fatalError, noteFatal, tryIOErrorLog, tryIOM)
 import Hix.Monad.Run (runWithTui)
-import Hix.Test.Hedgehog (TestTCompat (..), eqLines, runTestTCompat)
+import Hix.Test.Hedgehog (TestTCompat (..), eqLines, listEqTail, runTestTCompat)
 import Hix.Test.Utils (runTestTM)
 
 data PtyResources =
@@ -130,7 +131,10 @@ createTmuxConf wait content = do
   pure tmuxConf
   where
     defaultContent rc =
-      [[exon|set -g default-command '/usr/bin/env bash --noprofile --rcfile #{pathText rc}'|]]
+      [
+        [exon|set -g default-command '/usr/bin/env bash --noprofile --rcfile #{pathText rc}'|],
+        "set -g status off"
+      ]
 
     initCommands =
       [
@@ -310,9 +314,23 @@ showTmux = do
     Text.putStrLn (Text.dropEnd 1 output)
     Text.putStrLn "-----------------------------------"
 
+capturePlain ::
+  TmuxTest M Text
+capturePlain =
+  tmuxCmd ["capture-pane", "-p"]
+
 assertTmux ::
+  Bool ->
   Text ->
   TmuxTest M ()
-assertTmux target = do
-  actual <- capture
-  TmuxTest $ eqLines target actual
+assertTmux escapeSequences target = do
+  actual <- if escapeSequences then capture else capturePlain
+  TmuxTest $ eqLines (Text.stripEnd target) (Text.stripEnd actual)
+
+assertTmuxTail ::
+  Bool ->
+  Text ->
+  TmuxTest M ()
+assertTmuxTail escapeSequences target = do
+  actual <- if escapeSequences then capture else capturePlain
+  TmuxTest $ listEqTail (Text.lines (Text.stripEnd target)) (dropWhileEnd Text.null (Text.lines actual))

@@ -1,6 +1,7 @@
 module Hix.Managed.Handlers.Release.Test where
 
-import Data.IORef (IORef, atomicModifyIORef', atomicWriteIORef, newIORef)
+import Data.IORef (IORef, atomicWriteIORef, newIORef)
+import Data.IORef.Extra (atomicModifyIORef'_)
 import GHC.IsList (fromList)
 import Path (absfile)
 
@@ -75,7 +76,7 @@ uploadArtifactUnitTest ::
   ReleaseDist ->
   M ArtifactResult
 uploadArtifactUnitTest testConfig uploadedRef desc stage package _dist = do
-  liftIO $ atomicModifyIORef' uploadedRef \xs -> ((desc, stage, package) : xs, ())
+  liftIO $ atomicModifyIORef'_ uploadedRef \ xs -> (desc, stage, package) : xs
   pure results
   where
     shouldFail pkg

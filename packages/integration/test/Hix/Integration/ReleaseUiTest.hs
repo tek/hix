@@ -7,7 +7,7 @@ import Exon (exon)
 import Graphics.Vty (Key (..))
 import Hedgehog ((===))
 
-import Hix.Integration.Pty (assertTmux, showTmux, tmuxCmd, tmuxLiftM, tmuxTest)
+import Hix.Integration.Pty (assertTmuxTail, showTmux, tmuxCmd, tmuxLiftM, tmuxTest)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Handlers.ReleaseUi (ReleaseUi (..))
 import qualified Hix.Managed.Handlers.ReleaseUi.Prod as ReleaseUi
@@ -95,7 +95,7 @@ test_releaseUi = do
         liftIO $ putStrLn ([exon|sent '#{[c]}'|])
         showTmux
       sendKey debug KEnter
-      assertTmux targetT
+      assertTmuxTail True targetT
       wait asyncResult
   targetP === toReleasePlan (failRelease result)
     where
@@ -136,7 +136,7 @@ test_releaseUi_colors = do
     withAsync (tmuxLiftM $ ui.chooseVersions (Just (explicitVersion "1.1.0")) packagesC) \ asyncResult -> do
       sendChar debug 'l'
       showTmux
-      assertTmux colorsTarget
+      assertTmuxTail True colorsTarget
       sendKey debug KEnter
       wait asyncResult
 

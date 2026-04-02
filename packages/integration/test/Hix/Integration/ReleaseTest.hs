@@ -471,7 +471,7 @@ config = configInteractive,
                 oldStyleVersion = Nothing,
                 oldStylePackages = []
               }
-            brickDebugAsync debug 60_000_000
+            brickDebugAsync debug
               do
                 releaseCli options
                 revisionCabalFile hackage.client "local1-1.2.0" 0

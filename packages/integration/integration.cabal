@@ -161,6 +161,7 @@ test-suite integration-test
       Hix.Integration.Managed.BumpTest
       Hix.Integration.Managed.SolverPackagesTest
       Hix.Integration.Managed.SolveTest
+      Hix.Integration.ReleaseFlowTest
       Hix.Integration.ReleaseMaintenanceTest
       Hix.Integration.ReleaseTest
       Hix.Integration.ReleaseUiTest

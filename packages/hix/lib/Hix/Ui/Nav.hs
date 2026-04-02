@@ -23,6 +23,7 @@ import Hix.Ui.Data.Nav (
   updateFocusedTile,
   )
 
+
 -- | Find the first element in @candidates@ that can be focused and return it alongside the prefix and suffix enclosing
 -- it.
 -- @pre@ and @post@ are pre- and appended to the prefix and suffix in the result.
@@ -177,5 +178,9 @@ navigateRows =
 
     tryFocus (OldFocus FocusableRow {row = oldFocus}) = \case
         NewFocus (RowFocusable row) ->
-          Just (focusRow (length oldFocus.pre.tiles) <$> row)
+          Just (focusRow tileIndex <$> row)
+          where
+            tileIndex = case oldFocus of
+              ActiveRow {pre = Tiles {tiles}} -> length tiles
+              OnlyRow -> 0
         NewFocus RowUnfocusable -> Nothing

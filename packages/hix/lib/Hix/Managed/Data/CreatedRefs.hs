@@ -1,8 +1,10 @@
 module Hix.Managed.Data.CreatedRefs where
 
-import Data.IORef (IORef, atomicModifyIORef', newIORef, readIORef, writeIORef)
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import Data.IORef.Extra (atomicModifyIORef'_)
 import qualified Data.Set as Set
 import Exon (exon)
+
 import Hix.Data.Monad (M)
 import Hix.Managed.Git (BranchName, Tag)
 import Hix.Pretty (showP)
@@ -41,7 +43,7 @@ newRefsRef = liftIO (newIORef mempty)
 
 accumulateRefs :: IORef CreatedRefs -> CreatedRefs -> M ()
 accumulateRefs ref newRefs =
-  liftIO $ atomicModifyIORef' ref (\old -> (old <> newRefs, ()))
+  liftIO $ atomicModifyIORef'_ ref \ old -> old <> newRefs
 
 collectRefs :: IORef CreatedRefs -> M CreatedRefs
 collectRefs ref = liftIO do

@@ -89,11 +89,24 @@ withDebugSignal ::
   BrickEvent n BrickDebugEvent ->
   EventM n s ()
 withDebugSignal BrickDebug {output} original event = do
-  result <- original event
-  case event of
-    AppEvent e -> liftIO $ writeChan output e
-    _ -> unit
-  pure result
+  original event
+  sendSignal
+  where
+    sendSignal = case event of
+      AppEvent e -> liftIO $ writeChan output e
+      _ -> unit
+
+waitForApp ::
+  MonadIO m =>
+  MonadReader AppResources m =>
+  MonadError Error m =>
+  BrickDebug ->
+  m ()
+waitForApp BrickDebug {output} =
+  liftIO (timeout 3_000_000 (readChan output)) >>= \case
+    Just BrickStarted -> unit
+    Just e -> throwME (Error.Client [exon|First event from Brick app is not BrickStarted: #{show e}|])
+    _ -> throwME (Error.Client "No start event received from Brick app before timeout")
 
 brickDebugAsync ::
   MonadIO m =>
@@ -101,20 +114,13 @@ brickDebugAsync ::
   MonadReader AppResources m =>
   MonadBaseControl IO m =>
   BrickDebug ->
-  Int ->
   m a ->
   (m () -> m ()) ->
   m a
-brickDebugAsync BrickDebug {output} startEventTimeout prog test = do
+brickDebugAsync debug prog test = do
   withAsync prog \ asyncResult -> do
-    test waitForApp
+    test (waitForApp debug)
     wait asyncResult
-  where
-    waitForApp =
-      liftIO (timeout startEventTimeout (readChan output)) >>= \case
-        Just BrickStarted -> unit
-        Just e -> throwME (Error.Client [exon|First event from Brick app is not BrickStarted: #{show e}|])
-        _ -> throwME (Error.Client "No start event received from Brick app before timeout")
 
 brickAppDebug ::
   BrickDebug ->

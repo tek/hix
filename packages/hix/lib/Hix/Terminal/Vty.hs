@@ -136,6 +136,8 @@ updateTruncated hOut state vty picture = do
   ensureSpace hOut state vty.outputIface picHeight
   withRenderHeight state picHeight do
     vty.update truncated
+  atomicModifyIORef'_ state (#lastRenderHeight .~ picHeight)
   where
     picHeight = fromMaybe 1 (maximum (imageHeight <$> truncated.picLayers))
+
     truncated = truncatePicture picture

@@ -152,3 +152,7 @@ printError ::
   Error ->
   m ()
 printError = printErrorWith Console.err
+
+ignoringIOErrors :: IO () -> IO ()
+ignoringIOErrors action =
+  void (tryIOError action)
