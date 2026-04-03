@@ -5,7 +5,7 @@
   global = config;
   lib = pkgs.lib;
 
-  options = import ./options.nix { inherit pkgs; };
+  options = import ./options.nix { inherit pkgs util; };
   inherit (options) namePh;
 
   cabalOptionsModules = [

@@ -18,6 +18,8 @@
     inherit lib;
 
     version = import ./lib/version.nix { inherit lib; };
+
+    deprecation = import ./lib/deprecation.nix { inherit lib; };
   };
 
 in self

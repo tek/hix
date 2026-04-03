@@ -50,7 +50,9 @@ let
     evaled = libBase.evalModules (finalModules system evaled);
   in evaled.config;
 
-  oneSystem = system: (evalSystem system).output.final;
+  oneSystem = system: let
+    config = evalSystem system;
+  in lib.asserts.checkAssertWarn config.ui.assertions [] config.output.final;
 
   dummySystem = evalSystem "x86_64-linux";
 

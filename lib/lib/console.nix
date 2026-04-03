@@ -213,4 +213,8 @@ in {
 
   inherit (console.s) colors colorsBg;
 
+  indentBy = width: let
+    space = lib.strings.replicate width " ";
+  in map (l: space + l);
+
 }

@@ -51,8 +51,32 @@
   step_eval ghc-overrides
   '';
 
+  deprecatedOptionTests = lib.optionalString (lib.versionAtLeast builtins.nixVersion "2.19") ''
+  cd ../deprecated-option
+
+  describe 'Config evaluation succeeds when deprecation error is disabled'
+  output_ignore
+  step_build
+
+  sed -i '/ui\.warnings/d' flake.nix
+
+  describe 'Config evaluation fails with error message for definition of deprecated option'
+  error_exact "\
+  error:
+  Failed assertions:
+  - The option definition \`hackage.versionFile' in \`flake.nix' no longer has any effect; please remove it.
+    This option is deprecated in favor of 'release.versionFile'.
+    Disable this error by setting 'ui.warnings.keys.\"deprecated.option.hackage.versionFile\" = false;'"
+  exit_code 1
+  preproc_error "strip_indent 7 | nix_error"
+  step_build
+  '';
+
 in {
+  root = false;
   source = ''
+  cd root
+
   ${evalTests}
 
   error_exact "\
@@ -76,6 +100,8 @@ in {
   [35menvs.disabled.enable[0m[31m is set to [34mfalse[0m[31m.[0m"
   exit_code 1
   step_develop_in disabled echo 'do not execute'
+
+  ${deprecatedOptionTests}
   ''
   ;
 }

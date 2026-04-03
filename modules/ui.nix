@@ -30,6 +30,16 @@ in {
 
     };
 
+    ui.assertions = lib.mkOption {
+      description = ''
+      Conditions that must hold for the evaluation of the system configuration to succeed, along with associated error
+      messages for the user.
+      '';
+      type = types.listOf types.unspecified;
+      internal = true;
+      default = [];
+    };
+
     ui.experimental = {
 
       managed-maint = lib.mkOption {

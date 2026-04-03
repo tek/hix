@@ -5,14 +5,9 @@
 
   outputs = {hix, ...}: hix.lib._hix_test {
 
-    release = {
-      check = false;
-    };
+    release.check = false;
 
     hackage = {
-      askVersion = false;
-      confirm = false;
-
       repos = {
 
         "hackage.haskell.org" = {

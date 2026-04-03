@@ -826,7 +826,7 @@ last_match()
 # Extract the Nix error message from `--show-trace` stderr.
 nix_error()
 {
-  last_match '^       error:'
+  last_match '^ *error:'
 }
 
 diagnostics()

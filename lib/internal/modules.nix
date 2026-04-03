@@ -204,7 +204,7 @@
         inherit replacement extra key;
         option = lib.showOption loc;
       } (lib.head defs).value
-      else throw (deprecatedOptionDefined { inherit loc extra; replacement =  definitionReplacement; })
+      else throw (deprecatedOptionDefined { inherit loc extra; replacement = definitionReplacement; })
       ;
   };
 
@@ -220,6 +220,27 @@
     type = deprecated { inherit type key replacement definitionReplacement extra; };
   };
 
+  assertionHandler = path: options: isEnabled: message: let
+    opt = lib.getAttrFromPath path options;
+  in [{
+    assertion = !(isEnabled && opt.isDefined);
+    message = ''
+      The option definition `${lib.showOption path}' in ${lib.showFiles opt.files} no longer has any effect; please remove it.
+      ${message}''
+    ;
+  }];
+
+  deprecatedOptionAssertion = path: args: {options, ...}: let
+    defaults = {
+      desc = "This option";
+      handler = assertionHandler path options;
+      color = false;
+      replacement = null;
+      indent = 2;
+      error = true;
+    };
+  in internal.warn.deprecatedWith (defaults // args // { key = "option.${args.key}"; });
+
 in {
   inherit
   extendsDefault
@@ -230,5 +251,6 @@ in {
   extensibleOption
   resolveExtensibleModule
   deprecatedOption
+  deprecatedOptionAssertion
   ;
 }

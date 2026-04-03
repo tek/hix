@@ -10,18 +10,26 @@
 
   enabled = key: keys.${key} or all;
 
-  warnWith = color: handler: key: message:
-  handler (enabled key) ''
-  ${message}
-  Disable this warning by setting ${colorIf color (lib.pipe [colors.yellow bold]) ''ui.warnings.keys."${key}" = false;''}'';
+  warnWith = {key, message, color, handler ? _: a: a, indent ? 0, error ? false}: let
+    sort = if error then "error" else "warning";
+    code = colorIf color (lib.pipe [colors.yellow bold]) ''ui.warnings.keys."${key}" = false;'';
+    lines = lib.toList message ++ ["Disable this ${sort} by setting ${code}"];
+  in handler (enabled key) (util.unlines (util.indentBy indent lines));
 
-  warnEval = pred: warnWith false (enabled: lib.warnIf (pred && enabled));
+  warnEval = pred: key: message: warnWith {
+    inherit key message;
+    color = false;
+    handler = enabled: lib.warnIf (pred && enabled);
+  };
 
-  deprecatedWith = {handler, key, desc, replacement, color ? true, extra ? null}: let
+  deprecatedWith = {handler, key, desc, replacement, color ? true, extra ? null, indent ? 0, error ? false}: let
     extraAdjusted = lib.optionalString (extra != null) " ${extra}";
     suggestion = if replacement == null then "" else " in favor of ${colorIf color colors.blue replacement}";
+  in warnWith {
+    inherit color handler indent error;
     message = "${desc} is deprecated${suggestion}.${extraAdjusted}";
-  in warnWith color handler "deprecated.${key}" message;
+    key = "deprecated.${key}";
+  };
 
   # TODO does "$(cat ${warning})" cause problems with quotes in the file?
   scriptHandler = exe: isEnabled: message: let
@@ -46,7 +54,7 @@
 
   deprecatedEval = args: deprecatedWith ({ color = false; handler = lib.warnIf; } // args);
 
-  deprecatedOptionReadOnly = { key, option, replacement, extra ? null }:
+  deprecatedOptionReadOnly = {key, option, replacement, extra ? null}:
   deprecatedEval {
     key = "option.${key}";
     desc = "The option '${option}'";

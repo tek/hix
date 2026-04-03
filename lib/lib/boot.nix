@@ -24,6 +24,17 @@ let
 
   evalConfig = modules: (evalModules modules).config;
 
+  deprecatedOption = args0@{path, ...}: moduleArgs@{util, options, config, ...}: let
+
+    inherit (util) internal;
+    args = { key = lib.concatStringsSep "." path; } // lib.removeAttrs args0 ["path"];
+    optionArgs = { type = lib.types.str; replacement = null; } // args;
+
+  in {
+    options = lib.setAttrByPath path (internal.modules.deprecatedOption optionArgs);
+    config.ui.assertions = internal.modules.deprecatedOptionAssertion path args moduleArgs;
+  };
+
 in {
   inherit
   internalScope
@@ -32,5 +43,6 @@ in {
   utilModule
   evalModules
   evalConfig
+  deprecatedOption
   ;
 }

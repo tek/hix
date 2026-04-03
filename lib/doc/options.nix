@@ -1,7 +1,20 @@
-{pkgs}:
+{pkgs, util}:
 with pkgs.lib;
 let
   namePh = "<name>";
+
+  moduleDir = ../../modules;
+
+  # Modules that use deprecation imports need `util` from _module.args.
+  # The deprecation modules set config.ui.assertions, which may not be declared in all standalone evaluations.
+  # `_module.check = false` allows config on undeclared option paths without error.
+  infraModule = {
+    _module.check = false;
+    _module.args = {
+      inherit util;
+      inherit (util) internal project build outputs pkgs;
+    };
+  };
 
   excluded = loc: { type, path, except ? [] }: let
     plen = length path;
@@ -36,14 +49,12 @@ let
 
   json = exclude: options: (optionsDoc exclude options).optionsJSON;
 
-  moduleDir = ../../modules;
-
   nameModule = { _module.args.name = mkOptionDefault namePh; };
 
   importMod = name: import (moduleDir + "/${name}.nix");
 
   modulesWithout = exclude: modules: let
-    result = evalModules { modules = modules ++ [nameModule]; };
+    result = evalModules { modules = modules ++ [nameModule infraModule]; };
   in json exclude result.options;
 
   modules = modulesWithout [];
