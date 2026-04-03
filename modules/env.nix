@@ -593,9 +593,10 @@ in {
     in {
 
       compiler = lib.mkIf (config.compiler != null) (internal.modules.envDefault (
-        if global.compilers ? ${config.compiler}
-        then config.compiler
-        else { source = config.compiler; }
+        let c = config.compiler; in
+        if c != null && global.compilers ? ${c}
+        then c
+        else { source = c; }
       ));
 
       extraOverrides = internal.modules.envDefault (util.concatOverrides overrideSources);

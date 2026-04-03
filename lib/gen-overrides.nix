@@ -5,7 +5,9 @@ let
   pkgs = config.pkgs;
   overridesFile = config.gen-overrides.file;
 
-  drvAttr = pkg: dump: "  ${pkg} = ${toString dump};";
+  pretty = lib.generators.toPretty { allowPrettyValues = true; };
+
+  literal = expr: { __pretty = _: toString expr; val = null; };
 
   genEnv = env: let
     toolchain = build.envs.${env.name}.toolchain;
@@ -16,17 +18,18 @@ let
 
     enable = env.enable && env.package-set.gen-overrides;
 
-    attrs = lib.mapAttrsToList drvAttr (pregen.overrides toolchain.vanilla toolchain.overrides);
-
-    lines = ["${name} = {"] ++ lib.optionals enable attrs ++ ["};"]
-    ;
-  in { inherit name lines; };
+    value = lib.mapAttrs (_: literal) (
+      lib.optionalAttrs enable (pregen.overrides toolchain.vanilla toolchain.overrides)
+    );
+  in {
+    inherit name value;
+  };
 
   envResults = map genEnv (lib.attrValues config.envs);
 
-  uniqueByName = lib.attrValues (lib.listToAttrs (map (r: { name = r.name; value = r; }) envResults));
+  uniqueByName = lib.filterAttrs (_: v: v != {}) (lib.listToAttrs envResults);
 
-  expr = util.unlines (["{"] ++ lib.concatMap (r: r.lines) uniqueByName ++ ["}"]);
+  expr = pretty uniqueByName;
 
   file = pkgs.writeText "overrides.nix" expr;
 
@@ -51,3 +54,4 @@ let
 in {
   inherit file script;
 }
+

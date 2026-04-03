@@ -6,9 +6,13 @@ let
 
   envModule = import ./env.nix { global = config; inherit util; };
 
+  ghcVersionPackageSets = lib.genAttrs config.ghcVersions (compiler: {
+    compiler.extends = lib.mkDefault compiler;
+  });
+
   ghcVersionEnv = compiler: {
     package-set = {
-      name = compiler;
+      extends = compiler;
       compiler = {
         extends = lib.mkDefault compiler;
       };
@@ -56,6 +60,8 @@ in {
   config = {
 
     compilers = ghcVersionCompilers;
+
+    package-sets = ghcVersionPackageSets;
 
     envs = ghcVersionEnvs // internal.managed.env.modules // {
 
