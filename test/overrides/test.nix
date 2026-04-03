@@ -39,67 +39,147 @@ let
   presult = ghc.override { overrides = dep.reify (util.concatOverrides poverrides); };
 
 in {
-  source = ''
-    pushd ../dep
-    step_run gen-overrides
-    popd
+  tests = {
 
-    describe "Version for $(yellow aeson) (single)"
-    output_exact '2.1.2.1'
-    step print ${finalSingle.version}
+    root = {
+      source = ''
+        pushd ../dep
+        step_run gen-overrides
+        popd
 
-    describe "Version for $(yellow aeson) (multi)"
-    output_exact '2.1.2.1'
-    step print ${finalMulti.version}
+        describe "Version for $(yellow aeson) (single)"
+        output_exact '2.1.2.1'
+        step print ${finalSingle.version}
 
-    describe 'Tests enabled for single'
-    output_exact 'true'
-    step print ${builtins.toJSON finalSingle.doCheck}
+        describe "Version for $(yellow aeson) (multi)"
+        output_exact '2.1.2.1'
+        step print ${finalMulti.version}
 
-    describe 'Tests disabled for multi'
-    output_exact 'false'
-    step print ${builtins.toJSON finalMulti.doCheck}
+        describe 'Tests enabled for single'
+        output_exact 'true'
+        step print ${builtins.toJSON finalSingle.doCheck}
 
-    describe 'Rightmost override supersedes previous'
-    output_exact '2.0.1.0'
-    step print ${withOverrides.aeson.version}
+        describe 'Tests disabled for multi'
+        output_exact 'false'
+        step print ${builtins.toJSON finalMulti.doCheck}
 
-    describe 'Options correctly applied'
-    output_exact '2: 3/4'
-    step print ${presult.test}
+        describe 'Rightmost override supersedes previous'
+        output_exact '2.0.1.0'
+        step print ${withOverrides.aeson.version}
 
-    aeson="legacyPackages.${pkgs.system}.env.dev.ghc.aeson"
-    aeson_version="''${aeson}.version"
+        describe 'Options correctly applied'
+        output_exact '2: 3/4'
+        step print ${presult.test}
 
-    describe 'Error message before gen-overrides'
-    error_match "The option 'gen-overrides.enable' is set, but the file 'ops/overrides.nix' doesn't exist."
-    exit_code 1
-    step_eval $aeson_version
+        aeson="legacyPackages.${pkgs.system}.env.dev.ghc.aeson"
+        aeson_version="''${aeson}.version"
 
-    step_run gen-overrides
+        describe 'Error message before gen-overrides'
+        error_match "The option 'gen-overrides.enable' is set, but the file 'ops/overrides.nix' doesn't exist."
+        exit_code 1
+        step_eval $aeson_version
 
-    describe "$(color_path overrides.nix) exists in $(color_path ops/)"
-    output_exact 'overrides.nix'
-    step ls ops
+        step_run gen-overrides
 
-    describe "$(yellow aeson) version after gen-overrides"
-    output_exact '"2.2.2.0"'
-    step_eval $aeson_version
+        describe "$(color_path overrides.nix) exists in $(color_path ops/)"
+        output_exact 'overrides.nix'
+        step ls ops
 
-    describe "$(yellow aeson) revision after gen-overrides"
-    output_exact '"1"'
-    step_eval ''${aeson}.passthru.revision
+        describe "$(yellow aeson) version after gen-overrides"
+        output_exact '"2.2.2.0"'
+        step_eval $aeson_version
 
-    step_build root1
+        describe "$(yellow aeson) revision after gen-overrides"
+        output_exact '"1"'
+        step_eval ''${aeson}.passthru.revision
 
-    error_ignore
-    step_nix flake check
+        step_build root1
 
-    step sed -i 's/2\.2/5.8/' flake.nix
+        error_ignore
+        step_nix flake check
 
-    describe 'Error message after changing overrides'
-    error_match "Please run 'nix run .#gen-overrides' again."
-    exit_code 1
-    step_eval $aeson_version
-  '';
+        step sed -i 's/2\.2/5.8/' flake.nix
+
+        describe 'Error message after changing overrides'
+        error_match "Please run 'nix run .#gen-overrides' again."
+        exit_code 1
+        step_eval $aeson_version
+      '';
+    };
+
+    ps-env = {
+      source = ''
+        step_run gen-overrides
+
+        test_some() {
+          echo "legacyPackages.${pkgs.system}.env.$1.ghc.some"
+        }
+
+        # test1: PS=decl, extra=transform
+        test1=$(test_some test1)
+
+        describe 'test1 (PS=decl, extra=transform): hackage version'
+        output_exact '"1.0.5"'
+        step_eval ''${test1}.version
+
+        describe 'test1 (PS=decl, extra=transform): notest applied'
+        output_exact 'false'
+        step_eval ''${test1}.doCheck
+
+        # test2: PS=transform, extra=decl
+        # Standard compile semantics: extra's decl terminates compilation, PS's transform is lost
+        test2=$(test_some test2)
+
+        describe 'test2 (PS=transform, extra=decl): hackage version'
+        output_exact '"1.0.5"'
+        step_eval ''${test2}.version
+
+        describe 'test2 (PS=transform, extra=decl): notest not applied (decl terminates)'
+        output_exact 'true'
+        step_eval ''${test2}.doCheck
+
+        # test3: PS=decl+transform, extra=decl — extra's decl terminates, PS decl+transform lost
+        test3=$(test_some test3)
+
+        describe 'test3 (PS=decl+transform, extra=decl): hackage version'
+        output_exact '"1.0.5"'
+        step_eval ''${test3}.version
+
+        describe 'test3 (PS=decl+transform, extra=decl): PS notest lost (decl terminates)'
+        output_exact 'true'
+        step_eval ''${test3}.doCheck
+
+        # test4: PS=transform, extra=transform — both applied, falls back to super
+        test4=$(test_some test4)
+
+        describe 'test4 (PS=transform, extra=transform): notest applied'
+        output_exact 'false'
+        step_eval ''${test4}.doCheck
+
+        # test5: PS=decl, extra=nothing — PS decl used as-is
+        test5=$(test_some test5)
+
+        describe 'test5 (PS=decl, extra=nothing): hackage version'
+        output_exact '"1.0.5"'
+        step_eval ''${test5}.version
+
+        describe 'test5 (PS=decl, extra=nothing): doCheck unmodified'
+        output_exact 'true'
+        step_eval ''${test5}.doCheck
+
+        # test6: ghcVersion env (ghc910), PS=decl, extra=nothing — PS decl propagated via extends
+        test6=$(test_some ghc910)
+
+        describe 'test6 (ghc910 PS=decl, extra=nothing): hackage version'
+        output_exact '"1.0.5"'
+        step_eval ''${test6}.version
+
+        describe 'test6 (ghc910 PS=decl, extra=nothing): doCheck unmodified'
+        output_exact 'true'
+        step_eval ''${test6}.doCheck
+      '';
+    };
+
+  };
 }
+

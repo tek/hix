@@ -21,7 +21,14 @@
 
     exists = lib.pathExists path;
     pregen = lib.optionalAttrs exists (import path);
-    stored = lib.optionalAttrs exists (pregen.${name} or {});
+    protocol = pregen._meta.protocol or "1";
+
+    raw = lib.optionalAttrs exists (pregen.${name} or {});
+
+    stored =
+      if protocol == "2"
+      then (raw.overrides or {}) // (raw.extraOverrides or {})
+      else raw;
 
     error =
       if exists
