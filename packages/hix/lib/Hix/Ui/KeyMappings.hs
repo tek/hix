@@ -1,7 +1,10 @@
 module Hix.Ui.KeyMappings where
 
-import Brick (Padding (..), Widget, hLimit, padLeft, txt, vBox, withAttr, (<+>))
+import Brick (Padding (..), Widget, hLimit, padLeft, render, txt, vBox, withAttr, (<+>))
 import Brick.Keybindings (KeyConfig, KeyEventHandler, firstDefaultBinding, keybindingHelpWidget, ppBinding)
+import Brick.Types (Result (..), Size (..))
+import Brick.Types qualified as Brick
+import Graphics.Vty.Image (imageHeight)
 import qualified Data.Text as Text
 
 import Hix.Ui.Data.Attr (helpDescAttr, helpKeyAttr)
@@ -42,23 +45,30 @@ renderKeyMappings mappings =
         padding = maxSize - size
 
 -- | Create a layout with main content and key mappings in the lower right corner.
--- The mappings are pushed to the bottom by padding with empty lines based on content height.
+-- The mappings are pushed to the bottom by padding with empty lines.
+--
+-- Uses Brick's rendering internals to measure the content height and align the mappings
+-- to the bottom-right corner without relying on extent tracking.
 --
 -- The content rendering function must ensure that it doesn't include very long lines, otherwise the mappings will be
 -- pushed out of the rendering area.
 withKeyMappings ::
-  -- | Number of lines in the content
-  Int ->
   Widget n ->
   [KeyMapping] ->
   Widget n
-withKeyMappings contentHeight content mappings =
-  content <+> hLimit mappingsSize (vBox (padding ++ [mappingsWidget]))
+withKeyMappings content mappings =
+  content <+> hLimit mappingsSize (alignBottom mappingsWidget)
   where
     (mappingsSize, mappingsWidget) = renderKeyMappings mappings
-    mappingsHeight = length mappings
-    paddingLines = max 0 (contentHeight - mappingsHeight)
-    padding = replicate paddingLines (txt " ")
+
+    alignBottom w =
+      Brick.Widget Fixed Fixed $ do
+        contentResult <- render content
+        let contentHeight = imageHeight contentResult.image
+            mappingsHeight = length mappings
+            paddingLines = max 0 (contentHeight - mappingsHeight)
+            padding = replicate paddingLines (txt " ")
+        render (vBox (padding ++ [w]))
 
 -- | Convert a Brick 'KeyConfig' to 'KeyMappings' for display.
 keyMappingsFromConfig ::
@@ -92,11 +102,9 @@ withHelpScreen ::
   HelpConfig e m ->
   -- | Whether to show the help screen
   Bool ->
-  -- | Number of lines in the content (for positioning mappings)
-  Int ->
   -- | Main content widget
   Widget n ->
   Widget n
-withHelpScreen HelpConfig {..} showingHelp contentHeight content
+withHelpScreen HelpConfig {..} showingHelp content
   | showingHelp = keybindingHelpWidget keyConfig helpHandlers
-  | otherwise = withKeyMappings contentHeight content (keyMappingsFromConfig keyConfig helpEvents)
+  | otherwise = withKeyMappings content (keyMappingsFromConfig keyConfig helpEvents)

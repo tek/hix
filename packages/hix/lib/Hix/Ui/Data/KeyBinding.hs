@@ -46,7 +46,6 @@ data AppState ctx =
   AppState {
     context :: ctx,
     showingHelp :: Bool,
-    contentHeight :: Int,
     quit :: Bool
   }
   deriving stock (Eq, Show, Generic, Functor, Foldable, Traversable)

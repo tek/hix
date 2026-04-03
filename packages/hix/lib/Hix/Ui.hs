@@ -1,5 +1,5 @@
 module Hix.Ui (
-  UiName (..),
+  UiName,
   ScreenConfig (..),
   runScreen,
   runScreenWithHelp,
@@ -17,19 +17,15 @@ import Brick (
   attrName,
   hBox,
   halt,
-  lookupExtent,
-  modify,
   nestEventM',
   padRight,
-  reportExtent,
   txt,
   vBox,
   withAttr,
   )
 import Brick.Keybindings (KeyConfig)
-import Brick.Types (Extent (..))
 import Brick.Widgets.Border (border)
-import Control.Lens (use, (%=), (.=), (.~))
+import Control.Lens (use, (%=), (.=))
 import Exon (exon)
 
 import Hix.Data.Monad (AppResources (..), M, appRes)
@@ -61,7 +57,7 @@ runBrickApp s app debug = do
   run (maybe id brickAppDebug debug app) ((.input) <$> debug) s
 
 -- | Resource name for extent tracking
-data UiName = ContentExtent
+data UiName
   deriving stock (Eq, Ord, Show)
 
 noCursor :: s -> [CursorLocation n] -> Maybe (CursorLocation n)
@@ -184,28 +180,19 @@ runScreenWithHelp ::
   M (Maybe a)
 runScreenWithHelp ScreenConfig {name, help, instructions, handlerSpecs, render, startEvent, debug, initialContext} = do
   dispatcher <- either bindingConflict pure (makeKeyDispatcher help.keyConfig appHandlerSpecs)
-  result <- runUiApp renderWithHelp appStartEvent (handleEventWithExtent dispatcher) debug initialState
+  result <- runUiApp renderWithHelp appStartEvent (handleEvent dispatcher) debug initialState
   pure if result.quit then Nothing else Just result.context.state
   where
-    initialState = AppState {context = initialContext, showingHelp = False, contentHeight = 0, quit = False}
+    initialState = AppState {context = initialContext, showingHelp = False, quit = False}
 
     appHandlerSpecs = handlers handlerSpecs
 
     appStartEvent = liftAction startEvent
 
     renderWithHelp appState =
-      withHelpScreen help appState.showingHelp appState.contentHeight $
-      reportExtent ContentExtent $
+      withHelpScreen help appState.showingHelp $
       vBox [headline (instructions screenState), emptyCell, render screenState]
       where
         screenState = appState.context.state
-
-    handleEventWithExtent dispatcher ev = do
-      handleEvent dispatcher ev
-      updateContentHeight
-
-    updateContentHeight = do
-      lookupExtent ContentExtent >>= traverse_ \ Extent {extentSize = (_, height)} ->
-        modify (#contentHeight .~ height)
 
     bindingConflict _ = clientError [exon|Key binding conflict in #{name} UI|]
