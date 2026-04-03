@@ -1,5 +1,6 @@
 module Hix.Integration.ReleaseFlowTest where
 
+import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async.Lifted (withAsync)
 import Data.Text qualified as Text
 import Exon (exon)
@@ -10,7 +11,7 @@ import Path (reldir)
 
 import Hix.Data.Monad (M)
 import Hix.Data.VersionBounds (Bound (BoundUpper))
-import Hix.Integration.Pty (TmuxTest, assertTmuxTail, tmuxLiftM, tmuxTest)
+import Hix.Integration.Pty (TmuxTest, assertTmuxTail, capturePlain, tmuxLiftM, tmuxTest)
 import Hix.Managed.Cabal.ContextHackageRepo (unsafeCentralHackageContextFixed)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageDescription (..))
 import Hix.Managed.Data.EnvConfig (EnvConfig (..))
@@ -398,3 +399,53 @@ versionChangeSteps =
 test_releaseFlowVersionChange :: TestT IO ()
 test_releaseFlowVersionChange =
   tmuxTest True 10 (releaseFlowTest versionChangeSteps)
+
+-- | Poll the tmux pane for up to @maxAttempts@ iterations, checking that the tail matches @target@.
+-- On each iteration, captures the pane and checks if the expected lines match the tail of the actual lines.
+-- Retries after a short delay if the pane is empty or doesn't match yet.
+-- After exhausting retries, performs a hard 'assertTmuxTail' to produce a proper Hedgehog failure.
+pollAssertTmuxTail ::
+  -- | Maximum number of poll iterations (each ~10ms)
+  Word ->
+  Text ->
+  TmuxTest M ()
+pollAssertTmuxTail maxAttempts target =
+  go 0
+  where
+    targetLines = Text.lines (Text.stripEnd target)
+    targetLen = length targetLines
+
+    go count = do
+      actual <- capturePlain
+      let
+        actualLines = filter (not . Text.null) (Text.lines actual)
+        matched = targetLines == drop (length actualLines - targetLen) actualLines
+      if matched
+      then unit
+      else if count >= maxAttempts
+      then assertTmuxTail False target
+      else do
+        liftIO (threadDelay 10_000)
+        go (count + 1)
+
+-- | Reproduce the help corner position bug: on initial render, the key mappings
+-- corner appears in the upper right instead of the lower right because 'contentHeight'
+-- starts at 0 and is only updated after the first event.
+--
+-- This test starts the release flow, waits for the Brick app to start, but does NOT
+-- send a sync key (unlike 'runStep'), so 'updateContentHeight' is never called.
+-- The assertion expects the correct layout ('versionBox') which should fail if the
+-- corner is mispositioned.
+releaseFlowInitialRenderTest :: TmuxTest M ()
+releaseFlowInitialRenderTest = do
+  debug <- tmuxLiftM brickDebug
+  handlers <- tmuxLiftM (handlersFlowTest defaultTestConfig debug)
+  withAsync (tmuxLiftM (void (release handlers flowTestConfig flowTestContext))) \ _ -> do
+    tmuxLiftM (waitForApp debug)
+    -- Do NOT call syncRender here — that would trigger updateContentHeight and mask the bug.
+    -- Poll for up to 3 seconds (300 iterations * 10ms).
+    pollAssertTmuxTail 300 versionBox
+
+test_releaseFlowInitialRender :: TestT IO ()
+test_releaseFlowInitialRender =
+  tmuxTest True 10 releaseFlowInitialRenderTest
