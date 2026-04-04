@@ -45,7 +45,8 @@ chooseDistTargetsNe debug checksPassed packages = do
       render,
       startEvent = unit,
       debug,
-      initialContext = uiDistTargets checksPassed packages
+      initialContext = uiDistTargets checksPassed packages,
+      screenLog = "Completed distribution target selection"
     }
 
 chooseDistTargets ::

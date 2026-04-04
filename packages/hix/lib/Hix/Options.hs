@@ -509,6 +509,7 @@ releaseConfigParser = do
   check <- switch (long "check" <> help "Run flake checks before uploading")
   merge <- switch (long "merge" <> help "Merge the release branch back into the initial branch after successful uploads")
   globalCabalConfig <- switch (long "global-cabal-config" <> help "Use the global Cabal config for Hackage servers in addition to the flake config")
+  persistentUi <- switch (long "persistent-ui" <> help "Keep interactive UI screens visible on the terminal after completion")
   pure ReleaseConfig {candidates = selectCandidates publish candidatesSpec, ..}
   where
     versionHelp = "New version or increment (super|major|minor|patch)"

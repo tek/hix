@@ -34,7 +34,8 @@ data AppResources =
     target :: OutputTarget,
     theme :: Theme,
     tui :: TuiHandlers M,
-    context :: [AppContext]
+    context :: [AppContext],
+    persistentUi :: Bool
   }
   deriving stock (Generic)
 

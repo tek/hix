@@ -2,11 +2,19 @@ module Hix.Terminal.State where
 
 import Control.Monad.Catch (bracket)
 import Data.IORef (IORef, newIORef, readIORef)
-import System.Console.ANSI (hHideCursor, hSaveCursor, hSetCursorColumn, hSetCursorPosition, hShowCursor)
+import System.Console.ANSI (
+  hClearLine,
+  hCursorDown,
+  hHideCursor,
+  hSaveCursor,
+  hSetCursorColumn,
+  hSetCursorPosition,
+  hShowCursor,
+  )
 import System.IO (BufferMode (..), Handle, hFlush, hGetBuffering, hPutStr, hSetBuffering, hSetEcho, stdin)
 import System.Posix (Fd)
 
-import Hix.Data.Monad (M)
+import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Error (ignoringIOErrors)
 import Hix.Monad (appContextVerboseIO)
 import Hix.Terminal.Geometry (runRender, terminalGeometry)
@@ -58,37 +66,56 @@ hInitializeTerminal tuiState = do
   stateRef <- newOutputState tuiState
   pure (bufMode, stateRef)
 
--- | After a Brick app exits, move the cursor below the rendered area so subsequent output
--- (log messages, next UI) doesn't overwrite the previous content.
-repositionCursor :: Handle -> IORef OutputState -> IO ()
-repositionCursor hOut stateRef = do
+-- | After a Brick app exits, reposition the cursor.
+--
+-- When @persistent@ is 'True', move below the rendered area so subsequent output doesn't
+-- overwrite the previous content.
+--
+-- When @persistent@ is 'False', move back to the first line of the rendered area and clear
+-- the lines so the next output starts where the UI was.
+repositionCursor :: Bool -> Handle -> IORef OutputState -> IO ()
+repositionCursor persistent hOut stateRef = do
   OutputState {firstLine, lastRenderHeight} <- readIORef stateRef
   when (lastRenderHeight > 0) do
-    -- Move to the last rendered line and emit a newline.
-    -- This works even when the cursor is at the bottom of the terminal,
-    -- where hSetCursorPosition would be clamped and fail to advance.
-    let lastLine = firstLine + lastRenderHeight - 1
-    hSetCursorPosition hOut lastLine 0
-    hPutStr hOut "\n"
-    hFlush hOut
+    if persistent
+    then do
+      -- Move to the last rendered line and emit a newline.
+      -- This works even when the cursor is at the bottom of the terminal,
+      -- where hSetCursorPosition would be clamped and fail to advance.
+      let lastLine = firstLine + lastRenderHeight - 1
+      hSetCursorPosition hOut lastLine 0
+      hPutStr hOut "\n"
+      hFlush hOut
+    else do
+      -- Move back to the first line and clear the rendered area.
+      hSetCursorPosition hOut firstLine 0
+      replicateM_ lastRenderHeight do
+        hClearLine hOut
+        hCursorDown hOut 1
+      hSetCursorPosition hOut firstLine 0
+      hFlush hOut
 
 hResetTerminal ::
+  Bool ->
   IORef VtyTuiResources ->
   (BufferMode, IORef OutputState) ->
   IO ()
-hResetTerminal tuiState (hInMode, stateRef) = do
+hResetTerminal persistent tuiState (hInMode, stateRef) = do
   VtyTuiResources {hIn, hOut} <- readIORef tuiState
-  ignoringIOErrors $ repositionCursor hOut stateRef
-  ignoringIOErrors $ hShowCursor hOut
-  ignoringIOErrors $ hFlush hOut
-  ignoringIOErrors $ hSetEcho hIn True
-  ignoringIOErrors $ hSetBuffering hIn hInMode
+  traverse_ @[] ignoringIOErrors [
+    repositionCursor persistent hOut stateRef,
+    hShowCursor hOut,
+    hFlush hOut,
+    hSetEcho hIn True,
+    hSetBuffering hIn hInMode
+    ]
 
 bracketTerminal ::
   IORef VtyTuiResources ->
   (IORef OutputState -> IO a) ->
   M a
-bracketTerminal tuiState use =
+bracketTerminal tuiState use = do
+  persistent <- appRes.persistentUi
   appContextVerboseIO "running brick app" do
-    bracket (hInitializeTerminal tuiState) (hResetTerminal tuiState) \ (_, stateRef) ->
+    bracket (hInitializeTerminal tuiState) (hResetTerminal persistent tuiState) \ (_, stateRef) ->
       use stateRef

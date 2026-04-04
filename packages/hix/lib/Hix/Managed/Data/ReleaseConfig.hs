@@ -64,7 +64,10 @@ data ReleaseConfig =
     merge :: Bool,
     -- | Use the global Cabal configuration file instead of hermetic @/dev/null@.
     --   This allows using credentials configured in @~\/.cabal\/config@ but sacrifices reproducibility.
-    globalCabalConfig :: Bool
+    globalCabalConfig :: Bool,
+    -- | Keep the Brick UI screens rendered on the terminal after they are completed.
+    --   When 'False' (default), the cursor is reset to overwrite the UI and a log message is printed instead.
+    persistentUi :: Bool
   }
   deriving stock (Eq, Show)
 
@@ -85,5 +88,6 @@ instance Default ReleaseConfig where
       forceVersion = False,
       check = False,
       merge = False,
-      globalCabalConfig = False
+      globalCabalConfig = False,
+      persistentUi = False
     }

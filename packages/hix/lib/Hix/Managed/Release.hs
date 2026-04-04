@@ -4,6 +4,7 @@ import Exon (exon)
 import Path (Abs, File, Path)
 
 import Hix.Class.Map (nMap, nNull, nSize)
+import qualified Hix.Data.Monad as AppResources
 import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Data.Options (ReleaseOptions (..))
 import Hix.Data.PackageName (LocalPackage)
@@ -36,7 +37,7 @@ import qualified Hix.Managed.Release.Report as Report
 import Hix.Managed.Release.Staged (ReleaseStage (..))
 import Hix.Managed.Release.StateVersions (updateStateVersions)
 import Hix.Managed.Release.Validation (ProblematicVersion, findProblematicVersions, validateVersionsBatch)
-import Hix.Monad (appContext, ask, clientError)
+import Hix.Monad (appContext, ask, clientError, local)
 import Hix.Pretty (showP)
 
 -- | Handle post-upload activities: execute hooks and commit git changes.
@@ -185,6 +186,7 @@ releaseCli options = do
   context <- jsonOrQueryProd ContextRelease options.context
   cabal <- cabalConfig context.hackage options.cabal
   handlers <- Release.handlersProd options cabal
-  release handlers options.config context >>= \case
-    ReleaseStage {state = ReleaseState {termination = Termination _}} -> clientError "Release failed."
-    _ -> unit
+  local (\ res -> res {AppResources.persistentUi = options.config.persistentUi}) do
+    release handlers options.config context >>= \case
+      ReleaseStage {state = ReleaseState {termination = Termination _}} -> clientError "Release failed."
+      _ -> unit
