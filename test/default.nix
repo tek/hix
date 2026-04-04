@@ -98,7 +98,7 @@ let
 
   tests = tests-basic-1 // tests-basic-2 // tests-basic-3 // tests-vm // tests-managed // tests-examples;
 
-  tests-framework = testsNamed ["framework-step"];
+  tests-framework = testsNamed ["framework-step" "multi-script"];
 
   tests-debug = testsNamed ["debug"];
 

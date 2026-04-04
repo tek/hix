@@ -253,13 +253,15 @@ let
     path = [];
     # Run `nix flake update` in all subdirectories that contain a `flake.nix`.
     updateLock = true;
-    # Change the working directory to `./root` before starting the test, if it exists.
+    # Directory name of the flake associated with the case, if any.
+    flakeDir = "root";
+    # Change the working directory to `flakeDir` before starting the test, if it exists.
     root = true;
-    # Initialize a git repo and create a commit, most likely in `./root` due to the above flag.
+    # Initialize a git repo and create a commit, most likely in `flakeDir` due to the above flag.
     git = false;
     # Run `.#gen-cabal-quiet` before starting the test, but after initializing the git repo.
     genCabal = false;
-    # Create a minimal project in `./root`.
+    # Create a minimal project in `flakeDir`.
     project = false;
   };
 
@@ -302,17 +304,17 @@ let
   main = putStrLn "success"
   '';
 
-  createProject = ''
-  mkdir -p ./root/app
-  cp ${projectFlake} ./root/flake.nix
-  sed -i "s#HIX#$hix_dir#" ./root/flake.nix
-  cp ${projectMain} ./root/app/Main.hs
+  createProject = dir: ''
+  mkdir -p ./${dir}/app
+  cp ${projectFlake} ./${dir}/flake.nix
+  sed -i "s#HIX#$hix_dir#" ./${dir}/flake.nix
+  cp ${projectMain} ./${dir}/app/Main.hs
   '';
 
-  cdRoot = ''
-  if [[ -d ./root ]]
+  cdFlake = dir: ''
+  if [[ -d ./${dir} ]]
   then
-    cd root
+    cd ${dir}
   fi
   '';
 
@@ -328,11 +330,11 @@ let
   '';
 
   casePreamble = conf:
-  lib.optional conf.project createProject
+  lib.optional conf.project (createProject conf.flakeDir)
   ++
   lib.optional conf.updateLock updateLock
   ++
-  lib.optional conf.root cdRoot
+  lib.optional conf.root (cdFlake conf.flakeDir)
   ++
   lib.optional conf.git gitInit
   ++
@@ -346,11 +348,27 @@ let
     test = conf.source or "source ${conf.test}";
   in pkgs.writeText "hix-test-${name}" (util.unlines (path ++ casePreamble conf ++ [test]));
 
+  # For a multi-case test, create a wrapper script that runs all cases sequentially.
+  writeCases = testName: defaults: subtests: let
+    scripts = lib.mapAttrsToList (caseName: caseConf:
+      writeCase "${testName}-${caseName}" (defaults // caseConf // { flakeDir = caseName; })
+    ) subtests;
+    wrapperBody = lib.concatMapStringsSep "\n" (script: ''
+      cd "$work_dir"
+      ${testWrapper} $test_base ${script}
+    '') scripts;
+  in pkgs.writeText "hix-test-${testName}" wrapperBody;
+
+  writeTest = name: conf:
+    if conf ? tests
+    then writeCases name (builtins.removeAttrs conf ["tests"]) conf.tests
+    else writeCase name conf;
+
   suite = conf: {
     script = ''
     ${preamble}
     ${runtest}
-    ${defineTargets (lib.mapAttrs writeCase conf)}
+    ${defineTargets (lib.mapAttrs writeTest conf)}
     ${main}
     '';
   };
