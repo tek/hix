@@ -1,7 +1,7 @@
 {lib, config, util, ...}:
 let
   inherit (lib) types mkOption;
-  inherit (util) build internal;
+  inherit (util) build internal project;
 
 in {
   options = {
@@ -49,7 +49,7 @@ in {
       scriptQuiet = internal.hpack.gen { verbose = false; };
 
       internal.packages =
-        if config.managed.enable
+        if project.managedBounds
         then build.hpack.packagesWithManaged
         else build.hpack.packages
         ;
