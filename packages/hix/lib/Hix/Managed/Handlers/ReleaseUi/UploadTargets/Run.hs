@@ -1,5 +1,7 @@
 module Hix.Managed.Handlers.ReleaseUi.UploadTargets.Run where
 
+import Exon (exon)
+
 import Hix.Class.Map (nList)
 import Hix.Data.Monad (M)
 import Hix.Data.PackageName (LocalPackage)
@@ -47,7 +49,8 @@ chooseUploadTargetsNe debug stage packages = do
       render,
       startEvent = unit,
       debug,
-      initialContext = uiUploadTargets stage packages
+      initialContext = uiUploadTargets stage packages,
+      screenLog = [exon|Completed #{showP stage} target selection|]
     }
 
 chooseUploadTargets ::

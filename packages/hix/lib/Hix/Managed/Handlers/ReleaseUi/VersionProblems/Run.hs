@@ -38,5 +38,6 @@ chooseVersionProblems debug problems = do
       render,
       startEvent = unit,
       debug,
-      initialContext = uiVersionProblems problems
+      initialContext = uiVersionProblems problems,
+      screenLog = "Completed version problem review"
     }

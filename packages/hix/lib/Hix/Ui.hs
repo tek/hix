@@ -30,6 +30,7 @@ import Exon (exon)
 
 import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Handlers.Tui (RunBrick (..), TuiHandlers (..))
+import qualified Hix.Log as Log
 import Hix.Monad (clientError)
 import Hix.Ui.Data.Attr (defaultAttrMap)
 import Hix.Ui.Data.KeyBinding (
@@ -130,7 +131,9 @@ data ScreenConfig e m a r t =
     render :: a -> Widget UiName,
     startEvent :: EventM UiName (NavContext a r t) (),
     debug :: Maybe BrickDebug,
-    initialContext :: NavContext a r t
+    initialContext :: NavContext a r t,
+    -- | Log message to emit after the screen completes when the UI is non-persistent.
+    screenLog :: Text
   }
 
 -- Common navigation actions, generic for all screens.
@@ -178,9 +181,11 @@ runScreenWithHelp ::
   Show (UiKeyEvent e) =>
   ScreenConfig (UiKeyEvent e) m a r t ->
   M (Maybe a)
-runScreenWithHelp ScreenConfig {name, help, instructions, handlerSpecs, render, startEvent, debug, initialContext} = do
+runScreenWithHelp ScreenConfig {name, help, instructions, handlerSpecs, render, startEvent, debug, initialContext, screenLog} = do
   dispatcher <- either bindingConflict pure (makeKeyDispatcher help.keyConfig appHandlerSpecs)
   result <- runUiApp renderWithHelp appStartEvent (handleEvent dispatcher) debug initialState
+  unlessM (appRes.persistentUi) do
+    Log.info screenLog
   pure if result.quit then Nothing else Just result.context.state
   where
     initialState = AppState {context = initialContext, showingHelp = False, quit = False}

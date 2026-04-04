@@ -35,6 +35,7 @@ runMTuiWith tui GlobalOptions {..} ma =
         context = [],
         cwd = resolvedCwd,
         root = resolvedRoot,
+        persistentUi = True,
         ..
       }
     ExceptT (runMUsing resources ma)

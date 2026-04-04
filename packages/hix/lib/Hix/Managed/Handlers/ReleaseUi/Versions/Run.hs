@@ -41,5 +41,6 @@ chooseVersions debug sharedVersion targets = do
       render,
       startEvent = unit,
       debug,
-      initialContext = uiVersions sharedVersion targets
+      initialContext = uiVersions sharedVersion targets,
+      screenLog = "Completed version selection"
     }
