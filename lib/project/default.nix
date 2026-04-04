@@ -18,4 +18,6 @@ in {
     ;
 
   packages = import ./packages.nix { inherit util; };
+
+  managedBounds = config.managed.enable && (config.managed.latest.enable || config.managed.lower.enable);
 }
