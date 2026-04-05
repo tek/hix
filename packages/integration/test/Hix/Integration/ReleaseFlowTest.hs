@@ -449,3 +449,55 @@ releaseFlowInitialRenderTest = do
 test_releaseFlowInitialRender :: TestT IO ()
 test_releaseFlowInitialRender =
   tmuxTest True 10 releaseFlowInitialRenderTest
+
+-- | Context proto with packages at the same version and no --version flag.
+-- This should default to shared mode in the UI.
+sharedDefaultContext :: ReleaseContextProto
+sharedDefaultContext =
+  ReleaseContextProto {
+    packages = [
+      ("local1", ReleasePackage {name = "local1", version = [0, 5, 0, 0], path = [reldir|local1|]}),
+      ("local2", ReleasePackage {name = "local2", version = [0, 5, 0, 0], path = [reldir|local2|]})
+    ],
+    hackage = [unsafeCentralHackageContextFixed],
+    hooks = [],
+    commitExtraArgs = [],
+    tagExtraArgs = [],
+    managed = True
+  }
+
+sharedDefaultConfig :: ReleaseConfig
+sharedDefaultConfig =
+  def {
+    publish = bothArtifacts,
+    targets = Just ["local1", "local2"],
+    version = Nothing,
+    interactive = True
+  }
+
+sharedDefaultVersionBox :: Text
+sharedDefaultVersionBox =
+  [exon|┌──────────────────────────────────┐
+│██ Choose release versions        │
+│                                  │
+│● All packages 0.5.0.0      bump b│
+│                          shared s│
+│○ local1       0.5.0.0      quit q│
+│○ local2       0.5.0.0      help ?│
+└──────────────────────────────────┘
+|]
+
+sharedDefaultFlowTest :: TmuxTest M ()
+sharedDefaultFlowTest = do
+  debug <- tmuxLiftM brickDebug
+  handlers <- tmuxLiftM (handlersFlowTest defaultTestConfig debug)
+  withAsync (tmuxLiftM (void (release handlers sharedDefaultConfig sharedDefaultContext))) \ _ -> do
+    runStep debug FlowStep {
+      label = "version-selection (shared default)",
+      expected = sharedDefaultVersionBox,
+      keys = [KEnter]
+    }
+
+test_releaseFlowSharedDefault :: TestT IO ()
+test_releaseFlowSharedDefault =
+  tmuxTest True 10 sharedDefaultFlowTest
