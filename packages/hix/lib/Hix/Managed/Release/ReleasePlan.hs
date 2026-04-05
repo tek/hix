@@ -4,7 +4,7 @@ import Data.List.Extra (nubOrd)
 import qualified Data.Set as Set
 import Exon (exon)
 
-import Hix.Class.Map (nDelete, nFromList, nInsert, nMap, nNull, nTo, nViaA, (!?))
+import Hix.Class.Map (nDelete, nFromList, nInsert, nMap, nNull, nTo, (!?))
 import qualified Hix.Color as Color
 import Hix.Data.Monad (M)
 import Hix.Data.PackageName (LocalPackage (..))
@@ -13,7 +13,7 @@ import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..), ReleaseVersion (..))
 import Hix.Managed.Data.ReleaseContext (ReleaseContext (..), ReleasePackage (..))
 import Hix.Managed.Release.Data.ReleasePlan (ConfiguredTarget (..))
-import Hix.Managed.Release.Data.SelectedVersion (SelectedVersion, explicitVersion, keepVersion)
+import Hix.Managed.Release.Data.SelectedVersion (SelectedVersion, explicitVersion, implicitVersion, keepVersion)
 import Hix.Managed.Release.Data.TargetSpec (TargetSpec (..), targetSpecName, targetSpecVersion)
 import Hix.Managed.Report (plural)
 import Hix.Managed.VersionIncrement (incrementVersion)
@@ -30,7 +30,7 @@ data RestrictedTargets =
   RestrictedTargets {
     selected :: Packages ReleasePackage,
     excluded :: Packages ReleasePackage,
-    explicitVersions :: Map LocalPackage Version
+    explicitVersions :: Packages Version
   }
 
 restrictTargets ::
@@ -56,11 +56,11 @@ restrictTargets specified packages =
 
     err unknown = [exon|Unknown package#{plural (length unknown)}: #{showPL unknown}|]
 
-updateVersion :: Version -> ReleaseVersion -> M SelectedVersion
+updateVersion :: Version -> ReleaseVersion -> SelectedVersion
 updateVersion current = \case
-  ConcreteVersion new -> pure (explicitVersion new)
-  KeepVersion -> pure (keepVersion current)
-  VersionIncrement inc -> pure (explicitVersion (incrementVersion current inc))
+  ConcreteVersion new -> explicitVersion new
+  KeepVersion -> keepVersion current
+  VersionIncrement inc -> explicitVersion (incrementVersion current inc)
 
 currentSharedVersion :: Packages ReleasePackage -> Maybe Version
 currentSharedVersion packages =
@@ -72,22 +72,37 @@ currentSharedVersion packages =
 -- Priority: explicit version from --package > shared version from --version > increment from --version > keep current
 configuredTarget ::
   ReleaseConfig ->
-  Map LocalPackage Version ->
+  Packages Version ->
   Maybe SelectedVersion ->
   ReleasePackage ->
-  M ConfiguredTarget
+  ConfiguredTarget
 configuredTarget config explicitVersions sharedVersion ReleasePackage {name, version = current} =
-  appContext [exon|computing new version for ##{name}|] do
-    version <- case explicitVersions !? name of
-      Just v -> pure (Just (explicitVersion v))
-      Nothing -> case sharedVersion of
-        Just sv -> pure (Just sv)
-        Nothing -> traverse (updateVersion current) config.version
-    pure ConfiguredTarget {current, version, selected = True}
+  ConfiguredTarget {current, version, selected = True}
+  where
+    version =
+      (explicitVersion <$> explicitVersions !? name)
+      <|>
+      sharedVersion
+      <|>
+      (updateVersion current <$> config.version)
 
 excludedTarget :: ReleasePackage -> ConfiguredTarget
 excludedTarget ReleasePackage {version} =
   ConfiguredTarget {current = version, version = Nothing, selected = False}
+
+-- | Determine the shared version for a release, guarded on there being no explicit per-package versions.
+-- When @--version@ is given, applies it to the shared current version.
+-- When @--version@ is absent, falls back to an implicit shared version (the current version) so the UI
+-- can default to shared mode.
+-- Returns @Nothing@ when per-package explicit versions exist, since there is no single shared version.
+createSharedVersion :: ReleaseConfig -> Packages Version -> Packages ReleasePackage -> Maybe SelectedVersion
+createSharedVersion config explicitVersions selected =
+  if nNull explicitVersions
+  then explicit <|> implicit
+  else Nothing
+  where
+    implicit = implicitVersion <$> currentSharedVersion selected
+    explicit = updateVersion <$> currentSharedVersion selected <*> config.version
 
 configuredReleaseVersions ::
   ReleaseContext ->
@@ -96,14 +111,8 @@ configuredReleaseVersions ::
 configuredReleaseVersions ReleaseContext {packages} config =
   appContext "determining release versions from config" do
     RestrictedTargets {selected, excluded, explicitVersions} <- maybe allTargets restrictTargets config.targets packages
-    -- Only use --version as shared version if no --package args have explicit versions.
-    -- Otherwise, --version is used only as fallback for --package args without versions.
-    sharedVersion <-
-      if nNull explicitVersions
-      then appContext "computing new version for all packages" do
-        sequence (updateVersion <$> currentSharedVersion selected <*> config.version)
-      else pure Nothing
-    targets <- nViaA (traverse (configuredTarget config explicitVersions sharedVersion)) selected
+    let sharedVersion = createSharedVersion config explicitVersions selected
+        targets = nMap (configuredTarget config explicitVersions sharedVersion) selected
     pure (sharedVersion, nMap excludedTarget excluded <> targets)
   where
     allTargets pkgs = pure RestrictedTargets {selected = pkgs, excluded = [], explicitVersions = []}
