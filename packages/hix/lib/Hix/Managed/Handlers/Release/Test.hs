@@ -118,6 +118,7 @@ handlersUnitTestWith testConfig options cabal = do
   publishHackages <- HackageClient.handlersProdFor (Just manager) ForPublish cabal
   let
     handlers = ReleaseHandlers {
+      genCabal = unit,
       runChecks = runChecksUnitTest testData.checksRun testConfig.checksPass,
       releaseDist = releaseDistUnitTest,
       uploadArtifact = uploadArtifactUnitTest testConfig testData.uploadedArtifacts,
@@ -171,6 +172,7 @@ handlersGitTest testConfig options cabal = do
   publishHackages <- HackageClient.handlersProdFor (Just manager) ForPublish cabal
   let
     handlers = ReleaseHandlers {
+      genCabal = unit,
       runChecks = runChecksUnitTest testData.checksRun testConfig.checksPass,
       releaseDist = releaseDistUnitTest,
       uploadArtifact = uploadArtifactUnitTest testConfig testData.uploadedArtifacts,

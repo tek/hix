@@ -17,6 +17,10 @@ import Hix.Managed.Release.Git (GitExtraArgs, GitRelease)
 
 data ReleaseHandlers =
   ReleaseHandlers {
+    -- | Regenerate Cabal files and overrides after version state changes.
+    -- Runs @nix run .#gen-quiet@ in production, which generates hpack-based @.cabal@ files and @gen-overrides@ (when
+    -- enabled).
+    genCabal :: M (),
     -- | Run flake checks. Returns 'Nothing' on success, 'Just reasons' on failure.
     runChecks :: M (Maybe [Text]),
     releaseDist :: SelectedTargetView -> M (Either Error ReleaseDist),

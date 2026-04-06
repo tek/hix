@@ -8,7 +8,7 @@ import Hix.Data.Options (ReleaseOptions (..))
 import Hix.Http (httpManager)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForPublish))
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
-import Hix.Managed.Flake (runFlake)
+import Hix.Managed.Flake (runFlake, runFlakeGen)
 import Hix.Managed.Git (GitApi)
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
 import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
@@ -36,6 +36,7 @@ handlersProd options cabal = do
   upload <- Upload.handlersProd options.config.globalCabalConfig cabal
   publishHackages <- HackageClient.handlersProdFor (Just manager) ForPublish cabal
   pure ReleaseHandlers {
+    genCabal = runFlakeGen def,
     runChecks = runChecksProd,
     releaseDist,
     uploadArtifact = \ desc stage -> uploadArtifact desc stage upload,
