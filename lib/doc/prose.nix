@@ -499,28 +499,11 @@ in {
   - An optional set of services that may be run in a virtual machine, like database servers
   - Environment variables
 
-  This example configuration defines an environment that uses GHC 9.4, adds `socat` to the packages in `$PATH` and runs
+  This example configuration defines an environment that uses GHC 9.10, adds `socat` to the packages in `$PATH` and runs
   a PostgreSQL server:
 
   ```nix
-  {
-    outputs = {hix, ...}: hix ({config, ...}: {
-      envs.example = {
-
-        compiler = "ghc94";
-
-        shellTools = pkgs: [pkgs.socat];
-
-        services.postgres = {
-          enable = true;
-          config = { name = "test-db"; };
-        };
-
-        expose.shell = true;
-
-      };
-    });
-  }
+  ${exampleFile "envs" "config.nix"}
   ```
 
   ### Using environments {#envs-use}
@@ -538,7 +521,7 @@ in {
   >>> Starting VM with base port 20000
   >>> Waiting 30 seconds for VM to boot...
   $ ghc --version
-  The Glorious Glasgow Haskell Compilation System, version 9.4.3
+  The Glorious Glasgow Haskell Compilation System, version 9.10.1
   $ psql "host=localhost port=25432 user=test-db password=test-db dbname=test-db" -c 'select 1'
   ?column?
   ----------

@@ -89,6 +89,7 @@ let
       "example-env-compiler-2"
       "example-env-compiler-3"
       "env-compiler-edge-cases"
+      "example-envs"
       "example-env-selection"
       "example-flakes-basic"
       "example-flakes-hs"
