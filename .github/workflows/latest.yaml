@@ -22,8 +22,8 @@ jobs:
           extra_nix_config: download-buffer-size = 1000000000
       - uses: cachix/cachix-action@v17
         with:
-          name: tek
-          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+          name: hix-build
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - run: rm -rf /opt/hostedtoolcache
       - name: Build the AppImage binary
         run: nix build .#min.appimage

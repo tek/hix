@@ -35,7 +35,7 @@
 
       - uses: cachix/cachix-action@v15
         with:
-          name: tek
+          name: hix-build
 
       - id: upload
         name: Upload candidates
@@ -109,7 +109,7 @@
 
       - uses: cachix/cachix-action@v15
         with:
-          name: tek
+          name: hix-build
 
       - id: publish
         name: Publish packages

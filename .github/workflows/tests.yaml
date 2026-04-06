@@ -32,8 +32,8 @@ jobs:
       - name: Enable cachix
         uses: cachix/cachix-action@v17
         with:
-          name: tek
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          name: hix-build
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Flake checks
@@ -66,8 +66,8 @@ jobs:
       - name: Enable cachix
         uses: cachix/cachix-action@v17
         with:
-          name: tek
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          name: hix-build
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Configure apparmor to permit appimages to execute
@@ -93,8 +93,8 @@ jobs:
       - name: Enable cachix
         uses: cachix/cachix-action@v17
         with:
-          name: tek
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          name: hix-build
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Build the AppImage
@@ -118,8 +118,8 @@ jobs:
       - name: Enable cachix
         uses: cachix/cachix-action@v17
         with:
-          name: tek
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          name: hix-build
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - name: Free up space
         run: rm -rf /opt/hostedtoolcache
       - name: Build the docs

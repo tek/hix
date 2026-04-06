@@ -35,7 +35,7 @@
 
       - uses: cachix/cachix-action@v15
         with:
-          name: tek
+          name: hix-build
 
       - id: maint
         name: Run maint
@@ -95,7 +95,7 @@
 
       - uses: cachix/cachix-action@v15
         with:
-          name: tek
+          name: hix-build
 
       - id: revision
         name: Publish revision

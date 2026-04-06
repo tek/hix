@@ -155,7 +155,7 @@ let
   chmod +x $exe
   '';
 
-  nixC = "nix --option extra-substituters 'https://tek.cachix.org' --option extra-trusted-public-keys 'tek.cachix.org-1:+sdc73WFq8aEKnrVv5j/kuhmnW2hQJuqdPJF5SnaCBk='";
+  nixC = "nix --option extra-substituters 'https://hix-build.cachix.org' --option extra-trusted-public-keys 'hix-build.cachix.org-1:wBX4tx5Zyel2Y1S2ZgZYD1Y8EyRaRgeSEYHc6JEVw0U='";
 
   bootstrapWithStaticCli = name: cmd: script name ''
   ${setupScript { path = [pkgs.git]; nix = true; }}

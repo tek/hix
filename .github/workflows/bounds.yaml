@@ -17,7 +17,7 @@ on:
       cachix:
         required: false
         type: string
-        default: tek
+        default: hix-build
     secrets:
       cachix_key:
         required: false
@@ -40,7 +40,7 @@ jobs:
     - uses: cachix/cachix-action@v17
       with:
         name: ${{ inputs.cachix }}
-        signingKey: ${{ secrets.cachix_key }}
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - run: rm -rf /opt/hostedtoolcache
     - id: bounds
       name: Check and update bounds
