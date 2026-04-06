@@ -89,6 +89,12 @@ handleProblemsInteractive ui problems =
     Right accepted -> unless accepted do
       ReleaseFlow.lift (validateVersionsBatch problems)
 
+-- | Regenerate Cabal files and overrides from updated managed state.
+regenerateCabal :: ReleaseHandlers -> M ()
+regenerateCabal handlers = do
+  Log.info "Regenerating Cabal files"
+  handlers.genCabal
+
 -- | Run checks if enabled by config, otherwise skip.
 runChecksIfEnabled ::
   ReleaseConfig ->
@@ -124,10 +130,11 @@ uploadFlowStage config ui uploadArtifact stage =
 -- 1. __Version Selection__: Determine release versions (shared or per-package)
 -- 2. __Validation__: Check for problematic versions (too large jumps, same as current)
 -- 3. __State Update__: Update managed state files with new versions
--- 4. __Checks__: Run flake checks if enabled
--- 5. __Distribution__: Build release artifacts (source tarballs, docs)
--- 6. __Upload__: Upload artifacts to Hackage (candidates then publish)
--- 7. __Commit__: Create git commit and tags, execute hooks
+-- 4. __Regeneration__: Regenerate Cabal files and overrides from updated state
+-- 5. __Checks__: Run flake checks if enabled
+-- 6. __Distribution__: Build release artifacts (source tarballs, docs)
+-- 7. __Upload__: Upload artifacts to Hackage (candidates then publish)
+-- 8. __Commit__: Create git commit and tags, execute hooks
 --
 -- Each stage can terminate the flow early if errors occur.
 -- The @partial@ config option controls whether failures affect other packages.
@@ -142,6 +149,7 @@ releaseFlow handlers@ReleaseHandlers {ui} git context config = do
   ReleaseFlow.initTargets (ui.chooseVersions shared) configured
   validateFlowVersions config ui
   withTargetsAndShared (updateStateVersions handlers context.managed config.forceVersion)
+  ReleaseFlow.lift (regenerateCabal handlers)
   checksPassed <- ReleaseFlow.checksStage (runChecksIfEnabled config handlers)
   ReleaseFlow.initDists checksPassed ui.chooseDistTargets handlers.releaseDist
   ReleaseFlow.initUploading

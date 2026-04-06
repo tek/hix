@@ -63,6 +63,7 @@ handlersFlowTest ::
 handlersFlowTest testConfig debug = do
   testData <- liftIO mkReleaseTestData
   pure ReleaseHandlers {
+    genCabal = unit,
     runChecks = runChecksUnitTest testData.checksRun testConfig.checksPass,
     releaseDist = releaseDistUnitTest,
     uploadArtifact = uploadArtifactUnitTest testConfig testData.uploadedArtifacts,
