@@ -30,11 +30,6 @@ in {
       fi
       sleep 0.5
     done
-    if [[ -z $hackage_port ]]
-    then
-      fail "Port file didn't appear. Unit status:"
-      _hix_redirect systemctl --user status $unit
-    fi
 
     describe 'Validate Hackage port'
     diagnostics _hackage_unit_status

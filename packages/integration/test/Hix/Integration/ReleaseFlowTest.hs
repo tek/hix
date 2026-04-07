@@ -332,7 +332,7 @@ interactiveFlowSteps =
 
 test_releaseFlowInteractive :: TestT IO ()
 test_releaseFlowInteractive =
-  tmuxTest True 10 (releaseFlowTest interactiveFlowSteps)
+  tmuxTest False 10 (releaseFlowTest interactiveFlowSteps)
 
 -- | Version change flow: bump local1's minor version and increment patch.
 -- Initial: local1 = 1.1.1, local2 = 2.2.2
@@ -399,7 +399,7 @@ versionChangeSteps =
 
 test_releaseFlowVersionChange :: TestT IO ()
 test_releaseFlowVersionChange =
-  tmuxTest True 10 (releaseFlowTest versionChangeSteps)
+  tmuxTest False 10 (releaseFlowTest versionChangeSteps)
 
 -- | Poll the tmux pane for up to @maxAttempts@ iterations, checking that the tail matches @target@.
 -- On each iteration, captures the pane and checks if the expected lines match the tail of the actual lines.
@@ -449,7 +449,7 @@ releaseFlowInitialRenderTest = do
 
 test_releaseFlowInitialRender :: TestT IO ()
 test_releaseFlowInitialRender =
-  tmuxTest True 10 releaseFlowInitialRenderTest
+  tmuxTest False 10 releaseFlowInitialRenderTest
 
 -- | Context proto with packages at the same version and no --version flag.
 -- This should default to shared mode in the UI.
@@ -501,4 +501,4 @@ sharedDefaultFlowTest = do
 
 test_releaseFlowSharedDefault :: TestT IO ()
 test_releaseFlowSharedDefault =
-  tmuxTest True 10 sharedDefaultFlowTest
+  tmuxTest False 10 sharedDefaultFlowTest

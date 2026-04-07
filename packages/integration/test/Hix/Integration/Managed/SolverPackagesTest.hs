@@ -7,7 +7,6 @@ import Path (relfile)
 
 import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Data.Overrides (Override (..), Overrides)
-import Hix.Data.Version (SourceHash (..))
 import Hix.Integration.Utils (UnitTest, addFile, libHs, runMTest, withHixDir)
 import Hix.Managed.Build.Adapt (buildAdaptive)
 import Hix.Managed.Build.Target (BuilderResources (..), buildSolverPackages, suggestJailbreakAndLatestVersion)
@@ -23,11 +22,11 @@ flake path =
   [exon|{
   description = "hix test project";
   inputs.hix.url = "#{path}";
-  inputs.hix.inputs.nixpkgs.url = "github:nixos/nixpkgs/b2243f41e860ac85c0b446eadc6930359b294e79";
+  inputs.hix.inputs.nixpkgs.url = "github:nixos/nixpkgs/a7fc11be66bdfb5cdde611ee5ce381c183da8386";
   outputs = {hix, ...}: hix.lib.flake {
     managed = {
       enable = true;
-      latest.compiler = "ghc910";
+      latest.compiler = "ghc912";
     };
     cabal = {
       license = "MIT";
@@ -60,19 +59,11 @@ setupProject hixRoot = do
 
 targetResult :: BuildResult
 targetResult =
-  BuildSuccess ["/nix/store/ka5p0aywm9b8rr3n527czi466dghrfka-ghc-9.10.1-with-packages"]
+  BuildSuccess ["/nix/store/r7pjxkmiqbxiha2z5mirlg8c62bsvrw2-ghc-9.12.2-with-packages"]
 
 targetOverrides :: Overrides
 targetOverrides =
   [
-    ("exon", Override {
-      version = [1, 7, 2, 0],
-      hash = SourceHash "0hg271cvjqm4ps75qpnirq9nvjwpwb03mcbn1a364jrysrj6bg3b",
-      repo = Just "hackage.haskell.org",
-      revision = Nothing
-    }),
-    ("incipit-base", Jailbreak),
-    ("incipit-core", Jailbreak),
     ("polysemy-conc", Jailbreak),
     ("polysemy-resume", Jailbreak),
     ("polysemy-test", Jailbreak),

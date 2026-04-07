@@ -19,7 +19,9 @@ import Hix.Integration.Utils (UnitTest, addFile, runMTestLog, withHixDir)
 import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import Hix.Managed.Cabal.Data.Config (CabalConfig (..))
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo (..), contextHackageRepo)
+import qualified Hix.Managed.Cabal.Data.HackageRepo as HackageRepo
 import Hix.Managed.Cabal.Data.HackageRepo (centralName)
+import Hix.Managed.Cabal.HackageRepo (centralHackage)
 import qualified Hix.Managed.Data.EnvConfig
 import Hix.Managed.Data.EnvConfig (EnvConfig (EnvConfig))
 import Hix.Managed.Data.Envs (Envs)
@@ -55,7 +57,7 @@ flake repo path =
   [exon|{
   description = "hix test project";
   inputs.hix.url = "#{NixCode path}";
-  inputs.hix.inputs.nixpkgs.url = "github:nixos/nixpkgs/b2243f41e860ac85c0b446eadc6930359b294e79";
+  inputs.hix.inputs.nixpkgs.url = "github:nixos/nixpkgs/a7fc11be66bdfb5cdde611ee5ce381c183da8386";
   outputs = {hix, ...}: hix.lib.flake {
     managed = {
       enable = true;
@@ -145,7 +147,7 @@ bumpNativeTest hackage hixRoot = do
   root <- setupProject hackage.context hixRoot
   withProjectRoot root do
     handlersProject <- Project.handlersProd def
-    handlers <- Build.handlersFixed handlersProject def def {hackageExtra = [hackage.repo]}
+    handlers <- Build.handlersFixed handlersProject def def {hackageMain, hackageExtra = [hackage.repo]}
     result <- withProjectContext BoundUpper handlersProject opts proto \ context -> do
       bumpOptimizeMain handlers context
     updateProject handlers.project False result
@@ -159,11 +161,13 @@ bumpNativeTest hackage hixRoot = do
         state = def,
         envs = envsConfig,
         hackage = [
-          (centralName, (contextHackageRepo centralName) {
-            indexState = Just (unsafeParsec ("2024-01-01T00:00:00Z" :: String))
-          })
+          (centralName, (contextHackageRepo centralName) {indexState})
         ]
       }
+
+    hackageMain = Just centralHackage {HackageRepo.indexState}
+
+    indexState = Just (unsafeParsec ("2026-01-01T00:00:00Z" :: String))
 
 hackageId :: PackageName -> [Dep] -> HackageId
 hackageId name deps =
@@ -214,7 +218,7 @@ targetStateFile =
   };
   versions = {
     latest-local1 = {
-      extra = "1.8";
+      extra = "1.8.1";
     };
     latest-local2 = {
       dep1 = "1";
@@ -222,7 +226,7 @@ targetStateFile =
       local1 = "1.0";
     };
     latest-local3 = {
-      extra = "1.8";
+      extra = "1.8.1";
       local2 = "1.0";
     };
   };
@@ -234,8 +238,8 @@ targetStateFile =
   overrides = {
     latest-local1 = {
       extra = {
-        version = "1.8";
-        hash = "0cnk9ncn0k7fv24g0v3rhqd3z9zcz9cgz0rf59vs6v9kappbidmx";
+        version = "1.8.1";
+        hash = "0q3hyffi11dazq9n25r508spvmblx21wipfw10hfkxcazv5l1pg2";
         repo = "hackage.haskell.org";
       };
     };
@@ -261,8 +265,8 @@ targetStateFile =
         repo = "test";
       };
       extra = {
-        version = "1.8";
-        hash = "0cnk9ncn0k7fv24g0v3rhqd3z9zcz9cgz0rf59vs6v9kappbidmx";
+        version = "1.8.1";
+        hash = "0q3hyffi11dazq9n25r508spvmblx21wipfw10hfkxcazv5l1pg2";
         repo = "hackage.haskell.org";
       };
       local1 = {
@@ -286,8 +290,8 @@ targetStateFile =
         repo = "test";
       };
       extra = {
-        version = "1.8";
-        hash = "0cnk9ncn0k7fv24g0v3rhqd3z9zcz9cgz0rf59vs6v9kappbidmx";
+        version = "1.8.1";
+        hash = "0q3hyffi11dazq9n25r508spvmblx21wipfw10hfkxcazv5l1pg2";
         repo = "hackage.haskell.org";
       };
       local1 = {
@@ -319,6 +323,7 @@ targetStateFile =
     };
     latest-local3 = {};
   };
+  packages = {};
   resolving = false;
 }
 |]
@@ -344,10 +349,6 @@ targetStateFile =
 --   packages that cause difficulties with @local2@.
 --   Its dependency on @extra@ serves only the purpose of forcing a mutation to happen, since those aren't triggered for
 --   the local deps, who don't have any mutation candidates.
---
---   TODO investigate why dep1 isn't part of the solver set for local3. It seems to me that @packageDbSolver@ should
---   include it in the propagatedBuildInputs; or rather fail because when evaluating local2 to access its deps it can't
---   find dep1.
 test_bump :: UnitTest
 test_bump =
   withHixDir \ hixRoot -> do

@@ -139,7 +139,7 @@ outputResult result stdout = \case
   where
     failure = \case
       Right (unhandled, OutputResult {unknownMessages, failedPackages}) ->
-        let alt = maybe UnknownFailure UnexpectedFailure (nonEmpty unknownMessages <> (pure <$> unhandled))
+        let alt = maybe UnknownFailure UnexpectedFailure (nonEmpty (concatMap Text.lines unknownMessages) <> (pure <$> unhandled))
         in maybe alt PackageFailure failedPackages
       Left err ->
         AppFailure err

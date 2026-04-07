@@ -4,17 +4,23 @@ import Hix.Integration ()
 import Hix.Integration.HackageTest (test_hackage)
 import Hix.Integration.Managed.BumpTest (test_bump)
 import Hix.Integration.Managed.SolverPackagesTest (test_solverPackages)
-import Hix.Integration.ReleaseMaintenanceTest (test_releaseMaintenance)
 import Hix.Integration.ReleaseFlowTest (test_releaseFlow, test_releaseFlowInteractive, test_releaseFlowVersionChange)
+import Hix.Integration.ReleaseMaintenanceTest (test_releaseMaintenance)
 import Hix.Integration.ReleaseTest (test_release)
-import Hix.Integration.ReleaseUiTest (test_releaseUi, test_releaseUi_distTargets, test_releaseUi_colors, test_releaseUi_versionProblems_accept, test_releaseUi_versionProblems_reject)
+import Hix.Integration.ReleaseUiTest (
+  test_releaseUi,
+  test_releaseUi_colors,
+  test_releaseUi_distTargets,
+  test_releaseUi_versionProblems_accept,
+  test_releaseUi_versionProblems_reject,
+  )
 import Hix.Integration.RevisionTest (test_revision)
 import Hix.Test.Utils (unitTest)
-import Test.Tasty (TestTree, defaultMain, testGroup)
+import Test.Tasty (DependencyType (..), TestTree, defaultMain, sequentialTestGroup)
 
 tests :: TestTree
 tests =
-  testGroup "all" [
+  sequentialTestGroup "all" AllFinish [
     unitTest "hackage" test_hackage,
     unitTest "release maint" test_releaseMaintenance,
     unitTest "revision" test_revision,

@@ -456,7 +456,7 @@ releaseTest :: Bool -> UnitTest
 releaseTest each = do
   debug <- brickDebug
   withHixDir \ hixRoot -> do
-    cabalContents <- tmuxTest True 20 do
+    cabalContents <- tmuxTest False 20 do
       tmuxLiftM do
         withTempRoot "test-release" \ root ->
           withHackageClient \ hackage -> do
@@ -528,7 +528,7 @@ data GitWorkflowResult =
 test_releaseGitWorkflow :: UnitTest
 test_releaseGitWorkflow = do
   withHixDir \ hixRoot -> do
-    result <- runMTest True do
+    result <- runMTest False do
       -- Create bare repo to act as "remote" (like GitHub)
       withTempDir "remote" \ remoteDir -> do
         runGitNativeHermetic remoteDir "test: init bare remote" \ remoteGit -> do

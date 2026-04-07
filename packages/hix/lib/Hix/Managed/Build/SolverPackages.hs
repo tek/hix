@@ -54,7 +54,7 @@ nixSolverGhc resources env (Initial storedOverrides) =
         if nNull storedOverrides
         then "Vanilla package set doesn't build. Computing overrides..."
         else "Build with previous solver overrides failed. Recomputing overrides..."
-      Log.debug err
+      Log.trace err
       appContext "computing new overrides for the solver package set" do
         solverResult =<< runStateT (build (suggestJailbreakAndLatestVersion resources)) (mempty, mempty)
 

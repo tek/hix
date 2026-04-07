@@ -10,7 +10,7 @@
   else map (n: ghc.${n}) env.haskellPackages;
 
   # Collect the target dependencies of the specified env from the specified GHC package set.
-  # If noLocalsInDeps is `true`, exclude dependencies if they are local packages.
+  # If `noLocalsInDeps` is `true`, exclude dependencies if they are local packages.
   # If it is `false`, exclude dependencies if they are env target packages, but not if they are non-target local
   # packages (i.e. targets of a different env).
   packageDb = noLocalsInDeps: env: ghc: let

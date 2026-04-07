@@ -48,9 +48,14 @@ tillQuote ::
 tillQuote =
   fromString <$> manyTill anyChar (char '\'')
 
+requireLiteral :: CharParsing m => String -> m [Char]
+requireLiteral target =
+  manyTill anyChar (try (string target))
+
 unknownDepHix :: CabalParsing m => m UnknownDepMessage
 unknownDepHix = do
-  _ <- manyTill anyChar (try (string "The Cabal config for '"))
+  _ <- optional (requireLiteral "error:")
+  _ <- requireLiteral "The Cabal config for '"
   _local <- tillQuote @String
   string " in the env '"
   _env <- tillQuote @String
@@ -59,7 +64,8 @@ unknownDepHix = do
 
 unknownDepNixpkgs :: CabalParsing m => m UnknownDepMessage
 unknownDepNixpkgs = do
-  _ <- manyTill anyChar (try (string "function 'anonymous lambda' called without required argument '"))
+  _ <- optional (requireLiteral "error:")
+  _ <- requireLiteral "function 'anonymous lambda' called without required argument '"
   tillQuote <* skipMany anyChar
 
 -- TODO maybe we can add a module option that toggles errors in json or something, with which we can reliably extract

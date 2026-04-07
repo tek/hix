@@ -19,7 +19,7 @@ import Hedgehog (TestT)
 import Hedgehog.Internal.Property (TestT (..))
 import Path (Abs, File, Path, relfile, toFilePath, (</>))
 import Path.IO (doesFileExist)
-import System.IO (Handle)
+import System.IO (Handle, hClose)
 import System.IO.Error (tryIOError)
 import System.Posix (
   Fd,
@@ -265,13 +265,21 @@ withTmuxTui res (TmuxTest test) =
       appContextVerbose "setting up pipes in tmux" do
         void $ runTmux ["send-keys", "stty -icanon -echo", "ENTER"]
         void $ runTmux ["send-keys", [exon|cat #{inputFp} & cat - > #{outputFp}|], "ENTER"]
-    bracket (liftIO (openFd inputFp WriteOnly defaultFileFlags)) (lift . tryIOErrorLog . closeFd) \ fdOut ->
-      bracket (liftIO (openFd outputFp ReadOnly defaultFileFlags)) (lift . tryIOErrorLog . closeFd) \ fdIn -> do
-        hIn <- liftIO $ fdToHandle fdIn
-        hOut <- liftIO $ fdToHandle fdOut
-        let tmux = Tmux {run = runTmux . fmap toString, hIn, hOut, fdIn, fdOut}
-        lift $ Log.debug "running tmux test"
-        TestTCompat (hoist (flip runReaderT tmux) test)
+    let
+      acquire = liftIO do
+        fdOut <- openFd inputFp WriteOnly defaultFileFlags
+        fdIn <- openFd outputFp ReadOnly defaultFileFlags
+        hIn <- fdToHandle fdIn
+        hOut <- fdToHandle fdOut
+        pure (fdIn, fdOut, hIn, hOut)
+
+      release (_, _, hIn, hOut) = lift $ tryIOErrorLog $ liftIO do
+        hClose hIn
+        hClose hOut
+    bracket acquire release \ (fdIn, fdOut, hIn, hOut) -> do
+      let tmux = Tmux {run = runTmux . fmap toString, hIn, hOut, fdIn, fdOut}
+      lift $ Log.debug "running tmux test"
+      TestTCompat (hoist (flip runReaderT tmux) test)
 
 withTmuxPtyTui ::
   Int ->

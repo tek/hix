@@ -610,6 +610,7 @@ test_releaseMessageUrls = do
 
 target_releaseFlowMixedResults :: Text
 target_releaseFlowMixedResults = [exon|[35m[1m>>>[0m Writing new versions to managed state
+[35m[1m>>>[0m Regenerating Cabal files
 [35m[1m>>>[0m Skipping flake checks
 [35m[1m>>>[0m Building release distributions for local1
 [35m[1m>>>[0m Building release distributions for local2
@@ -662,6 +663,7 @@ test_releaseFlowMixedResults = do
 
 target_releaseFlowTerminated :: Text
 target_releaseFlowTerminated = [exon|[35m[1m>>>[0m Writing new versions to managed state
+[35m[1m>>>[0m Regenerating Cabal files
 [35m[1m>>>[0m Skipping flake checks
 [35m[1m>>>[0m Building release distributions for local1
 [35m[1m>>>[0m Building release distributions for local2

@@ -339,15 +339,15 @@ targetCommit =
     Bump base, extra, semigroups
     Maintenance for 'local1'
     New versions:
-    * base-4.19.2.0 [<4.20]
-    * extra-1.8 [>=1.7 && <1.9]
-    * semigroups-0.20 [>=0.19 && <0.21]
+    * base-4.21.0.0 [<4.22]
+    * extra-1.8.1 [>=1.7 && <1.9]
+    * semigroups-0.20.1 [>=0.19 && <0.21]
 
 diff --git a/ops/managed.nix b/ops/managed.nix
-index a4cb674..0e77542 100644
+index a4cb674..279462e 100644
 --- a/ops/managed.nix
 +++ b/ops/managed.nix
-@@ -3,34 +3,39 @@
+@@ -3,34 +3,45 @@
      local1 = {
        base = {
          lower = null;
@@ -356,7 +356,7 @@ index a4cb674..0e77542 100644
 -      semigroups = {
 -        lower = "0.19";
 -        upper = "0.20";
-+        upper = "4.20";
++        upper = "4.22";
        };
        extra = {
          lower = "1.7";
@@ -374,9 +374,9 @@ index a4cb674..0e77542 100644
 -      base = "4.19.0.0";
 -      semigroups = "0.19.2";
 -      extra = "1.7.16";
-+      base = "4.19.2.0";
-+      extra = "1.8";
-+      semigroups = "0.20";
++      base = "4.21.0.0";
++      extra = "1.8.1";
++      semigroups = "0.20.1";
      };
    };
 -  overrides = {
@@ -390,8 +390,13 @@ index a4cb674..0e77542 100644
 -      semigroups = "0.19.2";
 -      extra = "1.7.16";
 +      extra = {
-+        version = "1.8";
-+        hash = "0cnk9ncn0k7fv24g0v3rhqd3z9zcz9cgz0rf59vs6v9kappbidmx";
++        version = "1.8.1";
++        hash = "0q3hyffi11dazq9n25r508spvmblx21wipfw10hfkxcazv5l1pg2";
++        repo = "hackage.haskell.org";
++      };
++      semigroups = {
++        version = "0.20.1";
++        hash = "12z73rd84xdzy7mdppg65hz5fki9sj8gqwhj4128c31dm387ywsl";
 +        repo = "hackage.haskell.org";
 +      };
      };
@@ -399,10 +404,11 @@ index a4cb674..0e77542 100644
 +  solver = {
 +    latest = {};
 +  };
++  packages = {};
    resolving = false;
  }
 diff --git a/packages/local1/local1.cabal b/packages/local1/local1.cabal
-index 40c3900..8b24d57 100644
+index 47e216e..b028f04 100644
 --- a/packages/local1/local1.cabal
 +++ b/packages/local1/local1.cabal
 @@ -22,6 +22,6 @@ library
