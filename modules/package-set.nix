@@ -27,6 +27,12 @@
       type = util.types.cabalOverrides;
       description = ''
       Like [](#opt-package-set-overrides), but intended to be set from environments or other consumers of package sets.
+      At build time, the two lists are concatenated as `overrides ++ extraOverrides`.
+
+      In most cases, this option is populated automatically when an environment uses this package set: the env combines
+      inherited, local, global and env-level overrides and assigns them here via `envDefault`.
+      Setting it directly is rarely necessary — use [](#opt-general-overrides) or [](#opt-env-overrides) instead.
+      See [](#overrides-scoping) for details.
       '';
       default = [];
     };

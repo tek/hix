@@ -1,3 +1,4 @@
+# Release logic for Hix itself.
 {config, util}: let
 
   inherit (util) pkgs;

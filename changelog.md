@@ -1,32 +1,66 @@
 # Unreleased
 
+### Release
+
+* Migrate the shell script-based release app to the Haskell CLI.
+
+### Override combinators
+
 * Change the OC `ghcOptions` to accept a list of options as well as a string.
 * Add OC `ghcOption` that only accepts a single string.
-* Default to `language = "Haskell2010"` to avoid eager evaluation of environment configs.
 * Add OC `noshared` that disables creation of shared libraries.
 * Add OC `shared` that enables linking Haskell libraries dynamically in executables.
 * Add special treatment for the override named `__all`, applying to the result of `mkDerivation`, and therefore all
   packages.
-* Add the attribute `exe` to derivations in `build.*.executables`, containing the full path to the executable in the
-  store.
+* Allow multiple flags to be passed as a list in the OCs `enable`, `disable` and `configure`.
+* Apply the `buildInputs` OC to `pkgs` when it is a function, as documented.
+* Apply package-set and env OCs separately when reading pregenerated overrides.
+
+### Environments and toolchain
+
 * Add the option `nixpkgs` for configuring different nixpkgs versions.
 * Add the option `compilers` for configuring different GHC builds.
 * Add the option `package-sets` for configuring different GHC package sets.
-* Removed some attributes in the [intermediate build outputs](https://hix.how#intermediate-outputs) set to avoid eager
-  evaluation.
 * Add options for building GHC from source.
-* Rename `--ghci{,d}-options` to `--ghci{,d}-args` in commands with env selection.
-* Add the options `envs.*.ghci{,d}.args` as env-specific extra arguments to those commands, based on env selection.
-* Add the options `ghci{,d}.args` as unconditional extra arguments to those commands.
-* Add the CLI option `--env` to override env selection for commands.
+* Default to `language = "Haskell2010"` to avoid eager evaluation of environment configs.
+* Add the attribute `exe` to derivations in `build.*.executables`, containing the full path to the executable in the
+  store.
 * The packages defined by the option `envs.*.buildInputs` are now provided to local package derivations as well, for
   consistency with other options of that name.
 * Add the options `shellTools` and `envs.*.shellTools` to take on the previous role of `envs.*.buildInputs` for packages
   that should not be made available to local package derivations.
-* Add the options `build-tools.{ghcid,hasktags}.package` to configure these tools globally.
-* Migrate the shell script-based release app to the Haskell CLI.
 * Add the options `envs.*.libraryPath` and `commands.*.libraryPath` that add the `lib` directories of specified packages
   to `$LD_LIBRARY_PATH`.
+* Add the options `build-tools.{ghcid,hasktags}.package` to configure these tools globally.
+
+### CLI and commands
+
+* Rename `--ghci{,d}-options` to `--ghci{,d}-args` in commands with env selection.
+* Add the options `envs.*.ghci{,d}.args` as env-specific extra arguments to those commands, based on env selection.
+* Add the options `ghci{,d}.args` as unconditional extra arguments to those commands.
+* Add the CLI option `--env` to override env selection for commands.
+
+### Managed dependencies
+
+* Add the option `managed.latest.enable` to control whether the `latest` env is created.
+* Tag managed envs with the bound they manage (`lower`/`upper`) and select them based on that.
+
+### Configuration and DX
+
+* Add the option `genCabalInDerivations` to control whether Cabal configs are generated inside derivations.
+* Add the option `self` to infer the project root from the flake input by that name.
+* Add a `_file` attribute to user modules for clearer NixOS module error messages.
+* Emit errors for all definitions of deprecated options immediately upon flake evaluation.
+* Add a custom error message when `main` doesn't refer to a defined package.
+* Improve accuracy of error messages around compiler configuration.
+* Inform the user about `.#env.*` when an unexposed shell is requested.
+* Remove custom preludes from the regular dependency list.
+
+### Internal
+
+* Removed some attributes in the [intermediate build outputs](https://hix.how#intermediate-outputs) set to avoid eager
+  evaluation.
+* Only load managed bounds if at least one of `latest`/`lower` is enabled.
 
 # 0.9.0
 

@@ -572,13 +572,19 @@ in {
   as its argument a set of combinators and metadata for declaring those specifications, like the `hackage` combinator
   used above that takes a version and Nix store hash to fetch a package directly from Hackage.
   They can be specified at different levels, like dependencies: At the top level for all environments, in each
-  individual environment, and on the `package-set` module in an environment (although the latter is populated by Hix
-  with the merged global and local overrides).
+  individual environment, and on the `package-set` module in an environment.
+  The interactions between these levels are explained in [](#overrides-scoping).
 
   The special attribute name `__all` is recognized as a set of transformations applied to all packages – local as well
   as dependencies, causing the latter to be rebuilt completely.
   This works by overriding the package set attribute `mkDerivation` used by all packages (see below for details about
   this function).
+
+  ::: {.caution}
+  The name `__all` is reserved: it is silently extracted from the override set before regular overrides are applied.
+  A package literally named `__all` would collide with this mechanism, causing its overrides to be interpreted as
+  global transformations rather than package-specific ones.
+  :::
 
   ### Selecting the toolchain {#toolchain}
 
@@ -903,6 +909,46 @@ in {
     };
   }
   ```
+
+  ### Override scoping {#overrides-scoping}
+
+  Overrides can be specified at three levels, each of which is designed for a different scope:
+
+  - Top-level [`overrides`](#opt-general-overrides) are applied to all environments, unless an env sets
+  [](#opt-env-globalOverrides) to `false`.
+  - Environment [`envs.<name>.overrides`](#opt-env-overrides) are applied only when building packages through that
+    environment.
+  - Package set [`package-sets.<name>.overrides`](#opt-package-set-overrides) are applied to all environments that use
+    this package set, regardless of which env triggered the build.
+
+  #### How overrides reach the package set {#overrides-merging}
+
+  Each package set has two override options: [](#opt-package-set-overrides) and [](#opt-package-set-extraOverrides).
+  At build time, they are concatenated in that order and applied together.
+
+  The distinction exists because environments automatically populate `extraOverrides` with their computed overrides.
+  Concretely, when an environment defines a package set (inline or via `extends`), Hix sets
+  `package-set.extraOverrides` to the combined list of:
+
+  1. Inherited overrides from dependency flakes (controlled by [](#opt-env-inheritOverrides))
+  2. Local package derivations
+  3. Top-level [](#opt-general-overrides) (controlled by [](#opt-env-globalOverrides))
+  4. The environment's own [](#opt-env-overrides) (plus managed dependency overrides, if applicable)
+
+  This means that `package-set.overrides` is the "intrinsic" set of overrides belonging to the package set itself,
+  while `extraOverrides` is the "extrinsic" set injected by the environment that uses it.
+
+  For most configurations, you never need to set `extraOverrides` directly — use top-level or env-level `overrides`
+  instead, and Hix will route them to the package set automatically.
+  Setting `package-sets.<name>.overrides` is appropriate when a package set is shared by multiple environments and
+  should carry certain overrides regardless of which environment uses it.
+
+  ::: {.note}
+  Managed environments (`managed = true`) use a different override composition that omits global and inherited
+  overrides.
+  Packages that need overrides in managed envs must be overridden explicitly in `envs.<name>.overrides`.
+  See [](#managed) for details.
+  :::
 
   ## Commands {#commands}
 
