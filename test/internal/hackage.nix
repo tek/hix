@@ -17,8 +17,8 @@ in {
     error_ignore
     step_develop which cabal
 
-    systemd-run --quiet --user --collect --unit=$unit --property=Type=exec \
-      nix run path:$hix_dir#integration-hackage -- --port-file $port_file
+    systemd-run --user --collect --unit=$unit --property=Type=exec \
+      nix run path:$hix_dir#integration-hackage -- --port-file $port_file --trace
     trap 'hackage_quit 0' EXIT
     trap 'trap - EXIT; hackage_quit 130' INT
     for i in {1..120}
@@ -77,6 +77,9 @@ in {
     {
         message 'Unit status:'
         _hix_redirect systemctl --user status $unit
+        message 'Journal:'
+        _hix_redirect journalctl --user --unit $unit --no-pager
+        message '----------------------------------'
     }
 
     hackage_scope()
