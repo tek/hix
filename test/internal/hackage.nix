@@ -11,6 +11,7 @@ in {
     setopt local_options local_traps err_return
     local hackage_port=""
 
+    describe 'Build the integration executable'
     step nix build path:$hix_dir#env.integration-exe.integration
 
     output_ignore
@@ -77,6 +78,9 @@ in {
     {
         message 'Unit status:'
         _hix_redirect systemctl --user status $unit
+        message 'Journal:'
+        _hix_redirect journalctl --user --unit $unit --no-pager
+        message '----------------------------------'
     }
 
     hackage_scope()
