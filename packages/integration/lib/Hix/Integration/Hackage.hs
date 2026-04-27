@@ -106,7 +106,8 @@ testRepo port =
     location = HackageLocation {
       host = "localhost",
       port = Just (fromIntegral port.value),
-      auth = Just ("test", "test"),
+      user = Just "test",
+      password = Just "test",
       tls = TlsOff
     },
     enable = True,
@@ -161,7 +162,7 @@ testClient location = do
       location
     }
 
-    adminRes = res {HackageResources.location = location {auth = Just ("admin", "admin")}}
+    adminRes = res {HackageResources.location = location {user = Just "admin", password = Just "admin"}}
 
     adminClient = HackageClient.handlersProd adminRes
 

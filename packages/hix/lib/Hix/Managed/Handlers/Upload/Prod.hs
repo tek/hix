@@ -26,10 +26,11 @@ noCredentialsError name =
   [exon|The Hackage repo #{Color.config name} is marked for uploading but has no credentials|]
 
 uploadConfig :: HackageRepo -> M UploadConfig
-uploadConfig HackageRepo {name, location = HackageLocation {auth}} = do
+uploadConfig HackageRepo {name, location = HackageLocation {user, password}} = do
   verbosity <- cabalVerbosity
-  (user, password) <- noteClient (noCredentialsError name) auth
-  pure UploadConfig {verbosity, user, password}
+  user' <- noteClient (noCredentialsError name) user
+  password' <- noteClient (noCredentialsError name) password
+  pure UploadConfig {verbosity, user = user', password = password'}
 
 -- | Generate the base URL for a Hackage server (for package links).
 hackagePackageUrl :: HackageLocation -> HackageUrl

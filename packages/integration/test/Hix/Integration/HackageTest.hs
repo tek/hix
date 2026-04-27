@@ -95,18 +95,18 @@ testServer ::
 testServer port = do
   manager <- httpManager
   let
-    auth = ("admin", "admin")
     res = HackageResources {
       description = "test",
       manager,
       location = HackageLocation {
         host = "localhost",
         port = Just (fromIntegral port),
-        auth = Just auth,
+        user = Just "admin",
+        password = Just "admin",
         tls = TlsOff
       }
     }
-    userRes = res {location = res.location {auth = Just ("test", "test")}}
+    userRes = res {location = res.location {user = Just "test", password = Just "test"}}
     client = HackageClient.handlersProd res
     userClient = HackageClient.handlersProd userRes
     repo = (hackageRepo "test" res.location) {secure = Nothing}

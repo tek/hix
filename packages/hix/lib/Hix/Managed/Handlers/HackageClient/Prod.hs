@@ -96,15 +96,15 @@ baseRequest location@HackageLocation {host = HackageHost host, tls} HackageReque
 
 nativeRequest :: HackageLocation -> HackageRequest a -> M Request
 nativeRequest location request@HackageRequest {..} = do
-  addBody body (addAuth location.auth (addQuery query (baseRequest location request)))
+  addBody body (addAuth location (addQuery query (baseRequest location request)))
   where
     addBody = maybe pure \case
       Right bs -> \ r -> pure r { requestBody = RequestBodyLBS bs }
       Left fields -> formDataBody [partBS key (encodeUtf8 value) | (key, value) <- toList fields]
 
-    addAuth =
-      maybe id \ (HackageUser user, HackagePassword password) ->
-        applyBasicAuth (encodeUtf8 user) (encodeUtf8 password)
+    addAuth HackageLocation {user = Just (HackageUser u), password = Just (HackagePassword pw)} =
+      applyBasicAuth (encodeUtf8 u) (encodeUtf8 pw)
+    addAuth _ = id
 
     addQuery = maybe id \ q -> setQueryString (second Just <$> toList q)
 
@@ -194,8 +194,9 @@ handlersMock manager port = do
         host = "localhost",
         tls = TlsOff,
         port = Just (fromIntegral port),
-        auth = Just ("admin", "admin")
+        user = Just "admin",
+        password = Just "admin"
       }
     }
-    userRes = res {location = res.location {auth = Just ("test", "test")}}
+    userRes = res {location = res.location {user = Just "test", password = Just "test"}}
     adminClient = handlersProd res
