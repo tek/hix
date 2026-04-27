@@ -80,7 +80,8 @@ data HackageLocation =
     host :: HackageHost,
     tls :: HackageTls,
     port :: Maybe HackagePort,
-    auth :: Maybe (HackageUser, HackagePassword)
+    user :: Maybe HackageUser,
+    password :: Maybe HackagePassword
   }
   deriving stock (Eq, Show, Generic)
 
@@ -90,7 +91,8 @@ hackageLocation host tls =
     host,
     tls,
     port = Nothing,
-    auth = Nothing
+    user = Nothing,
+    password = Nothing
   }
 
 central :: HackageLocation

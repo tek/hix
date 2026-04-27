@@ -30,7 +30,7 @@ import Hix.Managed.Cabal.Data.ContextHackageRepo (
   ContextHackageRepo (..),
   )
 import qualified Hix.Managed.Cabal.Data.HackageLocation as HackageLocation
-import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (auth), HackagePassword (HackagePassword), HackageUser)
+import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackagePassword (HackagePassword), HackageUser)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName, HackageRepo (..), centralName)
 import Hix.Managed.Cabal.HackageLocation (parseLocation)
 import Hix.Managed.Cabal.HackageRepo (hackageDescription)
@@ -119,18 +119,9 @@ withAuth ::
   Maybe HackageUser ->
   Maybe ContextHackagePassword ->
   M HackageLocation
-withAuth location = \cases
-  (Just user) Nothing ->
-    onlyOne [exon|user (##{user})|] "password"
-  Nothing (Just _) ->
-    onlyOne "password" "user"
-  Nothing Nothing ->
-    pure location
-  (Just user) (Just passwordSpec) -> do
-    password <- resolvePassword passwordSpec
-    pure location {auth = Just (user, password)}
-  where
-    onlyOne present absent = clientError [exon|Specified a #{present}, but no #{absent}|]
+withAuth location user0 password0 = do
+  password <- traverse resolvePassword password0
+  pure location {HackageLocation.user = user0, password}
 
 validateContextRepo :: ContextHackageRepo -> M HackageRepo
 validateContextRepo ContextHackageRepo {location = location0, ..} = do

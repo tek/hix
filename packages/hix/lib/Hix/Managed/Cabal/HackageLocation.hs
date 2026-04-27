@@ -76,7 +76,8 @@ locationFromUri scheme URIAuth {..}
     host = fromString uriRegName,
     tls = hackageTls (scheme == "https:"),
     port,
-    auth = Nothing
+    user = Nothing,
+    password = Nothing
   }
 
 noSchemeMessage :: String -> String
