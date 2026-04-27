@@ -1,10 +1,14 @@
 {util}: let
 
-  inherit (util) config lib internal;
+  inherit (util) config lib internal project;
 
-  managedVersion = name: let
-    state = internal.managed.state.current;
-  in state.packages.${name}.version or "0.1.0.0";
+  managedVersion = name:
+    internal.managed.state.current.packages.${name}.version or null;
+
+  versionFromFile = f:
+    if f != null && lib.hasSuffix ".nix" f
+    then import "${project.base}/${f}"
+    else null;
 
   package = name: conf: {
 
@@ -15,10 +19,12 @@
       ;
 
     version =
-      if conf.cabal-config.version == null
-      then managedVersion name
-      else conf.cabal-config.version
-      ;
+      lib.findFirst (a: a != null) "0.1.0.0" [
+        conf.cabal-config.version
+        (managedVersion name)
+        (versionFromFile conf.versionFile)
+        (versionFromFile config.release.versionFile)
+      ];
 
   };
 

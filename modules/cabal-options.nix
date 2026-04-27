@@ -55,12 +55,7 @@ in {
       description = ''
       The version for all packages in this option tree, overriding [automatic version management](#release-version).
       '';
-      default = let
-        f = global.release.versionFile;
-      in
-        if (f != null && lib.hasSuffix ".nix" f)
-        then import "${project.base}/${f}"
-        else null;
+      default = null;
     };
 
     author = mkOption {

@@ -126,9 +126,7 @@ let
 
   benchSubmodule = component (exeModule "benchmark" false) "benchmark" "benchmark" "benchmark" "benchSuffix";
 
-  versionFromFile = let
-    f = config.versionFile;
-  in lib.mkIf (f != null && lib.hasSuffix ".nix" f) { version = import "${project.base}/${f}"; };
+  versionFromFile = {};
 
 in {
 
