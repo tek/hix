@@ -124,7 +124,8 @@ flowTestContext =
     hooks = [],
     commitExtraArgs = [],
     tagExtraArgs = [],
-    managed = True
+    managed = True,
+    git = Nothing
   }
 
 versionBox :: Text
@@ -464,7 +465,8 @@ sharedDefaultContext =
     hooks = [],
     commitExtraArgs = [],
     tagExtraArgs = [],
-    managed = True
+    managed = True,
+    git = Nothing
   }
 
 sharedDefaultConfig :: ReleaseConfig

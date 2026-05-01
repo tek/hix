@@ -3,8 +3,8 @@ module Hix.Managed.Data.ReleaseConfig where
 import Data.Aeson (ToJSON)
 
 import Hix.Data.Version (Version)
-import Hix.Managed.Release.Data.TargetSpec (TargetSpec)
 import Hix.Managed.Data.VersionIncrement (VersionIncrement)
+import Hix.Managed.Release.Data.TargetSpec (TargetSpec)
 
 data CandidatesSpec =
   CandidatesAuto
@@ -48,8 +48,6 @@ data ReleaseConfig =
     commit :: Bool,
     tag :: Bool,
     push :: Bool,
-    -- | Use the global git config rather than a synthetic committer ID (hix-bot@github.com).
-    globalGit :: Bool,
     -- | Immediately terminate when uploading docs fails.
     fatalDocs :: Bool,
     -- | Continue the flow (publish after candidates, git after publish) with successful packages when some fail.
@@ -81,7 +79,6 @@ instance Default ReleaseConfig where
       commit = False,
       tag = False,
       push = False,
-      globalGit = False,
       fatalDocs = False,
       partial = False,
       interactive = False,

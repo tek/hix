@@ -346,7 +346,8 @@ context hackage =
     hooks = [],
     commitExtraArgs = [],
     tagExtraArgs = [],
-    managed = True
+    managed = True,
+    git = Nothing
   }
 
 -- | Mock Hackage context for unit tests that allows publishing without a server
@@ -393,7 +394,8 @@ contextMockVersions [v1, v2] =
     hooks = [],
     commitExtraArgs = [],
     tagExtraArgs = [],
-    managed = True
+    managed = True,
+    git = Nothing
   }
 contextMockVersions _ = error "contextMockVersions: expected two versions"
 
@@ -467,6 +469,7 @@ releaseTest each = do
 config = configInteractive,
                 stateFile = def,
                 cabal = def,
+                git = Nothing,
                 uiDebug = Just debug,
                 oldStyleVersion = Nothing,
                 oldStylePackages = []
@@ -534,7 +537,7 @@ test_releaseGitWorkflow = do
         runGitNativeHermetic remoteDir "test: init bare remote" \ remoteGit -> do
           remoteGit.cmd_ ["init", "--bare"]
 
-        withTempRoot "test-release-git" \root -> do
+        withTempRoot "test-release-git" \ root -> do
           (phase1Tags, phase2Tags, phase1Data, phase2Data, remoteBranchesAfterPhase1, remoteBranchesAfterPhase2) <-
             runGitNativeHermetic root "test: project setup and release" \ git -> do
               -- Set up project
@@ -554,6 +557,7 @@ test_releaseGitWorkflow = do
                   config = configPhase1,
                   stateFile = def,
                   cabal = def,
+                  git = Nothing,
                   uiDebug = Nothing,
                   oldStyleVersion = Nothing,
                   oldStylePackages = []
@@ -587,6 +591,7 @@ test_releaseGitWorkflow = do
                   config = configPhase2,
                   stateFile = def,
                   cabal = def,
+                  git = Nothing,
                   uiDebug = Nothing,
                   oldStyleVersion = Nothing,
                   oldStylePackages = []

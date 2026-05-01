@@ -1,10 +1,10 @@
 module Hix.Managed.Release where
 
+import Control.Lens ((.~))
 import Exon (exon)
 import Path (Abs, File, Path)
 
 import Hix.Class.Map (nMap, nNull, nSize)
-import qualified Hix.Data.Monad as AppResources
 import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Data.Options (ReleaseOptions (..))
 import Hix.Data.PackageName (LocalPackage)
@@ -17,6 +17,7 @@ import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
 import Hix.Managed.Data.ReleaseContext (ReleaseContext (..), ReleaseContextProto (..))
 import Hix.Managed.Data.UploadResult (ArtifactResult)
 import Hix.Managed.Git (BranchName, runGitApi)
+import Hix.Managed.Git.Config (gitConfig)
 import Hix.Managed.Git.Native (BracketResult (..))
 import Hix.Managed.Handlers.Context (ContextKey (ContextRelease), jsonOrQueryProd)
 import Hix.Managed.Handlers.Release (ReleaseHandlers (..))
@@ -193,8 +194,10 @@ releaseCli options = do
   cliCompat options
   context <- jsonOrQueryProd ContextRelease options.context
   cabal <- cabalConfig context.hackage options.cabal
-  handlers <- Release.handlersProd options cabal
-  local (\ res -> res {AppResources.persistentUi = options.config.persistentUi}) do
+  gitCli <- traverse gitConfig options.git
+  let git = gitCli <|> context.git
+  handlers <- Release.handlersProd options cabal git
+  local (#persistentUi .~ options.config.persistentUi) do
     release handlers options.config context >>= \case
       ReleaseStage {state = ReleaseState {termination = Termination _}} -> clientError "Release failed."
       _ -> unit

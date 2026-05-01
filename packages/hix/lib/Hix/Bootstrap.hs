@@ -40,7 +40,7 @@ import qualified Hix.Data.ProjectFile
 import Hix.Data.ProjectFile (ProjectFile (ProjectFile), createFile)
 import Hix.Error (pathText)
 import Hix.Managed.Flake (runFlakeGenCabal, runFlakeLock)
-import Hix.Managed.Git (GitNative (cmd', cmd_), runGitNative)
+import Hix.Managed.Git (GitNative (cmd', cmd_), runGitNativeGlobal)
 import Hix.Monad (AppResources (AppResources), noteBootstrap, tryIOM)
 import Hix.NixExpr (mkAttrs, multi, multiOrSingle, nonEmptyAttrs, renderRootExpr, single, singleOpt)
 import qualified Hix.Prelude
@@ -290,7 +290,7 @@ bootstrapFiles conf = do
 initGitAndFlake :: M ()
 initGitAndFlake = do
   AppResources {cwd} <- M ask
-  runGitNative cwd "init new project" \ git -> do
+  runGitNativeGlobal cwd "init new project" \ git -> do
     statusResult <- git.cmd' ["status"]
     when (isLeft statusResult) $ git.cmd_ ["init"]
     git.cmd_ ["add", "."]

@@ -121,6 +121,7 @@
       packages = lib.mapAttrs maintPackage config.packages;
       hackage = config.hackage.repos;
       envs = util.mapValues maintEnv internal.managed.env.envs;
+      git = config.release.git;
     };
 
     release = {
@@ -129,6 +130,7 @@
       hooks = map ensureHookScript config.release.hooks;
       inherit (config.release) commitExtraArgs tagExtraArgs;
       managed = config.managed.enable;
+      git = config.release.git;
     };
 
     state-versions = {

@@ -183,7 +183,8 @@ maintContext =
       })
     ],
     hackage = [],
-    envs = [("latest", MaintEnv {targets = ["local1"], managedBound = Just BoundUpper})]
+    envs = [("latest", MaintEnv {targets = ["local1"], managedBound = Just BoundUpper})],
+    git = Nothing
   }
 
 bumpContext :: ProjectContextProto
@@ -214,7 +215,8 @@ options =
     context = Right Nothing,
     project = (projectOptions ["latest"]),
     stateFile = def,
-    handlers = Nothing
+    handlers = Nothing,
+    git = Nothing
   }
 
 maintConfig :: MaintConfig
@@ -226,7 +228,6 @@ maintConfig =
     targets = Nothing,
     push = False,
     fetch = False,
-    globalGit = False,
     pr = False
   }
 

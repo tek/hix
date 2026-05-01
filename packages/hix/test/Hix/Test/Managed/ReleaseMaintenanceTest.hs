@@ -46,7 +46,6 @@ config =
     revision = True,
     targets = Nothing,
     fetch = False,
-    globalGit = False,
     pr = False
   }
 

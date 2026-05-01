@@ -24,6 +24,7 @@ import Hix.Test.Managed.TagTest (test_tag)
 import Hix.Test.Managed.TargetSpecTest (test_targetSpec)
 import Hix.Test.Utils (unitTest)
 import Hix.Test.Managed.ReleaseUiTest (test_nav)
+import Hix.Test.Managed.GitConfigTest (test_gitConfig)
 
 test_managed :: TestTree
 test_managed =
@@ -55,6 +56,7 @@ test_managed =
         test_versionValidation,
         test_checkVersionPersistence,
         unitTest "UI navigation" test_nav,
-        test_targetSpec
-      ]
+      test_targetSpec
+      ],
+      test_gitConfig
     ]

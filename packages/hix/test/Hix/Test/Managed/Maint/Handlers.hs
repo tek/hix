@@ -342,7 +342,7 @@ runBump outputs env = do
 testContext :: Envs EnvOutput -> Packages PackageMeta -> M MaintContextProto
 testContext outputs packages = do
   maintPackages <- nViaA (Map.traverseWithKey maintPackage) packages
-  pure MaintContextProto {packages = maintPackages, hackage = [], envs}
+  pure MaintContextProto {packages = maintPackages, hackage = [], envs, git = Nothing}
   where
     maintPackage package PackageMeta {version, deps} = do
       path <- pathError package $ parseRelDir [exon|packages/##{package}|]

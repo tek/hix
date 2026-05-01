@@ -10,6 +10,7 @@ import Hix.Data.VersionBounds (Bound)
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName)
 import Hix.Managed.Data.Envs (Envs)
+import Hix.Managed.Data.GitConfig (GitConfig)
 import Hix.Managed.Data.ManagedPackage (ManagedPackage)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Pretty (HPretty (hpretty), field, prettyFieldsV, prettyMap)
@@ -56,7 +57,8 @@ data MaintContextProto =
   MaintContextProto {
     packages :: Packages MaintPackage,
     hackage :: Map HackageName ContextHackageRepo,
-    envs :: Envs MaintEnv
+    envs :: Envs MaintEnv,
+    git :: Maybe GitConfig
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -73,7 +75,8 @@ data MaintContext =
   MaintContext {
     packages :: Packages MaintPackage,
     hackage :: Map HackageName ContextHackageRepo,
-    targetEnvs :: Packages EnvName
+    targetEnvs :: Packages EnvName,
+    git :: Maybe GitConfig
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

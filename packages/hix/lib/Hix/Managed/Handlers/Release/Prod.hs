@@ -7,9 +7,10 @@ import Hix.Data.Monad (M)
 import Hix.Data.Options (ReleaseOptions (..))
 import Hix.Http (httpManager)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForPublish))
+import Hix.Managed.Data.GitConfig (GitConfig)
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
 import Hix.Managed.Flake (runFlake, runFlakeGen)
-import Hix.Managed.Git (GitApi)
+import Hix.Managed.Git (gitApiFromConfigM)
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
 import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
 import qualified Hix.Managed.Handlers.Project.Prod as Project
@@ -17,7 +18,7 @@ import Hix.Managed.Handlers.Release (ReleaseHandlers (..))
 import qualified Hix.Managed.Handlers.ReleaseUi.Batch as ReleaseUi
 import qualified Hix.Managed.Handlers.ReleaseUi.Prod as ReleaseUi
 import qualified Hix.Managed.Handlers.Upload.Prod as Upload
-import Hix.Managed.Release.Git (GitExtraArgs, GitRelease, gitApiReleaseHermetic, gitApiReleaseProd)
+import Hix.Managed.Release.Git (gitReleaseNative)
 import Hix.Managed.Release.Package (releaseDist, uploadArtifact)
 
 runChecksProd :: M (Maybe [Text])
@@ -29,8 +30,9 @@ runChecksProd =
 handlersProd ::
   ReleaseOptions ->
   CabalConfig ->
+  Maybe GitConfig ->
   M ReleaseHandlers
-handlersProd options cabal = do
+handlersProd options cabal git = do
   manager <- httpManager
   project <- Project.handlersProd options.stateFile
   upload <- Upload.handlersProd options.config.globalCabalConfig cabal
@@ -40,7 +42,7 @@ handlersProd options cabal = do
     runChecks = runChecksProd,
     releaseDist,
     uploadArtifact = \ desc stage -> uploadArtifact desc stage upload,
-    git = gitApi options.config,
+    git = gitApiFromConfigM git . gitReleaseNative options.config,
     context = ContextHandlers.handlersProd,
     project,
     upload,
@@ -48,12 +50,6 @@ handlersProd options cabal = do
     ui
   }
   where
-    gitApi :: ReleaseConfig -> GitExtraArgs -> GitApi GitRelease
-    gitApi =
-      if options.config.globalGit
-      then gitApiReleaseProd
-      else gitApiReleaseHermetic
-
     ui =
       if options.config.interactive
       then ReleaseUi.handlersProdWithEvents options.uiDebug

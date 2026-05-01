@@ -13,9 +13,11 @@ import Hix.Managed.Bump.Optimize (bumpOptimizeMain)
 import Hix.Managed.Cabal.Data.Config (CabalConfig, HackagePurpose (ForPublish))
 import Hix.Managed.Data.BuildOutput (DepChanges)
 import qualified Hix.Managed.Data.EnvContext
+import Hix.Managed.Data.GitConfig (GitConfig)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.ProjectContext (ProjectContext (..))
 import Hix.Managed.Flake (runFlakeGen)
+import Hix.Managed.Git (gitApiFromConfigM)
 import Hix.Managed.Handlers.Build (BuildHandlers (..))
 import qualified Hix.Managed.Handlers.Build.Prod as Build
 import qualified Hix.Managed.Handlers.Context as ContextHandlers
@@ -23,7 +25,7 @@ import Hix.Managed.Handlers.Context (ContextHandlers (..), ContextKey (ContextMa
 import qualified Hix.Managed.Handlers.HackageClient.Prod as HackageClient
 import Hix.Managed.Handlers.Maint (MaintHandlers (..))
 import qualified Hix.Managed.Handlers.Project.Prod as Project
-import Hix.Managed.Maint.Git (gitApiMaintHermetic, gitApiMaintProd)
+import Hix.Managed.Maint.Git (gitMaintNative)
 import Hix.Managed.ProjectContext (updateProject)
 import qualified Hix.Managed.ProjectContextProto as ProjectContextProto
 import Hix.Monad (noteFatal)
@@ -75,12 +77,13 @@ handlersProd ::
   ManagedOptions ->
   MaintConfig ->
   CabalConfig ->
+  Maybe GitConfig ->
   M MaintHandlers
-handlersProd options config cabal = do
+handlersProd options config cabal git = do
   manager <- httpManager
   publishHackages <- HackageClient.handlersProdFor (Just manager) ForPublish cabal
   pure MaintHandlers {
-    git = (if config.globalGit then gitApiMaintProd else gitApiMaintHermetic) config,
+    git = gitApiFromConfigM git (gitMaintNative config),
     context,
     runBump = runBumpProd context options,
     publishHackages

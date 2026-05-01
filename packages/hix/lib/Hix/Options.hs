@@ -71,6 +71,7 @@ import Hix.Data.Options (
   EnvRunnerCommandOptions (..),
   GhciOptions (..),
   GhcidOptions (..),
+  GitOptions,
   HackageCommand (..),
   InfoCommand (..),
   InitOptions (..),
@@ -378,12 +379,19 @@ projectOptionsParser = do
   localDeps <- switch (long "local-deps" <> help "Manage bounds of local deps belonging to separate sets")
   pure ProjectOptions {..}
 
+gitOptionsParser :: Parser (Maybe GitOptions)
+gitOptionsParser =
+  optional (strOption (long "git" <> metavar "global|FILE" <> help gitHelp))
+  where
+    gitHelp = "'global' to use the global git identity with hooks, or a path to a JSON file. Defaults to a hermetic env"
+
 managedOptionsParser :: Parser ManagedOptions
 managedOptionsParser = do
   context <- Right <$> optional jsonConfigParser
   project <- projectOptionsParser
   stateFile <- stateFileConfigParser
   handlers <- optional (option buildHandlersOption (long "build-handlers" <> help "Internal: Handlers for tests"))
+  git <- gitOptionsParser
   pure ManagedOptions {..}
 
 bumpParser :: Parser BumpOptions
@@ -413,10 +421,6 @@ lowerCommand :: Parser LowerCommand
 lowerCommand =
   hsubparser lowerCommands <|> (LowerAuto <$> lowerParser)
 
-globalGitParser :: Parser Bool
-globalGitParser =
-  switch (long "global-git" <> help "Use the global git ID rather than hix-bot@github.com")
-
 maintConfigParser :: Parser MaintConfig
 maintConfigParser = do
   targets <- nonEmpty <$> many (strOption (long "package" <> help "Packages that should be processed"))
@@ -425,7 +429,6 @@ maintConfigParser = do
   push <- switch (long "push" <> help "Commit and push dependency updates")
   pr <- switch (long "pr" <> help "Don't publish revisions and create branches with timestamps for PRs")
   revision <- switch (long "revision" <> help "Publish a revision to Hackage")
-  globalGit <- globalGitParser
   fetch <- switch (long "fetch" <> help "Fetch tags and branches, useful in CI")
   pure MaintConfig {commit = commit || push || pr, push = push || pr, ..}
 
@@ -443,7 +446,6 @@ revisionConfigParser :: Parser RevisionConfig
 revisionConfigParser = do
   packages <- fmap Left <$> many (strOption (long "package" <> help "Packages that should be processed"))
   branches <- fmap Right <$> many (strOption (long "branch" <> help "Release branches that should be processed"))
-  globalGit <- globalGitParser
   fetch <- switch (long "fetch" <> help "Fetch tags and branches, useful in CI")
   pure RevisionConfig {targets = nonEmpty (packages ++ branches), ..}
 
@@ -452,6 +454,7 @@ revisionParser = do
   context <- Right <$> optional jsonConfigParser
   config <- revisionConfigParser
   cabal <- cabalOptionsParser
+  git <- gitOptionsParser
   pure RevisionOptions {..}
 
 publishParser :: Parser ArtifactConfig
@@ -500,7 +503,6 @@ releaseConfigParser = do
   commit <- switch (long "commit" <> help "Commit version updates")
   tag <- switch (long "tag" <> help "Create git tags for releases")
   push <- switch (long "push" <> help "Push new commits created during release")
-  globalGit <- globalGitParser
   -- TODO implement or remove
   fatalDocs <- switch (long "fatal-docs" <> help "Terminate immediately if uploading documentation fails (not implemented)")
   partial <- switch (long "partial" <> help "Continue with successful packages if some fail (non-interactive)")
@@ -522,6 +524,7 @@ releaseParser = do
   config <- releaseConfigParser
   stateFile <- stateFileConfigParser
   cabal <- cabalOptionsParser
+  git <- gitOptionsParser
   oldStyleVersion <- optional (strOption (short 'v' <> hidden <> internal))
   oldStylePackages <- many (strArgument (hidden <> internal))
   pure ReleaseOptions {uiDebug = Nothing, ..}

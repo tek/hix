@@ -7,9 +7,7 @@ data RevisionConfig =
   RevisionConfig {
     targets :: Maybe (NonEmpty (Either PackageName BranchName)),
     -- | Fetch tags and branches.
-    fetch :: Bool,
-    -- | Use the global git config rather than a synthetic committer ID (hix-bot@github.com).
-    globalGit :: Bool
+    fetch :: Bool
   }
   deriving stock (Eq, Show)
 
@@ -17,6 +15,5 @@ instance Default RevisionConfig where
   def =
     RevisionConfig {
       targets = Nothing,
-      fetch = False,
-      globalGit = False
+      fetch = False
     }
