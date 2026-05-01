@@ -3,6 +3,26 @@ let
   inherit (util) internal;
   inherit (lib) types;
 
+  gitConfigModule = {
+    options = {
+      executable = util.maybeOption types.path {
+        description = "Override the git executable path.";
+      };
+      hooks = util.maybeOption types.bool {
+        description = "Whether to run git hooks. Defaults to false.";
+      };
+      env = util.maybeOption (types.either (types.enum ["global" "hermetic"]) (types.attrsOf types.str)) {
+        description = ''
+          Environment variable strategy for git processes.
+          - `"global"`: Inherit the process environment.
+          - `"hermetic"`: Clear the environment and set minimal variables (committer identity,
+            `GIT_CONFIG_NOSYSTEM`).
+          - An attrset of explicit env vars to set (clears the inherited env).
+        '';
+      };
+    };
+  };
+
 in {
 
   options.release = {
@@ -83,6 +103,16 @@ in {
       '';
       type = types.bool;
       default = false;
+    };
+
+    git = util.maybeOption (types.either (types.enum ["global" "hermetic"]) (types.submodule gitConfigModule)) {
+      description = ''
+        Git process configuration for release and maintenance commands.
+        Possible values:
+        - `"global"`: Use the impure git config in the current environment, enable hooks.
+        - `"hermetic"`: Hermetic environment with synthetic committer identity, no hooks.
+        - A submodule with fine-grained configuration.
+      '';
     };
 
     hooks = lib.mkOption {

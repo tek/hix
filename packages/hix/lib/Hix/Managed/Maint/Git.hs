@@ -12,7 +12,7 @@ import Hix.Managed.Data.BuildOutput (ModifiedId)
 import Hix.Managed.Data.CreatedRefs (newRefsRef)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
-import Hix.Managed.Git (BranchName (..), GitApi, GitNative (..), MaintBranch (..), Tag, gitApiHermeticM, gitApiM)
+import Hix.Managed.Git (BranchName (..), GitApi, GitNative (..), MaintBranch (..), Tag, gitApiHermetic)
 import Hix.Managed.Git.Native (GitBracketConfig (..), createBranch, wrapBracketWithRefs_)
 import Hix.Pretty (showP)
 
@@ -84,11 +84,8 @@ gitMaintNative MaintConfig {push, fetch, pr} git = do
       | otherwise
       = pure (releaseBranchName branch)
 
-gitApiMaintProd :: MaintConfig -> GitApi GitMaint
-gitApiMaintProd config = gitApiM (gitMaintNative config)
-
 gitApiMaintHermetic :: MaintConfig -> GitApi GitMaint
-gitApiMaintHermetic config = gitApiHermeticM (gitMaintNative config)
+gitApiMaintHermetic config = gitApiHermetic (gitMaintNative config)
 
 gitRevisionNative :: RevisionConfig -> GitNative -> M GitRevision
 gitRevisionNative RevisionConfig {fetch} git = do
@@ -100,8 +97,5 @@ gitRevisionNative RevisionConfig {fetch} git = do
     switchBranch = switchBranch git
   }
 
-gitApiRevisionProd :: RevisionConfig -> GitApi GitRevision
-gitApiRevisionProd config = gitApiM (gitRevisionNative config)
-
 gitApiRevisionHermetic :: RevisionConfig -> GitApi GitRevision
-gitApiRevisionHermetic config = gitApiHermeticM (gitRevisionNative config)
+gitApiRevisionHermetic config = gitApiHermetic (gitRevisionNative config)

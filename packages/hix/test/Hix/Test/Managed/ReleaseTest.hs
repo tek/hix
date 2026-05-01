@@ -101,7 +101,8 @@ mkContext TestConfig {packages} =
     hooks = [],
     commitExtraArgs = [],
     tagExtraArgs = [],
-    managed = True
+    managed = True,
+    git = Nothing
   }
 
 -- | Create a ReleaseConfig from test config
@@ -136,7 +137,8 @@ context =
     hooks = [],
     commitExtraArgs = [],
     tagExtraArgs = [],
-    managed = True
+    managed = True,
+    git = Nothing
   }
 
 -- | Run the release CLI with given options and return test data
@@ -169,6 +171,7 @@ prop_uploadCount = property do
           config = mkConfig testCfg,
           stateFile = def,
           cabal = def,
+          git = Nothing,
           uiDebug = Nothing,
           oldStyleVersion = Nothing,
           oldStylePackages = []
@@ -205,6 +208,7 @@ releaseTestNoUploads = do
         config,
         stateFile = def,
         cabal = def,
+        git = Nothing,
         uiDebug = Nothing,
         oldStyleVersion = Nothing,
         oldStylePackages = []
@@ -238,6 +242,7 @@ releaseTestChecksRunFirst = do
         config,
         stateFile = def,
         cabal = def,
+        git = Nothing,
         uiDebug = Nothing,
         oldStyleVersion = Nothing,
         oldStylePackages = []
@@ -285,6 +290,7 @@ releaseTestPartialSuccess = do
         config,
         stateFile = def,
         cabal = def,
+        git = Nothing,
         uiDebug = Nothing,
         oldStyleVersion = Nothing,
         oldStylePackages = []
@@ -328,6 +334,7 @@ releaseTestUploadFailures = do
         config,
         stateFile = def,
         cabal = def,
+        git = Nothing,
         uiDebug = Nothing,
         oldStyleVersion = Nothing,
         oldStylePackages = []
@@ -370,6 +377,7 @@ releaseTestBranchCreated = do
         config,
         stateFile = def,
         cabal = def,
+        git = Nothing,
         uiDebug = Nothing,
         oldStyleVersion = Nothing,
         oldStylePackages = []
@@ -653,6 +661,7 @@ test_releaseFlowMixedResults = do
       config = releaseConfig,
       stateFile = def,
       cabal = def,
+      git = Nothing,
       uiDebug = Nothing,
       oldStyleVersion = Nothing,
       oldStylePackages = []
@@ -703,6 +712,7 @@ test_releaseFlowTerminated = do
       config = releaseConfig,
       stateFile = def,
       cabal = def,
+      git = Nothing,
       uiDebug = Nothing,
       oldStyleVersion = Nothing,
       oldStylePackages = []

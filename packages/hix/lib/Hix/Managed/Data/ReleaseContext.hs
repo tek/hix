@@ -11,6 +11,7 @@ import Hix.Data.PathSpec (PathSpec)
 import Hix.Data.Version (Version)
 import Hix.Managed.Cabal.Data.ContextHackageRepo (ContextHackageRepo)
 import Hix.Managed.Cabal.Data.HackageRepo (HackageName)
+import Hix.Managed.Data.GitConfig (GitConfig)
 import Hix.Managed.Data.Packages (Packages)
 import Hix.Pretty (HPretty (hpretty), field, prettyMap)
 
@@ -43,7 +44,8 @@ data ReleaseContextProto =
     hooks :: [PathSpec File],
     commitExtraArgs :: [Text],
     tagExtraArgs :: [Text],
-    managed :: Bool
+    managed :: Bool,
+    git :: Maybe GitConfig
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)
@@ -64,7 +66,8 @@ data ReleaseContext =
     hooks :: [Path Abs File],
     commitExtraArgs :: [Text],
     tagExtraArgs :: [Text],
-    managed :: Bool
+    managed :: Bool,
+    git :: Maybe GitConfig
   }
   deriving stock (Eq, Show, Generic)
   deriving anyclass (FromJSON)

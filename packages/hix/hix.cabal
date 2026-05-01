@@ -140,6 +140,7 @@ library
       Hix.Managed.Data.EnvResult
       Hix.Managed.Data.Envs
       Hix.Managed.Data.EnvState
+      Hix.Managed.Data.GitConfig
       Hix.Managed.Data.Initial
       Hix.Managed.Data.Lower
       Hix.Managed.Data.LowerConfig
@@ -182,6 +183,7 @@ library
       Hix.Managed.Flake
       Hix.Managed.Flow
       Hix.Managed.Git
+      Hix.Managed.Git.Config
       Hix.Managed.Git.Native
       Hix.Managed.Handlers.AvailableVersions
       Hix.Managed.Handlers.AvailableVersions.Prod
@@ -567,6 +569,7 @@ test-suite hix-test
       Hix.Test.Managed.Bump.CandidatesTest
       Hix.Test.Managed.Bump.MutationTest
       Hix.Test.Managed.DiffTest
+      Hix.Test.Managed.GitConfigTest
       Hix.Test.Managed.HackageTest
       Hix.Test.Managed.LowerAuto.MutationOptimizeTest
       Hix.Test.Managed.LowerAuto.MutationStabilizeTest
@@ -649,6 +652,7 @@ test-suite hix-test
     , these >=1.2.1 && <1.3
     , time >=1.12.2 && <1.15
     , transformers >=0.6.1.0 && <0.7
+    , unix >=2.8.6.0 && <2.9
     , vector <0.14
   mixins:
       base hiding (Prelude)

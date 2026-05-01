@@ -16,6 +16,7 @@ import Hix.Managed.Data.Packages (Packages)
 import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import Hix.Managed.Data.SpecialMaintHandlers (SpecialMaintHandlers (..))
 import Hix.Managed.Git (runGitApi)
+import Hix.Managed.Git.Config (gitConfig)
 import Hix.Managed.Handlers.Context (ContextKey (ContextMaint), jsonOrQueryProd)
 import Hix.Managed.Handlers.Maint (MaintHandlers (..))
 import qualified Hix.Managed.Handlers.Maint.Prod as Maint
@@ -68,9 +69,11 @@ releaseMaintenanceCli :: ReleaseMaintOptions -> M ()
 releaseMaintenanceCli options = do
   context <- jsonOrQueryProd ContextMaint options.context
   cabal <- cabalConfig context.hackage options.managed.project.cabal
+  gitCli <- traverse gitConfig options.managed.git
+  let git = gitCli <|> context.git
   handlers <- case options.handlers of
-    Just MaintHandlersTestMaint -> Maint.handlersTest options.managed options.config cabal
-    Nothing -> Maint.handlersProd options.managed options.config cabal
+    Just MaintHandlersTestMaint -> Maint.handlersTest options.managed options.config cabal git
+    Nothing -> Maint.handlersProd options.managed options.config cabal git
   void $ releaseMaintenance handlers options.config context
 
 publishRevisions :: RevisionHandlers -> RevisionConfig -> MaintContextProto -> M ()
@@ -87,5 +90,6 @@ revisionCli :: RevisionOptions -> M ()
 revisionCli options = do
   context <- jsonOrQueryProd ContextMaint options.context
   cabal <- cabalConfig context.hackage options.cabal
-  handlers <- Revision.handlersProd options.config cabal
+  git <- traverse gitConfig options.git
+  handlers <- Revision.handlersProd options.config cabal git
   publishRevisions handlers options.config context

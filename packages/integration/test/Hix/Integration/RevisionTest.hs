@@ -17,11 +17,11 @@ import Hix.Data.VersionBounds (Bound (BoundUpper), unsafeVersionBoundsFromRange)
 import Hix.Error (pathText)
 import Hix.Integration.Hackage (TestHackage (..), withHackageClient)
 import Hix.Integration.Utils (UnitTest, add, addP, libHs, local1, runMTest, withHixDir)
-import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (ArtifactSources))
 import Hix.Managed.Cabal.Data.Config (GhcDb (GhcDbSystem))
 import Hix.Managed.Cabal.Data.HackageLocation (HackageLocation (..), HackageTls (TlsOff))
 import Hix.Managed.Cabal.Data.HackageRepo (HackageRepo (..))
 import Hix.Managed.Cabal.Data.Revision (Revision (..))
+import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (ArtifactSources))
 import Hix.Managed.Cabal.Init (globalFlagsWithDefaultCacheDir, remoteRepo)
 import Hix.Managed.Cabal.Resources (cabalVerbosity)
 import Hix.Managed.Cabal.Sdist (sourceDistribution)
@@ -222,7 +222,8 @@ maintContext =
       })
     ],
     hackage = [],
-    envs = [("latest", MaintEnv { targets = ["local1"], managedBound = Just BoundUpper })]
+    envs = [("latest", MaintEnv { targets = ["local1"], managedBound = Just BoundUpper })],
+    git = Nothing
   }
 
 bumpContext :: ProjectContextProto
@@ -253,7 +254,8 @@ options =
     context = Right Nothing,
     project = (projectOptions ["latest"]),
     stateFile = def,
-    handlers = Nothing
+    handlers = Nothing,
+    git = Nothing
   }
 
 revisionConfig :: RevisionConfig

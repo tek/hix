@@ -15,7 +15,7 @@ import Hix.Managed.Data.CreatedRefs (CreatedRefs (..), accumulateRefs, newRefsRe
 import Hix.Managed.Data.Packages (Packages (..))
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
 import qualified Hix.Managed.Git as Git
-import Hix.Managed.Git (BranchName (..), GitApi (..), GitNative (..), gitApiHermeticM, gitApiM)
+import Hix.Managed.Git (BranchName (..), GitApi (..), GitNative (..), gitApiHermetic)
 import Hix.Managed.Git.Native (
   BracketResult (..),
   GitBracketConfig (..),
@@ -158,7 +158,6 @@ branchCreated refsRef branch = do
 -- Branch creation is deferred until a commit is made.
 -- Returns a 'BracketResult' and the release branch name (if created).
 withReleaseBranch ::
-  forall a .
   ReleaseConfig ->
   GitNative ->
   IORef CreatedRefs ->
@@ -206,11 +205,8 @@ gitReleaseNative config extraArgs git = do
         else pure Set.empty
       pure CommitResult {names = committedNames, tags = tagRefs}
 
-gitApiReleaseProd :: ReleaseConfig -> GitExtraArgs -> GitApi GitRelease
-gitApiReleaseProd config extraArgs = gitApiM (gitReleaseNative config extraArgs)
-
 gitApiReleaseHermetic :: ReleaseConfig -> GitExtraArgs -> GitApi GitRelease
-gitApiReleaseHermetic config extraArgs = gitApiHermeticM (gitReleaseNative config extraArgs)
+gitApiReleaseHermetic config extraArgs = gitApiHermetic (gitReleaseNative config extraArgs)
 
 gitReleaseUnitTest :: GitRelease
 gitReleaseUnitTest =
@@ -224,4 +220,3 @@ gitReleaseUnitTest =
 
 gitApiReleaseUnitTest :: GitApi GitRelease
 gitApiReleaseUnitTest = GitApi (\_ use -> use gitReleaseUnitTest)
-

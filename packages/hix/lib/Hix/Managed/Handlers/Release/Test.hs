@@ -176,7 +176,6 @@ handlersGitTest testConfig options cabal = do
       runChecks = runChecksUnitTest testData.checksRun testConfig.checksPass,
       releaseDist = releaseDistUnitTest,
       uploadArtifact = uploadArtifactUnitTest testConfig testData.uploadedArtifacts,
-      -- Use real hermetic git handlers for testing git workflows
       git = gitApiReleaseHermetic options.config,
       context = contextHandlersUnitTest,
       project,

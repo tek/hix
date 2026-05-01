@@ -179,12 +179,24 @@ instance Default ProjectOptions where
 projectOptions :: [EnvName] -> ProjectOptions
 projectOptions envs = def {envs}
 
+data GitOptions =
+  GitOptionsGlobal
+  |
+  GitOptionsPath JsonContext
+  deriving stock (Eq, Show)
+
+instance IsString GitOptions where
+  fromString = \case
+    "global" -> GitOptionsGlobal
+    path -> GitOptionsPath (fromString path)
+
 data ManagedOptions =
   ManagedOptions {
     context :: Either ProjectContextProto (Maybe JsonContext),
     project :: ProjectOptions,
     stateFile :: StateFileConfig,
-    handlers :: Maybe SpecialBuildHandlers
+    handlers :: Maybe SpecialBuildHandlers,
+    git :: Maybe GitOptions
   }
   deriving stock (Show, Generic)
 
@@ -226,7 +238,8 @@ data RevisionOptions =
   RevisionOptions {
     context :: Either MaintContextProto (Maybe JsonContext),
     config :: RevisionConfig,
-    cabal :: CabalOptions
+    cabal :: CabalOptions,
+    git :: Maybe GitOptions
   }
   deriving stock (Show)
 
@@ -236,6 +249,7 @@ data ReleaseOptions =
     config :: ReleaseConfig,
     stateFile :: StateFileConfig,
     cabal :: CabalOptions,
+    git :: Maybe GitOptions,
     uiDebug :: Maybe BrickDebug,
     -- | Old-style version argument (@-v@) detected, suggesting old interface usage.
     oldStyleVersion :: Maybe Text,

@@ -1,18 +1,20 @@
 module Hix.Managed.Git where
 
+import Control.Lens ((<>:~))
 import Data.Aeson (FromJSON, ToJSON)
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as Text
 import Distribution.Compat.CharParsing (string, try)
 import Distribution.Parsec (Parsec (parsec))
 import Distribution.Pretty (Pretty, pretty)
 import Exon (exon)
 import GHC.IsList (IsList (..))
-import Path (Abs, Dir, Path, toFilePath)
+import Path (Abs, Dir, File, Path, toFilePath)
 import System.Exit (ExitCode (ExitFailure, ExitSuccess))
 import System.Process.Typed (proc, readProcess, setEnv, setWorkingDir)
 import Text.PrettyPrint (text)
 
-import Hix.Class.Map (LookupMaybe, NMap, nTo)
+import Hix.Class.Map (LookupMaybe, NMap, nToWith)
 import qualified Hix.Color as Color
 import Hix.Data.Monad (M)
 import Hix.Data.PackageId (PackageId (..))
@@ -20,6 +22,7 @@ import qualified Hix.Data.PackageName as PackageName
 import Hix.Data.PackageName (LocalPackage (..))
 import Hix.Data.Version (Version)
 import Hix.Error (pathText)
+import Hix.Managed.Data.GitConfig (GitConfig (..), GitEnvVars (..), gitConfigHermetic)
 import Hix.Monad (appContextDebug, fatalError, tryIOM, withTempDir)
 import Hix.Pretty (prettyNt)
 
@@ -59,7 +62,7 @@ data GitCmd =
     repo :: Path Abs Dir,
     args :: [Text]
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Show, Generic)
 
 data GitResult =
   GitSuccess { stdout :: [Text] }
@@ -67,12 +70,16 @@ data GitResult =
   GitFailure { code :: Int, stdout :: [Text], stderr :: [Text] }
   deriving stock (Eq, Show)
 
-gitProcess :: EnvVars -> GitCmd -> M ProcessResult
-gitProcess env GitCmd {repo, args} = do
-  appContextDebug [exon|running process #{Color.shellCommand cmdline}|] do
+gitProcess :: Maybe (Path Abs File) -> Maybe EnvVars -> GitCmd -> M ProcessResult
+gitProcess exe env GitCmd {repo, args} =
+  appContextDebug [exon|running process #{Color.shellCommand cmdline} with #{envInfo} env|] do
     result <$> tryIOM (readProcess conf)
   where
-    conf = setEnv envString $ setWorkingDir (toFilePath repo) (proc "git" (toString <$> args))
+    conf =
+      maybe id (setEnv . envString) env $
+      setWorkingDir (toFilePath repo) $
+      proc (maybe "git" toFilePath exe) (toString <$> args)
+
     result (code, stdout, stderr) =
       ProcessResult {
         code,
@@ -80,13 +87,18 @@ gitProcess env GitCmd {repo, args} = do
         stderr = Text.lines (decodeUtf8 stderr)
       }
 
-    envString = nTo env \ k v -> (toString k, toString v)
+    envString = nToWith \ k v -> (toString k, toString v)
 
     cmdline = [exon|git #{Text.unwords args}|]
 
-gitExec :: EnvVars -> GitCmd -> M GitResult
-gitExec env cmd =
-  gitProcess env cmd <&> \case
+    envInfo =
+      if isJust env
+      then "custom"
+      else "global"
+
+gitExec :: Maybe (Path Abs File) -> Maybe EnvVars -> GitCmd -> M GitResult
+gitExec exe env cmd =
+  gitProcess exe env cmd <&> \case
     ProcessResult {code, stdout, stderr}
       | ExitSuccess <- code
       -> GitSuccess stdout
@@ -170,62 +182,57 @@ gitNative env =
     repo = env.repo
   }
 
-gitApiWithNativeEnv :: (GitEnv -> api) -> GitApi api
-gitApiWithNativeEnv api =
-  GitApi \ repo f -> f (api GitEnv {backend = GitBackend {exec = gitExec mempty}, repo})
+hermeticEnvVars :: Path Abs Dir -> EnvVars
+hermeticEnvVars home =
+  [
+    ("HOME", coerce (pathText home)),
+    ("GIT_CONFIG_NOSYSTEM", "1"),
+    ("GIT_AUTHOR_NAME", "hix"),
+    ("GIT_AUTHOR_EMAIL", "hix-bot@github.com"),
+    ("GIT_COMMITTER_NAME", "hix"),
+    ("GIT_COMMITTER_EMAIL", "hix-bot@github.com")
+  ]
 
-gitApi :: (GitNative -> api) -> GitApi api
-gitApi api =
-  GitApi \ repo f -> f (api (gitNative GitEnv {backend = GitBackend {exec = gitExec mempty}, repo}))
-
-gitApiM :: (GitNative -> M api) -> GitApi api
-gitApiM mkApi =
-  GitApi \ repo f -> do
-    api <- mkApi (gitNative GitEnv {backend = GitBackend {exec = gitExec mempty}, repo})
-    f api
-
-gitApiNative :: GitApi GitNative
-gitApiNative = gitApi id
-
--- TODO allow configuring the user data, especially for CI
-gitEnvHermetic :: Path Abs Dir -> Path Abs Dir -> GitEnv
-gitEnvHermetic home repo =
-  GitEnv {backend = GitBackend {exec = gitExec env}, repo}
+withGitEnvVars :: GitEnvVars -> (Maybe EnvVars -> M a) -> M a
+withGitEnvVars envVars f = case envVars of
+  GitEnvGlobal -> f Nothing
+  GitEnvHermetic -> withTempDir "git-home" \ home -> f (Just (hermeticEnvVars home))
+  GitEnvExplicit vars -> f (Just (explicit vars))
   where
-    env =
-      [
-        ("HOME", coerce (pathText home)),
-        ("GIT_CONFIG_NOSYSTEM", "1"),
-        ("GIT_AUTHOR_NAME", "hix"),
-        ("GIT_AUTHOR_EMAIL", "hix-bot@github.com"),
-        ("GIT_COMMITTER_NAME", "hix"),
-        ("GIT_COMMITTER_EMAIL", "hix-bot@github.com")
-      ]
+    explicit vars = EnvVars (fromList [(EnvKey k, EnvVal v) | (k, v) <- Map.toList vars])
 
-gitHermetic :: Path Abs Dir -> Path Abs Dir -> GitNative
-gitHermetic home repo = gitNative (gitEnvHermetic home repo)
+withGitBackend :: GitConfig -> (GitBackend -> M a) -> M a
+withGitBackend config f = case config of
+  GitConfigGlobal -> f GitBackend {exec = gitExec Nothing Nothing}
+  GitConfig {executable, hooks, env} ->
+    withGitEnvVars (fromMaybe GitEnvHermetic env) \ vars ->
+      f GitBackend {exec = gitExec executable vars . addHooksArgs hooks}
+  where
+    addHooksArgs enable =
+      if fromMaybe False enable
+      then id
+      else #args <>:~ ["-c", "core.hooksPath=/dev/null"]
 
-gitApiHermetic :: (GitNative -> api) -> GitApi api
-gitApiHermetic consApi =
+-- | Create a 'GitApi' from a 'GitConfig'.
+-- For 'GitEnvGlobal', inherits the process environment.
+-- For hermetic variants, creates a temp HOME directory.
+gitApiFromConfigM :: Maybe GitConfig -> (GitNative -> M api) -> GitApi api
+gitApiFromConfigM config consApi =
   GitApi \ repo f ->
-    withTempDir "git-home" \ home ->
-      f (consApi (gitNative (gitEnvHermetic home repo)))
+    withGitBackend (fromMaybe gitConfigHermetic config) \ backend ->
+      f =<< consApi (gitNative GitEnv {backend, repo})
 
-gitApiHermeticM :: (GitNative -> M api) -> GitApi api
-gitApiHermeticM mkApi =
-  GitApi \ repo f ->
-    withTempDir "git-home" \ home -> do
-      api <- mkApi (gitNative (gitEnvHermetic home repo))
-      f api
+gitApiGlobal :: (GitNative -> M api) -> GitApi api
+gitApiGlobal mkApi = gitApiFromConfigM (Just GitConfigGlobal) mkApi
 
-gitApiNativeHermetic :: GitApi GitNative
-gitApiNativeHermetic = gitApiHermetic id
+gitApiHermetic :: (GitNative -> M api) -> GitApi api
+gitApiHermetic mkApi = gitApiFromConfigM (Just gitConfigHermetic) mkApi
 
-runGitNative :: Path Abs Dir -> Text -> (GitNative -> M a) -> M a
-runGitNative = runGitApi gitApiNative
+runGitNativeGlobal :: Path Abs Dir -> Text -> (GitNative -> M a) -> M a
+runGitNativeGlobal = runGitApi (gitApiGlobal pure)
 
 runGitNativeHermetic :: Path Abs Dir -> Text -> (GitNative -> M a) -> M a
-runGitNativeHermetic = runGitApi gitApiNativeHermetic
+runGitNativeHermetic = runGitApi (gitApiHermetic pure)
 
 data Tag =
   Tag {

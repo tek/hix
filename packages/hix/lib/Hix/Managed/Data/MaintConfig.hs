@@ -13,9 +13,7 @@ data MaintConfig =
     pr :: Bool,
     revision :: Bool,
     -- | Fetch tags and branches.
-    fetch :: Bool,
-    -- | Use the global git config rather than a synthetic committer ID (hix-bot@github.com).
-    globalGit :: Bool
+    fetch :: Bool
   }
   deriving stock (Eq, Show)
 
@@ -28,6 +26,5 @@ instance Default MaintConfig where
       push = False,
       pr = False,
       revision = False,
-      fetch = False,
-      globalGit = False
+      fetch = False
     }
