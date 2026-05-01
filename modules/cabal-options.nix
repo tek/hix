@@ -5,7 +5,6 @@ let
 
   inherit (lib) types mkOption literalExpression;
   inherit (types) nullOr str;
-  inherit (util) project;
 
   preludeModule = {
 
