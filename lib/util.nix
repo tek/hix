@@ -97,6 +97,8 @@ let
 
   zapp = name: test: util.app (zscript name test);
 
+  bapp = name: test: util.app (script name test);
+
   nixWrapper = scriptBin "nix" ''
   if [[ -n ''${hix_nix_quiet:-} ]]
   then
@@ -230,6 +232,7 @@ let
     zscriptErrBin
     zscriptBin
     zapp
+    bapp
     exportPath
     exportPathOptional
     setupScript

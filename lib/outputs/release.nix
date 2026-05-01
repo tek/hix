@@ -23,7 +23,7 @@
 
   app = suffix: args:
     let allArgs = lib.concatStringsSep " " (lib.filter (s: s != "") [cliArgs args]);
-    in util.zapp "hix-release${suffix}" ''
+    in util.bapp "hix-release${suffix}" ''
     ${cli} hackage release ${allArgs} $@
     '';
 
