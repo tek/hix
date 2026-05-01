@@ -25,7 +25,7 @@ jobs:
       - run: rm -rf /opt/hostedtoolcache
       - name: build static
         run: nix build .#min.appimage
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         name: Create release
         with:
           prerelease: false

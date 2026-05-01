@@ -27,7 +27,7 @@ jobs:
       - run: rm -rf /opt/hostedtoolcache
       - name: Build the AppImage binary
         run: nix build .#min.appimage
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         name: Create release
         with:
           tag_name: latest
