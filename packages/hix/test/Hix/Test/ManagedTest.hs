@@ -19,6 +19,7 @@ import Hix.Test.Managed.LowerStabilize.MutationTest (test_lowerStabilizeMutation
 import Hix.Test.Managed.ProjectContextProtoTest (test_parseProjectContextProto)
 import Hix.Test.Managed.Release.ValidationTest (test_validation)
 import Hix.Test.Managed.ReleaseMaintenanceTest (test_maint)
+import Hix.Test.Managed.ReleaseInputTest (test_releaseInput)
 import Hix.Test.Managed.ReleaseTest (test_checkVersionPersistence, test_release, test_releaseReport, test_versionValidation)
 import Hix.Test.Managed.TagTest (test_tag)
 import Hix.Test.Managed.TargetSpecTest (test_targetSpec)
@@ -56,7 +57,8 @@ test_managed =
         test_versionValidation,
         test_checkVersionPersistence,
         unitTest "UI navigation" test_nav,
-      test_targetSpec
+        test_releaseInput
       ],
+      test_targetSpec,
       test_gitConfig
     ]

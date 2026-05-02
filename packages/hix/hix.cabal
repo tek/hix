@@ -582,6 +582,7 @@ test-suite hix-test
       Hix.Test.Managed.Maint.Handlers
       Hix.Test.Managed.ProjectContextProtoTest
       Hix.Test.Managed.Release.ValidationTest
+      Hix.Test.Managed.ReleaseInputTest
       Hix.Test.Managed.ReleaseMaintenance.Case
       Hix.Test.Managed.ReleaseMaintenance.Gen
       Hix.Test.Managed.ReleaseMaintenanceTest

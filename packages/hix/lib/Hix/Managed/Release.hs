@@ -30,7 +30,7 @@ import Hix.Managed.Release.Data.ReleaseTarget (ReleaseDist)
 import Hix.Managed.Release.Data.Staged (ReleaseState (..), Termination (..), UploadingTargetView (..))
 import qualified Hix.Managed.Release.Flow as ReleaseFlow
 import Hix.Managed.Release.Flow (ReleaseFlow, runReleaseFlow, withTargetsAndShared)
-import Hix.Managed.Release.Git (CommitResult (..), CommitStyle (..), GitExtraArgs (..), GitRelease (..))
+import Hix.Managed.Release.Git (CommitResult (..), CommitStyle (..), GitExtraArgs (..), GitRelease (..), noCommitResult)
 import Hix.Managed.Release.Hook (withHooks)
 import Hix.Managed.Release.ReleasePlan (configuredReleaseVersions)
 import Hix.Managed.Release.ReleaseResult (outputResults)
@@ -150,12 +150,13 @@ releaseFlow handlers@ReleaseHandlers {ui} git context config = do
   ReleaseFlow.initTargets (ui.chooseVersions shared) configured
   validateFlowVersions config ui
   withTargetsAndShared (updateStateVersions handlers context.managed config.forceVersion)
-  ReleaseFlow.lift (regenerateCabal handlers)
+  unlessM ReleaseFlow.isTerminated (ReleaseFlow.lift (regenerateCabal handlers))
   checksPassed <- ReleaseFlow.checksStage (runChecksIfEnabled config handlers)
   ReleaseFlow.initDists checksPassed ui.chooseDistTargets handlers.releaseDist
   ReleaseFlow.initUploading
   traverse_ @[] (uploadFlowStage config ui handlers.uploadArtifact) [minBound .. maxBound]
-  commitResult <- ReleaseFlow.withUploading (postUpload config context.hooks git (nSize context.packages))
+  commitResult <- ifM ReleaseFlow.isTerminated (pure noCommitResult) do
+    ReleaseFlow.withUploading (postUpload config context.hooks git (nSize context.packages))
   sharedVer <- ReleaseFlow.getSharedVersion
   pure (sharedVer, commitResult)
 

@@ -23,8 +23,6 @@ import Hix.Data.Monad (LogLevel (..), M)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Data.Version (Version)
 import qualified Hix.Log as Log
-import Hix.Monad (shouldLog)
-import Hix.Pretty (showP)
 import Hix.Managed.Cabal.Data.UploadStage (ArtifactSort (..), UploadMutability (..), UploadStage (..))
 import Hix.Managed.Data.Packages (Packages (..))
 import Hix.Managed.Data.ReleaseConfig (ArtifactConfig (..), ReleaseConfig (..))
@@ -52,6 +50,8 @@ import Hix.Managed.Release.Data.UploadResult (hasFailure)
 import Hix.Managed.Release.Data.VersionChoice (VersionChoice)
 import qualified Hix.Managed.Release.Staged as Staged
 import Hix.Managed.Release.Staged (KnownStage, ReleaseStage (..))
+import Hix.Monad (shouldLog)
+import Hix.Pretty (showP)
 
 newtype ReleaseFlow a =
   ReleaseFlow (StateT ReleaseStage M a)
@@ -272,6 +272,13 @@ checksFailed buildLog = do
 getSharedVersion :: ReleaseFlow (Maybe Version)
 getSharedVersion =
   ReleaseFlow $ gets Staged.currentSharedVersion
+
+-- | Check if the flow has been terminated.
+isTerminated :: ReleaseFlow Bool
+isTerminated =
+  ReleaseFlow $ gets \ ReleaseStage {tag} -> case tag of
+    STerminated _ -> True
+    SInProgress _ -> False
 
 -- | Run an action with the uploading targets.
 withUploading :: (Maybe Version -> Packages UploadingTargetView -> M a) -> ReleaseFlow a
