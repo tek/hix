@@ -12,7 +12,7 @@ import Hix.Data.Monad (AppResources (..), M, appRes)
 import Hix.Data.Options (ReleaseOptions (..))
 import Hix.Data.PackageName (LocalPackage (..))
 import Hix.Managed.Cabal.Config (cabalConfig)
-import Hix.Managed.Data.ReleaseConfig (ArtifactConfig (..), ReleaseConfig (..), ReleaseVersion (..))
+import Hix.Managed.Data.ReleaseConfig (ArtifactConfig (..), ReleaseConfig (..), ReleaseVersion (..), bothArtifacts)
 import Hix.Managed.Data.ReleaseContext (ReleaseContextProto (..), ReleasePackage (..))
 import qualified Hix.Managed.Data.VersionIncrement as VersionIncrement
 import Hix.Managed.Git (GitNative (..), runGitNativeHermetic)
@@ -211,3 +211,69 @@ prop_releaseInput = withTests 100 $ property do
 test_releaseInput :: TestTree
 test_releaseInput =
   testProperty "release-input" prop_releaseInput
+
+-- | Context with two packages for testing explicit version targeting.
+multiContextProto :: ReleaseContextProto
+multiContextProto =
+  ReleaseContextProto {
+    packages = fromList [
+      (LocalPackage "local1", ReleasePackage {
+        name = LocalPackage "local1",
+        version = [1, 0, 0],
+        path = [reldir|packages/local1|]
+      }),
+      (LocalPackage "local2", ReleasePackage {
+        name = LocalPackage "local2",
+        version = [3, 0, 0],
+        path = [reldir|packages/local2|]
+      })
+    ],
+    hackage = mempty,
+    hooks = [],
+    commitExtraArgs = [],
+    tagExtraArgs = [],
+    managed = True,
+    git = Nothing
+  }
+
+-- | Test that @--package local1-2.0.0@ with multiple packages sets the version for local1 to 2.0.0
+-- and excludes local2.
+prop_releaseExplicitVersion :: Property
+prop_releaseExplicitVersion = withTests 1 $ property do
+  let
+    config = def {
+      targets = Just (pure "local1-2.0.0"),
+      interactive = False,
+      commit = True,
+      tag = True,
+      merge = True,
+      candidates = bothArtifacts
+    }
+    options = ReleaseOptions {
+      context = Left multiContextProto,
+      config,
+      stateFile = def,
+      cabal = def,
+      git = Nothing,
+      uiDebug = Nothing,
+      oldStyleVersion = Nothing,
+      oldStylePackages = []
+    }
+    testConfig = ReleaseTest.defaultTestConfig
+  (stage, tags) <- test $ runMTest False do
+    initGitRepo
+    cabal <- cabalConfig multiContextProto.hackage options.cabal
+    (handlers, _testData) <- ReleaseTest.handlersGitTest testConfig options cabal
+    stage <- release handlers config multiContextProto
+    tags <- gitTags
+    pure (stage, tags)
+  let terminated = case stage of
+        ReleaseStage {state = ReleaseState {termination = Termination _}} -> True
+        _ -> False
+  terminated === False
+  -- Tag should be local1-2.0.0
+  sort tags === ["local1-2.0.0"]
+
+test_releaseExplicitVersion :: TestTree
+test_releaseExplicitVersion =
+  testProperty "release-explicit-version" prop_releaseExplicitVersion

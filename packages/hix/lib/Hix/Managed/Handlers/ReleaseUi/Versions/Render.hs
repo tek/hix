@@ -96,7 +96,11 @@ render VersionsScreen {shared = sharedFocusable, packages} =
       surroundingBorder False $
       rowBorders False $
       columnBorders False $
-      table (sharedRow : separatorRow : packageRows)
+      table rows
+
+    rows
+      | showShared = sharedRow : separatorRow : packageRows
+      | otherwise = packageRows
 
     sharedRow =
       versionRow "All packages" (rowState shared.enabled shared.enabled) shared.components
@@ -108,6 +112,8 @@ render VersionsScreen {shared = sharedFocusable, packages} =
       renderPackageVersion <$> toList packages
 
     renderPackageVersion PackageVersion {package, version = Focusable {state = TogglableVersion {enabled, components}}} =
-      versionRow (showP package) (rowState (not shared.enabled) enabled) components
+      versionRow (showP package) (rowState (showShared && not shared.enabled) enabled) components
+
+    showShared = length (toList packages) > 1
 
     shared = sharedFocusable.state

@@ -12,7 +12,7 @@ import Hix.Ui.Data.Nav (
   Grid (..),
   NavContext,
   NavHandlers (..),
-  NavMeta,
+  NavMeta (..),
   NewFocus (..),
   OldFocus (..),
   Row (..),
@@ -154,6 +154,41 @@ focusRow targetIndex (Tiles tiles) =
       pre :|> tile -> tryRight (tile <| between) pre post
       Seq.Empty | Seq.Empty <- post -> Nothing
                 | otherwise -> tryRight between [] post
+
+-- | Move the grid focus to a specific row by its NavMeta index, focusing the tile at the given position.
+gridNavigateToRow :: Int -> Int -> Grid s r t -> Maybe (Grid s r t)
+gridNavigateToRow targetRowIndex targetTileIndex Grid {pre, focus, post} =
+  scan Seq.empty allRows
+  where
+    allRows = (pre |> RowFocusable (unfocusRow focus)) <> post
+
+    scan scanned = \case
+      Seq.Empty -> Nothing
+      row :<| rest -> case row of
+        RowFocusable FocusableRow {meta = meta@NavMeta {index}, row = tiles}
+          | index == targetRowIndex ->
+            Just Grid {
+              pre = scanned,
+              focus = FocusableRow {meta, row = focusRow targetTileIndex tiles},
+              post = rest
+            }
+        _ -> scan (scanned |> row) rest
+
+-- | Navigate to a specific row by its NavMeta index, focusing the tile at the given position.
+navigateToRowIndex ::
+  ∀ s r t m .
+  MonadState (NavContext s r t) m =>
+  Int ->
+  Int ->
+  m ()
+navigateToRowIndex targetRow targetTile = do
+  grid <- use #navGrid
+  for_ (gridNavigateToRow targetRow targetTile grid) \ newGrid -> do
+    updateFocusedRow False
+    updateFocusedTile False
+    #navGrid .= newGrid
+    updateFocusedTile True
+    updateFocusedRow True
 
 navigateRows ::
   ∀ s r t m .

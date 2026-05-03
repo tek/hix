@@ -3,15 +3,20 @@ module Hix.Managed.Handlers.ReleaseUi.Versions.Event where
 import Brick (EventM, get)
 import Control.Lens ((%=), (%~))
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Vector as Vector
+import Data.Vector (Vector)
 
 import Hix.Managed.Handlers.ReleaseUi.Versions.KeyEvent (VersionsActions (..))
 import Hix.Managed.Handlers.ReleaseUi.Versions.State (
+  PackageVersion,
   TogglableVersion (..),
   VersionsContext,
   VersionsScreen (..),
+  packageVersionEnabled,
   withNonEmptyComponents,
   )
 import Hix.Ui.Data.Nav (Focusable (..), FocusableRow (..), NavContext (..), NavMeta (..), focusedRow, focusedTile)
+import Hix.Ui.Nav (navigateToRowIndex)
 
 overFocusedRow ::
   (TogglableVersion -> TogglableVersion) ->
@@ -26,9 +31,19 @@ overFocusedComponent ::
 overFocusedComponent f =
   focusedTile >>= traverse_ \ NavMeta {lens} -> #state . lens . #state %= f
 
+firstEnabledRow :: Vector PackageVersion -> Int
+firstEnabledRow packages =
+  fromMaybe 0 (Vector.findIndex packageVersionEnabled packages) + 1
+
 toggleShared :: EventM n VersionsContext ()
 toggleShared = do
   #state . #shared . #state . #enabled %= not
+  NavContext {state = VersionsScreen {shared, packages}} <- get
+  isShared <- isFocusedSharedRow
+  case (shared.state.enabled, isShared) of
+    (True, False) -> navigateToRowIndex 0 0
+    (False, True) -> navigateToRowIndex (firstEnabledRow packages) 0
+    _ -> unit
 
 -- | Check if the focused row is the shared row (index 0)
 isFocusedSharedRow :: EventM n VersionsContext Bool

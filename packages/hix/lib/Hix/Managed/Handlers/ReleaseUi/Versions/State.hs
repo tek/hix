@@ -42,6 +42,10 @@ data PackageVersion =
   }
   deriving stock (Eq, Show, Generic)
 
+packageVersionEnabled :: PackageVersion -> Bool
+packageVersionEnabled PackageVersion {version = Focusable {state = TogglableVersion {enabled}}} =
+  enabled
+
 data VersionsScreen =
   VersionsScreen {
     shared :: Focusable TogglableVersion,

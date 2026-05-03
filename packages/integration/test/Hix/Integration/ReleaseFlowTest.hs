@@ -108,7 +108,6 @@ flowTestConfig =
   def {
     publish = bothArtifacts,
     targets = Just ["local1", "local2"],
-    version = Just (VersionIncrement Major),
     interactive = True
   }
 
@@ -504,3 +503,223 @@ sharedDefaultFlowTest = do
 test_releaseFlowSharedDefault :: TestT IO ()
 test_releaseFlowSharedDefault =
   tmuxTest False 10 sharedDefaultFlowTest
+
+-- | Context proto with a single package — the shared row should not be shown.
+singlePackageContext :: ReleaseContextProto
+singlePackageContext =
+  ReleaseContextProto {
+    packages = [
+      ("local1", ReleasePackage {name = "local1", version = [1, 0, 0], path = [reldir|local1|]})
+    ],
+    hackage = [unsafeCentralHackageContextFixed],
+    hooks = [],
+    commitExtraArgs = [],
+    tagExtraArgs = [],
+    managed = True,
+    git = Nothing
+  }
+
+singlePackageConfig :: ReleaseConfig
+singlePackageConfig =
+  def {
+    publish = bothArtifacts,
+    targets = Just ["local1"],
+    version = Just (VersionIncrement Major),
+    interactive = True
+  }
+
+singlePackageVersionBox :: Text
+singlePackageVersionBox =
+  [exon|┌──────────────────────────────────┐
+│██ Choose release versions  bump b│
+│                          shared s│
+│● local1 1.1.0              quit q│
+│                            help ?│
+└──────────────────────────────────┘
+|]
+
+singlePackageFlowTest :: TmuxTest M ()
+singlePackageFlowTest = do
+  debug <- tmuxLiftM brickDebug
+  handlers <- tmuxLiftM (handlersFlowTest defaultTestConfig debug)
+  withAsync (tmuxLiftM (void (release handlers singlePackageConfig singlePackageContext))) \_ -> do
+    runStep debug FlowStep {
+      label = "version-selection (single package, no shared row)",
+      expected = singlePackageVersionBox,
+      keys = [KEnter]
+    }
+
+test_releaseFlowSinglePackage :: TestT IO ()
+test_releaseFlowSinglePackage =
+  tmuxTest False 10 singlePackageFlowTest
+
+-- | Test that pressing 's' (toggle shared) moves cursor to the correct row.
+-- Uses 4 packages. Start on shared row, move to local3 (j,j,j).
+-- Press 's': toggle shared ON → cursor moves to row 0 (shared row).
+-- Press 's': toggle shared OFF → cursor moves to first enabled package (local1).
+sharedToggleContext :: ReleaseContextProto
+sharedToggleContext =
+  ReleaseContextProto {
+    packages = [
+      ("local1", ReleasePackage {name = "local1", version = [1, 0, 0], path = [reldir|local1|]}),
+      ("local2", ReleasePackage {name = "local2", version = [2, 0, 0], path = [reldir|local2|]}),
+      ("local3", ReleasePackage {name = "local3", version = [3, 0, 0], path = [reldir|local3|]}),
+      ("local4", ReleasePackage {name = "local4", version = [4, 0, 0], path = [reldir|local4|]})
+    ],
+    hackage = [unsafeCentralHackageContextFixed],
+    hooks = [],
+    commitExtraArgs = [],
+    tagExtraArgs = [],
+    managed = True,
+    git = Nothing
+  }
+
+sharedToggleConfig :: ReleaseConfig
+sharedToggleConfig =
+  def {
+    publish = bothArtifacts,
+    targets = Just ["local1", "local2", "local3", "local4"],
+    interactive = True
+  }
+
+sharedToggleVersionBox :: Text
+sharedToggleVersionBox =
+  [exon|┌──────────────────────────────────┐
+│██ Choose release versions        │
+│                                  │
+│○ All packages 0                  │
+│                                  │
+│● local1       1.0.0        bump b│
+│○ local2       2.0.0      shared s│
+│○ local3       3.0.0        quit q│
+│○ local4       4.0.0        help ?│
+└──────────────────────────────────┘
+|]
+
+sharedToggleFlowTest :: TmuxTest M ()
+sharedToggleFlowTest = do
+  debug <- tmuxLiftM brickDebug
+  handlers <- tmuxLiftM (handlersFlowTest defaultTestConfig debug)
+  withAsync (tmuxLiftM (void (release handlers sharedToggleConfig sharedToggleContext))) \_ -> do
+    -- Start: shared row focused (row 0), shared disabled (no --version).
+    -- j,j,j: move to local3 (row 3).
+    -- s: toggle shared ON → cursor moves to row 0 (shared row).
+    -- s: toggle shared OFF → cursor moves to first enabled package (row 1 = local1).
+    runStep debug FlowStep {
+      label = "version-selection (shared toggle)",
+      expected = "",
+      keys = [KChar 'j', KChar 'j', KChar 'j', KChar 's', KChar 's']
+    }
+    syncRender debug
+    assertTmuxTail False sharedToggleVersionBox
+
+test_releaseFlowSharedToggle :: TestT IO ()
+test_releaseFlowSharedToggle =
+  tmuxTest False 10 sharedToggleFlowTest
+
+-- | Test that with --commit (no --publish), candidate upload screens appear.
+-- Bug: flow was quitting immediately after distributions.
+commitOnlyConfig :: ReleaseConfig
+commitOnlyConfig =
+  def {
+    targets = Just ["local1", "local2"],
+    interactive = True,
+    commit = True
+    -- Note: no publish = bothArtifacts, so publish defaults to noArtifacts
+    -- Note: no version, so packages show current versions
+  }
+
+commitOnlyFlowSteps :: [FlowStep]
+commitOnlyFlowSteps =
+  [
+    FlowStep {
+      label = "version-selection (commit only)",
+      expected = versionBox,
+      keys = [KEnter]
+    },
+    FlowStep {
+      label = "dist-targets (commit only)",
+      expected = distBox,
+      keys = [KEnter]
+    },
+    FlowStep {
+      label = "upload-candidates-sources (commit only)",
+      expected = "",
+      keys = [KEnter]
+    },
+    FlowStep {
+      label = "upload-candidates-docs (commit only)",
+      expected = "",
+      keys = [KEnter]
+    }
+  ]
+
+commitOnlyFlowTest :: TmuxTest M ()
+commitOnlyFlowTest = do
+  debug <- tmuxLiftM brickDebug
+  handlers <- tmuxLiftM (handlersFlowTest defaultTestConfig debug)
+  withAsync (tmuxLiftM (void (release handlers commitOnlyConfig flowTestContext))) \_ ->
+    for_ commitOnlyFlowSteps (runStep debug)
+
+test_releaseFlowCommitOnly :: TestT IO ()
+test_releaseFlowCommitOnly =
+  tmuxTest False 10 commitOnlyFlowTest
+
+-- | Test that --package local1-2.0.0 with interactive mode shows 2.0.0 in the versions screen.
+-- Bug: versionTarget ignores ConfiguredTarget.version, showing current version instead.
+explicitVersionConfig :: ReleaseConfig
+explicitVersionConfig =
+  def {
+    targets = Just ["local4-4.0.0"],
+    interactive = True,
+    publish = bothArtifacts
+  }
+
+explicitVersionContext :: ReleaseContextProto
+explicitVersionContext =
+  ReleaseContextProto {
+    packages = [
+      ("local1", ReleasePackage {name = "local1", version = [1, 0, 0], path = [reldir|local1|]}),
+      ("local2", ReleasePackage {name = "local2", version = [3, 0, 0], path = [reldir|local2|]}),
+      ("local3", ReleasePackage {name = "local3", version = [4, 1, 0], path = [reldir|local3|]}),
+      ("local4", ReleasePackage {name = "local4", version = [3, 0, 1], path = [reldir|local4|]}),
+      ("local5", ReleasePackage {name = "local5", version = [5, 0, 2], path = [reldir|local5|]})
+    ],
+    hackage = [unsafeCentralHackageContextFixed],
+    hooks = [],
+    commitExtraArgs = [],
+    tagExtraArgs = [],
+    managed = True,
+    git = Nothing
+  }
+
+-- | With --package local1-2.0.0: local1 at 2.0.0, local2 disabled at 3.0.0, no shared row.
+explicitVersionBox :: Text
+explicitVersionBox =
+  [exon|┌──────────────────────────────────┐
+│██ Choose release versions        │
+│                                  │
+│○ All packages 0                  │
+│                                  │
+│○ local1       1.0.0              │
+│○ local2       3.0.0        bump b│
+│○ local3       4.1.0      shared s│
+│● local4       4.0.0        quit q│
+│○ local5       5.0.2        help ?│
+└──────────────────────────────────┘
+|]
+
+explicitVersionFlowTest :: TmuxTest M ()
+explicitVersionFlowTest = do
+  debug <- tmuxLiftM brickDebug
+  handlers <- tmuxLiftM (handlersFlowTest defaultTestConfig debug)
+  withAsync (tmuxLiftM (void (release handlers explicitVersionConfig explicitVersionContext))) \ _ -> do
+    runStep debug FlowStep {
+      label = "version-selection (explicit version)",
+      expected = explicitVersionBox,
+      keys = [KEnter]
+    }
+
+test_releaseFlowExplicitVersion :: TestT IO ()
+test_releaseFlowExplicitVersion =
+  tmuxTest False 11 explicitVersionFlowTest

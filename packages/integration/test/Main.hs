@@ -4,7 +4,7 @@ import Hix.Integration ()
 import Hix.Integration.HackageTest (test_hackage)
 import Hix.Integration.Managed.BumpTest (test_bump)
 import Hix.Integration.Managed.SolverPackagesTest (test_solverPackages)
-import Hix.Integration.ReleaseFlowTest (test_releaseFlow, test_releaseFlowInteractive, test_releaseFlowVersionChange)
+import Hix.Integration.ReleaseFlowTest (test_releaseFlow, test_releaseFlowInteractive, test_releaseFlowVersionChange, test_releaseFlowSinglePackage, test_releaseFlowSharedToggle, test_releaseFlowCommitOnly, test_releaseFlowExplicitVersion)
 import Hix.Integration.ReleaseMaintenanceTest (test_releaseMaintenance)
 import Hix.Integration.ReleaseTest (test_release)
 import Hix.Integration.ReleaseUiTest (
@@ -34,7 +34,11 @@ tests =
     unitTest "release ui version problems reject" test_releaseUi_versionProblems_reject,
     unitTest "release flow" test_releaseFlow,
     unitTest "release flow interactive" test_releaseFlowInteractive,
-    unitTest "release flow version change" test_releaseFlowVersionChange
+    unitTest "release flow version change" test_releaseFlowVersionChange,
+    unitTest "release flow single package" test_releaseFlowSinglePackage,
+    unitTest "release flow shared toggle" test_releaseFlowSharedToggle,
+    unitTest "release flow commit only" test_releaseFlowCommitOnly,
+    unitTest "release flow explicit version" test_releaseFlowExplicitVersion
   ]
 
 main :: IO ()

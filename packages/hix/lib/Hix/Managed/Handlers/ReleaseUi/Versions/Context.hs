@@ -2,6 +2,7 @@ module Hix.Managed.Handlers.ReleaseUi.Versions.Context where
 
 import Control.Lens (Traversal', ix, (^.))
 import Data.Functor.WithIndex (imap)
+import Data.List (findIndex)
 import qualified Data.Sequence as Seq
 import qualified Data.Vector as Vector
 import Distribution.Version (mkVersion, versionNumbers)
@@ -17,6 +18,7 @@ import Hix.Managed.Handlers.ReleaseUi.Versions.State (
   TogglableVersion (..),
   VersionsContext,
   VersionsScreen (..),
+  packageVersionEnabled,
   )
 import Hix.Managed.Release.Data.ReleasePlan (ConfiguredTarget (..))
 import Hix.Managed.Release.Data.ReleaseTarget (ReleaseTarget (..))
@@ -33,6 +35,7 @@ import Hix.Ui.Data.Nav (
   focusable,
   navContext,
   )
+import Hix.Ui.Nav (focusRow, gridNavigateToRow)
 
 versionComponents ::
   Version ->
@@ -49,35 +52,74 @@ versionTarget ::
   LocalPackage ->
   ConfiguredTarget ->
   PackageVersion
-versionTarget package ConfiguredTarget {current, selected} =
+versionTarget package ConfiguredTarget {current, version = configuredVersion, selected} =
   PackageVersion {
     package,
     current,
     version = focusable TogglableVersion {enabled = selected, components}
   }
   where
-    components = versionComponents current
+    components = versionComponents (maybe current (.version) configuredVersion)
 
+-- TODO with @showShared@ now having to be synced with other code, it would be better to abstract over shared/individual
+-- somewhere up the call graph.
 uiVersions ::
   Maybe SelectedVersion ->
   Packages ConfiguredTarget ->
   VersionsContext
 uiVersions configuredSharedVersion targets =
-  navContext screen navGrid
+  navContext screen initialGrid
   where
-    navGrid =
+    initialGrid =
+      if startIndividual
+      then fromMaybe baseGrid (gridNavigateToRow firstEnabledRow 0 baseGrid)
+      else baseGrid
+
+    baseGrid =
       Grid {
         pre = [],
-        focus = FocusableRow {
-          meta = NavMeta {index = 0, lens = sharedLens},
-          row = ActiveRow {
-            pre = [TileUnfocusable],
-            focus = NavMeta {index = 0, lens = sharedLens . #state . #components . #super},
-            post = fromList (componentList sharedLens)
-          }
-        },
-        post = componentRow <$> Seq.fromList [0 .. length packages - 1]
+        focus = active 0,
+        post = Seq.fromList [RowFocusable (f i) | (f, i) <- zip rows [1 ..]]
       }
+
+    (active, rows) = if showShared then withShared else withoutShared
+
+    -- | Start in individual mode when shared row is shown but not all packages are enabled.
+    startIndividual = showShared && not allEnabled
+
+    allEnabled = all packageVersionEnabled packages
+
+    -- | Row index of the first enabled package (1-based, since shared row is 0).
+    firstEnabledRow = fromMaybe 0 (findIndex packageVersionEnabled packages) + 1
+
+    withShared = (sharedRow, componentRow <$> [0 .. length packages - 1])
+
+    withoutShared = (fmap (focusRow 1) . componentRow 0, (componentRow <$> [1 .. length packages - 1]))
+
+    sharedRow index =
+      FocusableRow {
+        meta = NavMeta {index, lens = sharedLens},
+        row = ActiveRow {
+          pre = [TileUnfocusable],
+          focus = NavMeta {index = 0, lens = sharedLens . #state . #components . #super},
+          post = fromList (componentList sharedLens)
+        }
+      }
+
+    componentRow lensIndex rowIndex =
+      let
+        lens :: Traversal' VersionsScreen (Focusable TogglableVersion)
+        lens = #packages . ix lensIndex . #version
+      in FocusableRow {
+        meta = NavMeta {index = rowIndex, lens},
+        row = [
+          TileUnfocusable,
+          TileFocusable NavMeta {index = 0, lens = lens . #state . #components . #super}
+        ] <> fromList (toList (imap (tailComponent lens) (screen ^. (lens . #state . #components . #subs))))
+      }
+
+    -- | Show shared row when there are multiple selected packages
+    showShared = length packages > 1
 
     sharedLens :: Traversal' VersionsScreen (Focusable TogglableVersion)
     sharedLens = #shared
@@ -85,29 +127,18 @@ uiVersions configuredSharedVersion targets =
     componentList (l :: Traversal' VersionsScreen (Focusable TogglableVersion)) =
       toList (imap (tailComponent l) (screen ^. (l . #state . #components . #subs)))
 
-    componentRow i = vRow i (#packages . ix i . #version)
-
-    vRow i (l :: Traversal' VersionsScreen (Focusable TogglableVersion)) =
-      RowFocusable FocusableRow {
-        meta = NavMeta {index = i + 1, lens = l},
-        row = [
-          TileUnfocusable,
-          TileFocusable NavMeta {index = 0, lens = l . #state . #components . #super}
-        ] <> fromList (toList (imap (tailComponent l) (screen ^. (l . #state . #components . #subs))))
-      }
-
     tailComponent (l :: Traversal' VersionsScreen (Focusable TogglableVersion)) i _ =
       TileFocusable NavMeta {index = i + 1, lens = l . #state . #components . #subs . ix i}
 
     screen = VersionsScreen {
       shared = focusable TogglableVersion {
-        enabled = isJust configuredSharedVersion,
+        enabled = isJust configuredSharedVersion && allEnabled,
         components = sharedVersion
       },
       packages = Vector.fromList packages
     }
 
-    sharedVersion = versionComponents (maybe [0] (\sv -> sv.version) configuredSharedVersion)
+    sharedVersion = versionComponents (maybe [0] (.version) configuredSharedVersion)
 
     packages = uncurry versionTarget <$> nList targets
 
