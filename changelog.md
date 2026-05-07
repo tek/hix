@@ -15,6 +15,7 @@
 * Allow multiple flags to be passed as a list in the OCs `enable`, `disable` and `configure`.
 * Apply the `buildInputs` OC to `pkgs` when it is a function, as documented.
 * Apply package-set and env OCs separately when reading pregenerated overrides.
+* Add OC `github` as a convenience wrapper of `source`.
 
 ### Environments and toolchain
 

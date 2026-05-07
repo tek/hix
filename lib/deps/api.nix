@@ -108,13 +108,18 @@ let
   else c2n.hackageAt conf.location
   ;
 
+
+  github = {owner, repo, rev, hash, path ? null}: let
+    src = config.pkgs.fetchFromGitHub { inherit owner repo rev hash; };
+  in if path == null then c2n.source.root src else c2n.source.sub src path;
+
 in transformers // {
   inherit (c2n) hackageAt source;
   inherit self super pkgs;
   final = self;
   prev = super;
   inherit reset transform transform_ noHpack cabalOverrides cabal2nixOverrides cabal2nixArgs revision drv;
-  inherit hackageConfGen hackageConf hackage;
+  inherit hackageConfGen hackageConf hackage github;
   inherit (spec) option;
   hsLib = pkgs.haskell.lib;
   inherit hsLibC;
