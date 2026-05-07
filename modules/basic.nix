@@ -289,6 +289,12 @@ in {
         readOnly = true;
       };
 
+      hixRelease = mkOption {
+        description = "Whether this project uses a release version of Hix.";
+        type = bool;
+        default = true;
+      };
+
       hixUrl = mkOption {
         description = "The URL to the Hix release tag used by this project.";
         type = str;
@@ -351,6 +357,8 @@ in {
       packageNames = lib.attrNames config.packages;
 
       hixVersion = "0.9.1";
+
+      hixRelease = false;
 
     };
   };
