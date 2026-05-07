@@ -129,6 +129,7 @@
   sed -i 's/ref=[^"#]\+/ref='"$version/" readme.md examples/*/flake.nix
   sed -ri 's/~[[:digit:]]+\.[[:digit:]]+\.tar/~'"''${version%.*}.tar/" readme.md
   sed -i 's/hixVersion = ".*"/hixVersion = "'"$version"'"/' modules/basic.nix packages/hix/lib/Hix.hs
+  sed -i 's/hixRelease = false/hixRelease = true/' modules/basic.nix
   sed -i "s/Unreleased/$version/" changelog.md
   sed -i '/cliReleaseOverride/ s/false/true/' modules/hix-test.nix
   sed -i "s/@since unreleased/@since $version/" packages/**/*.hs
@@ -145,6 +146,9 @@
   ask_abort 'Ready to commit. Continue?'
   ${git} commit --allow-empty -m "Release $version"
   ${git} tag -m "Release $version" "$version"
+  sed -i 's/hixRelease = true/hixRelease = false/' modules/basic.nix
+  ${git} add modules/basic.nix
+  ${git} commit --allow-empty -m "Reset release option"
   '';
 
   grepDevCli = "${grep} --files-with-matches 'hixCli\.dev = true'";
