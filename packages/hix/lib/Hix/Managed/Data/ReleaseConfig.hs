@@ -58,7 +58,6 @@ data ReleaseConfig =
     -- | Run Nix flake checks before uploading. Defaults to False; must be explicitly enabled with --check.
     check :: Bool,
     -- | Merge the release branch back into the initial branch after successful uploads.
-    --   A temporary release branch is always created. Use --merge to merge it back.
     merge :: Bool,
     -- | Use the global Cabal configuration file instead of hermetic @/dev/null@.
     --   This allows using credentials configured in @~\/.cabal\/config@ but sacrifices reproducibility.
