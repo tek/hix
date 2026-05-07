@@ -271,11 +271,6 @@ in {
 
   internal.cabal-extra.default-extensions = ["StrictData"];
 
-  internal.hixCli = {
-    commit = "d14e85f7aee0878665484663e9f95347b7beb80d";
-    sha256 = "0disvvvvv9wwckvg6ybvjas72vg6p4nhcbcswdpddikxhs1xy9xj";
-  };
-
   outputs = let
 
     # The test runner does not copy `./test` to the temporary directory.
