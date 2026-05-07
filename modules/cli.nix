@@ -3,11 +3,6 @@ let
   inherit (lib) types;
   inherit (util) build;
 
-  cliNixpkgs = config.pkgs.fetchzip {
-    url = "https://github.com/nixos/nixpkgs/archive/a7fc11be66bdfb5cdde611ee5ce381c183da8386.tar.gz";
-    sha256 = "0h3gvjbrlkvxhbxpy01n603ixv0pjy19n9kf73rdkchdvqcn70j2";
-  };
-
   package-set = build.package-sets config.internal.hixCli.ghc;
 
 in {
@@ -40,7 +35,7 @@ in {
         default = null;
       };
 
-      sha256 = lib.mkOption {
+      hash = lib.mkOption {
         description = ''
         If `commit` is configured, this is the corresponding source hash.
         Initially the empty string, you can add the value after the first build attempt by copying it from the error
@@ -75,32 +70,44 @@ in {
 
   config.internal.hixCli = {
 
-    overrides = {hackage, source, minimal, jailbreak, super, ...}: let
+    commit = lib.mkIf (!config.internal.hixRelease) (lib.mkDefault "b79cf30e9275ade0b0303fce3dbb772bb1cb59b0");
+
+    hash = "sha256-xht1kRRnFOslSiDPgahg0AuXjL84bZINYrXCcVaZjtI=";
+
+    overrides = {hackage, source, github, minimal, jailbreak, ...}: let
 
       conf = config.internal.hixCli;
 
-      githubSrc = builtins.fetchTarball {
-        url = "https://github.com/tek/hix/archive/${conf.commit}.tar.gz";
-        inherit (conf) sha256;
+      githubArgs = {
+        owner = "tek";
+        repo = "hix";
+        rev = conf.commit;
+        inherit (conf) hash;
+        path =  "packages/hix";
       };
-
-      devHix = source.package (if conf.commit == null then ../. else githubSrc) "hix";
 
       prodHix = let
         meta = import ../ops/cli-dep.nix;
-      in jailbreak (hackage meta.version meta.sha256);
+      in hackage meta.version meta.sha256;
 
-      useDev = conf.commit != null || conf.dev;
+      hix =
+        if conf.dev
+        then source.package ../. "hix"
+        else if conf.commit != null
+        then github githubArgs
+        else prodHix
+        ;
 
-      hix = if useDev then devHix else prodHix;
-
-    in { hix = minimal hix; };
+    in { hix = jailbreak (minimal hix); };
 
     ghc = {
       name = "hix";
       compiler = {
         nixpkgs = {
-          source = cliNixpkgs;
+          source = {
+            rev = "a7fc11be66bdfb5cdde611ee5ce381c183da8386";
+            hash = "sha256:0h3gvjbrlkvxhbxpy01n603ixv0pjy19n9kf73rdkchdvqcn70j2";
+          };
           extends = null;
         };
         source = "ghc912";
