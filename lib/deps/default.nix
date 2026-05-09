@@ -91,7 +91,10 @@ let
   replace = error: ghcName: pregen: overrides: self: super: let
     # Directly compiled OCs, containing non-persistable transformations like `jailbreak`.
     comp = compile overrides self super;
-  in lib.mapAttrs (replaceDecl error ghcName self super pregen) comp;
+    # `__all` injects `mkDerivation` into the compiled set, which is not an OC and must be passed through.
+    regular = builtins.removeAttrs comp ["mkDerivation"];
+    special = lib.optionalAttrs (comp ? mkDerivation) { inherit (comp) mkDerivation; };
+  in lib.mapAttrs (replaceDecl error ghcName self super pregen) regular // special;
 
 in {
   inherit normalize apply compile reify replace;

@@ -10,6 +10,9 @@
       lower = {
         enable = true;
         compiler = "ghc94";
+        envs.verbatim.overrides = {nodoc, ...}: {
+          __all = nodoc;
+        };
       };
       verbose = false;
       debug = false;
