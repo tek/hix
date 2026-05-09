@@ -179,7 +179,7 @@ in {
           Options for environments generated for lower bounds.
           These default to the values in [](#opt-managed-managed.envs).
           '';
-          type = types.submodule (envConfigModule "latest");
+          type = types.submodule (envConfigModule "lower");
           default = {};
         };
 
