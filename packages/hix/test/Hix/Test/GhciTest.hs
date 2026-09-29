@@ -147,7 +147,7 @@ options =
 
 searchPath :: Text -> [Text] -> Text
 searchPath dir subs =
-  Text.intercalate ":" [[exon|#{dir}packages/#{sub}/|] | sub <- subs]
+  Text.intercalate ":" [[exon|#{dir}packages/#{sub}|] | sub <- subs]
 
 ghcidTarget ::
   Path Abs Dir ->
