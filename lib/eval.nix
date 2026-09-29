@@ -52,7 +52,8 @@ let
 
   oneSystem = system: let
     config = evalSystem system;
-  in lib.asserts.checkAssertWarn config.ui.assertions [] config.output.final;
+    check = lib.asserts.checkAssertWarn or (_: _: lib.id);
+  in check config.ui.assertions [] config.output.final;
 
   dummySystem = evalSystem "x86_64-linux";
 
