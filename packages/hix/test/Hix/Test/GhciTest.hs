@@ -147,21 +147,16 @@ options =
 
 searchPath :: Text -> [Text] -> Text
 searchPath dir subs =
-  Text.intercalate ":" [[exon|#{dir}packages/#{sub}|] | sub <- subs]
+  Text.intercalate ":" [[exon|#{dir}packages/#{sub}/|] | sub <- subs]
 
-ghcidTarget ::
-  Path Abs Dir ->
-  Path Abs File ->
-  [Text]
-ghcidTarget cwd scriptFile =
+ghcidTarget :: Path Abs File -> [Text]
+ghcidTarget scriptFile =
   [
-    [exon|--command=ghci -Werror -i#{path} -ghci-script=#{pathText scriptFile}|],
+    [exon|--command=ghci -Werror -ghci-script=#{pathText scriptFile}|],
     [exon|--test=#{test}|]
   ]
   where
     test = "(check . property . test) test_server"
-    path = searchPath dir ["api/test", "api/lib", "api/testing", "core/lib", "core/tools"]
-    dir = pathText cwd
 
 contextHandlers :: ContextHandlers
 contextHandlers =
@@ -176,12 +171,25 @@ contextHandlers =
         CommandEnvContext {ghcidArgs = [], ghciArgs = [], runner}
     _ -> pure Nothing
 
+targetScriptGhcid :: Text
+targetScriptGhcid =
+  [exon|:set -i#{path}
+:cd packages/api/
+import Test.Tasty
+:load Api.ServerTest
+import Api.ServerTest
+|]
+  where
+    path = searchPath dir ["api/test", "api/lib", "api/testing", "core/lib", "core/tools"]
+    dir = pathText root
+
 test_ghcid :: UnitTest
 test_ghcid = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
     runM root (ghcidCmdlineFromOptions contextHandlers tmp options)
   cmdline <- evalEither res
-  ghcidTarget root cmdline.ghci.scriptFile === toList cmdline.args
+  ghcidTarget cmdline.ghci.scriptFile === toList cmdline.args
+  targetScriptGhcid === cmdline.ghci.test.script
 
 mainOptions :: GhciOptions
 mainOptions =
@@ -213,24 +221,31 @@ mainOptions =
   }
 
 mainPackageTarget ::
-  Path Abs Dir ->
   Path Abs File ->
   [Text]
-mainPackageTarget cwd scriptFile =
+mainPackageTarget scriptFile =
   [
-    [exon|-i#{path}|],
     [exon|-ghci-script=#{pathText scriptFile}|]
   ]
+
+targetScriptMainTarget :: Text
+targetScriptMainTarget =
+  [exon|:set -i#{path}
+:cd packages/core/
+:load Main
+import Main
+|]
   where
     path = searchPath dir ["core/test", "core/lib"]
-    dir = pathText cwd
+    dir = pathText root
 
 test_mainPackage :: UnitTest
 test_mainPackage = do
   res <- lift $ withSystemTempDir "hix-test" \ tmp ->
     runM root (ghciCmdlineFromOptions contextHandlers tmp mainOptions)
   cmdline <- evalEither res
-  mainPackageTarget root cmdline.scriptFile === argsGhciRun cmdline
+  mainPackageTarget cmdline.scriptFile === argsGhciRun cmdline
+  targetScriptMainTarget === cmdline.test.script
 
 spec2 :: TargetSpec
 spec2 =
@@ -267,10 +282,12 @@ spec4 =
 
 target_moduleName :: Text
 target_moduleName =
-  [exon|:cd packages/core/
+  [exon|:set -i/project/packages/core/test/:/project/packages/core/lib/
+:cd packages/core/
 import Test.Tasty
 :load #{m}
-import #{m}|]
+import #{m}
+|]
   where
     m = "Core.Test.Main"
 

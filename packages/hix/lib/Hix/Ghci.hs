@@ -45,7 +45,7 @@ import Hix.Error (Error, ErrorMessage (..), pathText, throwMessage, tryIO)
 import Hix.Json (resolveContext)
 import qualified Hix.Managed.Handlers.Context as Context
 import Hix.Managed.Handlers.Context (ContextHandlers)
-import Hix.Maybe (fromMaybeA)
+import Hix.Maybe (fromMaybeA, justIf)
 import Hix.Monad (M, noteGhci, withTempDir)
 import Hix.Path (PathSpecResolver (resolvePathSpec), rootDir)
 
@@ -73,22 +73,42 @@ moduleName package component = \case
   where
     withoutExt p = pathText (maybe p fst (splitExtension p))
 
+searchPathArg :: NonEmpty (Path Abs Dir) -> Text
+searchPathArg paths =
+  [exon|-i#{colonSeparated}|]
+  where
+    colonSeparated = Text.intercalate ":" (pathText <$> toList paths)
+
+ghciCommand :: Text -> Text -> Text
+ghciCommand cmd args =
+  [exon|:#{cmd} #{args}|]
+
+loadAndImport :: Text -> Text
+loadAndImport module_ =
+  [exon|:load #{module_}
+import #{module_}|]
+
 ghciScript ::
   GhciContext ->
   PackageConfig ->
   Maybe SourceDir ->
   GhciOptions ->
+  [Path Abs Dir] ->
   M Text
-ghciScript config package component options = do
+ghciScript config package component options searchPath = do
   ModuleName module_ <- moduleName package component options
-  pure [exon|#{cdCode}#{setup}
-:load #{module_}
-import #{module_}|]
+  pure $ Text.unlines $ catMaybes [
+    ghciCommand "set" <$> search,
+    ghciCommand "cd" <$> cwd,
+    coerce setup,
+    Just (loadAndImport module_)
+    ]
   where
-    cdCode | options.test.cd.unChangeDir = [exon|:cd #{pathText package.src}
-|]
-           | otherwise = ""
-    GhciSetupCode setup = fold (flip Map.lookup config.setup =<< options.test.runner)
+    cwd = justIf options.test.cd.enable (pathText package.src)
+
+    search = searchPathArg <$> nonEmpty searchPath
+
+    setup = flip Map.lookup config.setup =<< options.test.runner
 
 componentSearchPaths :: Path Rel Dir -> ComponentConfig -> [Path Rel Dir]
 componentSearchPaths src comp = do
@@ -149,14 +169,16 @@ assemble options context = do
   mRoot <- traverse resolvePathSpec options.command.root
   root <- rootDir mRoot
   Target {..} <- targetComponentOrError mRoot context.command.mainPackage context.command.packages options.command.component
-  script <- ghciScript context package sourceDir options
-  let searchPath = if context.manualCabal then legacySearchPath else depSearchPath
+  let searchPath = (root </>) <$> mkSearchPath context.command.packages package component
+  script <- ghciScript context package sourceDir options searchPath
   pure GhciTest {
     script,
     test = testRun context options.test,
     args = context.args,
-    searchPath = (root </>) <$> searchPath context.command.packages package component
+    searchPath
   }
+  where
+    mkSearchPath = if context.manualCabal then legacySearchPath else depSearchPath
 
 hixTempDir :: ExceptT Error IO (Path Abs Dir)
 hixTempDir = do
@@ -186,12 +208,6 @@ argFrag s = [exon| #{s}|]
 optArg :: Maybe Text -> Text
 optArg = foldMap argFrag
 
-searchPathArg :: NonEmpty (Path Abs Dir) -> Text
-searchPathArg paths =
-  [exon|-i#{colonSeparated}|]
-  where
-    colonSeparated = Text.intercalate ":" (Text.dropWhileEnd (== '/') . pathText <$> toList paths)
-
 ghciCmdline ::
   GhciTest ->
   GhciArgs ->
@@ -202,13 +218,11 @@ ghciCmdline ::
 ghciCmdline test extra args scriptFile runScriptFile =
   GhciRun {..}
   where
-    shell = appendList (prependList (coerce test.args ++ searchPath) [scriptArg]) extraOpts
+    shell = appendList (prependList (coerce test.args) [scriptArg]) extraOpts
 
     scriptArg = [exon|-ghci-script=##{toFilePath scriptFile}|]
 
     run = runScriptFile <&> \ f -> [exon|-ghci-script=##{toFilePath f}|]
-
-    searchPath = foldMap (pure . searchPathArg) (nonEmpty test.searchPath)
 
     extraOpts = extra.text ++ args
 

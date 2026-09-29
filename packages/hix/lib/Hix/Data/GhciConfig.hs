@@ -34,7 +34,7 @@ newtype GhcidArgs =
   deriving newtype (IsList, Ord, FromJSON, Semigroup, Monoid, HPretty)
 
 newtype ChangeDir =
-  ChangeDir { unChangeDir :: Bool }
+  ChangeDir { enable :: Bool }
   deriving stock (Eq, Show, Generic)
 
 data CommandContext =
