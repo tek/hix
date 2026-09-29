@@ -99,6 +99,7 @@ ghciScript config package component options searchPath = do
   ModuleName module_ <- moduleName package component options
   pure $ Text.unlines $ catMaybes [
     ghciCommand "set" <$> search,
+    ghciCommand "seti" "-i" <$ search,
     ghciCommand "cd" <$> cwd,
     coerce setup,
     Just (loadAndImport module_)
