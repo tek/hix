@@ -14,6 +14,10 @@ in {
     describe 'Build the integration executable'
     step nix build path:$hix_dir#env.integration-exe.integration
 
+    describe 'Run the integration executable with --help'
+    output_ignore
+    step nix run path:$hix_dir#integration-hackage -- --help
+
     output_ignore
     error_ignore
     step_develop which cabal

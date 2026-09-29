@@ -190,7 +190,7 @@ searchPathArg :: NonEmpty (Path Abs Dir) -> Text
 searchPathArg paths =
   [exon|-i#{colonSeparated}|]
   where
-    colonSeparated = Text.intercalate ":" (pathText <$> toList paths)
+    colonSeparated = Text.intercalate ":" (Text.dropWhileEnd (== '/') . pathText <$> toList paths)
 
 ghciCmdline ::
   GhciTest ->
