@@ -174,6 +174,7 @@ contextHandlers =
 targetScriptGhcid :: Text
 targetScriptGhcid =
   [exon|:set -i#{path}
+:seti -i
 :cd packages/api/
 import Test.Tasty
 :load Api.ServerTest
@@ -231,6 +232,7 @@ mainPackageTarget scriptFile =
 targetScriptMainTarget :: Text
 targetScriptMainTarget =
   [exon|:set -i#{path}
+:seti -i
 :cd packages/core/
 :load Main
 import Main
@@ -283,6 +285,7 @@ spec4 =
 target_moduleName :: Text
 target_moduleName =
   [exon|:set -i/project/packages/core/test/:/project/packages/core/lib/
+:seti -i
 :cd packages/core/
 import Test.Tasty
 :load #{m}
