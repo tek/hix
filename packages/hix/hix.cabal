@@ -185,6 +185,7 @@ library
       Hix.Managed.Git
       Hix.Managed.Git.Config
       Hix.Managed.Git.Native
+      Hix.Managed.Git.Push
       Hix.Managed.Handlers.AvailableVersions
       Hix.Managed.Handlers.AvailableVersions.Prod
       Hix.Managed.Handlers.AvailableVersions.Test
@@ -570,6 +571,8 @@ test-suite hix-test
       Hix.Test.Managed.Bump.MutationTest
       Hix.Test.Managed.DiffTest
       Hix.Test.Managed.GitConfigTest
+      Hix.Test.Managed.GitFetchTest
+      Hix.Test.Managed.GitPushTest
       Hix.Test.Managed.HackageTest
       Hix.Test.Managed.LowerAuto.MutationOptimizeTest
       Hix.Test.Managed.LowerAuto.MutationStabilizeTest

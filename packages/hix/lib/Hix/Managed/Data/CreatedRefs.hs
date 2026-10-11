@@ -12,24 +12,30 @@ import Hix.Pretty (showP)
 data CreatedRefs =
   CreatedRefs {
     branches :: Set BranchName,
+    -- | Branches that only serve as the base for other branches, so a remote that has diverged on them isn't an error.
+    bases :: Set BranchName,
     tags :: Set Tag
   }
   deriving stock (Eq, Show, Generic)
 
 instance Semigroup CreatedRefs where
-  CreatedRefs b1 t1 <> CreatedRefs b2 t2 = CreatedRefs (b1 <> b2) (t1 <> t2)
+  CreatedRefs b1 s1 t1 <> CreatedRefs b2 s2 t2 = CreatedRefs (b1 <> b2) (s1 <> s2) (t1 <> t2)
 
 instance Monoid CreatedRefs where
-  mempty = CreatedRefs Set.empty Set.empty
+  mempty = CreatedRefs Set.empty Set.empty Set.empty
 
 noBranches :: CreatedRefs
 noBranches = mempty
 
 singleTag :: Tag -> CreatedRefs
-singleTag tag = CreatedRefs Set.empty (Set.singleton tag)
+singleTag tag = mempty {tags = Set.singleton tag}
 
 singleBranch :: BranchName -> CreatedRefs
-singleBranch branch = CreatedRefs (Set.singleton branch) Set.empty
+singleBranch branch = mempty {branches = Set.singleton branch}
+
+-- | A branch that is only the base for other branches, see 'bases'.
+singleBase :: BranchName -> CreatedRefs
+singleBase branch = mempty {branches = Set.singleton branch, bases = Set.singleton branch}
 
 refArgs :: CreatedRefs -> [Text]
 refArgs CreatedRefs {branches, tags} =

@@ -4,6 +4,11 @@
 
 * Migrate the shell script-based release app to the Haskell CLI.
 
+### Maintenance
+
+* Fix `--fetch` not fetching any release branches.
+* Improve resilience of `--fetch` and `--push` against different environmental circumstances, like in Github Actions.
+
 ### Override combinators
 
 * Change the OC `ghcOptions` to accept a list of options as well as a string.

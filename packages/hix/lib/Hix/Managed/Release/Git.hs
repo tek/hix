@@ -11,7 +11,7 @@ import Hix.Data.Monad (M)
 import Hix.Data.PackageId (PackageId (..))
 import Hix.Data.PackageName (LocalPackage (..))
 import Hix.Data.Version (Version)
-import Hix.Managed.Data.CreatedRefs (CreatedRefs (..), accumulateRefs, newRefsRef)
+import Hix.Managed.Data.CreatedRefs (CreatedRefs (..), accumulateRefs, newRefsRef, singleTag)
 import Hix.Managed.Data.Packages (Packages (..))
 import Hix.Managed.Data.ReleaseConfig (ReleaseConfig (..))
 import qualified Hix.Managed.Git as Git
@@ -125,10 +125,10 @@ createTags git extraArgs packages trailers = \case
   CommitIndividual -> do
     let zipped = nZip (,) packages trailers
     tags <- nForWithKey @(Packages _) zipped createPkgTag
-    pure CreatedRefs {branches = [], tags = Set.fromList (nElems @(Packages _) tags)}
+    pure (foldMap singleTag (nElems @(Packages _) tags))
   CommitShared version -> do
     tag <- createTag git extraArgs Nothing version (nElems trailers)
-    pure CreatedRefs {branches = [], tags = [tag]}
+    pure (singleTag tag)
   where
     createPkgTag package (version, trailer) =
       createTag git extraArgs (Just package) version [trailer]
