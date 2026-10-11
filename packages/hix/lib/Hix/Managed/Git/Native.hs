@@ -6,8 +6,10 @@ import qualified Data.Set as Set
 import Exon (exon)
 
 import Hix.Data.Monad (M)
-import Hix.Managed.Data.CreatedRefs (CreatedRefs (..), accumulateRefs, collectRefs, singleBranch, singleTag)
+import Hix.Managed.Data.CreatedRefs (CreatedRefs (..), accumulateRefs, collectRefs, singleBase, singleBranch, singleTag)
 import Hix.Managed.Git (BranchName (..), GitNative (..), GitResult (..), Tag (..), gitError)
+import Hix.Managed.Git.Push (pushRefs)
+import qualified Hix.Log as Log
 import Hix.Monad (appContext, clientError, fatalError)
 import Hix.Pretty (showP)
 
@@ -23,18 +25,28 @@ data GitBracketConfig =
   }
   deriving stock (Eq, Show)
 
--- | Create a new branch and track it in refs
-createBranch ::
+-- | Create a new branch and track it in refs, using @track@ to determine how it is recorded.
+createBranchWith ::
+  (BranchName -> CreatedRefs) ->
   GitNative ->
   IORef CreatedRefs ->
   BranchName ->
   -- | Optional base (tag/branch to branch from)
   Maybe Text ->
   M ()
-createBranch git refsRef (BranchName branch) base = do
+createBranchWith track git refsRef name@(BranchName branch) base = do
   let args = ["switch", "--create", branch] ++ maybe [] pure base
   git.cmd_ args
-  accumulateRefs refsRef (singleBranch (BranchName branch))
+  accumulateRefs refsRef (track name)
+
+-- | Create a new branch and track it in refs
+createBranch :: GitNative -> IORef CreatedRefs -> BranchName -> Maybe Text -> M ()
+createBranch = createBranchWith singleBranch
+
+-- | Create a new branch that only serves as the base for other branches.
+-- Failing to push it to a remote that has diverged is not an error.
+createBaseBranch :: GitNative -> IORef CreatedRefs -> BranchName -> Maybe Text -> M ()
+createBaseBranch = createBranchWith singleBase
 
 -- | Create a git tag and accumulate it in the refs tracker
 createTagWith ::
@@ -56,6 +68,20 @@ branchRemote git branch =
     GitFailure {..} -> fatalError (gitError args stdout stderr)
   where
     args = ["config", [exon|branch.#{branch}.remote|]]
+
+-- | Fetch release branches and tags from the remote of the current branch.
+-- Local-only repositories have no remote, in which case there is nothing to fetch.
+--
+-- The refspec must be fully qualified: git doesn't resolve wildcard patterns like @release/*@ against @refs/heads@,
+-- so an unqualified refspec silently fetches nothing.
+-- Branches are not force-updated, so that unpushed local commits on a release branch are never discarded.
+fetchRemote :: GitNative -> Maybe Text -> M ()
+fetchRemote git = \case
+  Just remote -> git.cmd_ ["fetch", "--tags", remote, releaseBranchRefspec]
+  Nothing -> Log.debug "Not fetching: The current branch has no remote."
+
+releaseBranchRefspec :: Text
+releaseBranchRefspec = "refs/heads/release/*:refs/heads/release/*"
 
 reset :: GitNative -> Maybe Text -> M ()
 reset git initialBranch = do
@@ -107,7 +133,7 @@ pushOnSuccess git config initialBranch mainRemote refs = do
 
     pushBranches remote mergedBranch =
       unless (Set.null branchesToPush) do
-        git.cmd_ $ ["push", remote] ++ [showP b | b <- Set.toList branchesToPush]
+        pushRefs git (Set.map showP bases) remote [showP b | b <- Set.toList branchesToPush]
       where
         -- Include initial branch in push if we merged into it
         branchesToPush = foldr Set.insert branches mergedBranch
@@ -116,7 +142,7 @@ pushOnSuccess git config initialBranch mainRemote refs = do
       unless (Set.null tags) do
         git.cmd_ $ ["push", remote] ++ [[exon|refs/tags/#{showP t}|] | t <- Set.toList tags]
 
-    CreatedRefs {branches, tags} = refs
+    CreatedRefs {branches, bases, tags} = refs
 
 gitBracket ::
   GitNative ->
@@ -126,15 +152,14 @@ gitBracket ::
 gitBracket git config ma = do
   git.cmd' ["diff", "--exit-code"] >>= leftA \ _ ->
     clientError "Git tree is dirty"
-  when config.fetch do
-    git.cmd_ ["fetch", "--tags", "origin", "release/*:release/*"]
   initialBranch <- head <$> git.cmd ["symbolic-ref", "--short", "HEAD"]
-  mainRemote <- traverse (branchRemote git) initialBranch
+  mainRemote <- join <$> traverse (branchRemote git) initialBranch
+  when config.fetch (fetchRemote git mainRemote)
   finally (runAndPush initialBranch mainRemote) (reset git initialBranch)
   where
     runAndPush initialBranch mainRemote = do
       (result, refs) <- ma
-      bracketResult <- pushOnSuccess git config initialBranch (join mainRemote) refs
+      bracketResult <- pushOnSuccess git config initialBranch mainRemote refs
       pure (bracketResult, result)
 
 -- | Wrap an action to collect created refs from an 'IORef' and pass them to 'gitBracket'

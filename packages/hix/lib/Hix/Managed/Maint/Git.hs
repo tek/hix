@@ -9,11 +9,11 @@ import Hix.Data.Monad (M)
 import Hix.Data.PackageName (LocalPackage)
 import Hix.Managed.BuildOutput.CommitMsg (commitModified)
 import Hix.Managed.Data.BuildOutput (ModifiedId)
-import Hix.Managed.Data.CreatedRefs (newRefsRef)
+import Hix.Managed.Data.CreatedRefs (accumulateRefs, newRefsRef, singleBranch)
 import Hix.Managed.Data.MaintConfig (MaintConfig (..))
 import Hix.Managed.Data.RevisionConfig (RevisionConfig (..))
 import Hix.Managed.Git (BranchName (..), GitApi, GitNative (..), MaintBranch (..), Tag, gitApiHermetic)
-import Hix.Managed.Git.Native (GitBracketConfig (..), createBranch, wrapBracketWithRefs_)
+import Hix.Managed.Git.Native (GitBracketConfig (..), createBaseBranch, createBranch, wrapBracketWithRefs_)
 import Hix.Pretty (showP)
 
 data GitMaint =
@@ -66,7 +66,7 @@ gitMaintNative MaintConfig {push, fetch, pr} git = do
   where
     branchOffTagImpl refsRef branch tag = do
       let branchName = BranchName (formatReleaseBranch branch)
-      createBranch git refsRef branchName (Just (showP tag))
+      (if pr then createBaseBranch else createBranch) git refsRef branchName (Just (showP tag))
 
     commitBumpImpl refsRef branch package modified = do
       prBranch <- ensurePrBranch refsRef branch
@@ -82,7 +82,11 @@ gitMaintNative MaintConfig {push, fetch, pr} git = do
         createBranch git refsRef prBranch Nothing
         pure prBranch
       | otherwise
-      = pure (releaseBranchName branch)
+      = do
+        accumulateRefs refsRef (singleBranch existing)
+        pure existing
+      where
+        existing = releaseBranchName branch
 
 gitApiMaintHermetic :: MaintConfig -> GitApi GitMaint
 gitApiMaintHermetic config = gitApiHermetic (gitMaintNative config)

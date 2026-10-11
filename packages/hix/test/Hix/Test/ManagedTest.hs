@@ -26,6 +26,8 @@ import Hix.Test.Managed.TargetSpecTest (test_targetSpec)
 import Hix.Test.Utils (unitTest)
 import Hix.Test.Managed.ReleaseUiTest (test_nav)
 import Hix.Test.Managed.GitConfigTest (test_gitConfig)
+import Hix.Test.Managed.GitFetchTest (test_fetchReleaseBranches)
+import Hix.Test.Managed.GitPushTest (test_pushRejected)
 
 test_managed :: TestTree
 test_managed =
@@ -61,5 +63,6 @@ test_managed =
         test_releaseExplicitVersion
       ],
       test_targetSpec,
-      test_gitConfig
-    ]
+      test_gitConfig,
+      unitTest "fetch release branches" test_fetchReleaseBranches,
+      unitTest "parse rejected refs from git push" test_pushRejected    ]
