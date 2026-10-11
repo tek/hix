@@ -58,8 +58,8 @@
     };
     lower-local2 = {
       containers = {
-        version = "0.8";
-        hash = "06mmyljfj41hg5rzr9d2fb61gd2a11waicpk7dcy3hxrqvfgs8yc";
+        version = "0.8.1";
+        hash = "0jrbb54qc1ljjvy193dh6c2ppp562bf558s5m5j9lmibm1kdxy2l";
         repo = "hackage.haskell.org";
       };
       local1 = {
